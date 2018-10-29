@@ -1,4 +1,5 @@
-from hera.vm import Op, VirtualMachine
+from hera.parser import Op
+from hera.vm import VirtualMachine
 
 
 def test_add():

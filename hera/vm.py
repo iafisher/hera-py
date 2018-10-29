@@ -1,7 +1,3 @@
-from collections import namedtuple
-
-
-Op = namedtuple('Op', ['name', 'args'])
 
 
 class VirtualMachine:
