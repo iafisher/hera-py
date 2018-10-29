@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+*.pyo
+.mypy_cache
+.venv
+*.egg-info
+
+*.swp
+*~
+.DS_Store
