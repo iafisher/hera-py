@@ -88,7 +88,6 @@ STORE(R4, 0, R5)
     ]
 
 
-@pytest.mark.skip(reason='pending response from maintainer of Lark parser')
 def test_parse_multiline_comment():
     program = '''\
 /* Starts on this line

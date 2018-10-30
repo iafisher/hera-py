@@ -28,7 +28,7 @@ class TreeToOplist(Transformer):
             return matches[0]
 
 
-_parser = Lark('''
+_parser = Lark(r'''
     ?start: op*
 
     op: SYMBOL "(" _arglist? ")"
@@ -43,7 +43,7 @@ _parser = Lark('''
     REGISTER: /[rR][0-9]+/
 
     // TODO: Support multi-line comments
-    COMMENT: "//" /[^\\n]*/
+    COMMENT: ( "//" /[^\n]*/ | "/*" /([^*]|\*[^\/])*/ "*/" )
 
     %import common.WS
     %ignore WS
