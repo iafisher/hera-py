@@ -22,6 +22,8 @@ class TreeToOplist(Transformer):
             return int(matches[0])
         elif matches[0].type == 'HEX':
             return int(matches[0], base=16)
+        elif matches[0].type == 'OCTAL':
+            return int(matches[0], base=8)
         elif matches[0].type == 'BINARY':
             return int(matches[0], base=2)
         elif matches[0].type == 'REGISTER':
@@ -37,11 +39,12 @@ _parser = Lark(r'''
 
     _arglist: ( value "," )* value
 
-    value: DECIMAL | HEX | BINARY | REGISTER
+    value: DECIMAL | HEX | OCTAL | BINARY | REGISTER
 
     SYMBOL: /[A-Za-z_][A-Za-z0-9_]*/
     DECIMAL: /-?[0-9]+/
     HEX: /-?0x[0-9a-fA-F]+/
+    OCTAL: /-?0o[0-7]+/
     BINARY: /-?0b[01]+/
     REGISTER: /[rR][0-9]+/
 

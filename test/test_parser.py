@@ -27,6 +27,14 @@ def test_parse_negative_binary_number():
     assert parse('SETLO(R5, -0b10110)') == [Op('SETLO', [5, -22])]
 
 
+def test_parse_octal_number():
+    assert parse('SETLO(R3, 0o173)') == [Op('SETLO', [3, 123])]
+
+
+def test_parse_negative_octal_number():
+    assert parse('SETLO(R3, -0o173)') == [Op('SETLO', [3, -123])]
+
+
 def test_parse_multiline_comment():
     program = '''\
 /* Starts on this line
