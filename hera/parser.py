@@ -22,6 +22,8 @@ class TreeToOplist(Transformer):
             return int(matches[0])
         elif matches[0].type == 'HEX':
             return int(matches[0], base=16)
+        elif matches[0].type == 'BINARY':
+            return int(matches[0], base=2)
         elif matches[0].type == 'REGISTER':
             return int(matches[0][1:])
         else:
@@ -35,11 +37,12 @@ _parser = Lark(r'''
 
     _arglist: ( value "," )* value
 
-    value: DECIMAL | HEX | REGISTER
+    value: DECIMAL | HEX | BINARY | REGISTER
 
     SYMBOL: /[A-Za-z_][A-Za-z0-9_]*/
     DECIMAL: /-?[0-9]+/
     HEX: /-?0x[0-9a-fA-F]+/
+    BINARY: /-?0b[01]+/
     REGISTER: /[rR][0-9]+/
 
     // TODO: Support multi-line comments
