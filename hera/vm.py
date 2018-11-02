@@ -49,6 +49,7 @@ class VirtualMachine:
             self.flag_carry = False
             self.flag_overflow = True
         elif value < -2**15:
+            # TODO: This isn't the right way to do it.
             value += 2**16
             self.flag_carry = True
             self.flag_overflow = True
