@@ -1,3 +1,9 @@
+"""The virtual HERA machine.
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: November 2018
+"""
+from hera.utils import to_uint
 
 
 class VirtualMachine:
@@ -8,7 +14,10 @@ class VirtualMachine:
 
     def reset(self):
         """Reset the machine to its initial state."""
-        # Sixteen 16-bit registers
+        # Sixteen 16-bit registers. The virtual machine stores integers in their
+        # unsigned representation, so the values of self.registers will always
+        # be non-negative, although values above 2**15 implicitly represent
+        # negative integers under a signed interpretation.
         self.registers = [0] * 16
         # 16-bit program counter
         self.pc = 0
@@ -44,23 +53,14 @@ class VirtualMachine:
         """Store the value in the target register, handling overflow and setting
         flags.
         """
-        if value >= 2**15:
-            value = (value % 2**15) - 2**15
-            self.flag_carry = False
-            self.flag_overflow = True
-        elif value < -2**15:
-            # TODO: This isn't the right way to do it.
-            value += 2**16
-            self.flag_carry = True
-            self.flag_overflow = True
-        else:
-            self.flag_carry = False
-            self.flag_overflow = False
+        if value >= 2**16:
+            value %= 2**16
         index = self.rindex(target)
         if index != 0:
             self.registers[self.rindex(target)] = value
         self.flag_zero = (value == 0)
-        self.flag_sign = (value < 0)
+        self.flag_sign = (value >= 2**15)
+        self.flag_carry = False
 
     def getr(self, name):
         """Get the contents of the register with the given name."""
