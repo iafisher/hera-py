@@ -80,6 +80,20 @@ def test_add_with_negative_overflow():
     assert vm.flag_carry
 
 
+def test_add_with_carry():
+    vm = VirtualMachine()
+    vm.registers[3] = 5
+    vm.registers[5] = 3
+    vm.flag_carry = True
+    vm.exec_one(Op('ADD', ['R7', 'R3', 'R5']))
+    assert vm.registers[7] == 9
+    assert vm.pc == 1
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+
+
 def test_sub():
     vm = VirtualMachine()
     vm.registers[2] = 64

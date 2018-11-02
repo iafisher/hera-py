@@ -46,12 +46,14 @@ class VirtualMachine:
         """
         if value >= 2**15:
             value = (value % 2**15) - 2**15
+            self.flag_carry = False
             self.flag_overflow = True
         elif value < -2**15:
             value += 2**16
             self.flag_carry = True
             self.flag_overflow = True
         else:
+            self.flag_carry = False
             self.flag_overflow = False
         index = self.rindex(target)
         if index != 0:
@@ -74,7 +76,8 @@ class VirtualMachine:
 
     def exec_add(self, target, left, right):
         """Execute the ADD instruction."""
-        self.setr(target, self.getr(left) + self.getr(right))
+        carry = 1 if not self.flag_carry_block and self.flag_carry else 0
+        self.setr(target, self.getr(left) + self.getr(right) + carry)
         self.pc += 1
 
     def exec_sub(self, target, left, right):
