@@ -40,14 +40,27 @@ class VirtualMachine:
         while self.pc < len(program):
             self.exec_one(program[self.pc])
 
+    def put_register(self, target, value):
+        """Store the value in the target register, handling overflow and setting
+        flags.
+        """
+        if value >= 2**16:
+            value %= 2**16
+            self.flag_carry = True
+        else:
+            self.flag_carry = False
+        self.registers[target] = value
+        self.flag_zero = (value == 0)
+        self.flag_sign = (value < 0)
+
     def exec_add(self, target, left, right):
         """Execute the ADD instruction."""
-        self.registers[target] = self.registers[left] + self.registers[right]
+        self.put_register(target, self.registers[left] + self.registers[right])
         self.pc += 1
 
     def exec_sub(self, target, left, right):
         """Execute the SUB instruction."""
-        self.registers[target] = self.registers[left] - self.registers[right]
+        self.put_register(target, self.registers[left] - self.registers[right])
         self.pc += 1
 
     # A mapping from instruction names to handler functions.

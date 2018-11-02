@@ -9,6 +9,46 @@ def test_add():
     vm.exec_one(Op('ADD', [1, 2, 3]))
     assert vm.registers[1] == 42
     assert vm.pc == 1
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+
+
+def test_add_with_negative():
+    vm = VirtualMachine()
+    vm.registers[2] = -14
+    vm.registers[3] = 8
+    vm.exec_one(Op('ADD', [1, 2, 3]))
+    assert vm.registers[1] == -6
+    assert vm.pc == 1
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+
+
+def test_add_with_zero():
+    vm = VirtualMachine()
+    vm.registers[7] = -4
+    vm.registers[3] = 4
+    vm.exec_one(Op('ADD', [5, 7, 3]))
+    assert vm.registers[5] == 0
+    assert vm.pc == 1
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
+
+
+def test_add_with_overflow():
+    vm = VirtualMachine()
+    vm.registers[9] = 65000
+    vm.registers[2] = 65000
+    vm.exec_one(Op('ADD', [7, 9, 2]))
+    assert vm.registers[7] == 64464
+    assert vm.pc == 1
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
 
 
 def test_sub():
@@ -18,3 +58,30 @@ def test_sub():
     vm.exec_one(Op('SUB', [1, 2, 3]))
     assert vm.registers[1] == 42
     assert vm.pc == 1
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+
+
+def test_sub_with_negative():
+    vm = VirtualMachine()
+    vm.registers[2] = -64
+    vm.registers[3] = 22
+    vm.exec_one(Op('SUB', [1, 2, 3]))
+    assert vm.registers[1] == -86
+    assert vm.pc == 1
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+
+
+def test_sub_with_zero():
+    vm = VirtualMachine()
+    vm.registers[2] = -37
+    vm.registers[3] = -37
+    vm.exec_one(Op('SUB', [1, 2, 3]))
+    assert vm.registers[1] == 0
+    assert vm.pc == 1
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
