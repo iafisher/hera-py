@@ -1,7 +1,7 @@
 """Parse HERA programs.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: October 2018
+Version: November 2018
 """
 from collections import namedtuple
 
@@ -32,7 +32,8 @@ class TreeToOplist(Transformer):
             return matches[0]
 
 
-_parser = Lark(r'''
+_parser = Lark(
+    r'''
     ?start: op*
 
     op: SYMBOL "(" _arglist? ")"
@@ -44,6 +45,8 @@ _parser = Lark(r'''
     SYMBOL: /[A-Za-z_][A-Za-z0-9_]*/
     DECIMAL: /-?[0-9]+/
     HEX: /-?0x[0-9a-fA-F]+/
+    // TODO: How should I handle zero-prefixed numbers, which the HERA-C
+    // simulator would treat as octal?
     OCTAL: /-?0o[0-7]+/
     BINARY: /-?0b[01]+/
     REGISTER: /[rR][0-9]+/
@@ -54,7 +57,10 @@ _parser = Lark(r'''
     %import common.WS
     %ignore WS
     %ignore COMMENT
-''', parser='lalr', transformer=TreeToOplist())
+    ''',
+    parser='lalr',
+    transformer=TreeToOplist()
+)
 
 
 def parse(text):

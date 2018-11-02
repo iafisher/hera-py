@@ -35,10 +35,22 @@ def test_parse_negative_octal_number():
     assert parse('SETLO(R3, -0o173)') == [Op('SETLO', [3, -123])]
 
 
+def test_parse_single_line_comment():
+    assert parse('SETLO(R1, 0)  // R1 <- 0') == [Op('SETLO', [1, 0])]
+
+
+def test_parse_another_single_line_comments():
+    program = '''\
+// Single-line comment
+SETLO(R9, 42)
+    '''
+    assert parse(program) == [Op('SETLO', [9, 42])]
+
+
 def test_parse_multiline_comment():
     program = '''\
 /* Starts on this line
    ends on this one */
 SETLO(R1, 1)
-'''
+    '''
     assert parse(program) == [Op('SETLO', [1, 1])]
