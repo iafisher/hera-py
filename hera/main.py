@@ -17,7 +17,10 @@ from .parser import parse
 from .vm import VirtualMachine
 
 
-def main(path):
+def main():
+    arguments = docopt(__doc__, version='hera-py 0.1.0')
+    path = arguments['<path>']
+
     vm = VirtualMachine()
     try:
         with open(path, 'r', encoding='utf-8') as f:
@@ -33,8 +36,3 @@ def main(path):
         sys.exit(2)
     else:
         vm.exec_many(program)
-
-
-if __name__ == '__main__':
-    arguments = docopt(__doc__, version='hera-py 0.1.0')
-    main(arguments['path'])
