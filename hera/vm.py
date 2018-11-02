@@ -44,12 +44,18 @@ class VirtualMachine:
         """Store the value in the target register, handling overflow and setting
         flags.
         """
-        if value >= 2**16:
-            value %= 2**16
+        if value >= 2**15:
+            value = (value % 2**15) - 2**15
+            self.flag_overflow = True
+        elif value < -2**15:
+            value += 2**16
             self.flag_carry = True
+            self.flag_overflow = True
         else:
-            self.flag_carry = False
-        self.registers[self.rindex(target)] = value
+            self.flag_overflow = False
+        index = self.rindex(target)
+        if index != 0:
+            self.registers[self.rindex(target)] = value
         self.flag_zero = (value == 0)
         self.flag_sign = (value < 0)
 

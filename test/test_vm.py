@@ -12,6 +12,7 @@ def test_add():
     assert not vm.flag_sign
     assert not vm.flag_zero
     assert not vm.flag_overflow
+    assert not vm.flag_carry
 
 
 def test_add_with_negative():
@@ -24,6 +25,7 @@ def test_add_with_negative():
     assert vm.flag_sign
     assert not vm.flag_zero
     assert not vm.flag_overflow
+    assert not vm.flag_carry
 
 
 def test_add_with_zero():
@@ -36,18 +38,45 @@ def test_add_with_zero():
     assert not vm.flag_sign
     assert vm.flag_zero
     assert not vm.flag_overflow
+    assert not vm.flag_carry
 
 
 def test_add_with_overflow():
     vm = VirtualMachine()
-    vm.registers[9] = 65000
-    vm.registers[2] = 65000
+    vm.registers[9] = 32767
+    vm.registers[2] = 1
     vm.exec_one(Op('ADD', ['R7', 'R9', 'R2']))
-    assert vm.registers[7] == 64464
+    assert vm.registers[7] == -32768
+    assert vm.pc == 1
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert vm.flag_overflow
+    assert not vm.flag_carry
+
+
+def test_add_with_big_overflow():
+    vm = VirtualMachine()
+    vm.registers[9] = 32767
+    vm.registers[2] = 32767
+    vm.exec_one(Op('ADD', ['R7', 'R9', 'R2']))
+    assert vm.registers[7] == -2
+    assert vm.pc == 1
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert vm.flag_overflow
+    assert not vm.flag_carry
+
+
+def test_add_with_negative_overflow():
+    vm = VirtualMachine()
+    vm.registers[9] = -32768
+    vm.registers[2] = -32768
+    vm.exec_one(Op('ADD', ['R7', 'R9', 'R2']))
+    assert vm.registers[7] == 0
     assert vm.pc == 1
     assert not vm.flag_sign
-    assert not vm.flag_zero
-    assert not vm.flag_overflow
+    assert vm.flag_zero
+    assert vm.flag_overflow
     assert vm.flag_carry
 
 
