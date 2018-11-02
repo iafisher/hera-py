@@ -26,8 +26,6 @@ class TreeToOplist(Transformer):
             return int(matches[0], base=8)
         elif matches[0].type == 'BINARY':
             return int(matches[0], base=2)
-        elif matches[0].type == 'REGISTER':
-            return int(matches[0][1:])
         else:
             return matches[0]
 

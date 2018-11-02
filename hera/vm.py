@@ -40,7 +40,7 @@ class VirtualMachine:
         while self.pc < len(program):
             self.exec_one(program[self.pc])
 
-    def put_register(self, target, value):
+    def setr(self, target, value):
         """Store the value in the target register, handling overflow and setting
         flags.
         """
@@ -49,18 +49,31 @@ class VirtualMachine:
             self.flag_carry = True
         else:
             self.flag_carry = False
-        self.registers[target] = value
+        self.registers[self.rindex(target)] = value
         self.flag_zero = (value == 0)
         self.flag_sign = (value < 0)
 
+    def getr(self, name):
+        """Get the contents of the register with the given name."""
+        return self.registers[self.rindex(name)]
+
+    def rindex(self, name):
+        """Return the index of the register with the given name in the register
+        array.
+        """
+        if name.startswith('R'):
+            return int(name[1:])
+        else:
+            raise KeyError(name)
+
     def exec_add(self, target, left, right):
         """Execute the ADD instruction."""
-        self.put_register(target, self.registers[left] + self.registers[right])
+        self.setr(target, self.getr(left) + self.getr(right))
         self.pc += 1
 
     def exec_sub(self, target, left, right):
         """Execute the SUB instruction."""
-        self.put_register(target, self.registers[left] - self.registers[right])
+        self.setr(target, self.getr(left) - self.getr(right))
         self.pc += 1
 
     # A mapping from instruction names to handler functions.
