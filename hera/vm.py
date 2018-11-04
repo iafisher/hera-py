@@ -53,11 +53,11 @@ class VirtualMachine:
     def exec_one(self, inst):
         """Execute a single instruction."""
         try:
-            handler = self.imap[inst.name]
+            handler = getattr(self, 'exec_' + inst.name.lower())
         except KeyError:
             raise ValueError(f'unknown instruction "{inst.name}"') from None
         else:
-            handler(self, *inst.args)
+            handler(*inst.args)
 
     def exec_many(self, program):
         """Execute a program (i.e., a list of instructions), resetting the
@@ -146,15 +146,3 @@ class VirtualMachine:
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
         self.pc += 1
-
-    # A mapping from instruction names to handler functions.
-    imap = {
-        'ADD': exec_add,
-        'AND': exec_and,
-        'OR': exec_or,
-        'SET': exec_set,
-        'SUB': exec_sub,
-        'XOR': exec_xor,
-
-        'print_reg': exec_print_reg,
-    }
