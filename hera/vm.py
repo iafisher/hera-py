@@ -224,6 +224,11 @@ class VirtualMachine:
         """Execute the LSL8 instruction."""
         return (original << 8) & 0xffff
 
+    @binary_op
+    def exec_lsr8(self, original):
+        """Execute the LSR8 instruction."""
+        return original >> 8
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
