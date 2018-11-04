@@ -106,8 +106,16 @@ class VirtualMachine:
         self.setr(target, result)
         self.pc += 1
 
+    def exec_and(self, target, left, right):
+        left = self.getr(left)
+        right = self.getr(right)
+
+        self.setr(target, left & right)
+        self.pc += 1
+
     # A mapping from instruction names to handler functions.
     imap = {
         'ADD': exec_add,
+        'AND': exec_and,
         'SUB': exec_sub,
     }
