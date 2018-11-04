@@ -3,7 +3,25 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: November 2018
 """
+import functools
+
 from hera.utils import from_uint, to_uint
+
+
+def ternary_op(f):
+    """A decorator for ternary HERA ops that handles fetching the values of the
+    left and right registers, storing the result in the target register,
+    setting the zero and sign flags, and incrementing the program counter.
+    """
+    @functools.wraps(f)
+    def inner(self, target, left, right):
+        left = self.registers[self.rindex(left)]
+        right = self.registers[self.rindex(right)]
+        result = f(self, left, right)
+        self.store_register(target, result)
+        self.set_zero_and_sign(result)
+        self.pc += 1
+    return inner
 
 
 class VirtualMachine:
@@ -49,16 +67,6 @@ class VirtualMachine:
         while self.pc < len(program):
             self.exec_one(program[self.pc])
 
-    def setr(self, target, value):
-        """Store the value in the target register, handling overflow and setting
-        flags.
-        """
-        index = self.rindex(target)
-        if index != 0:
-            self.registers[self.rindex(target)] = value
-        self.flag_zero = (value == 0)
-        self.flag_sign = (value >= 2**15)
-
     def getr(self, name):
         """Get the contents of the register with the given name."""
         return self.registers[self.rindex(name)]
@@ -72,10 +80,20 @@ class VirtualMachine:
         else:
             raise KeyError(name)
 
-    def exec_add(self, target, left, right):
+    def store_register(self, target, value):
+        """Store the value in the target register (a string)."""
+        index = self.rindex(target)
+        if index != 0:
+            self.registers[index] = value
+
+    def set_zero_and_sign(self, value):
+        """Set the zero and sign flags based on the value."""
+        self.flag_zero = (value == 0)
+        self.flag_sign = (value >= 2**15)
+
+    @ternary_op
+    def exec_add(self, left, right):
         """Execute the ADD instruction."""
-        left = self.getr(left)
-        right = self.getr(right)
         carry = 1 if not self.flag_carry_block and self.flag_carry else 0
 
         result = (left + right + carry) % 2**16
@@ -86,13 +104,11 @@ class VirtualMachine:
             (left >= 2**15 and right >= 2**15 and result < 2**15)
         )
 
-        self.setr(target, result)
-        self.pc += 1
+        return result
 
-    def exec_sub(self, target, left, right):
+    @ternary_op
+    def exec_sub(self, left, right):
         """Execute the SUB instruction."""
-        left = self.getr(left)
-        right = self.getr(right)
         borrow = 1 if not self.flag_carry_block and not self.flag_carry else 0
 
         # to_uint is necessary because although left and right are necessarily
@@ -104,15 +120,12 @@ class VirtualMachine:
         )
         self.flag_carry = (left > right)
 
-        self.setr(target, result)
-        self.pc += 1
+        return result
 
-    def exec_and(self, target, left, right):
-        left = self.getr(left)
-        right = self.getr(right)
-
-        self.setr(target, left & right)
-        self.pc += 1
+    @ternary_op
+    def exec_and(self, left, right):
+        """Execute the AND instruction."""
+        return left & right
 
     # A mapping from instruction names to handler functions.
     imap = {
