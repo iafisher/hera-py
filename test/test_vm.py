@@ -838,3 +838,110 @@ def test_dec_ignores_incoming_carry(vm):
 def test_dec_does_not_affect_R0(vm):
     vm.exec_dec('R0', 1)
     assert vm.registers[0] == 0
+
+
+def test_exec_one_delegates_to_lsl(vm):
+    with patch('hera.vm.VirtualMachine.exec_lsl') as mock_exec_lsl:
+        vm.exec_one(Op('LSL', ['R1', 'R2']))
+        assert mock_exec_lsl.call_count == 1
+        assert mock_exec_lsl.call_args == (('R1', 'R2'), {})
+
+
+def test_lsl_with_small_positive(vm):
+    vm.registers[6] = 7
+    vm.exec_lsl('R1', 'R6')
+    assert vm.registers[1] == 14
+
+
+def test_lsl_with_large_positive(vm):
+    vm.registers[6] = 15000
+    vm.exec_lsl('R1', 'R6')
+    assert vm.registers[1] == 30000
+
+
+def test_lsl_with_positive_overflow(vm):
+    vm.registers[6] = 17000
+    vm.exec_lsl('R1', 'R6')
+    assert vm.registers[1] == 34000
+
+
+def test_lsl_with_small_negative(vm):
+    vm.registers[6] = to_uint(-7)
+    vm.exec_lsl('R1', 'R6')
+    assert vm.registers[1] == to_uint(-14)
+
+
+def test_lsl_with_large_negative(vm):
+    vm.registers[6] = to_uint(-8400)
+    vm.exec_lsl('R1', 'R6')
+    assert vm.registers[1] == to_uint(-16800)
+
+
+def test_lsl_with_negative_overflow(vm):
+    vm.registers[6] = to_uint(-20000)
+    vm.exec_lsl('R1', 'R6')
+    assert vm.registers[1] == 25536
+    assert vm.flag_carry
+
+
+def test_lsl_shifts_out_carry_when_blocked(vm):
+    vm.registers[6] = to_uint(-20000)
+    vm.flag_carry_block = True
+    vm.exec_lsl('R1', 'R6')
+    assert vm.flag_carry
+
+
+def test_lsl_shifts_in_carry(vm):
+    vm.registers[6] = 7
+    vm.flag_carry = True
+    vm.exec_lsl('R1', 'R6')
+    assert vm.registers[1] == 15
+    assert not vm.flag_carry
+
+
+def test_lsl_ignores_carry_when_blocked(vm):
+    vm.registers[6] = 7
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_lsl('R1', 'R6')
+    assert vm.registers[1] == 14
+    assert not vm.flag_carry
+
+
+def test_lsl_resets_carry(vm):
+    vm.flag_carry = True
+    vm.exec_lsl('R6', 'R6')
+    assert not vm.flag_carry
+
+
+def test_lsl_does_not_affect_R0(vm):
+    vm.registers[6] = 7
+    vm.exec_lsl('R0', 'R6')
+    assert vm.registers[0] == 0
+
+
+def test_lsl_increments_pc(vm):
+    vm.exec_lsl('R6', 'R6')
+    assert vm.pc == 1
+
+
+def test_lsl_sets_zero_flag(vm):
+    vm.registers[6] = 32768
+    vm.exec_lsl('R1', 'R6')
+    assert vm.registers[1] == 0
+    assert vm.flag_zero
+    assert not vm.flag_sign
+
+
+def test_lsl_sets_sign_flag(vm):
+    vm.registers[6] = 32767
+    vm.exec_lsl('R1', 'R6')
+    assert vm.registers[1] == to_uint(-2)
+    assert not vm.flag_zero
+    assert vm.flag_sign
+
+
+def test_lsl_ignores_overflow_flag(vm):
+    vm.flag_overflow = True
+    vm.exec_lsl('R1', 'R6')
+    assert vm.flag_overflow

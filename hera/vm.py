@@ -9,7 +9,7 @@ from hera.utils import from_uint, to_uint
 
 
 def ternary_op(f):
-    """A decorator for ternary HERA ops that handles fetching the values of the
+    """A decorator for ternary HERA ops. It handles fetching the values of the
     left and right registers, storing the result in the target register,
     setting the zero and sign flags, and incrementing the program counter.
     """
@@ -18,6 +18,21 @@ def ternary_op(f):
         left = self.registers[self.rindex(left)]
         right = self.registers[self.rindex(right)]
         result = f(self, left, right)
+        self.store_register(target, result)
+        self.set_zero_and_sign(result)
+        self.pc += 1
+    return inner
+
+
+def binary_op(f):
+    """A decorator for binary HERA ops. It handles fetching the value of the
+    operand register, storing the result in the target register, setting the
+    zero and sign flags, and incrementing the program counter.
+    """
+    @functools.wraps(f)
+    def inner(self, target, original):
+        original = self.registers[self.rindex(original)]
+        result = f(self, original)
         self.store_register(target, result)
         self.set_zero_and_sign(result)
         self.pc += 1
@@ -183,6 +198,16 @@ class VirtualMachine:
         self.flag_overflow = (from_uint(result) != from_uint(original) - value)
         self.flag_carry = (original < value)
         self.pc += 1
+
+    @binary_op
+    def exec_lsl(self, original):
+        """Execute the LSL instruction."""
+        carry = 1 if self.flag_carry and not self.flag_carry_block else 0
+        result = ((original << 1) + carry) % 2**16
+
+        self.flag_carry = (original << 1) + carry >= 2**16
+
+        return result
 
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
