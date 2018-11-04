@@ -131,7 +131,7 @@ class VirtualMachine:
         """Execute the ADD instruction."""
         carry = 1 if not self.flag_carry_block and self.flag_carry else 0
 
-        result = (left + right + carry) % 2**16
+        result = (left + right + carry) & 0xffff
 
         self.flag_carry = result < (left + right + carry)
         self.flag_overflow = (
@@ -148,7 +148,7 @@ class VirtualMachine:
 
         # to_uint is necessary because although left and right are necessarily
         # uints, left - right might not be.
-        result = to_uint((left - right - borrow) % 2**16)
+        result = to_uint((left - right - borrow) & 0xffff)
 
         self.flag_overflow = (
             from_uint(result) != from_uint(left) - from_uint(right)
@@ -180,7 +180,7 @@ class VirtualMachine:
     def exec_inc(self, target, value):
         """Execute the INC instruction."""
         original = self.getr(target)
-        result = (value + original) % 2**16
+        result = (value + original) & 0xffff
         self.store_register(target, result)
 
         self.set_zero_and_sign(result)
@@ -191,7 +191,7 @@ class VirtualMachine:
     def exec_dec(self, target, value):
         """Execute the DEC instruction."""
         original = self.getr(target)
-        result = to_uint((original - value) % 2**16)
+        result = to_uint((original - value) & 0xffff)
         self.store_register(target, result)
 
         self.set_zero_and_sign(result)
@@ -203,7 +203,7 @@ class VirtualMachine:
     def exec_lsl(self, original):
         """Execute the LSL instruction."""
         carry = 1 if self.flag_carry and not self.flag_carry_block else 0
-        result = ((original << 1) + carry) % 2**16
+        result = ((original << 1) + carry) & 0xffff
 
         self.flag_carry = (original << 1) + carry >= 2**16
 
