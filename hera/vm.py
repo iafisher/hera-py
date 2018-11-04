@@ -98,7 +98,9 @@ class VirtualMachine:
         # uints, left - right might not be.
         result = to_uint((left - right) % 2**16)
 
-        self.flag_overflow = (result != from_uint(left) - from_uint(right))
+        self.flag_overflow = (
+            from_uint(result) != from_uint(left) - from_uint(right)
+        )
         self.flag_carry = (left > right)
 
         self.setr(target, result)

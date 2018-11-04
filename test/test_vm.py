@@ -173,3 +173,33 @@ def test_sub_with_max_negative_overflow(vm):
     assert not vm.flag_sign
     assert vm.flag_carry
     assert vm.flag_overflow
+
+
+def test_sub_with_min_positive_overflow(vm):
+    vm.registers[4] = 32767
+    vm.registers[5] = to_uint(-1)
+    vm.exec_one(Op('SUB', ['R6', 'R4', 'R5']))
+    assert vm.registers[6] == to_uint(-32768)
+    assert vm.flag_sign
+    assert not vm.flag_carry
+    assert vm.flag_overflow
+
+
+def test_sub_with_big_positive_overflow(vm):
+    vm.registers[4] = 27500
+    vm.registers[5] = to_uint(-7040)
+    vm.exec_one(Op('SUB', ['R6', 'R4', 'R5']))
+    assert vm.registers[6] == to_uint(-30996)
+    assert vm.flag_sign
+    assert not vm.flag_carry
+    assert vm.flag_overflow
+
+
+def test_sub_with_max_positive_overflow(vm):
+    vm.registers[4] = 32767
+    vm.registers[5] = to_uint(-32768)
+    vm.exec_one(Op('SUB', ['R6', 'R4', 'R5']))
+    assert vm.registers[6] == to_uint(-1)
+    assert vm.flag_sign
+    assert not vm.flag_carry
+    assert vm.flag_overflow
