@@ -20,3 +20,13 @@ def to_uint(n):
         return 2**16+n
     else:
         return n
+
+
+def from_uint(n):
+    """Reinterpret the number from an unsigned 16-bit integer to a signed 16-bit
+    integer.
+    """
+    if n >= 2**15:
+        return -(2**16-n)
+    else:
+        return n

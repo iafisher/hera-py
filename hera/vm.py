@@ -3,7 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: November 2018
 """
-from hera.utils import to_uint
+from hera.utils import from_uint, to_uint
 
 
 class VirtualMachine:
@@ -53,14 +53,11 @@ class VirtualMachine:
         """Store the value in the target register, handling overflow and setting
         flags.
         """
-        if value >= 2**16:
-            value %= 2**16
         index = self.rindex(target)
         if index != 0:
             self.registers[self.rindex(target)] = value
         self.flag_zero = (value == 0)
         self.flag_sign = (value >= 2**15)
-        self.flag_carry = False
 
     def getr(self, name):
         """Get the contents of the register with the given name."""
@@ -77,13 +74,34 @@ class VirtualMachine:
 
     def exec_add(self, target, left, right):
         """Execute the ADD instruction."""
+        left = self.getr(left)
+        right = self.getr(right)
         carry = 1 if not self.flag_carry_block and self.flag_carry else 0
-        self.setr(target, self.getr(left) + self.getr(right) + carry)
+
+        result = (left + right + carry) % 2**16
+
+        self.flag_carry = result < (left + right + carry)
+        self.flag_overflow = (
+            (left < 2**15 and right < 2**15 and result >= 2**15) or
+            (left >= 2**15 and right >= 2**15 and result < 2**15)
+        )
+
+        self.setr(target, result)
         self.pc += 1
 
     def exec_sub(self, target, left, right):
         """Execute the SUB instruction."""
-        self.setr(target, self.getr(left) - self.getr(right))
+        left = self.getr(left)
+        right = self.getr(right)
+
+        # to_uint is necessary because although left and right are necessarily
+        # uints, left - right might not be.
+        result = to_uint((left - right) % 2**16)
+
+        self.flag_overflow = (result != from_uint(left) - from_uint(right))
+        self.flag_carry = (left > right)
+
+        self.setr(target, result)
         self.pc += 1
 
     # A mapping from instruction names to handler functions.
