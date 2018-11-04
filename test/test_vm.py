@@ -945,3 +945,104 @@ def test_lsl_ignores_overflow_flag(vm):
     vm.flag_overflow = True
     vm.exec_lsl('R1', 'R6')
     assert vm.flag_overflow
+
+
+def test_exec_one_delegates_to_lsr(vm):
+    with patch('hera.vm.VirtualMachine.exec_lsr') as mock_exec_lsr:
+        vm.exec_one(Op('LSR', ['R1', 'R2']))
+        assert mock_exec_lsr.call_count == 1
+        assert mock_exec_lsr.call_args == (('R1', 'R2'), {})
+
+
+def test_lsr_with_small_positive(vm):
+    vm.registers[6] = 7
+    vm.exec_lsr('R1', 'R6')
+    assert vm.registers[1] == 3
+
+
+def test_lsr_with_large_positive(vm):
+    vm.registers[6] = 15000
+    vm.exec_lsr('R1', 'R6')
+    assert vm.registers[1] == 7500
+
+
+def test_lsr_with_small_negative(vm):
+    vm.registers[6] = to_uint(-7)
+    vm.exec_lsr('R1', 'R6')
+    assert vm.registers[1] == 32764
+
+
+def test_lsr_with_large_negative(vm):
+    vm.registers[6] = to_uint(-8400)
+    vm.exec_lsr('R1', 'R6')
+    assert vm.registers[1] == 28568
+
+
+def test_lsr_with_another_large_nevative(vm):
+    vm.registers[6] = to_uint(-20000)
+    vm.exec_lsr('R1', 'R6')
+    assert vm.registers[1] == 22768
+
+
+def test_lsr_shifts_out_carry_when_blocked(vm):
+    vm.registers[6] = 3
+    vm.flag_carry_block = True
+    vm.exec_lsr('R1', 'R6')
+    assert vm.registers[1] == 1
+    assert vm.flag_carry
+
+
+def test_lsr_shifts_in_carry(vm):
+    vm.registers[6] = 6
+    vm.flag_carry = True
+    vm.exec_lsr('R1', 'R6')
+    assert vm.registers[1] == to_uint(-32765)
+    assert not vm.flag_carry
+
+
+def test_lsr_ignores_carry_when_blocked(vm):
+    vm.registers[6] = 6
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_lsr('R1', 'R6')
+    assert vm.registers[1] == 3
+    assert not vm.flag_carry
+
+
+def test_lsr_resets_carry(vm):
+    vm.flag_carry = True
+    vm.exec_lsr('R6', 'R6')
+    assert not vm.flag_carry
+
+
+def test_lsr_does_not_affect_R0(vm):
+    vm.registers[6] = 7
+    vm.exec_lsr('R0', 'R6')
+    assert vm.registers[0] == 0
+
+
+def test_lsr_increments_pc(vm):
+    vm.exec_lsr('R6', 'R6')
+    assert vm.pc == 1
+
+
+def test_lsr_sets_zero_flag(vm):
+    vm.registers[6] = 1
+    vm.exec_lsr('R1', 'R6')
+    assert vm.registers[1] == 0
+    assert vm.flag_zero
+    assert not vm.flag_sign
+
+
+def test_lsr_sets_sign_flag(vm):
+    vm.registers[6] = 6
+    vm.flag_carry = True
+    vm.exec_lsr('R1', 'R6')
+    assert not vm.flag_zero
+    assert vm.flag_sign
+
+
+def test_lsr_ignores_overflow_flag(vm):
+    vm.flag_overflow = True
+    vm.exec_lsr('R1', 'R6')
+    assert vm.flag_overflow

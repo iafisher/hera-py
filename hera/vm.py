@@ -209,6 +209,16 @@ class VirtualMachine:
 
         return result
 
+    @binary_op
+    def exec_lsr(self, original):
+        """Execute the LSR instruction."""
+        carry = 2**15 if self.flag_carry and not self.flag_carry_block else 0
+        result = (original >> 1) + carry
+
+        self.flag_carry = original % 2 == 1
+
+        return result
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
