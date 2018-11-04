@@ -137,6 +137,11 @@ class VirtualMachine:
         """Execute the XOR instruction."""
         return left ^ right
 
+    def exec_print_reg(self, target):
+        """Execute the print_reg debugging operation."""
+        print(f'{target} = {self.registers[self.rindex(target)]}')
+        self.pc += 1
+
     # A mapping from instruction names to handler functions.
     imap = {
         'ADD': exec_add,
@@ -144,4 +149,6 @@ class VirtualMachine:
         'OR': exec_or,
         'SUB': exec_sub,
         'XOR': exec_xor,
+
+        'print_reg': exec_print_reg,
     }

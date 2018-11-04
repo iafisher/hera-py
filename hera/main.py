@@ -22,17 +22,21 @@ def main():
     path = arguments['<path>']
 
     vm = VirtualMachine()
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            program = parse(f.read())
-    except FileNotFoundError:
-        sys.stderr.write(f'Error: file "{path}" does not exist.\n')
-        sys.exit(2)
-    except PermissionError:
-        sys.stderr.write(f'Error: permission denied to open file "{path}".\n')
-        sys.exit(2)
-    except OSError:
-        sys.stderr.write(f'Error: could not open file "{path}".\n')
-        sys.exit(2)
+
+    if path == '-':
+        program = sys.stdin.read()
     else:
-        vm.exec_many(program)
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                program = f.read()
+        except FileNotFoundError:
+            sys.stderr.write(f'Error: file "{path}" does not exist.\n')
+            sys.exit(2)
+        except PermissionError:
+            sys.stderr.write(f'Error: permission denied to open file "{path}".\n')
+            sys.exit(2)
+        except OSError:
+            sys.stderr.write(f'Error: could not open file "{path}".\n')
+            sys.exit(2)
+
+    vm.exec_many(parse(program))
