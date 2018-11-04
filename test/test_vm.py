@@ -145,6 +145,16 @@ def test_sub_with_zero(vm):
     assert vm.flag_zero
 
 
+def test_sub_with_two_negatives(vm):
+    vm.registers[2] = to_uint(-20)
+    vm.registers[3] = to_uint(-40)
+    vm.exec_one(Op('SUB', ['R1', 'R2', 'R3']))
+    assert vm.registers[1] == 20
+    assert not vm.flag_sign
+    assert vm.flag_carry
+    assert not vm.flag_overflow
+
+
 def test_sub_with_min_negative_overflow(vm):
     vm.registers[1] = to_uint(-32768)
     vm.registers[2] = 1
