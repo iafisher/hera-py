@@ -382,3 +382,66 @@ def test_or_does_not_clear_other_flags(vm):
     vm.exec_one(Op('OR', ['R1', 'R2', 'R3']))
     assert vm.flag_carry
     assert vm.flag_overflow
+
+
+def test_xor_same_numbers(vm):
+    vm.registers[2] = 27
+    vm.registers[3] = 27
+    vm.exec_one(Op('XOR', ['R1', 'R2', 'R3']))
+    assert vm.registers[1] == 0
+
+
+def test_xor_different_numbers(vm):
+    vm.registers[2] = 3  # 011
+    vm.registers[3] = 6  # 110
+    vm.exec_one(Op('XOR', ['R1', 'R2', 'R3']))
+    assert vm.registers[1] == 5
+
+
+def test_xor_increments_pc(vm):
+    vm.exec_one(Op('AND', ['R0', 'R1', 'R2']))
+    assert vm.pc == 1
+
+
+def test_xor_big_numbers(vm):
+    vm.registers[2] = 8199
+    vm.registers[3] = 762
+    vm.exec_one(Op('XOR', ['R1', 'R2', 'R3']))
+    assert vm.registers[1] == 8957
+
+
+def test_xor_sets_zero_flag(vm):
+    vm.registers[2] = 0
+    vm.registers[3] = 0
+    vm.exec_one(Op('XOR', ['R1', 'R2', 'R3']))
+    assert vm.registers[1] == 0
+    assert vm.flag_zero
+    assert not vm.flag_sign
+
+
+def test_xor_sets_sign_flag(vm):
+    vm.registers[2] = 0
+    vm.registers[3] = to_uint(-37)
+    vm.exec_one(Op('XOR', ['R1', 'R2', 'R3']))
+    assert vm.registers[1] == to_uint(-37)
+    assert not vm.flag_zero
+    assert vm.flag_sign
+
+
+def test_xor_does_not_set_other_flags(vm):
+    vm.registers[2] = 0
+    vm.registers[3] = to_uint(-37)
+    vm.exec_one(Op('XOR', ['R1', 'R2', 'R3']))
+    assert vm.registers[1] == to_uint(-37)
+    assert not vm.flag_carry
+    assert not vm.flag_overflow
+
+
+def test_xor_does_not_clear_other_flags(vm):
+    vm.registers[2] = 0
+    vm.registers[3] = to_uint(-37)
+    vm.flag_carry = True
+    vm.flag_overflow = True
+    vm.exec_one(Op('XOR', ['R1', 'R2', 'R3']))
+    assert vm.flag_carry
+    assert vm.flag_overflow

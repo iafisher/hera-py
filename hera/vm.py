@@ -127,11 +127,15 @@ class VirtualMachine:
         """Execute the AND instruction."""
         return left & right
 
-
     @ternary_op
     def exec_or(self, left, right):
         """Execute the OR instruction."""
         return left | right
+
+    @ternary_op
+    def exec_xor(self, left, right):
+        """Execute the XOR instruction."""
+        return left ^ right
 
     # A mapping from instruction names to handler functions.
     imap = {
@@ -139,4 +143,5 @@ class VirtualMachine:
         'AND': exec_and,
         'OR': exec_or,
         'SUB': exec_sub,
+        'XOR': exec_xor,
     }
