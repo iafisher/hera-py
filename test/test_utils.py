@@ -1,6 +1,6 @@
 import pytest
 
-from hera.utils import to_uint
+from hera.utils import from_uint, to_uint
 
 
 def test_to_uint_with_min_negative():
@@ -40,3 +40,27 @@ def test_to_uint_with_another_overflow():
 def test_to_uint_with_positive_overflow():
     # to_uint doesn't check positive overflow.
     assert to_uint(70000) == 70000
+
+
+def test_from_uint_with_min_negative():
+    assert from_uint(65535) == -1
+
+
+def test_from_uint_with_max_negative():
+    assert from_uint(32768) == -32768
+
+
+def test_from_uint_with_mid_sized_negative():
+    assert from_uint(63802) == -1734
+
+
+def test_from_uint_with_another_negative():
+    assert from_uint(40493) == -25043
+
+
+def test_from_uint_with_positive():
+    assert from_uint(17) == 17
+
+
+def test_from_uint_with_zero():
+    assert from_uint(0) == 0
