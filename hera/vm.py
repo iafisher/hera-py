@@ -54,7 +54,7 @@ class VirtualMachine:
         """Execute a single instruction."""
         try:
             handler = getattr(self, 'exec_' + inst.name.lower())
-        except KeyError:
+        except AttributeError:
             raise ValueError(f'unknown instruction "{inst.name}"') from None
         else:
             handler(*inst.args)
@@ -143,6 +143,11 @@ class VirtualMachine:
         return result
 
     @ternary_op
+    def exec_mul(self, left, right):
+        """Execute the MUL instruction."""
+        # TODO
+
+    @ternary_op
     def exec_and(self, left, right):
         """Execute the AND instruction."""
         return left & right
@@ -156,6 +161,17 @@ class VirtualMachine:
     def exec_xor(self, left, right):
         """Execute the XOR instruction."""
         return left ^ right
+
+    def exec_inc(self, target, value):
+        """Execute the INC instruction."""
+        original = self.getr(target)
+        result = (value + original) % 2**16
+        self.store_register(target, result)
+
+        self.set_zero_and_sign(result)
+        self.flag_overflow = (from_uint(result) != from_uint(original) + value)
+        self.flag_carry = (value + original >= 2**16)
+        self.pc += 1
 
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
