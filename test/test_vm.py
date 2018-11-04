@@ -756,3 +756,75 @@ def test_inc_ignores_incoming_carry(vm):
     vm.exec_inc('R8', 5)
     assert vm.registers[8] == 5
     assert not vm.flag_carry
+
+
+def test_exec_one_delegates_to_dec(vm):
+    with patch('hera.vm.VirtualMachine.exec_dec') as mock_exec_dec:
+        vm.exec_one(Op('DEC', ['R1', 1]))
+        assert mock_exec_dec.call_count == 1
+        assert mock_exec_dec.call_args == (('R1', 1), {})
+
+
+def test_dec_with_small_positive(vm):
+    vm.exec_dec('R8', 6)
+    assert vm.registers[8] == to_uint(-6)
+
+
+def test_dec_with_max(vm):
+    vm.exec_dec('R2', 32)
+    assert vm.registers[2] == to_uint(-32)
+
+
+def test_dec_with_previous_value(vm):
+    vm.registers[5] = 4000
+    vm.exec_dec('R5', 2)
+    assert vm.registers[5] == 3998
+
+
+def test_dec_with_previous_negative_value(vm):
+    vm.registers[9] = to_uint(-12)
+    vm.exec_dec('R9', 10)
+    assert vm.registers[9] == to_uint(-22)
+
+
+def test_dec_increments_pc(vm):
+    vm.exec_dec('R1', 1)
+    assert vm.pc == 1
+
+
+def test_dec_sets_zero_flag(vm):
+    vm.registers[7] = 1
+    vm.exec_dec('R7', 1)
+    assert vm.registers[7] == 0
+    assert vm.flag_zero
+    assert not vm.flag_sign
+
+
+def test_dec_sets_sign_flag(vm):
+    vm.registers[1] = 1
+    vm.exec_dec('R1', 5)
+    assert vm.registers[1] == to_uint(-4)
+    assert not vm.flag_zero
+    assert vm.flag_sign
+
+
+def test_dec_sets_carry_flag(vm):
+    vm.exec_dec('R8', 1)
+    assert vm.flag_carry
+    assert not vm.flag_overflow
+
+
+def test_dec_sets_overflow_flag(vm):
+    vm.registers[8] = to_uint(-32768)
+    vm.exec_dec('R8', 5)
+    assert vm.registers[8] == 32763
+    assert not vm.flag_carry
+    assert vm.flag_overflow
+
+
+def test_dec_ignores_incoming_carry(vm):
+    vm.flag_carry = True
+    vm.registers[8] = 10
+    vm.exec_dec('R8', 5)
+    assert vm.registers[8] == 5
+    assert not vm.flag_carry

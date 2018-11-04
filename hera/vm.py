@@ -173,6 +173,17 @@ class VirtualMachine:
         self.flag_carry = (value + original >= 2**16)
         self.pc += 1
 
+    def exec_dec(self, target, value):
+        """Execute the DEC instruction."""
+        original = self.getr(target)
+        result = to_uint((original - value) % 2**16)
+        self.store_register(target, result)
+
+        self.set_zero_and_sign(result)
+        self.flag_overflow = (from_uint(result) != from_uint(original) - value)
+        self.flag_carry = (original < value)
+        self.pc += 1
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
