@@ -91,6 +91,11 @@ class VirtualMachine:
         self.flag_zero = (value == 0)
         self.flag_sign = (value >= 2**15)
 
+    def exec_set(self, target, value):
+        """Execute the SET pseudo-instruction."""
+        self.store_register(target, value)
+        self.pc += 1
+
     @ternary_op
     def exec_add(self, left, right):
         """Execute the ADD instruction."""
@@ -147,6 +152,7 @@ class VirtualMachine:
         'ADD': exec_add,
         'AND': exec_and,
         'OR': exec_or,
+        'SET': exec_set,
         'SUB': exec_sub,
         'XOR': exec_xor,
 

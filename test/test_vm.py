@@ -10,6 +10,48 @@ def vm():
     return VirtualMachine()
 
 
+def test_set_with_positive(vm):
+    vm.exec_one(Op('SET', ['R1', 47]))
+    assert vm.registers[1] == 47
+
+
+def test_set_with_negative(vm):
+    vm.exec_one(Op('SET', ['R1', to_uint(-6453)]))
+    assert vm.registers[1] == to_uint(-6453)
+
+
+def test_set_increments_pc(vm):
+    vm.exec_one(Op('SET', ['R1', 47]))
+    assert vm.pc == 1
+
+
+def test_set_ignores_flags(vm):
+    vm.flag_carry = True
+    vm.flag_overflow = True
+    vm.flag_sign = True
+    vm.flag_zero = False
+    vm.exec_one(Op('SET', ['R7', 0]))
+    assert vm.flag_carry
+    assert vm.flag_overflow
+    assert vm.flag_sign
+    assert not vm.flag_zero
+
+
+def test_set_does_not_set_zero_flag(vm):
+    vm.exec_one(Op('SET', ['R7', 0]))
+    assert not vm.flag_zero
+
+
+def test_set_does_not_set_sign_flag(vm):
+    vm.exec_one(Op('SET', ['R7', to_uint(-1)]))
+    assert not vm.flag_sign
+
+
+def test_set_does_not_change_R0(vm):
+    vm.exec_one(Op('SET', ['R0', 666]))
+    assert vm.registers[0] == 0
+
+
 def test_add_small_numbers(vm):
     vm.registers[2] = 20
     vm.registers[3] = 22
