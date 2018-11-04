@@ -758,6 +758,11 @@ def test_inc_ignores_incoming_carry(vm):
     assert not vm.flag_carry
 
 
+def test_inc_does_not_affect_R0(vm):
+    vm.exec_inc('R0', 1)
+    assert vm.registers[0] == 0
+
+
 def test_exec_one_delegates_to_dec(vm):
     with patch('hera.vm.VirtualMachine.exec_dec') as mock_exec_dec:
         vm.exec_one(Op('DEC', ['R1', 1]))
@@ -828,3 +833,8 @@ def test_dec_ignores_incoming_carry(vm):
     vm.exec_dec('R8', 5)
     assert vm.registers[8] == 5
     assert not vm.flag_carry
+
+
+def test_dec_does_not_affect_R0(vm):
+    vm.exec_dec('R0', 1)
+    assert vm.registers[0] == 0
