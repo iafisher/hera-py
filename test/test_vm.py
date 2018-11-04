@@ -1046,3 +1046,77 @@ def test_lsr_ignores_overflow_flag(vm):
     vm.flag_overflow = True
     vm.exec_lsr('R1', 'R6')
     assert vm.flag_overflow
+
+
+def test_exec_one_delegates_to_lsl8(vm):
+    with patch('hera.vm.VirtualMachine.exec_lsl8') as mock_exec_lsl8:
+        vm.exec_one(Op('LSL8', ['R1', 'R2']))
+        assert mock_exec_lsl8.call_count == 1
+        assert mock_exec_lsl8.call_args == (('R1', 'R2'), {})
+
+
+def test_lsl8_with_small_positive(vm):
+    vm.registers[4] = 51
+    vm.exec_lsl8('R3', 'R4')
+    assert vm.registers[3] == 13056
+
+
+def test_lsl8_with_large_positive(vm):
+    vm.registers[4] = 17000
+    vm.exec_lsl8('R3', 'R4')
+    assert vm.registers[3] == 26624
+
+
+def test_lsl8_with_small_negative(vm):
+    vm.registers[4] = -4
+    vm.exec_lsl8('R3', 'R4')
+    assert vm.registers[3] == to_uint(-1024)
+
+
+def test_lsl8_with_large_negative(vm):
+    vm.registers[4] = to_uint(-31781)
+    vm.exec_lsl8('R3', 'R4')
+    assert vm.registers[3] == to_uint(-9472)
+
+
+def test_lsl8_sets_zero_flag(vm):
+    vm.registers[4] = 32768
+    vm.exec_lsl8('R3', 'R4')
+    assert vm.registers[3] == 0
+    assert vm.flag_zero
+    assert not vm.flag_sign
+
+
+def test_lsl8_sets_sign_flag(vm):
+    vm.registers[4] = 32767
+    vm.exec_lsl8('R3', 'R4')
+    assert vm.registers[3] == to_uint(-256)
+    assert not vm.flag_zero
+    assert vm.flag_sign
+
+
+def test_lsl8_increments_pc(vm):
+    vm.exec_lsl8('R1', 'R1')
+    assert vm.pc == 1
+
+
+def test_lsl8_ignores_incoming_carry(vm):
+    vm.flag_carry = True
+    vm.registers[4] = 5
+    vm.exec_lsl8('R3', 'R4')
+    assert vm.registers[3] == 1280
+    assert vm.flag_carry
+
+
+def test_lsl8_does_not_set_carry_or_overflow(vm):
+    vm.registers[4] = to_uint(-1)
+    vm.exec_lsl8('R3', 'R4')
+    assert vm.registers[3] == to_uint(-256)
+    assert not vm.flag_carry
+    assert not vm.flag_overflow
+
+
+def test_lsl8_does_not_affect_R0(vm):
+    vm.registers[4] = 4
+    vm.exec_lsl8('R0', 'R4')
+    assert vm.registers[0] == 0
