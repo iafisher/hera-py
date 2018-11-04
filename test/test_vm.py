@@ -60,6 +60,126 @@ def test_set_does_not_change_R0(vm):
     assert vm.registers[0] == 0
 
 
+def test_exec_one_delegates_to_setlo(vm):
+    with patch('hera.vm.VirtualMachine.exec_setlo') as mock_exec_setlo:
+        vm.exec_one(Op('SETLO', ['R1', 47]))
+        assert mock_exec_setlo.call_count == 1
+        assert mock_exec_setlo.call_args == (('R1', 47), {})
+
+
+def test_setlo_with_positive(vm):
+    vm.exec_setlo('R5', 23)
+    assert vm.registers[5] == 23
+
+
+def test_setlo_with_negative(vm):
+    vm.exec_setlo('R9', -12)
+    assert vm.registers[9] == to_uint(-12)
+
+
+def test_setlo_with_max_positive(vm):
+    vm.exec_setlo('R2', 127)
+    assert vm.registers[2] == 127
+
+
+def test_setlo_with_max_negative(vm):
+    vm.exec_setlo('R2', -128)
+    assert vm.registers[2] == to_uint(-128)
+
+
+def test_setlo_clears_high_bits(vm):
+    vm.registers[6] = 4765
+    vm.exec_setlo('R6', 68)
+    assert vm.registers[6] == 68
+
+
+def test_setlo_increments_pc(vm):
+    vm.exec_setlo('R9', -12)
+    assert vm.pc == 1
+
+
+def test_setlo_ignores_flags(vm):
+    vm.flag_carry = True
+    vm.flag_overflow = True
+    vm.flag_sign = True
+    vm.flag_zero = False
+    vm.exec_setlo('R7', 0)
+    assert vm.flag_carry
+    assert vm.flag_overflow
+    assert vm.flag_sign
+    assert not vm.flag_zero
+
+
+def test_setlo_does_not_set_zero_flag(vm):
+    vm.exec_setlo('R7', 0)
+    assert not vm.flag_zero
+
+
+def test_setlo_does_not_set_sign_flag(vm):
+    vm.exec_setlo('R7', -1)
+    assert not vm.flag_sign
+
+
+def test_setlo_does_not_change_R0(vm):
+    vm.exec_setlo('R0', 20)
+    assert vm.registers[0] == 0
+
+
+def test_exec_one_delegates_to_sethi(vm):
+    with patch('hera.vm.VirtualMachine.exec_sethi') as mock_exec_sethi:
+        vm.exec_one(Op('SETHI', ['R1', 47]))
+        assert mock_exec_sethi.call_count == 1
+        assert mock_exec_sethi.call_args == (('R1', 47), {})
+
+
+def test_sethi_with_positive(vm):
+    vm.exec_sethi('R5', 23)
+    assert vm.registers[5] == 5888
+
+
+def test_sethi_with_max_positive(vm):
+    vm.exec_sethi('R2', 255)
+    assert vm.registers[2] == 65280
+
+
+def test_sethi_does_not_clear_low_bits(vm):
+    vm.registers[6] = 4765
+    vm.exec_sethi('R6', 68)
+    assert vm.registers[6] == 17565
+
+
+def test_sethi_increments_pc(vm):
+    vm.exec_sethi('R9', 12)
+    assert vm.pc == 1
+
+
+def test_sethi_ignores_flags(vm):
+    vm.flag_carry = True
+    vm.flag_overflow = True
+    vm.flag_sign = True
+    vm.flag_zero = False
+    vm.exec_sethi('R7', 0)
+    assert vm.flag_carry
+    assert vm.flag_overflow
+    assert vm.flag_sign
+    assert not vm.flag_zero
+
+
+def test_sethi_does_not_set_zero_flag(vm):
+    vm.exec_sethi('R7', 0)
+    assert not vm.flag_zero
+
+
+def test_sethi_does_not_set_sign_flag(vm):
+    vm.exec_sethi('R7', -1)
+    assert not vm.flag_sign
+
+
+def test_sethi_does_not_change_R0(vm):
+    vm.exec_sethi('R0', 20)
+    assert vm.registers[0] == 0
+
+
 def test_exec_one_delegates_to_add(vm):
     with patch('hera.vm.VirtualMachine.exec_add') as mock_exec_add:
         vm.exec_one(Op('ADD', ['R1', 'R2', 'R3']))

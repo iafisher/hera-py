@@ -96,6 +96,21 @@ class VirtualMachine:
         self.store_register(target, value)
         self.pc += 1
 
+    def exec_setlo(self, target, value):
+        """Execute the SETLO instruction. Note that unlike other op handlers,
+        the `value` argument is allowed to be negative. However, it must be in
+        the range [-128, 127], as it is only given 8 bits in machine code.
+        """
+        self.store_register(target, to_uint(value))
+        self.pc += 1
+
+    def exec_sethi(self, target, value):
+        """Execute the SETHI instruction. `value` must be an integer in the
+        range [0, 255].
+        """
+        self.store_register(target, (value << 8) + (self.getr(target) & 0x00ff))
+        self.pc += 1
+
     @ternary_op
     def exec_add(self, left, right):
         """Execute the ADD instruction."""
