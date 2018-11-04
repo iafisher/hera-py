@@ -93,10 +93,11 @@ class VirtualMachine:
         """Execute the SUB instruction."""
         left = self.getr(left)
         right = self.getr(right)
+        borrow = 1 if not self.flag_carry_block and not self.flag_carry else 0
 
         # to_uint is necessary because although left and right are necessarily
         # uints, left - right might not be.
-        result = to_uint((left - right) % 2**16)
+        result = to_uint((left - right - borrow) % 2**16)
 
         self.flag_overflow = (
             from_uint(result) != from_uint(left) - from_uint(right)
