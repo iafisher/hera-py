@@ -135,8 +135,7 @@ class VirtualMachine:
 
         self.flag_carry = result < (left + right + carry)
         self.flag_overflow = (
-            (left < 2**15 and right < 2**15 and result >= 2**15) or
-            (left >= 2**15 and right >= 2**15 and result < 2**15)
+            from_uint(result) != from_uint(left) + from_uint(right)
         )
 
         return result
@@ -205,7 +204,7 @@ class VirtualMachine:
         carry = 1 if self.flag_carry and not self.flag_carry_block else 0
         result = ((original << 1) + carry) & 0xffff
 
-        self.flag_carry = (original << 1) + carry >= 2**16
+        self.flag_carry = original & 0x8000
 
         return result
 
