@@ -1486,3 +1486,99 @@ def test_savef_does_not_affect_R0(vm):
     vm.flag_carry = True
     vm.exec_savef('R0')
     assert vm.registers[0] == 0
+
+
+def test_exec_one_delegates_to_rstrf(vm):
+    with patch('hera.vm.VirtualMachine.exec_rstrf') as mock_exec_rstrf:
+        vm.exec_one(Op('RSTRF', ['R1']))
+        assert mock_exec_rstrf.call_count == 1
+        assert mock_exec_rstrf.call_args == (('R1',), {})
+
+
+def test_rstrf_with_sign(vm):
+    vm.registers[5] = 1
+    vm.exec_rstrf('R5')
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_rstrf_with_zero(vm):
+    vm.registers[5] = 0b10
+    vm.exec_rstrf('R5')
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_rstrf_with_overflow(vm):
+    vm.registers[5] = 0b100
+    vm.exec_rstrf('R5')
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_rstrf_with_carry(vm):
+    vm.registers[5] = 0b1000
+    vm.exec_rstrf('R5')
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_rstrf_with_carry_block(vm):
+    vm.registers[5] = 0b10000
+    vm.exec_rstrf('R5')
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_rstrf_with_several_flags(vm):
+    vm.registers[5] = 0b1101
+    vm.exec_rstrf('R5')
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_rstrf_with_all_flags(vm):
+    vm.registers[5] = 0b11111
+    vm.exec_rstrf('R5')
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_rstrf_with_no_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_rstrf('R5')
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_rstrf_increments_pc(vm):
+    vm.exec_rstrf('R5')
+    assert vm.pc == 1

@@ -258,12 +258,23 @@ class VirtualMachine:
         return result
 
     def exec_savef(self, target):
+        """Execute the SAVE instruction."""
         value = (
             int(self.flag_sign) + 2*int(self.flag_zero) +
             4*int(self.flag_overflow) + 8*int(self.flag_carry) +
             16*int(self.flag_carry_block)
         )
         self.store_register(target, value)
+        self.pc += 1
+
+    def exec_rstrf(self, target):
+        """Execute the RSTRF instruction."""
+        value = self.getr(target)
+        self.flag_sign = bool(value & 1)
+        self.flag_zero = bool(value & 0b10)
+        self.flag_overflow = bool(value & 0b100)
+        self.flag_carry = bool(value & 0b1000)
+        self.flag_carry_block = bool(value & 0b10000)
         self.pc += 1
 
     def exec_print_reg(self, target):
