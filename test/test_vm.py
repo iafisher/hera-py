@@ -1582,3 +1582,85 @@ def test_rstrf_with_no_flags(vm):
 def test_rstrf_increments_pc(vm):
     vm.exec_rstrf('R5')
     assert vm.pc == 1
+
+
+def test_exec_one_delegates_to_fon(vm):
+    with patch('hera.vm.VirtualMachine.exec_fon') as mock_exec_fon:
+        vm.exec_one(Op('FON', [5]))
+        assert mock_exec_fon.call_count == 1
+        assert mock_exec_fon.call_args == ((5,), {})
+
+
+def test_fon_with_sign(vm):
+    vm.exec_fon(1)
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fon_with_zero(vm):
+    vm.exec_fon(0b10)
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fon_with_overflow(vm):
+    vm.exec_fon(0b100)
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fon_with_carry(vm):
+    vm.exec_fon(0b1000)
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fon_with_carry_block(vm):
+    vm.exec_fon(0b10000)
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_fon_with_multiple_flags(vm):
+    vm.exec_fon(0b10101)
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert vm.flag_overflow
+    assert not vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_fon_with_no_flags(vm):
+    vm.exec_fon(0)
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fon_does_not_overwrite_flags(vm):
+    vm.flag_carry_block = True
+    vm.exec_fon(1)
+    assert vm.flag_sign
+    assert vm.flag_carry_block
+
+
+def test_fon_increments_pc(vm):
+    vm.exec_fon(0)
+    assert vm.pc == 1
