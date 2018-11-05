@@ -257,6 +257,15 @@ class VirtualMachine:
 
         return result
 
+    def exec_savef(self, target):
+        value = (
+            int(self.flag_sign) + 2*int(self.flag_zero) +
+            4*int(self.flag_overflow) + 8*int(self.flag_carry) +
+            16*int(self.flag_carry_block)
+        )
+        self.store_register(target, value)
+        self.pc += 1
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')

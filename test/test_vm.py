@@ -1397,3 +1397,92 @@ def test_asr_does_not_reset_overflow_flag(vm):
     vm.flag_overflow = True
     vm.exec_asr('R1', 'R6')
     assert vm.flag_overflow
+
+
+def test_exec_one_delegates_to_savef(vm):
+    with patch('hera.vm.VirtualMachine.exec_savef') as mock_exec_savef:
+        vm.exec_one(Op('SAVEF', ['R1']))
+        assert mock_exec_savef.call_count == 1
+        assert mock_exec_savef.call_args == (('R1',), {})
+
+
+def test_savef_with_sign(vm):
+    vm.flag_sign = True
+    vm.exec_savef('R5')
+    assert vm.registers[5] == 1
+    assert vm.flag_sign
+
+
+def test_savef_with_zero(vm):
+    vm.flag_zero = True
+    vm.exec_savef('R5')
+    assert vm.registers[5] == 0b10
+    assert vm.flag_zero
+
+
+def test_savef_with_overflow(vm):
+    vm.flag_overflow = True
+    vm.exec_savef('R5')
+    assert vm.registers[5] == 0b100
+    assert vm.flag_overflow
+
+
+def test_savef_with_carry(vm):
+    vm.flag_carry = True
+    vm.exec_savef('R5')
+    assert vm.registers[5] == 0b1000
+    assert vm.flag_carry
+
+
+def test_savef_with_carry_block(vm):
+    vm.flag_carry_block = True
+    vm.exec_savef('R5')
+    assert vm.registers[5] == 0b10000
+
+
+def test_savef_with_several_flags(vm):
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.exec_savef('R5')
+    assert vm.registers[5] == 0b1101
+    assert vm.flag_sign
+    assert vm.flag_overflow
+    assert vm.flag_carry
+
+
+def test_savef_with_all_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_savef('R5')
+    assert vm.registers[5] == 0b11111
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_savef_with_no_flags(vm):
+    vm.exec_savef('R5')
+    assert vm.registers[5] == 0
+
+
+def test_savef_overwrites_high_bits(vm):
+    vm.registers[5] = 17500
+    vm.exec_savef('R5')
+    assert vm.registers[5] == 0
+
+
+def test_savef_increments_pc(vm):
+    vm.exec_savef('R5')
+    assert vm.pc == 1
+
+
+def test_savef_does_not_affect_R0(vm):
+    vm.flag_carry = True
+    vm.exec_savef('R0')
+    assert vm.registers[0] == 0
