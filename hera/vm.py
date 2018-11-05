@@ -286,6 +286,17 @@ class VirtualMachine:
         self.flag_carry_block = self.flag_carry_block or bool(value & 0b10000)
         self.pc += 1
 
+    def exec_foff(self, value):
+        """Execute the FOFF instruction."""
+        self.flag_sign = self.flag_sign and not bool(value & 1)
+        self.flag_zero = self.flag_zero and not bool(value & 0b10)
+        self.flag_overflow = self.flag_overflow and not bool(value & 0b100)
+        self.flag_carry = self.flag_carry and not bool(value & 0b1000)
+        self.flag_carry_block = (
+            self.flag_carry_block and not bool(value & 0b10000)
+        )
+        self.pc += 1
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')

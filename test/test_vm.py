@@ -1664,3 +1664,113 @@ def test_fon_does_not_overwrite_flags(vm):
 def test_fon_increments_pc(vm):
     vm.exec_fon(0)
     assert vm.pc == 1
+
+
+def test_exec_one_delegates_to_foff(vm):
+    with patch('hera.vm.VirtualMachine.exec_foff') as mock_exec_foff:
+        vm.exec_one(Op('FOFF', [5]))
+        assert mock_exec_foff.call_count == 1
+        assert mock_exec_foff.call_args == ((5,), {})
+
+
+def test_foff_with_sign(vm):
+    vm.flag_zero = True
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_foff(1)
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_foff_with_zero(vm):
+    vm.flag_zero = True
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_foff(0b10)
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_foff_with_overflow(vm):
+    vm.flag_zero = True
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_foff(0b100)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_foff_with_carry(vm):
+    vm.flag_zero = True
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_foff(0b1000)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert not vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_foff_with_carry_block(vm):
+    vm.flag_zero = True
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_foff(0b10000)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_foff_with_multiple_flags(vm):
+    vm.flag_zero = True
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_foff(0b10101)
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_foff_with_no_flags(vm):
+    vm.flag_zero = True
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_foff(0)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_foff_increments_pc(vm):
+    vm.exec_foff(0)
+    assert vm.pc == 1
