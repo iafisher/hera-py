@@ -1296,3 +1296,104 @@ def test_asl_resets_overflow_flag(vm):
     vm.flag_overflow = True
     vm.exec_asl('R1', 'R6')
     assert not vm.flag_overflow
+
+
+def test_exec_one_delegates_to_asr(vm):
+    with patch('hera.vm.VirtualMachine.exec_asr') as mock_exec_asr:
+        vm.exec_one(Op('ASR', ['R1', 'R2']))
+        assert mock_exec_asr.call_count == 1
+        assert mock_exec_asr.call_args == (('R1', 'R2'), {})
+
+
+def test_asr_with_small_positive(vm):
+    vm.registers[6] = 7
+    vm.exec_asr('R1', 'R6')
+    assert vm.registers[1] == 3
+
+
+def test_asr_with_large_positive(vm):
+    vm.registers[6] = 15000
+    vm.exec_asr('R1', 'R6')
+    assert vm.registers[1] == 7500
+
+
+def test_asr_with_small_negative(vm):
+    vm.registers[6] = to_uint(-7)
+    vm.exec_asr('R1', 'R6')
+    assert vm.registers[1] == to_uint(-3)
+
+
+def test_asr_with_another_small_negative(vm):
+    vm.registers[6] = to_uint(-5)
+    vm.exec_asr('R1', 'R6')
+    assert vm.registers[1] == to_uint(-2)
+
+
+def test_asr_with_large_negative(vm):
+    vm.registers[6] = to_uint(-8400)
+    vm.exec_asr('R1', 'R6')
+    assert vm.registers[1] == to_uint(-4200)
+
+
+def test_asr_shifts_out_carry_when_blocked(vm):
+    vm.registers[6] = 3
+    vm.flag_carry_block = True
+    vm.exec_asr('R1', 'R6')
+    assert vm.flag_carry
+    assert not vm.flag_overflow
+
+
+def test_asr_ignores_incoming_carry(vm):
+    vm.registers[6] = 4
+    vm.flag_carry = True
+    vm.exec_asr('R1', 'R6')
+    assert vm.registers[1] == 2
+    assert not vm.flag_carry
+
+
+def test_asr_ignores_carry_when_blocked(vm):
+    vm.registers[6] = 4
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_asr('R1', 'R6')
+    assert vm.registers[1] == 2
+    assert not vm.flag_carry
+
+
+def test_asr_resets_carry(vm):
+    vm.flag_carry = True
+    vm.exec_asr('R6', 'R6')
+    assert not vm.flag_carry
+
+
+def test_asr_does_not_affect_R0(vm):
+    vm.registers[6] = 7
+    vm.exec_asr('R0', 'R6')
+    assert vm.registers[0] == 0
+
+
+def test_asr_increments_pc(vm):
+    vm.exec_asr('R6', 'R6')
+    assert vm.pc == 1
+
+
+def test_asr_sets_zero_flag(vm):
+    vm.registers[6] = 1
+    vm.exec_asr('R1', 'R6')
+    assert vm.registers[1] == 0
+    assert vm.flag_zero
+    assert not vm.flag_sign
+
+
+def test_asr_sets_sign_flag(vm):
+    vm.registers[6] = to_uint(-20)
+    vm.exec_asr('R1', 'R6')
+    assert vm.registers[1] == to_uint(-10)
+    assert not vm.flag_zero
+    assert vm.flag_sign
+
+
+def test_asr_does_not_reset_overflow_flag(vm):
+    vm.flag_overflow = True
+    vm.exec_asr('R1', 'R6')
+    assert vm.flag_overflow

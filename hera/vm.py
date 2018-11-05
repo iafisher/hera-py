@@ -239,6 +239,24 @@ class VirtualMachine:
 
         return result
 
+    @binary_op
+    def exec_asr(self, original):
+        """Execute the ASR instruction."""
+        # This is a little messy because right shift in Python rounds towards
+        # negative infinity (7 >> 1 == -4) but in HERA it rounds towards zero
+        # (7 >> 1 == -3).
+        if original & 0x8000:
+            if original & 0x0001:
+                result = ((original >> 1) | 0x8000) + 1
+            else:
+                result = original >> 1 | 0x8000
+        else:
+            result = original >> 1
+
+        self.flag_carry = original & 0x0001
+
+        return result
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
