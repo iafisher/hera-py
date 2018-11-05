@@ -229,6 +229,17 @@ class VirtualMachine:
         """Execute the LSR8 instruction."""
         return original >> 8
 
+    @binary_op
+    def exec_asl(self, original):
+        """Execute the ASL instruction."""
+        carry = 1 if self.flag_carry and not self.flag_carry_block else 0
+        result = ((original << 1) + carry) & 0xffff
+
+        self.flag_carry = original & 0x8000
+        self.flag_overflow = (original & 0x8000 and not result & 0x8000)
+
+        return result
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
