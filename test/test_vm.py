@@ -2009,3 +2009,78 @@ def test_fset5_does_overwrite_flags(vm):
 def test_fset5_increments_pc(vm):
     vm.exec_fset5(0)
     assert vm.pc == 1
+
+
+def test_exec_one_delegates_to_fset4(vm):
+    with patch('hera.vm.VirtualMachine.exec_fset4') as mock_exec_fset4:
+        vm.exec_one(Op('FSET4', [5]))
+        assert mock_exec_fset4.call_count == 1
+        assert mock_exec_fset4.call_args == ((5,), {})
+
+
+def test_fset4_with_sign(vm):
+    vm.exec_fset4(1)
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fset4_with_zero(vm):
+    vm.exec_fset4(0b10)
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fset4_with_overflow(vm):
+    vm.exec_fset4(0b100)
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fset4_with_carry(vm):
+    vm.exec_fset4(0b1000)
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fset4_with_multiple_flags(vm):
+    vm.exec_fset4(0b101)
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fset4_with_no_flags(vm):
+    vm.exec_fset4(0)
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_fset4_does_overwrite_flags(vm):
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.exec_fset4(1)
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+
+
+def test_fset4_increments_pc(vm):
+    vm.exec_fset4(0)
+    assert vm.pc == 1

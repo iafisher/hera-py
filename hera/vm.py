@@ -320,6 +320,14 @@ class VirtualMachine:
         self.flag_carry_block = bool(value & 0b10000)
         self.pc += 1
 
+    def exec_fset4(self, value):
+        """Execute the FSET4 instruction."""
+        self.flag_sign = bool(value & 1)
+        self.flag_zero = bool(value & 0b10)
+        self.flag_overflow = bool(value & 0b100)
+        self.flag_carry = bool(value & 0b1000)
+        self.pc += 1
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
