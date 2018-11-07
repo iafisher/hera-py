@@ -5,27 +5,24 @@ Version: November 2018
 """
 
 
-def to_uint(n):
-    """Convert the number to its unsigned representation as a 16-bit integer.
-    If `n` is non-negative, then it is returned unchanged. If `n` is negative,
-    an unsigned integer is returned whose binary representation is identical to
-    the two's complement representation of `n` as a 16-bit signed integer.
+def to_u16(n):
+    """Reinterpret the signed integer `n` as a 16-bit unsigned integer.
 
-    If `n` is negative and too large to represent as a 16-bit integer, then a
-    ValueError is raised.
+    If `n` is too large for 16 bits, OverflowError is raised.
     """
+    # Note that we allow positive values up to 2**16, but negative values only
+    # down to -2**15.
+    if n >= 2**16 or n < -2**15:
+        raise OverflowError('signed integer too large for 16 bits')
+
     if n < 0:
-        if n < -2**15:
-            raise ValueError('signed integer too large for 16 bits')
         return 2**16+n
     else:
         return n
 
 
-def from_uint(n):
-    """Reinterpret the number from an unsigned 16-bit integer to a signed 16-bit
-    integer.
-    """
+def from_u16(n):
+    """Reinterpret the unsigned 16-bit integer `n` as a signed integer."""
     if n >= 2**15:
         return -(2**16-n)
     else:
@@ -33,10 +30,16 @@ def from_uint(n):
 
 
 def to_u32(n):
-    """Reinterpret the signed integer `n` as an unsigned 32-bit integer."""
+    """Reinterpret the signed integer `n` as an unsigned 32-bit integer.
+
+    If `n` is too large for 32 bits, OverflowError is raised.
+    """
+    # Note that we allow positive values up to 2**32, but negative values only
+    # down to -2**31.
+    if n >= 2**32 or n < -2**31:
+        raise OverflowError('signed integer too large for 16 bits')
+
     if n < 0:
-        if n < -2**31:
-            raise ValueError('signed integer too large for 32 bits')
         return 2**32+n
     else:
         return n

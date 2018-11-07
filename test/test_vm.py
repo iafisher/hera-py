@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 
 from hera.parser import Op
-from hera.utils import to_uint
+from hera.utils import to_u16
 from hera.vm import VirtualMachine
 
 
@@ -24,8 +24,8 @@ def test_set_with_positive(vm):
 
 
 def test_set_with_negative(vm):
-    vm.exec_set('R1', to_uint(-6453))
-    assert vm.registers[1] == to_uint(-6453)
+    vm.exec_set('R1', to_u16(-6453))
+    assert vm.registers[1] == to_u16(-6453)
 
 
 def test_set_increments_pc(vm):
@@ -51,7 +51,7 @@ def test_set_does_not_set_zero_flag(vm):
 
 
 def test_set_does_not_set_sign_flag(vm):
-    vm.exec_set('R7', to_uint(-1))
+    vm.exec_set('R7', to_u16(-1))
     assert not vm.flag_sign
 
 
@@ -74,7 +74,7 @@ def test_setlo_with_positive(vm):
 
 def test_setlo_with_negative(vm):
     vm.exec_setlo('R9', -12)
-    assert vm.registers[9] == to_uint(-12)
+    assert vm.registers[9] == to_u16(-12)
 
 
 def test_setlo_with_max_positive(vm):
@@ -84,7 +84,7 @@ def test_setlo_with_max_positive(vm):
 
 def test_setlo_with_max_negative(vm):
     vm.exec_setlo('R2', -128)
-    assert vm.registers[2] == to_uint(-128)
+    assert vm.registers[2] == to_u16(-128)
 
 
 def test_setlo_clears_high_bits(vm):
@@ -210,16 +210,16 @@ def test_add_sets_flags(vm):
 
 
 def test_add_with_negative(vm):
-    vm.registers[2] = to_uint(-14)
+    vm.registers[2] = to_u16(-14)
     vm.registers[3] = 8
     vm.exec_add('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-6)
+    assert vm.registers[1] == to_u16(-6)
     assert vm.flag_sign
     assert not vm.flag_zero
 
 
 def test_add_with_zero(vm):
-    vm.registers[7] = to_uint(-4)
+    vm.registers[7] = to_u16(-4)
     vm.registers[3] = 4
     vm.exec_add('R5', 'R7', 'R3')
     assert vm.registers[5] == 0
@@ -231,7 +231,7 @@ def test_add_with_overflow(vm):
     vm.registers[9] = 32767
     vm.registers[2] = 1
     vm.exec_add('R7', 'R9', 'R2')
-    assert vm.registers[7] == to_uint(-32768)
+    assert vm.registers[7] == to_u16(-32768)
     assert vm.flag_sign
     assert vm.flag_overflow
     assert not vm.flag_carry
@@ -241,15 +241,15 @@ def test_add_with_big_overflow(vm):
     vm.registers[9] = 32767
     vm.registers[2] = 32767
     vm.exec_add('R7', 'R9', 'R2')
-    assert vm.registers[7] == to_uint(-2)
+    assert vm.registers[7] == to_u16(-2)
     assert vm.flag_sign
     assert vm.flag_overflow
     assert not vm.flag_carry
 
 
 def test_add_with_negative_overflow(vm):
-    vm.registers[9] = to_uint(-32768)
-    vm.registers[2] = to_uint(-32768)
+    vm.registers[9] = to_u16(-32768)
+    vm.registers[2] = to_u16(-32768)
     vm.exec_add('R7', 'R9', 'R2')
     assert vm.registers[7] == 0
     assert vm.flag_zero
@@ -282,7 +282,7 @@ def test_add_with_overflow_from_carry(vm):
     vm.registers[3] = 7
     vm.flag_carry = True
     vm.exec_add('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-32768)
+    assert vm.registers[1] == to_u16(-32768)
     assert vm.flag_sign
     assert vm.flag_overflow
     assert not vm.flag_carry
@@ -327,18 +327,18 @@ def test_sub_increments_pc(vm):
 
 
 def test_sub_with_negative(vm):
-    vm.registers[2] = to_uint(-64)
+    vm.registers[2] = to_u16(-64)
     vm.registers[3] = 22
     vm.flag_carry_block = True
     vm.exec_sub('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-86)
+    assert vm.registers[1] == to_u16(-86)
     assert vm.flag_sign
     assert not vm.flag_zero
 
 
 def test_sub_with_zero(vm):
-    vm.registers[2] = to_uint(-37)
-    vm.registers[3] = to_uint(-37)
+    vm.registers[2] = to_u16(-37)
+    vm.registers[3] = to_u16(-37)
     vm.flag_carry_block = True
     vm.exec_sub('R1', 'R2', 'R3')
     assert vm.registers[1] == 0
@@ -347,8 +347,8 @@ def test_sub_with_zero(vm):
 
 
 def test_sub_with_two_negatives(vm):
-    vm.registers[2] = to_uint(-20)
-    vm.registers[3] = to_uint(-40)
+    vm.registers[2] = to_u16(-20)
+    vm.registers[3] = to_u16(-40)
     vm.flag_carry_block = True
     vm.exec_sub('R1', 'R2', 'R3')
     assert vm.registers[1] == 20
@@ -358,7 +358,7 @@ def test_sub_with_two_negatives(vm):
 
 
 def test_sub_with_min_negative_overflow(vm):
-    vm.registers[1] = to_uint(-32768)
+    vm.registers[1] = to_u16(-32768)
     vm.registers[2] = 1
     vm.flag_carry_block = True
     vm.exec_sub('R3', 'R1', 'R2')
@@ -369,7 +369,7 @@ def test_sub_with_min_negative_overflow(vm):
 
 
 def test_sub_with_big_negative_overflow(vm):
-    vm.registers[1] = to_uint(-32000)
+    vm.registers[1] = to_u16(-32000)
     vm.registers[2] = 32000
     vm.flag_carry_block = True
     vm.exec_sub('R3', 'R1', 'R2')
@@ -380,7 +380,7 @@ def test_sub_with_big_negative_overflow(vm):
 
 
 def test_sub_with_max_negative_overflow(vm):
-    vm.registers[1] = to_uint(-32768)
+    vm.registers[1] = to_u16(-32768)
     vm.registers[2] = 32767
     vm.flag_carry_block = True
     vm.exec_sub('R3', 'R1', 'R2')
@@ -392,10 +392,10 @@ def test_sub_with_max_negative_overflow(vm):
 
 def test_sub_with_min_positive_overflow(vm):
     vm.registers[4] = 32767
-    vm.registers[5] = to_uint(-1)
+    vm.registers[5] = to_u16(-1)
     vm.flag_carry_block = True
     vm.exec_sub('R6', 'R4', 'R5')
-    assert vm.registers[6] == to_uint(-32768)
+    assert vm.registers[6] == to_u16(-32768)
     assert vm.flag_sign
     assert not vm.flag_carry
     assert vm.flag_overflow
@@ -403,10 +403,10 @@ def test_sub_with_min_positive_overflow(vm):
 
 def test_sub_with_big_positive_overflow(vm):
     vm.registers[4] = 27500
-    vm.registers[5] = to_uint(-7040)
+    vm.registers[5] = to_u16(-7040)
     vm.flag_carry_block = True
     vm.exec_sub('R6', 'R4', 'R5')
-    assert vm.registers[6] == to_uint(-30996)
+    assert vm.registers[6] == to_u16(-30996)
     assert vm.flag_sign
     assert not vm.flag_carry
     assert vm.flag_overflow
@@ -414,10 +414,10 @@ def test_sub_with_big_positive_overflow(vm):
 
 def test_sub_with_max_positive_overflow(vm):
     vm.registers[4] = 32767
-    vm.registers[5] = to_uint(-32768)
+    vm.registers[5] = to_u16(-32768)
     vm.flag_carry_block = True
     vm.exec_sub('R6', 'R4', 'R5')
-    assert vm.registers[6] == to_uint(-1)
+    assert vm.registers[6] == to_u16(-1)
     assert vm.flag_sign
     assert not vm.flag_carry
     assert vm.flag_overflow
@@ -431,16 +431,16 @@ def test_sub_with_implicit_borrow(vm):
 
 
 def test_sub_with_no_carry_block_and_no_borrow(vm):
-    vm.registers[2] = to_uint(-64)
+    vm.registers[2] = to_u16(-64)
     vm.registers[3] = 22
     vm.flag_carry = True
     vm.exec_sub('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-86)
+    assert vm.registers[1] == to_u16(-86)
     assert vm.flag_carry
 
 
 def test_sub_overflow_from_borrow(vm):
-    vm.registers[1] = to_uint(-32767)
+    vm.registers[1] = to_u16(-32767)
     vm.registers[2] = 1
     vm.exec_sub('R3', 'R1', 'R2')
     assert vm.registers[3] == 32767
@@ -478,17 +478,17 @@ def test_mul_with_large_positives(vm):
 
 
 def test_mul_with_small_negatives(vm):
-    vm.registers[2] = to_uint(-5)
+    vm.registers[2] = to_u16(-5)
     vm.registers[3] = 3
     vm.exec_mul('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-15)
+    assert vm.registers[1] == to_u16(-15)
 
 
 def test_mul_with_large_negatives(vm):
     vm.registers[2] = 7
-    vm.registers[3] = to_uint(-3100)
+    vm.registers[3] = to_u16(-3100)
     vm.exec_mul('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-21700)
+    assert vm.registers[1] == to_u16(-21700)
 
 
 def test_mul_sets_zero_flag(vm):
@@ -501,10 +501,10 @@ def test_mul_sets_zero_flag(vm):
 
 
 def test_mul_sets_sign_flag(vm):
-    vm.registers[2] = to_uint(-1)
+    vm.registers[2] = to_u16(-1)
     vm.registers[3] = 17
     vm.exec_mul('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-17)
+    assert vm.registers[1] == to_u16(-17)
     assert not vm.flag_zero
     assert vm.flag_sign
 
@@ -513,7 +513,7 @@ def test_mul_with_signed_positive_overflow(vm):
     vm.registers[2] = 17000
     vm.registers[3] = 3
     vm.exec_mul('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-14536)
+    assert vm.registers[1] == to_u16(-14536)
     assert not vm.flag_carry
     assert vm.flag_overflow
 
@@ -528,8 +528,8 @@ def test_mul_with_unsigned_positive_overflow(vm):
 
 
 def test_mul_with_signed_negative_overflow(vm):
-    vm.registers[2] = to_uint(-400)
-    vm.registers[3] = to_uint(-200)
+    vm.registers[2] = to_u16(-400)
+    vm.registers[3] = to_u16(-200)
     vm.exec_mul('R1', 'R2', 'R3')
     assert vm.registers[1] == 14464
     assert vm.flag_carry
@@ -568,7 +568,7 @@ def test_mul_produces_high_bits_when_sign_flag_is_on(vm):
 def test_mul_with_sign_flag_and_negative_result(vm):
     vm.flag_sign = True
     vm.registers[2] = 20000
-    vm.registers[3] = to_uint(-200)
+    vm.registers[3] = to_u16(-200)
     vm.exec_mul('R1', 'R2', 'R3')
     assert vm.registers[1] == 0b1111111111000010
     assert vm.flag_sign
@@ -650,26 +650,26 @@ def test_and_sets_zero_flag(vm):
 
 
 def test_and_sets_sign_flag(vm):
-    vm.registers[2] = to_uint(-1)
-    vm.registers[3] = to_uint(-37)
+    vm.registers[2] = to_u16(-1)
+    vm.registers[3] = to_u16(-37)
     vm.exec_and('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-37)
+    assert vm.registers[1] == to_u16(-37)
     assert not vm.flag_zero
     assert vm.flag_sign
 
 
 def test_and_does_not_set_other_flags(vm):
-    vm.registers[2] = to_uint(-1)
-    vm.registers[3] = to_uint(-1)
+    vm.registers[2] = to_u16(-1)
+    vm.registers[3] = to_u16(-1)
     vm.exec_and('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-1)
+    assert vm.registers[1] == to_u16(-1)
     assert not vm.flag_carry
     assert not vm.flag_overflow
 
 
 def test_and_does_not_clear_other_flags(vm):
-    vm.registers[2] = to_uint(-1)
-    vm.registers[3] = to_uint(-1)
+    vm.registers[2] = to_u16(-1)
+    vm.registers[3] = to_u16(-1)
     vm.flag_carry = True
     vm.flag_overflow = True
     vm.exec_and('R1', 'R2', 'R3')
@@ -727,26 +727,26 @@ def test_or_sets_zero_flag(vm):
 
 
 def test_or_sets_sign_flag(vm):
-    vm.registers[2] = to_uint(-1)
-    vm.registers[3] = to_uint(-37)
+    vm.registers[2] = to_u16(-1)
+    vm.registers[3] = to_u16(-37)
     vm.exec_or('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-1)
+    assert vm.registers[1] == to_u16(-1)
     assert not vm.flag_zero
     assert vm.flag_sign
 
 
 def test_or_does_not_set_other_flags(vm):
-    vm.registers[2] = to_uint(-1)
-    vm.registers[3] = to_uint(-1)
+    vm.registers[2] = to_u16(-1)
+    vm.registers[3] = to_u16(-1)
     vm.exec_or('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-1)
+    assert vm.registers[1] == to_u16(-1)
     assert not vm.flag_carry
     assert not vm.flag_overflow
 
 
 def test_or_does_not_clear_other_flags(vm):
-    vm.registers[2] = to_uint(-1)
-    vm.registers[3] = to_uint(-1)
+    vm.registers[2] = to_u16(-1)
+    vm.registers[3] = to_u16(-1)
     vm.flag_carry = True
     vm.flag_overflow = True
     vm.exec_or('R1', 'R2', 'R3')
@@ -805,25 +805,25 @@ def test_xor_sets_zero_flag(vm):
 
 def test_xor_sets_sign_flag(vm):
     vm.registers[2] = 0
-    vm.registers[3] = to_uint(-37)
+    vm.registers[3] = to_u16(-37)
     vm.exec_xor('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-37)
+    assert vm.registers[1] == to_u16(-37)
     assert not vm.flag_zero
     assert vm.flag_sign
 
 
 def test_xor_does_not_set_other_flags(vm):
     vm.registers[2] = 0
-    vm.registers[3] = to_uint(-37)
+    vm.registers[3] = to_u16(-37)
     vm.exec_xor('R1', 'R2', 'R3')
-    assert vm.registers[1] == to_uint(-37)
+    assert vm.registers[1] == to_u16(-37)
     assert not vm.flag_carry
     assert not vm.flag_overflow
 
 
 def test_xor_does_not_clear_other_flags(vm):
     vm.registers[2] = 0
-    vm.registers[3] = to_uint(-37)
+    vm.registers[3] = to_u16(-37)
     vm.flag_carry = True
     vm.flag_overflow = True
     vm.exec_xor('R1', 'R2', 'R3')
@@ -862,9 +862,9 @@ def test_inc_with_previous_value(vm):
 
 
 def test_inc_with_previous_negative_value(vm):
-    vm.registers[9] = to_uint(-12)
+    vm.registers[9] = to_u16(-12)
     vm.exec_inc('R9', 10)
-    assert vm.registers[9] == to_uint(-2)
+    assert vm.registers[9] == to_u16(-2)
 
 
 def test_inc_increments_pc(vm):
@@ -873,7 +873,7 @@ def test_inc_increments_pc(vm):
 
 
 def test_inc_sets_zero_flag(vm):
-    vm.registers[7] = to_uint(-1)
+    vm.registers[7] = to_u16(-1)
     vm.exec_inc('R7', 1)
     assert vm.registers[7] == 0
     assert vm.flag_zero
@@ -883,13 +883,13 @@ def test_inc_sets_zero_flag(vm):
 def test_inc_sets_sign_flag(vm):
     vm.registers[1] = 32765
     vm.exec_inc('R1', 5)
-    assert vm.registers[1] == to_uint(-32766)
+    assert vm.registers[1] == to_u16(-32766)
     assert not vm.flag_zero
     assert vm.flag_sign
 
 
 def test_inc_sets_carry_flag(vm):
-    vm.registers[8] = to_uint(-1)
+    vm.registers[8] = to_u16(-1)
     vm.exec_inc('R8', 1)
     assert vm.flag_carry
     assert not vm.flag_overflow
@@ -923,12 +923,12 @@ def test_exec_one_delegates_to_dec(vm):
 
 def test_dec_with_small_positive(vm):
     vm.exec_dec('R8', 6)
-    assert vm.registers[8] == to_uint(-6)
+    assert vm.registers[8] == to_u16(-6)
 
 
 def test_dec_with_max(vm):
     vm.exec_dec('R2', 32)
-    assert vm.registers[2] == to_uint(-32)
+    assert vm.registers[2] == to_u16(-32)
 
 
 def test_dec_with_previous_value(vm):
@@ -938,9 +938,9 @@ def test_dec_with_previous_value(vm):
 
 
 def test_dec_with_previous_negative_value(vm):
-    vm.registers[9] = to_uint(-12)
+    vm.registers[9] = to_u16(-12)
     vm.exec_dec('R9', 10)
-    assert vm.registers[9] == to_uint(-22)
+    assert vm.registers[9] == to_u16(-22)
 
 
 def test_dec_increments_pc(vm):
@@ -959,7 +959,7 @@ def test_dec_sets_zero_flag(vm):
 def test_dec_sets_sign_flag(vm):
     vm.registers[1] = 1
     vm.exec_dec('R1', 5)
-    assert vm.registers[1] == to_uint(-4)
+    assert vm.registers[1] == to_u16(-4)
     assert not vm.flag_zero
     assert vm.flag_sign
 
@@ -971,7 +971,7 @@ def test_dec_sets_carry_flag(vm):
 
 
 def test_dec_sets_overflow_flag(vm):
-    vm.registers[8] = to_uint(-32768)
+    vm.registers[8] = to_u16(-32768)
     vm.exec_dec('R8', 5)
     assert vm.registers[8] == 32763
     assert not vm.flag_carry
@@ -1017,19 +1017,19 @@ def test_lsl_with_positive_overflow(vm):
 
 
 def test_lsl_with_small_negative(vm):
-    vm.registers[6] = to_uint(-7)
+    vm.registers[6] = to_u16(-7)
     vm.exec_lsl('R1', 'R6')
-    assert vm.registers[1] == to_uint(-14)
+    assert vm.registers[1] == to_u16(-14)
 
 
 def test_lsl_with_large_negative(vm):
-    vm.registers[6] = to_uint(-8400)
+    vm.registers[6] = to_u16(-8400)
     vm.exec_lsl('R1', 'R6')
-    assert vm.registers[1] == to_uint(-16800)
+    assert vm.registers[1] == to_u16(-16800)
 
 
 def test_lsl_with_negative_overflow(vm):
-    vm.registers[6] = to_uint(-20000)
+    vm.registers[6] = to_u16(-20000)
     vm.exec_lsl('R1', 'R6')
     assert vm.registers[1] == 25536
     assert vm.flag_carry
@@ -1037,7 +1037,7 @@ def test_lsl_with_negative_overflow(vm):
 
 
 def test_lsl_shifts_out_carry_when_blocked(vm):
-    vm.registers[6] = to_uint(-20000)
+    vm.registers[6] = to_u16(-20000)
     vm.flag_carry_block = True
     vm.exec_lsl('R1', 'R6')
     assert vm.flag_carry
@@ -1088,7 +1088,7 @@ def test_lsl_sets_zero_flag(vm):
 def test_lsl_sets_sign_flag(vm):
     vm.registers[6] = 32767
     vm.exec_lsl('R1', 'R6')
-    assert vm.registers[1] == to_uint(-2)
+    assert vm.registers[1] == to_u16(-2)
     assert not vm.flag_zero
     assert vm.flag_sign
 
@@ -1119,19 +1119,19 @@ def test_lsr_with_large_positive(vm):
 
 
 def test_lsr_with_small_negative(vm):
-    vm.registers[6] = to_uint(-7)
+    vm.registers[6] = to_u16(-7)
     vm.exec_lsr('R1', 'R6')
     assert vm.registers[1] == 32764
 
 
 def test_lsr_with_large_negative(vm):
-    vm.registers[6] = to_uint(-8400)
+    vm.registers[6] = to_u16(-8400)
     vm.exec_lsr('R1', 'R6')
     assert vm.registers[1] == 28568
 
 
 def test_lsr_with_another_large_nevative(vm):
-    vm.registers[6] = to_uint(-20000)
+    vm.registers[6] = to_u16(-20000)
     vm.exec_lsr('R1', 'R6')
     assert vm.registers[1] == 22768
 
@@ -1148,7 +1148,7 @@ def test_lsr_shifts_in_carry(vm):
     vm.registers[6] = 6
     vm.flag_carry = True
     vm.exec_lsr('R1', 'R6')
-    assert vm.registers[1] == to_uint(-32765)
+    assert vm.registers[1] == to_u16(-32765)
     assert not vm.flag_carry
 
 
@@ -1222,13 +1222,13 @@ def test_lsl8_with_large_positive(vm):
 def test_lsl8_with_small_negative(vm):
     vm.registers[4] = -4
     vm.exec_lsl8('R3', 'R4')
-    assert vm.registers[3] == to_uint(-1024)
+    assert vm.registers[3] == to_u16(-1024)
 
 
 def test_lsl8_with_large_negative(vm):
-    vm.registers[4] = to_uint(-31781)
+    vm.registers[4] = to_u16(-31781)
     vm.exec_lsl8('R3', 'R4')
-    assert vm.registers[3] == to_uint(-9472)
+    assert vm.registers[3] == to_u16(-9472)
 
 
 def test_lsl8_sets_zero_flag(vm):
@@ -1242,7 +1242,7 @@ def test_lsl8_sets_zero_flag(vm):
 def test_lsl8_sets_sign_flag(vm):
     vm.registers[4] = 32767
     vm.exec_lsl8('R3', 'R4')
-    assert vm.registers[3] == to_uint(-256)
+    assert vm.registers[3] == to_u16(-256)
     assert not vm.flag_zero
     assert vm.flag_sign
 
@@ -1261,9 +1261,9 @@ def test_lsl8_ignores_incoming_carry(vm):
 
 
 def test_lsl8_does_not_set_carry_or_overflow(vm):
-    vm.registers[4] = to_uint(-1)
+    vm.registers[4] = to_u16(-1)
     vm.exec_lsl8('R3', 'R4')
-    assert vm.registers[3] == to_uint(-256)
+    assert vm.registers[3] == to_u16(-256)
     assert not vm.flag_carry
     assert not vm.flag_overflow
 
@@ -1294,13 +1294,13 @@ def test_lsr8_with_large_positive(vm):
 
 
 def test_lsr8_with_small_negative(vm):
-    vm.registers[4] = to_uint(-4)
+    vm.registers[4] = to_u16(-4)
     vm.exec_lsr8('R3', 'R4')
     assert vm.registers[3] == 255
 
 
 def test_lsr8_with_large_negative(vm):
-    vm.registers[4] = to_uint(-31781)
+    vm.registers[4] = to_u16(-31781)
     vm.exec_lsr8('R3', 'R4')
     assert vm.registers[3] == 131
 
@@ -1366,19 +1366,19 @@ def test_asl_with_positive_overflow(vm):
 
 
 def test_asl_with_small_negative(vm):
-    vm.registers[6] = to_uint(-7)
+    vm.registers[6] = to_u16(-7)
     vm.exec_asl('R1', 'R6')
-    assert vm.registers[1] == to_uint(-14)
+    assert vm.registers[1] == to_u16(-14)
 
 
 def test_asl_with_large_negative(vm):
-    vm.registers[6] = to_uint(-8400)
+    vm.registers[6] = to_u16(-8400)
     vm.exec_asl('R1', 'R6')
-    assert vm.registers[1] == to_uint(-16800)
+    assert vm.registers[1] == to_u16(-16800)
 
 
 def test_asl_with_negative_overflow(vm):
-    vm.registers[6] = to_uint(-20000)
+    vm.registers[6] = to_u16(-20000)
     vm.exec_asl('R1', 'R6')
     assert vm.registers[1] == 25536
     assert vm.flag_carry
@@ -1386,7 +1386,7 @@ def test_asl_with_negative_overflow(vm):
 
 
 def test_asl_shifts_out_carry_when_blocked(vm):
-    vm.registers[6] = to_uint(-20000)
+    vm.registers[6] = to_u16(-20000)
     vm.flag_carry_block = True
     vm.exec_asl('R1', 'R6')
     assert vm.flag_carry
@@ -1438,7 +1438,7 @@ def test_asl_sets_zero_flag(vm):
 def test_asl_sets_sign_flag(vm):
     vm.registers[6] = 32767
     vm.exec_asl('R1', 'R6')
-    assert vm.registers[1] == to_uint(-2)
+    assert vm.registers[1] == to_u16(-2)
     assert not vm.flag_zero
     assert vm.flag_sign
 
@@ -1469,21 +1469,21 @@ def test_asr_with_large_positive(vm):
 
 
 def test_asr_with_small_negative(vm):
-    vm.registers[6] = to_uint(-7)
+    vm.registers[6] = to_u16(-7)
     vm.exec_asr('R1', 'R6')
-    assert vm.registers[1] == to_uint(-3)
+    assert vm.registers[1] == to_u16(-3)
 
 
 def test_asr_with_another_small_negative(vm):
-    vm.registers[6] = to_uint(-5)
+    vm.registers[6] = to_u16(-5)
     vm.exec_asr('R1', 'R6')
-    assert vm.registers[1] == to_uint(-2)
+    assert vm.registers[1] == to_u16(-2)
 
 
 def test_asr_with_large_negative(vm):
-    vm.registers[6] = to_uint(-8400)
+    vm.registers[6] = to_u16(-8400)
     vm.exec_asr('R1', 'R6')
-    assert vm.registers[1] == to_uint(-4200)
+    assert vm.registers[1] == to_u16(-4200)
 
 
 def test_asr_shifts_out_carry_when_blocked(vm):
@@ -1537,9 +1537,9 @@ def test_asr_sets_zero_flag(vm):
 
 
 def test_asr_sets_sign_flag(vm):
-    vm.registers[6] = to_uint(-20)
+    vm.registers[6] = to_u16(-20)
     vm.exec_asr('R1', 'R6')
-    assert vm.registers[1] == to_uint(-10)
+    assert vm.registers[1] == to_u16(-10)
     assert not vm.flag_zero
     assert vm.flag_sign
 

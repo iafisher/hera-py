@@ -5,7 +5,7 @@ Version: November 2018
 """
 import functools
 
-from hera.utils import from_uint, to_uint, to_u32
+from hera.utils import from_u16, to_u16, to_u32
 
 
 def ternary_op(f):
@@ -116,7 +116,7 @@ class VirtualMachine:
         the `value` argument is allowed to be negative. However, it must be in
         the range [-128, 127], as it is only given 8 bits in machine code.
         """
-        self.store_register(target, to_uint(value))
+        self.store_register(target, to_u16(value))
         self.pc += 1
 
     def exec_sethi(self, target, value):
@@ -135,7 +135,7 @@ class VirtualMachine:
 
         self.flag_carry = result < (left + right + carry)
         self.flag_overflow = (
-            from_uint(result) != from_uint(left) + from_uint(right)
+            from_u16(result) != from_u16(left) + from_u16(right)
         )
 
         return result
@@ -145,13 +145,13 @@ class VirtualMachine:
         """Execute the SUB instruction."""
         borrow = 1 if not self.flag_carry_block and not self.flag_carry else 0
 
-        # to_uint is necessary because although left and right are necessarily
-        # uints, left - right might not be.
-        result = to_uint((left - right - borrow) & 0xffff)
+        # to_u16 is necessary because although left and right are necessarily
+        # uints, left - right - borrow might not be.
+        result = to_u16((left - right - borrow) & 0xffff)
 
         self.flag_carry = (left > right)
         self.flag_overflow = (
-            from_uint(result) != from_uint(left) - from_uint(right)
+            from_u16(result) != from_u16(left) - from_u16(right)
         )
 
         return result
@@ -161,8 +161,8 @@ class VirtualMachine:
         """Execute the MUL instruction."""
         if self.flag_sign and not self.flag_carry_block:
             # Take the high 16 bits.
-            left = to_u32(from_uint(left))
-            right = to_u32(from_uint(right))
+            left = to_u32(from_u16(left))
+            right = to_u32(from_u16(right))
             result = ((left * right) & 0xffff0000) >> 16
         else:
             # Take the low 16 bits.
@@ -170,7 +170,7 @@ class VirtualMachine:
 
         self.flag_carry = result < left * right
         self.flag_overflow = (
-            from_uint(result) != from_uint(left) * from_uint(right)
+            from_u16(result) != from_u16(left) * from_u16(right)
         )
 
         return result
@@ -197,18 +197,18 @@ class VirtualMachine:
         self.store_register(target, result)
 
         self.set_zero_and_sign(result)
-        self.flag_overflow = (from_uint(result) != from_uint(original) + value)
+        self.flag_overflow = (from_u16(result) != from_u16(original) + value)
         self.flag_carry = (value + original >= 2**16)
         self.pc += 1
 
     def exec_dec(self, target, value):
         """Execute the DEC instruction."""
         original = self.getr(target)
-        result = to_uint((original - value) & 0xffff)
+        result = to_u16((original - value) & 0xffff)
         self.store_register(target, result)
 
         self.set_zero_and_sign(result)
-        self.flag_overflow = (from_uint(result) != from_uint(original) - value)
+        self.flag_overflow = (from_u16(result) != from_u16(original) - value)
         self.flag_carry = (original < value)
         self.pc += 1
 
