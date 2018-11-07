@@ -339,6 +339,14 @@ class VirtualMachine:
         self.store_register(target, result)
         self.pc += 1
 
+    def exec_store(self, source, offset, address):
+        address = self.getr(address) + offset
+        # Extend the size of the memory array if necessary.
+        if address >= len(self.memory):
+            self.memory.extend([0] * (address-len(self.memory)+1))
+        self.memory[address] = self.getr(source)
+        self.pc += 1
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
