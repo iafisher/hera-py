@@ -5,7 +5,7 @@ Version: November 2018
 """
 import functools
 
-from hera.utils import from_uint, to_uint
+from hera.utils import from_uint, to_uint, to_u32
 
 
 def ternary_op(f):
@@ -149,17 +149,31 @@ class VirtualMachine:
         # uints, left - right might not be.
         result = to_uint((left - right - borrow) & 0xffff)
 
+        self.flag_carry = (left > right)
         self.flag_overflow = (
             from_uint(result) != from_uint(left) - from_uint(right)
         )
-        self.flag_carry = (left > right)
 
         return result
 
     @ternary_op
     def exec_mul(self, left, right):
         """Execute the MUL instruction."""
-        # TODO
+        if self.flag_sign and not self.flag_carry_block:
+            # Take the high 16 bits.
+            left = to_u32(from_uint(left))
+            right = to_u32(from_uint(right))
+            result = ((left * right) & 0xffff0000) >> 16
+        else:
+            # Take the low 16 bits.
+            result = (left * right) & 0xffff
+
+        self.flag_carry = result < left * right
+        self.flag_overflow = (
+            from_uint(result) != from_uint(left) * from_uint(right)
+        )
+
+        return result
 
     @ternary_op
     def exec_and(self, left, right):

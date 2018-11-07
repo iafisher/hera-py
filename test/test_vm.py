@@ -436,7 +436,7 @@ def test_sub_with_no_carry_block_and_no_borrow(vm):
     vm.flag_carry = True
     vm.exec_sub('R1', 'R2', 'R3')
     assert vm.registers[1] == to_uint(-86)
-    assert vm.flag_carry  # TODO: Check this against HERA-C.
+    assert vm.flag_carry
 
 
 def test_sub_overflow_from_borrow(vm):
@@ -453,6 +453,157 @@ def test_sub_does_not_affect_R0(vm):
     vm.registers[1] = 4
     vm.registers[2] = 3
     vm.exec_sub('R0', 'R1', 'R2')
+    assert vm.registers[0] == 0
+
+
+def test_exec_one_delegates_to_mul(vm):
+    with patch('hera.vm.VirtualMachine.exec_mul') as mock_exec_mul:
+        vm.exec_one(Op('MUL', ['R1', 'R2', 'R3']))
+        assert mock_exec_mul.call_count == 1
+        assert mock_exec_mul.call_args == (('R1', 'R2', 'R3'), {})
+
+
+def test_mul_with_small_positives(vm):
+    vm.registers[2] = 4
+    vm.registers[3] = 2
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 8
+
+
+def test_mul_with_large_positives(vm):
+    vm.registers[2] = 4500
+    vm.registers[3] = 3
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 13500
+
+
+def test_mul_with_small_negatives(vm):
+    vm.registers[2] = to_uint(-5)
+    vm.registers[3] = 3
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == to_uint(-15)
+
+
+def test_mul_with_large_negatives(vm):
+    vm.registers[2] = 7
+    vm.registers[3] = to_uint(-3100)
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == to_uint(-21700)
+
+
+def test_mul_sets_zero_flag(vm):
+    vm.registers[2] = 7
+    vm.registers[3] = 0
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 0
+    assert vm.flag_zero
+    assert not vm.flag_sign
+
+
+def test_mul_sets_sign_flag(vm):
+    vm.registers[2] = to_uint(-1)
+    vm.registers[3] = 17
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == to_uint(-17)
+    assert not vm.flag_zero
+    assert vm.flag_sign
+
+
+def test_mul_with_signed_positive_overflow(vm):
+    vm.registers[2] = 17000
+    vm.registers[3] = 3
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == to_uint(-14536)
+    assert not vm.flag_carry
+    assert vm.flag_overflow
+
+
+def test_mul_with_unsigned_positive_overflow(vm):
+    vm.registers[2] = 128
+    vm.registers[3] = 749
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 30336
+    assert vm.flag_carry
+    assert vm.flag_overflow
+
+
+def test_mul_with_signed_negative_overflow(vm):
+    vm.registers[2] = to_uint(-400)
+    vm.registers[3] = to_uint(-200)
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 14464
+    assert vm.flag_carry
+    assert vm.flag_overflow
+
+
+def test_mul_ignores_carry_when_blocked(vm):
+    vm.flag_carry_block = True
+    vm.flag_carry = True
+    vm.registers[2] = 4
+    vm.registers[3] = 12
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 48
+    assert not vm.flag_carry
+
+
+def test_mul_ignores_carry_when_not_blocked(vm):
+    vm.flag_carry = True
+    vm.registers[2] = 4
+    vm.registers[3] = 12
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 48
+    assert not vm.flag_carry
+
+
+def test_mul_produces_high_bits_when_sign_flag_is_on(vm):
+    vm.flag_sign = True
+    vm.registers[2] = 20000
+    vm.registers[3] = 200
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 0b111101
+    assert not vm.flag_sign
+    # TODO: Find out how the carry and overflow flags should be set.
+
+
+def test_mul_with_sign_flag_and_negative_result(vm):
+    vm.flag_sign = True
+    vm.registers[2] = 20000
+    vm.registers[3] = to_uint(-200)
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 0b1111111111000010
+    assert vm.flag_sign
+
+
+def test_mul_with_sign_flag_zero_result(vm):
+    vm.flag_sign = True
+    vm.registers[2] = 47
+    vm.registers[3] = 0
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 0
+    assert not vm.flag_sign
+    assert vm.flag_zero
+
+
+def test_mul_ignores_sign_flag_when_carry_is_blocked(vm):
+    vm.flag_sign = True
+    vm.flag_carry_block = True
+    vm.registers[2] = 20000
+    vm.registers[3] = 200
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.registers[1] == 2304
+    assert not vm.flag_sign
+    assert vm.flag_carry
+
+
+def test_mul_increments_pc(vm):
+    vm.exec_mul('R1', 'R2', 'R3')
+    assert vm.pc == 1
+
+
+def test_mul_does_not_affect_R0(vm):
+    vm.registers[1] = 4
+    vm.registers[2] = 3
+    vm.exec_mul('R0', 'R1', 'R2')
     assert vm.registers[0] == 0
 
 

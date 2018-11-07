@@ -30,3 +30,13 @@ def from_uint(n):
         return -(2**16-n)
     else:
         return n
+
+
+def to_u32(n):
+    """Reinterpret the signed integer `n` as an unsigned 32-bit integer."""
+    if n < 0:
+        if n < -2**31:
+            raise ValueError('signed integer too large for 32 bits')
+        return 2**32+n
+    else:
+        return n
