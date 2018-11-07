@@ -328,6 +328,17 @@ class VirtualMachine:
         self.flag_carry = bool(value & 0b1000)
         self.pc += 1
 
+    def exec_load(self, target, offset, address):
+        address = self.getr(address) + offset
+        if address < len(self.memory):
+            result = self.memory[address]
+        else:
+            result = 0
+
+        self.set_zero_and_sign(result)
+        self.store_register(target, result)
+        self.pc += 1
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
