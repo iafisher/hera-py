@@ -473,6 +473,16 @@ class VirtualMachine:
         """Execute the BCR instruction."""
         return self.flag_carry
 
+    @branch
+    def exec_bnc(self):
+        """Execute the BNC instruction."""
+        return not self.flag_carry
+
+    @relative_branch
+    def exec_bncr(self):
+        """Execute the BNCR instruction."""
+        return not self.flag_carry
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
