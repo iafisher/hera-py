@@ -364,6 +364,13 @@ class VirtualMachine:
         else:
             self.pc += 1
 
+    def exec_blr(self, offset):
+        """Execute the BLR instruction."""
+        if self.flag_sign ^ self.flag_overflow:
+            self.pc += offset
+        else:
+            self.pc += 1
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')

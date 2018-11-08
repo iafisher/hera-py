@@ -2349,3 +2349,52 @@ def test_bl_does_not_set_flags(vm):
     assert vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_blr(vm):
+    with patch('hera.vm.VirtualMachine.exec_blr') as mock_exec_blr:
+        vm.exec_one(Op('BLR', [20]))
+        assert mock_exec_blr.call_count == 1
+        assert mock_exec_blr.call_args == ((20,), {})
+
+
+def test_blr_branches_on_sign(vm):
+    vm.flag_sign = True
+    vm.pc = 100
+    vm.exec_blr(20)
+    assert vm.pc == 120
+
+
+def test_blr_branches_on_overflow(vm):
+    vm.flag_overflow = True
+    vm.pc = 100
+    vm.exec_blr(-20)
+    assert vm.pc == 80
+
+
+def test_blr_does_not_branch_on_sign_and_overflow(vm):
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.pc = 100
+    vm.exec_blr(20)
+    assert vm.pc == 101
+
+
+def test_blr_does_not_branch_on_neither_sign_nor_overflow(vm):
+    vm.pc = 100
+    vm.exec_blr(20)
+    assert vm.pc == 101
+
+
+def test_blr_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_blr(20)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
