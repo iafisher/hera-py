@@ -2842,3 +2842,100 @@ def test_buler_does_not_set_flags(vm):
     assert vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bug(vm):
+    with patch('hera.vm.VirtualMachine.exec_bug') as mock_exec_bug:
+        vm.exec_one(Op('BUG', ['R3']))
+        assert mock_exec_bug.call_count == 1
+        assert mock_exec_bug.call_args == (('R3',), {})
+
+
+def test_bug_branches_on_carry_and_not_zero(vm):
+    vm.flag_carry = True
+    vm.flag_zero = False
+    vm.registers[3] = 47
+    vm.exec_bug('R3')
+    assert vm.pc == 47
+
+
+def test_bug_does_not_branch_on_carry_and_zero(vm):
+    vm.flag_carry = True
+    vm.flag_zero = True
+    vm.registers[3] = 47
+    vm.exec_bug('R3')
+    assert vm.pc == 1
+
+
+def test_bug_does_not_branch_on_not_carry_and_not_zero(vm):
+    vm.registers[3] = 47
+    vm.exec_bug('R3')
+    assert vm.pc == 1
+
+
+def test_bug_does_not_branch_on_sign(vm):
+    vm.flag_sign = True
+    vm.registers[3] = 47
+    vm.exec_bug('R3')
+    assert vm.pc == 1
+
+
+def test_bug_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bug('R0')
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bugr(vm):
+    with patch('hera.vm.VirtualMachine.exec_bugr') as mock_exec_bugr:
+        vm.exec_one(Op('BUGR', [47]))
+        assert mock_exec_bugr.call_count == 1
+        assert mock_exec_bugr.call_args == ((47,), {})
+
+
+def test_bugr_branches_on_carry_and_not_zero(vm):
+    vm.flag_carry = True
+    vm.flag_zero = False
+    vm.exec_bugr(47)
+    assert vm.pc == 47
+
+
+def test_bugr_does_not_branch_on_carry_and_zero(vm):
+    vm.flag_carry = True
+    vm.flag_zero = True
+    vm.pc = 100
+    vm.exec_bugr(47)
+    assert vm.pc == 101
+
+
+def test_bugr_does_not_branch_on_not_carry_and_not_zero(vm):
+    vm.exec_bugr(47)
+    assert vm.pc == 1
+
+
+def test_bugr_does_not_branch_on_sign(vm):
+    vm.flag_sign = True
+    vm.exec_bugr(47)
+    assert vm.pc == 1
+
+
+def test_bugr_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bugr(47)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
