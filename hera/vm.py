@@ -130,7 +130,7 @@ class VirtualMachine:
     def set_zero_and_sign(self, value):
         """Set the zero and sign flags based on the value."""
         self.flag_zero = (value == 0)
-        self.flag_sign = (value >= 2**15)
+        self.flag_sign = (value & 0x8000)
 
     def exec_set(self, target, value):
         """Execute the SET pseudo-instruction."""
