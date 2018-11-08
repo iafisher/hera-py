@@ -2256,3 +2256,47 @@ def test_br_does_not_change_flags(vm):
     assert vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_brr(vm):
+    with patch('hera.vm.VirtualMachine.exec_brr') as mock_exec_brr:
+        vm.exec_one(Op('BRR', [12]))
+        assert mock_exec_brr.call_count == 1
+        assert mock_exec_brr.call_args == ((12,), {})
+
+
+def test_brr_sets_pc(vm):
+    vm.exec_brr(100)
+    assert vm.pc == 100
+
+
+def test_brr_with_negative_offset(vm):
+    vm.pc = 50
+    vm.exec_brr(-17)
+    assert vm.pc == 33
+
+
+def test_brr_sets_pc_with_previous_value(vm):
+    vm.pc = 100
+    vm.exec_brr(15)
+    assert vm.pc == 115
+
+
+def test_brr_sets_pc_to_zero(vm):
+    vm.exec_brr(0)
+    assert vm.pc == 0
+
+
+def test_brr_does_not_change_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_brr(16)
+    assert vm.pc == 16
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block

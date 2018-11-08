@@ -350,6 +350,9 @@ class VirtualMachine:
     def exec_br(self, dest):
         self.pc = self.getr(dest)
 
+    def exec_brr(self, offset):
+        self.pc += offset
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
