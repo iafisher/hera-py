@@ -2222,3 +2222,37 @@ def test_store_ignores_all_flags(vm):
 def test_store_increments_pc(vm):
     vm.exec_store('R1', 0, 'R2')
     assert vm.pc == 1
+
+
+def test_exec_one_delegates_to_br(vm):
+    with patch('hera.vm.VirtualMachine.exec_br') as mock_exec_br:
+        vm.exec_one(Op('BR', ['R1']))
+        assert mock_exec_br.call_count == 1
+        assert mock_exec_br.call_args == (('R1',), {})
+
+
+def test_br_sets_pc(vm):
+    vm.registers[7] = 170
+    vm.exec_br('R7')
+    assert vm.pc == 170
+
+
+def test_br_sets_pc_to_zero(vm):
+    vm.exec_br('R0')
+    assert vm.pc == 0
+
+
+def test_br_does_not_change_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.registers[7] = 92
+    vm.exec_br('R7')
+    assert vm.pc == 92
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block

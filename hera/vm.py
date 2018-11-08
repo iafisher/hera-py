@@ -347,6 +347,9 @@ class VirtualMachine:
         self.memory[address] = self.getr(source)
         self.pc += 1
 
+    def exec_br(self, dest):
+        self.pc = self.getr(dest)
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
