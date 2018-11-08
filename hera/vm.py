@@ -453,6 +453,16 @@ class VirtualMachine:
         """Execute the BZR instruction."""
         return self.flag_zero
 
+    @branch
+    def exec_bnz(self):
+        """Execute the BNZ instruction."""
+        return not self.flag_zero
+
+    @relative_branch
+    def exec_bnzr(self):
+        """Execute the BNZR instruction."""
+        return not self.flag_zero
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
