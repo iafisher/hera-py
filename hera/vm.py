@@ -39,6 +39,32 @@ def binary_op(f):
     return inner
 
 
+def branch(f):
+    """A decorator for HERA register branching ops. Implementing functions only
+    need to return a boolean indicating whether to branch (True) or not (False).
+    """
+    @functools.wraps(f)
+    def inner(self, dest):
+        if f(self):
+            self.pc = self.getr(dest)
+        else:
+            self.pc += 1
+    return inner
+
+
+def relative_branch(f):
+    """A decorator for HERA relative branching ops. Implementing functions only
+    need to return a boolean indicating whether to branch (True) or not (False).
+    """
+    @functools.wraps(f)
+    def inner(self, offset):
+        if f(self):
+            self.pc += offset
+        else:
+            self.pc += 1
+    return inner
+
+
 class VirtualMachine:
     """An abstract representation of a HERA processor."""
 
@@ -357,19 +383,15 @@ class VirtualMachine:
         """Execute the BRR instruction."""
         self.pc += offset
 
-    def exec_bl(self, dest):
+    @branch
+    def exec_bl(self):
         """Execute the BL instruction."""
-        if self.flag_sign ^ self.flag_overflow:
-            self.pc = self.getr(dest)
-        else:
-            self.pc += 1
+        return self.flag_sign ^ self.flag_overflow
 
-    def exec_blr(self, offset):
+    @relative_branch
+    def exec_blr(self):
         """Execute the BLR instruction."""
-        if self.flag_sign ^ self.flag_overflow:
-            self.pc += offset
-        else:
-            self.pc += 1
+        return self.flag_sign ^ self.flag_overflow
 
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
