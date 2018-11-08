@@ -2435,6 +2435,13 @@ def test_bge_does_not_branch_on_overflow(vm):
     assert vm.pc == 1
 
 
+def test_bge_branches_on_zero(vm):
+    vm.flag_zero = True
+    vm.registers[3] = 47
+    vm.exec_bge('R3')
+    assert vm.pc == 47
+
+
 def test_bge_does_not_set_flags(vm):
     vm.flag_sign = True
     vm.flag_zero = True
@@ -2480,6 +2487,12 @@ def test_bger_does_not_branch_on_overflow(vm):
     vm.pc = 100
     vm.exec_bger(47)
     assert vm.pc == 101
+
+
+def test_bger_branches_on_zero(vm):
+    vm.flag_zero = True
+    vm.exec_bger(47)
+    assert vm.pc == 47
 
 
 def test_bger_does_not_set_flags(vm):
@@ -2613,6 +2626,115 @@ def test_bler_does_not_set_flags(vm):
     vm.flag_carry = True
     vm.flag_carry_block = True
     vm.exec_bler(47)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bg(vm):
+    with patch('hera.vm.VirtualMachine.exec_bg') as mock_exec_bg:
+        vm.exec_one(Op('BG', ['R3']))
+        assert mock_exec_bg.call_count == 1
+        assert mock_exec_bg.call_args == (('R3',), {})
+
+
+def test_bg_branches_on_no_flags(vm):
+    vm.registers[3] = 47
+    vm.exec_bg('R3')
+    assert vm.pc == 47
+
+
+def test_bg_branches_on_sign_and_overflow(vm):
+    vm.flag_overflow = True
+    vm.flag_sign = True
+    vm.registers[3] = 47
+    vm.exec_bg('R3')
+    assert vm.pc == 47
+
+
+def test_bg_does_not_branch_on_sign(vm):
+    vm.flag_sign = True
+    vm.registers[3] = 47
+    vm.exec_bg('R3')
+    assert vm.pc == 1
+
+
+def test_bg_does_not_branch_on_overflow(vm):
+    vm.flag_overflow = True
+    vm.registers[3] = 47
+    vm.exec_bg('R3')
+    assert vm.pc == 1
+
+
+def test_bg_does_not_branch_on_zero(vm):
+    vm.flag_zero = True
+    vm.registers[3] = 47
+    vm.exec_bg('R3')
+    assert vm.pc == 1
+
+
+def test_bg_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bg('R0')
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bgr(vm):
+    with patch('hera.vm.VirtualMachine.exec_bgr') as mock_exec_bgr:
+        vm.exec_one(Op('BGR', [20]))
+        assert mock_exec_bgr.call_count == 1
+        assert mock_exec_bgr.call_args == ((20,), {})
+
+
+def test_bgr_branches_on_no_flags(vm):
+    vm.exec_bgr(47)
+    assert vm.pc == 47
+
+
+def test_bgr_branches_on_sign_and_overflow(vm):
+    vm.flag_overflow = True
+    vm.flag_sign = True
+    vm.pc = 100
+    vm.exec_bgr(47)
+    assert vm.pc == 147
+
+
+def test_bgr_does_not_branch_on_sign(vm):
+    vm.flag_sign = True
+    vm.exec_bgr(47)
+    assert vm.pc == 1
+
+
+def test_bgr_does_not_branch_on_overflow(vm):
+    vm.flag_overflow = True
+    vm.pc = 100
+    vm.exec_bgr(47)
+    assert vm.pc == 101
+
+
+def test_bgr_does_not_branch_on_zero(vm):
+    vm.flag_zero = True
+    vm.exec_bgr(47)
+    assert vm.pc == 1
+
+
+def test_bgr_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bgr(47)
     assert vm.flag_sign
     assert vm.flag_zero
     assert vm.flag_overflow
