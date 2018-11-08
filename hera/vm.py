@@ -393,6 +393,16 @@ class VirtualMachine:
         """Execute the BLR instruction."""
         return self.flag_sign ^ self.flag_overflow
 
+    @branch
+    def exec_bge(self):
+        """Execute the BGE instruction."""
+        return not (self.flag_sign ^ self.flag_overflow)
+
+    @relative_branch
+    def exec_bger(self):
+        """Execute the BGER instruction."""
+        return not (self.flag_sign ^ self.flag_overflow)
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')

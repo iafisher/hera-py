@@ -2398,3 +2398,99 @@ def test_blr_does_not_set_flags(vm):
     assert vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bge(vm):
+    with patch('hera.vm.VirtualMachine.exec_bge') as mock_exec_bge:
+        vm.exec_one(Op('BGE', ['R3']))
+        assert mock_exec_bge.call_count == 1
+        assert mock_exec_bge.call_args == (('R3',), {})
+
+
+def test_bge_branches_on_no_flags(vm):
+    vm.registers[3] = 47
+    vm.exec_bge('R3')
+    assert vm.pc == 47
+
+
+def test_bge_branches_on_sign_and_overflow(vm):
+    vm.flag_overflow = True
+    vm.flag_sign = True
+    vm.registers[3] = 47
+    vm.exec_bge('R3')
+    assert vm.pc == 47
+
+
+def test_bge_does_not_branch_on_sign(vm):
+    vm.flag_sign = True
+    vm.registers[3] = 47
+    vm.exec_bge('R3')
+    assert vm.pc == 1
+
+
+def test_bge_does_not_branch_on_overflow(vm):
+    vm.flag_overflow = True
+    vm.registers[3] = 47
+    vm.exec_bge('R3')
+    assert vm.pc == 1
+
+
+def test_bge_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bge('R0')
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bger(vm):
+    with patch('hera.vm.VirtualMachine.exec_bger') as mock_exec_bger:
+        vm.exec_one(Op('BGER', [20]))
+        assert mock_exec_bger.call_count == 1
+        assert mock_exec_bger.call_args == ((20,), {})
+
+
+def test_bger_branches_on_no_flags(vm):
+    vm.exec_bger(47)
+    assert vm.pc == 47
+
+
+def test_bger_branches_on_sign_and_overflow(vm):
+    vm.flag_overflow = True
+    vm.flag_sign = True
+    vm.pc = 100
+    vm.exec_bger(47)
+    assert vm.pc == 147
+
+
+def test_bger_does_not_branch_on_sign(vm):
+    vm.flag_sign = True
+    vm.exec_bger(47)
+    assert vm.pc == 1
+
+
+def test_bger_does_not_branch_on_overflow(vm):
+    vm.flag_overflow = True
+    vm.pc = 100
+    vm.exec_bger(47)
+    assert vm.pc == 101
+
+
+def test_bger_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bger(47)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
