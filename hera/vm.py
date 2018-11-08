@@ -443,6 +443,16 @@ class VirtualMachine:
         """Execute the BUGR instruction."""
         return self.flag_carry and not self.flag_zero
 
+    @branch
+    def exec_bz(self):
+        """Execute the BZ instruction."""
+        return self.flag_zero
+
+    @relative_branch
+    def exec_bzr(self):
+        """Execute the BZR instruction."""
+        return self.flag_zero
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')

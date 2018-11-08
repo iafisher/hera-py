@@ -2939,3 +2939,70 @@ def test_bugr_does_not_set_flags(vm):
     assert vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bz(vm):
+    with patch('hera.vm.VirtualMachine.exec_bz') as mock_exec_bz:
+        vm.exec_one(Op('BZ', ['R3']))
+        assert mock_exec_bz.call_count == 1
+        assert mock_exec_bz.call_args == (('R3',), {})
+
+
+def test_bz_branches_on_zero(vm):
+    vm.flag_zero = True
+    vm.registers[3] = 47
+    vm.exec_bz('R3')
+    assert vm.pc == 47
+
+
+def test_bz_does_not_branch_on_not_zero(vm):
+    vm.registers[3] = 47
+    vm.exec_bz('R3')
+    assert vm.pc == 1
+
+
+def test_bz_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bz('R3')
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bzr(vm):
+    with patch('hera.vm.VirtualMachine.exec_bzr') as mock_exec_bzr:
+        vm.exec_one(Op('BZR', [47]))
+        assert mock_exec_bzr.call_count == 1
+        assert mock_exec_bzr.call_args == ((47,), {})
+
+
+def test_bzr_branches_on_zero(vm):
+    vm.flag_zero = True
+    vm.pc = 100
+    vm.exec_bzr(47)
+    assert vm.pc == 147
+
+
+def test_bzr_does_not_branch_on_not_zero(vm):
+    vm.exec_bzr(47)
+    assert vm.pc == 1
+
+
+def test_bzr_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bzr(47)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
