@@ -423,6 +423,16 @@ class VirtualMachine:
         """Execute the BGR instruction."""
         return not (self.flag_sign ^ self.flag_overflow) and not self.flag_zero
 
+    @branch
+    def exec_bule(self):
+        """Execute the BULE instruction."""
+        return not self.flag_carry or self.flag_zero
+
+    @relative_branch
+    def exec_buler(self):
+        """Execute the BULER instruction."""
+        return not self.flag_carry or self.flag_zero
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print(f'{target} = {self.registers[self.rindex(target)]}')
