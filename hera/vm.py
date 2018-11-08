@@ -329,6 +329,7 @@ class VirtualMachine:
         self.pc += 1
 
     def exec_load(self, target, offset, address):
+        """Execute the LOAD instruction."""
         address = self.getr(address) + offset
         if address < len(self.memory):
             result = self.memory[address]
@@ -340,6 +341,7 @@ class VirtualMachine:
         self.pc += 1
 
     def exec_store(self, source, offset, address):
+        """Execute the STORE instruction."""
         address = self.getr(address) + offset
         # Extend the size of the memory array if necessary.
         if address >= len(self.memory):
@@ -348,10 +350,19 @@ class VirtualMachine:
         self.pc += 1
 
     def exec_br(self, dest):
+        """Execute the BR instruction."""
         self.pc = self.getr(dest)
 
     def exec_brr(self, offset):
+        """Execute the BRR instruction."""
         self.pc += offset
+
+    def exec_bl(self, dest):
+        """Execute the BL instruction."""
+        if self.flag_sign ^ self.flag_overflow:
+            self.pc = self.getr(dest)
+        else:
+            self.pc += 1
 
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""

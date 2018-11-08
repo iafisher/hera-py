@@ -2300,3 +2300,52 @@ def test_brr_does_not_change_flags(vm):
     assert vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bl(vm):
+    with patch('hera.vm.VirtualMachine.exec_bl') as mock_exec_bl:
+        vm.exec_one(Op('BL', ['R3']))
+        assert mock_exec_bl.call_count == 1
+        assert mock_exec_bl.call_args == (('R3',), {})
+
+
+def test_bl_branches_on_sign(vm):
+    vm.flag_sign = True
+    vm.registers[3] = 47
+    vm.exec_bl('R3')
+    assert vm.pc == 47
+
+
+def test_bl_branches_on_overflow(vm):
+    vm.flag_overflow = True
+    vm.registers[3] = 47
+    vm.exec_bl('R3')
+    assert vm.pc == 47
+
+
+def test_bl_does_not_branch_on_sign_and_overflow(vm):
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.registers[3] = 47
+    vm.exec_bl('R3')
+    assert vm.pc == 1
+
+
+def test_bl_does_not_branch_on_neither_sign_nor_overflow(vm):
+    vm.registers[3] = 47
+    vm.exec_bl('R3')
+    assert vm.pc == 1
+
+
+def test_bl_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bl('R0')
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
