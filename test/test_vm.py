@@ -2494,3 +2494,127 @@ def test_bger_does_not_set_flags(vm):
     assert vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_ble(vm):
+    with patch('hera.vm.VirtualMachine.exec_ble') as mock_exec_ble:
+        vm.exec_one(Op('BLE', ['R3']))
+        assert mock_exec_ble.call_count == 1
+        assert mock_exec_ble.call_args == (('R3',), {})
+
+
+def test_ble_branches_on_sign(vm):
+    vm.flag_sign = True
+    vm.registers[3] = 47
+    vm.exec_ble('R3')
+    assert vm.pc == 47
+
+
+def test_ble_branches_on_overflow(vm):
+    vm.flag_overflow = True
+    vm.registers[3] = 47
+    vm.exec_ble('R3')
+    assert vm.pc == 47
+
+
+def test_ble_branches_on_zero(vm):
+    vm.flag_zero = True
+    vm.registers[3] = 47
+    vm.exec_ble('R3')
+    assert vm.pc == 47
+
+
+def test_ble_branches_on_overflow_and_zero(vm):
+    vm.flag_overflow = True
+    vm.flag_zero = True
+    vm.registers[3] = 47
+    vm.exec_ble('R3')
+    assert vm.pc == 47
+
+
+def test_ble_does_not_branch_on_no_flags(vm):
+    vm.registers[3] = 47
+    vm.exec_ble('R3')
+    assert vm.pc == 1
+
+
+def test_ble_does_not_branch_on_sign_and_overflow(vm):
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.registers[3] = 47
+    vm.exec_ble('R3')
+    assert vm.pc == 1
+
+
+def test_ble_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_ble('R0')
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bler(vm):
+    with patch('hera.vm.VirtualMachine.exec_bler') as mock_exec_bler:
+        vm.exec_one(Op('BLER', [47]))
+        assert mock_exec_bler.call_count == 1
+        assert mock_exec_bler.call_args == ((47,), {})
+
+
+def test_bler_branches_on_sign(vm):
+    vm.flag_sign = True
+    vm.exec_bler(47)
+    assert vm.pc == 47
+
+
+def test_bler_branches_on_overflow(vm):
+    vm.flag_overflow = True
+    vm.pc = 100
+    vm.exec_bler(47)
+    assert vm.pc == 147
+
+
+def test_bler_branches_on_zero(vm):
+    vm.flag_zero = True
+    vm.exec_bler(47)
+    assert vm.pc == 47
+
+
+def test_bler_branches_on_overflow_and_zero(vm):
+    vm.flag_overflow = True
+    vm.flag_zero = True
+    vm.exec_bler(47)
+    assert vm.pc == 47
+
+
+def test_bler_does_not_branch_on_no_flags(vm):
+    vm.exec_bler(47)
+    assert vm.pc == 1
+
+
+def test_bler_does_not_branch_on_sign_and_overflow(vm):
+    vm.flag_sign = True
+    vm.flag_overflow = True
+    vm.pc = 100
+    vm.exec_bler(47)
+    assert vm.pc == 101
+
+
+def test_bler_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bler(47)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
