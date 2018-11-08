@@ -3274,3 +3274,70 @@ def test_bsr_does_not_set_flags(vm):
     assert vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bns(vm):
+    with patch('hera.vm.VirtualMachine.exec_bns') as mock_exec_bns:
+        vm.exec_one(Op('BNS', ['R3']))
+        assert mock_exec_bns.call_count == 1
+        assert mock_exec_bns.call_args == (('R3',), {})
+
+
+def test_bns_branches_on_not_sign(vm):
+    vm.registers[3] = 47
+    vm.exec_bns('R3')
+    assert vm.pc == 47
+
+
+def test_bns_does_not_branch_on_sign(vm):
+    vm.flag_sign = True
+    vm.registers[3] = 47
+    vm.exec_bns('R3')
+    assert vm.pc == 1
+
+
+def test_bns_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bns('R3')
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_bnsr(vm):
+    with patch('hera.vm.VirtualMachine.exec_bnsr') as mock_exec_bnsr:
+        vm.exec_one(Op('BNSR', [47]))
+        assert mock_exec_bnsr.call_count == 1
+        assert mock_exec_bnsr.call_args == ((47,), {})
+
+
+def test_bnsr_branches_on_not_sign(vm):
+    vm.pc = 100
+    vm.exec_bnsr(47)
+    assert vm.pc == 147
+
+
+def test_bnsr_does_not_branch_on_sign(vm):
+    vm.flag_sign = True
+    vm.exec_bnsr(47)
+    assert vm.pc == 1
+
+
+def test_bnsr_does_not_set_flags(vm):
+    vm.flag_sign = True
+    vm.flag_zero = True
+    vm.flag_overflow = True
+    vm.flag_carry = True
+    vm.flag_carry_block = True
+    vm.exec_bnsr(47)
+    assert vm.flag_sign
+    assert vm.flag_zero
+    assert vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
