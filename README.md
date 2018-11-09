@@ -1,3 +1,8 @@
-**UNDER DEVELOPMENT**
+An interpreter for the [Haverford Educational RISC Architecture](https://www.haverford.edu/computer-science/resources/hera) (HERA) assembly language.
 
-An interpreter for the Haverford Educational RISC Architecture (HERA) assembly language.
+## Installation
+You can install hera-py with pip:
+
+```
+$ pip3 install hera-py
+```
