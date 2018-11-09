@@ -41,7 +41,7 @@ def test_fib_dot_hera():
     assert vm.flag_sign == False
     assert vm.flag_zero == True
     assert vm.flag_overflow == False
-    #assert vm.flag_carry == True
+    assert vm.flag_carry == True
     assert vm.flag_carry_block == True
     for x in vm.memory:
         assert x == 0

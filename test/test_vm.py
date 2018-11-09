@@ -400,6 +400,15 @@ def test_sub_overflow_from_borrow(vm):
     assert vm.flag_overflow
 
 
+def test_sub_sets_carry_for_equal_operands(vm):
+    vm.flag_carry = True
+    vm.registers[1] = 12
+    vm.registers[2] = 12
+    vm.exec_sub('R3', 'R1', 'R2')
+    assert vm.registers[3] == 0
+    assert vm.flag_carry
+
+
 def test_sub_does_not_affect_R0(vm):
     vm.registers[1] = 4
     vm.registers[2] = 3

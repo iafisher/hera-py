@@ -173,7 +173,7 @@ class VirtualMachine:
         # uints, left - right - borrow might not be.
         result = to_u16((left - right - borrow) & 0xffff)
 
-        self.flag_carry = (left > right)
+        self.flag_carry = (left >= right)
         self.flag_overflow = (
             from_u16(result) != from_u16(left) - from_u16(right)
         )
