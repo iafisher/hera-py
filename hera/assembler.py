@@ -10,6 +10,17 @@ from .parser import Op
 from .utils import to_u16
 
 
+def branch_assembler(name):
+    def assemble_XXX(self, d):
+        if d.type == 'SYMBOL':
+            return (
+                self.assemble_set('R11', self.labels[d]) + [Op(name, ['R11'])]
+            )
+        else:
+            return [Op(name, [d])]
+    return assemble_XXX
+
+
 class Assembler:
     """A class to convert pseudo-instructions and to statically verify HERA
     assembly programs.
@@ -79,3 +90,12 @@ class Assembler:
 
     def assemble_ccboff(self):
         return [Op('FOFF', [24])]
+
+    def assemble_label(self, l):
+        return []
+
+    def assemble_cmp(self, a, b):
+        return [Op('FON', [8]), Op('SUB', ['R0', a, b])]
+
+    assemble_bz = branch_assembler('BZ')
+    assemble_br = branch_assembler('BR')

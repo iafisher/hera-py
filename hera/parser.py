@@ -38,8 +38,9 @@ _parser = Lark(
 
     _arglist: ( value "," )* value
 
-    value: DECIMAL | HEX | OCTAL | BINARY | REGISTER
+    value: DECIMAL | HEX | OCTAL | BINARY | REGISTER | SYMBOL
 
+    REGISTER: /[rR][0-9]+/
     SYMBOL: /[A-Za-z_][A-Za-z0-9_]*/
     DECIMAL: /-?[0-9]+/
     HEX: /-?0x[0-9a-fA-F]+/
@@ -47,9 +48,7 @@ _parser = Lark(
     // simulator would treat as octal?
     OCTAL: /-?0o[0-7]+/
     BINARY: /-?0b[01]+/
-    REGISTER: /[rR][0-9]+/
 
-    // TODO: Support multi-line comments
     COMMENT: ( "//" /[^\n]*/ | "/*" /([^*]|\*[^\/])*/ "*/" )
 
     %import common.WS

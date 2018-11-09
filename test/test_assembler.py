@@ -65,3 +65,14 @@ def test_assemble_cbon(asm):
 
 def test_assemble_ccboff(asm):
     assert asm.assemble_ccboff() == [Op('FOFF', [24])]
+
+
+def test_assemble_label(asm):
+    assert asm.assemble_label('whatever') == []
+
+
+def test_assemble_cmp(asm):
+    assert asm.assemble_cmp('R1', 'R2') == [
+        Op('FON', [8]),
+        Op('SUB', ['R0', 'R1', 'R2'])
+    ]
