@@ -27,6 +27,7 @@ def branch_assembler(name):
     receive the same first-pass translation, which replaces the use of a label
     with a SET(R11, label) BRANCH(R11) combination.
     """
+
     def assemble1_XXX(self, l):
         if isinstance(l, Token) and l.type == 'SYMBOL':
             # Note that we MUST use SETLO+SETHI and not SET, because the next
