@@ -49,3 +49,19 @@ def test_assemble_set_with_negative(asm):
 
 def test_assemble_move(asm):
     assert asm.assemble_move('R5', 'R3') == [Op('OR', ['R5', 'R3', 'R0'])]
+
+
+def test_assemble_con(asm):
+    assert asm.assemble_con() == [Op('FON', [8])]
+
+
+def test_assemble_coff(asm):
+    assert asm.assemble_coff() == [Op('FOFF', [8])]
+
+
+def test_assemble_cbon(asm):
+    assert asm.assemble_cbon() == [Op('FON', [16])]
+
+
+def test_assemble_ccboff(asm):
+    assert asm.assemble_ccboff() == [Op('FOFF', [24])]

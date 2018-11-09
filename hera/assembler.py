@@ -67,3 +67,15 @@ class Assembler:
 
     def assemble_move(self, a, b):
         return [Op('OR', [a, b, 'R0'])]
+
+    def assemble_con(self):
+        return [Op('FON', [8])]
+
+    def assemble_coff(self):
+        return [Op('FOFF', [8])]
+
+    def assemble_cbon(self):
+        return [Op('FON', [16])]
+
+    def assemble_ccboff(self):
+        return [Op('FOFF', [24])]
