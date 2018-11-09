@@ -135,11 +135,6 @@ class VirtualMachine:
         self.flag_zero = (value == 0)
         self.flag_sign = (value & 0x8000)
 
-    def exec_set(self, target, value):
-        """Execute the SET pseudo-instruction."""
-        self.store_register(target, value)
-        self.pc += 1
-
     def exec_setlo(self, target, value):
         """Execute the SETLO instruction. Note that unlike other op handlers,
         the `value` argument is allowed to be negative. However, it must be in
