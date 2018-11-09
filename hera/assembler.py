@@ -142,6 +142,12 @@ class AssemblyHelper:
     def assemble1_flags(self, a):
         return [Op('FOFF', [8]), Op('ADD', ['R0', a, 'R0'])]
 
+    def assemble1_halt(self):
+        return [Op('BRR', [0])]
+
+    def assemble1_nop(self):
+        return [Op('BRR', [1])]
+
     # Assembling branch instructions. Read the docstring of branch_assembler
     # for details.
     assemble1_br = branch_assembler('BR')

@@ -103,3 +103,11 @@ def test_assemble1_br_with_label(asm):
         Op('SETHI', ['R11', 'top']),
         Op('BR', ['R11'])
     ]
+
+
+def test_assemble1_halt(asm):
+    assert asm.assemble1_halt() == [Op('BRR', [0])]
+
+
+def test_assemble1_nop(asm):
+    assert asm.assemble1_nop() == [Op('BRR', [1])]

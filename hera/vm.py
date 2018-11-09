@@ -106,7 +106,10 @@ class VirtualMachine:
         """
         self.reset()
         while self.pc < len(program):
+            opc = self.pc
             self.exec_one(program[self.pc])
+            if opc == self.pc:
+                break
 
     def getr(self, name):
         """Get the contents of the register with the given name."""
