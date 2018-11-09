@@ -59,10 +59,11 @@ class Assembler:
             return handler(*op.args)
 
     def assemble_set(self, d, v):
-        """Assemble the SET instruction, into a pair of SETLO and SETHI calls.
-        """
         v = to_u16(v)
         if v >> 8 > 0:
             return [Op('SETLO', [d, v & 0xff]), Op('SETHI', [d, v >> 8])]
         else:
             return [Op('SETLO', [d, v & 0xff])]
+
+    def assemble_move(self, a, b):
+        return [Op('OR', [a, b, 'R0'])]

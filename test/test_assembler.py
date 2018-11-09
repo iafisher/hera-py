@@ -45,3 +45,7 @@ def test_assemble_set_with_negative(asm):
             Op('SETHI', ['R7', 255]),
         ]
     )
+
+
+def test_assemble_move(asm):
+    assert asm.assemble_move('R5', 'R3') == [Op('OR', ['R5', 'R3', 'R0'])]
