@@ -136,6 +136,12 @@ class AssemblyHelper:
     def assemble1_move(self, a, b):
         return [Op('OR', [a, b, 'R0'])]
 
+    def assemble1_setrf(self, d, v):
+        return self.assemble1_set(d, v) + self.assemble1_flags(d)
+
+    def assemble1_flags(self, a):
+        return [Op('FOFF', [8]), Op('ADD', ['R0', a, 'R0'])]
+
     assemble1_bz = branch_assembler('BZ')
     assemble1_br = branch_assembler('BR')
 

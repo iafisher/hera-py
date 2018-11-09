@@ -15,16 +15,16 @@ def test_assemble1_set_with_small_positive(asm):
 
 def test_assemble1_set_with_large_positive(asm):
     assert asm.assemble1_set('R5', 34000) == [
-            Op('SETLO', ['R5', 208]),
-            Op('SETHI', ['R5', 132]),
-        ]
+        Op('SETLO', ['R5', 208]),
+        Op('SETHI', ['R5', 132]),
+    ]
 
 
 def test_assemble1_set_with_negative(asm):
     assert asm.assemble1_set('R5', -5) == [
-            Op('SETLO', ['R5', 251]),
-            Op('SETHI', ['R5', 255]),
-        ]
+        Op('SETLO', ['R5', 251]),
+        Op('SETHI', ['R5', 255]),
+    ]
 
 
 def test_assemble1_move(asm):
@@ -55,4 +55,37 @@ def test_assemble1_cmp(asm):
     assert asm.assemble1_cmp('R1', 'R2') == [
         Op('FON', [8]),
         Op('SUB', ['R0', 'R1', 'R2']),
+    ]
+
+
+def test_assemble1_setrf_with_small_positive(asm):
+    assert asm.assemble1_setrf('R5', 18) == [
+        Op('SETLO', ['R5', 18]),
+        Op('FOFF', [8]),
+        Op('ADD', ['R0', 'R5', 'R0']),
+    ]
+
+
+def test_assemble1_setrf_with_large_positive(asm):
+    assert asm.assemble1_setrf('R5', 34000) == [
+        Op('SETLO', ['R5', 208]),
+        Op('SETHI', ['R5', 132]),
+        Op('FOFF', [8]),
+        Op('ADD', ['R0', 'R5', 'R0']),
+    ]
+
+
+def test_assemble1_setrf_with_negative(asm):
+    assert asm.assemble1_setrf('R5', -5) == [
+        Op('SETLO', ['R5', 251]),
+        Op('SETHI', ['R5', 255]),
+        Op('FOFF', [8]),
+        Op('ADD', ['R0', 'R5', 'R0']),
+    ]
+
+
+def test_assemble1_flags(asm):
+    assert asm.assemble1_flags('R8') == [
+        Op('FOFF', [8]),
+        Op('ADD', ['R0', 'R8', 'R0'])
     ]
