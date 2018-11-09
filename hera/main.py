@@ -38,7 +38,7 @@ def main(argv=None):
             with open(path, 'r', encoding='utf-8') as f:
                 program = f.read()
         except FileNotFoundError:
-            sys.stderr.write(f'Error: file "{path}" does not exist.\n')
+            sys.stderr.write('Error: file "{}" does not exist.\n'.format(path))
             sys.exit(2)
         except PermissionError:
             sys.stderr.write(
