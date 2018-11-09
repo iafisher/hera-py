@@ -116,8 +116,11 @@ class VirtualMachine:
         """Return the index of the register with the given name in the register
         array.
         """
-        if name.startswith('R'):
+        name = name.lower()
+        if name.startswith('r'):
             return int(name[1:])
+        elif name == 'fp':
+            return 14
         else:
             raise KeyError(name)
 
@@ -522,6 +525,18 @@ class VirtualMachine:
     def exec_bnvr(self):
         """Execute the BNVR instruction."""
         return not self.flag_overflow
+
+    def exec_call(self, ra, rb):
+        """Execute the CALL instruction."""
+        old_pc = self.pc
+        self.pc = self.getr(rb)
+        self.store_register(rb, old_pc + 1)
+        old_fp = self.getr('FP')
+        self.store_register('FP', self.getr(ra))
+        self.store_register(ra, old_fp)
+
+    # CALL and RETURN do the exact same thing.
+    exec_return = exec_call
 
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""

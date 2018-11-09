@@ -3475,3 +3475,75 @@ def test_bnvr_does_not_set_flags(vm):
     assert vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
+
+def test_exec_one_delegates_to_call(vm):
+    with patch('hera.vm.VirtualMachine.exec_call') as mock_exec_call:
+        vm.exec_one(Op('CALL', ['R12', 'R13']))
+        assert mock_exec_call.call_count == 1
+        assert mock_exec_call.call_args == (('R12', 'R13'), {})
+
+
+def test_call_changes_pc(vm):
+    vm.pc = 100
+    vm.registers[13] = 40
+    vm.exec_call('R12', 'R13')
+    assert vm.pc == 40
+
+
+def test_call_updates_second_register(vm):
+    vm.pc = 100
+    vm.registers[13] = 40
+    vm.exec_call('R12', 'R13')
+    assert vm.registers[13] == 101
+
+
+def test_call_updates_frame_pointer(vm):
+    vm.registers[12] = 600
+    vm.registers[13] = 40
+    vm.exec_call('R12', 'R13')
+    assert vm.registers[14] == 600
+
+
+def test_call_updates_first_register(vm):
+    vm.registers[14] = 550
+    vm.registers[12] = 600
+    vm.registers[13] = 40
+    vm.exec_call('R12', 'R13')
+    assert vm.registers[12] == 550
+
+
+def test_exec_one_delegates_to_return(vm):
+    with patch('hera.vm.VirtualMachine.exec_return') as mock_exec_return:
+        vm.exec_one(Op('RETURN', ['R12', 'R13']))
+        assert mock_exec_return.call_count == 1
+        assert mock_exec_return.call_args == (('R12', 'R13'), {})
+
+
+def test_return_changes_pc(vm):
+    vm.pc = 100
+    vm.registers[13] = 40
+    vm.exec_return('R12', 'R13')
+    assert vm.pc == 40
+
+
+def test_return_updates_second_register(vm):
+    vm.pc = 100
+    vm.registers[13] = 40
+    vm.exec_return('R12', 'R13')
+    assert vm.registers[13] == 101
+
+
+def test_return_updates_frame_pointer(vm):
+    vm.registers[12] = 600
+    vm.registers[13] = 40
+    vm.exec_return('R12', 'R13')
+    assert vm.registers[14] == 600
+
+
+def test_return_updates_first_register(vm):
+    vm.registers[14] = 550
+    vm.registers[12] = 600
+    vm.registers[13] = 40
+    vm.exec_return('R12', 'R13')
+    assert vm.registers[12] == 550
