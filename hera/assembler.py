@@ -158,6 +158,16 @@ class AssemblyHelper:
         else:
             return [Op('CALL', [a, l])]
 
+    def assemble1_neg(self, d, b):
+        return [Op('FON', [8]), Op('SUB', [d, 'R0', b])]
+
+    def assemble1_not(self, d, b):
+        return [
+            Op('SETLO', ['R11', 0xff]),
+            Op('SETHI', ['R11', 0xff]),
+            Op('XOR', [d, 'R11', b])
+        ]
+
     # Assembling branch instructions. Read the docstring of branch_assembler
     # for details.
     assemble1_br = branch_assembler('BR')

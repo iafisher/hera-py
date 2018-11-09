@@ -125,3 +125,18 @@ def test_assemble1_call_with_label(asm):
         Op('SETHI', ['R13', 'div']),
         Op('CALL', ['R12', 'R13']),
     ]
+
+
+def test_assemble1_neg(asm):
+    assert asm.assemble1_neg('R1', 'R2') == [
+        Op('FON', [8]),
+        Op('SUB', ['R1', 'R0', 'R2']),
+    ]
+
+
+def test_assemble1_not(asm):
+    assert asm.assemble1_not('R1', 'R2') == [
+        Op('SETLO', ['R11', 0xff]),
+        Op('SETHI', ['R11', 0xff]),
+        Op('XOR', ['R1', 'R11', 'R2']),
+    ]
