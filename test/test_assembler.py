@@ -1,5 +1,7 @@
 import pytest
 
+from lark import Token
+
 from hera.assembler import AssemblyHelper
 from hera.parser import Op
 
@@ -88,4 +90,16 @@ def test_assemble1_flags(asm):
     assert asm.assemble1_flags('R8') == [
         Op('FOFF', [8]),
         Op('ADD', ['R0', 'R8', 'R0'])
+    ]
+
+
+def test_assemble1_br_with_register(asm):
+    assert asm.assemble1_br(Token('REGISTER', 'R5')) == [Op('BR', ['R5'])]
+
+
+def test_assemble1_br_with_label(asm):
+    assert asm.assemble1_br(Token('SYMBOL', 'top')) == [
+        Op('SETLO', ['R11', 'top']),
+        Op('SETHI', ['R11', 'top']),
+        Op('BR', ['R11'])
     ]

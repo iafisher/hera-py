@@ -142,8 +142,23 @@ class AssemblyHelper:
     def assemble1_flags(self, a):
         return [Op('FOFF', [8]), Op('ADD', ['R0', a, 'R0'])]
 
-    assemble1_bz = branch_assembler('BZ')
+    # Assembling branch instructions. Read the docstring of branch_assembler
+    # for details.
     assemble1_br = branch_assembler('BR')
+    assemble1_bl = branch_assembler('BL')
+    assemble1_bge = branch_assembler('BGE')
+    assemble1_ble = branch_assembler('BLE')
+    assemble1_bg = branch_assembler('BG')
+    assemble1_bule = branch_assembler('BULE')
+    assemble1_bug = branch_assembler('BUG')
+    assemble1_bz = branch_assembler('BZ')
+    assemble1_bnz = branch_assembler('BNZ')
+    assemble1_bc = branch_assembler('BC')
+    assemble1_bnc = branch_assembler('BNC')
+    assemble1_bs = branch_assembler('BS')
+    assemble1_bns = branch_assembler('BNS')
+    assemble1_bv = branch_assembler('BV')
+    assemble1_bnv = branch_assembler('BNV')
 
     def assemble2_label(self, l):
         # Labels do not result in any machine code instructions.
