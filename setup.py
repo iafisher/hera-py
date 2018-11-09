@@ -7,7 +7,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='hera-py',
-    version='0.1.0',
+    version='0.1.1',
     description=(
         'Interpreter for the Haverford Educational RISC Architecture (HERA) '
         'assembly language'
