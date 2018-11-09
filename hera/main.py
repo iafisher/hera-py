@@ -46,7 +46,7 @@ def main(argv=None):
             )
             sys.exit(2)
         except OSError:
-            sys.stderr.write(f'Error: could not open file "{path}".\n')
+            sys.stderr.write('Error: could not open file "{}".\n'.format(path))
             sys.exit(2)
 
     if arguments['assemble']:
@@ -96,7 +96,7 @@ def dump_state(vm):
     """Print the state of the virtual machine to standard output."""
     print('Virtual machine state:')
     for i, value in enumerate(vm.registers):
-        print(f'\tR{i} = {value}')
+        print('\tR{} = {}'.format(i, value))
     print()
     print('\tZero flag is ' + ('ON' if vm.flag_zero else 'OFF'))
     print('\tSign flag is ' + ('ON' if vm.flag_sign else 'OFF'))

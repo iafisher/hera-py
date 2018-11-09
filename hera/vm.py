@@ -96,7 +96,9 @@ class VirtualMachine:
         try:
             handler = getattr(self, 'exec_' + inst.name.lower())
         except AttributeError:
-            raise ValueError(f'unknown instruction "{inst.name}"') from None
+            raise ValueError(
+                'unknown instruction "{}"'.format(inst.name)
+            ) from None
         else:
             handler(*inst.args)
 
@@ -540,5 +542,5 @@ class VirtualMachine:
 
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
-        print(f'{target} = {self.registers[self.rindex(target)]}')
+        print('{} = {}'.format(target, self.registers[self.rindex(target)]))
         self.pc += 1
