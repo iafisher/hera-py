@@ -42,7 +42,7 @@ def main(argv=None):
             sys.exit(2)
         except PermissionError:
             sys.stderr.write(
-                f'Error: permission denied to open file "{path}".\n'
+                'Error: permission denied to open file "{}".\n'.format(path)
             )
             sys.exit(2)
         except OSError:
