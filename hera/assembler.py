@@ -3,99 +3,148 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: November 2018
 """
-import sys
+from lark import Token
 
-from .exceptions import AssemblyError
 from .parser import Op
-from .utils import to_u16
+
+
+def assemble(program):
+    """Assemble the program (a list of Op objects) into valid input for the
+    exec_many method on the VirtualMachine class.
+
+    This function does the following
+        - Replaces pseudo-instructions with real ones
+        - Verifies the correct usage of instructions
+        - Resolves labels into their line numbers.
+    """
+    helper = AssemblyHelper()
+    return helper.assemble(program)
 
 
 def branch_assembler(name):
-    def assemble_XXX(self, d):
-        if d.type == 'SYMBOL':
-            return (
-                self.assemble_set('R11', self.labels[d]) + [Op(name, ['R11'])]
-            )
+    """A factory method to create handlers for branch instructions. All of these
+    receive the same first-pass translation, which replaces the use of a label
+    with a SET(R11, label) BRANCH(R11) combination.
+    """
+    def assemble1_XXX(self, l):
+        if isinstance(l, Token) and l.type == 'SYMBOL':
+            # Note that we MUST use SETLO+SETHI and not SET, because the next
+            # pass only handles label resolution and does not further expand
+            # pseudo-instructions.
+            return [
+                Op('SETLO', ['R11', l]),
+                Op('SETHI', ['R11', l]),
+                Op(name, ['R11'])
+            ]
         else:
-            return [Op(name, [d])]
-    return assemble_XXX
+            return [Op(name, [l])]
+
+    return assemble1_XXX
 
 
-class Assembler:
-    """A class to convert pseudo-instructions and to statically verify HERA
-    assembly programs.
+class AssemblyHelper:
+    """A helper class for assembling programs. Do not instantiate this class
+    directly. Use the module-level assemble function instead.
     """
 
     def __init__(self):
         self.labels = {}
 
-    def resolve_labels(self, program):
-        """Populate the `labels` field with (label, lineno) pairs."""
+    def assemble(self, program):
+        """See docstring for module-level assemble for details."""
+        for op in program:
+            try:
+                verifier = getattr(self, 'verify_' + op.name.lower())
+            except AttributeError:
+                pass
+            else:
+                verifier(*op.args)
+
+        program = self.assemble_first_pass(program)
+        program = self.assemble_second_pass(program)
+        return program
+
+    def assemble_first_pass(self, program):
+        """Run the first pass of the assembler. This pass converts pseudo-
+        instructions to real ones, but does not resolve labels. It does however
+        guarantee that labels will only appear as the second argument of SETLO
+        and SETHI.
+        """
+        nprogram = []
+        for op in program:
+            try:
+                handler = getattr(self, 'assemble1_' + op.name.lower())
+            except AttributeError:
+                nprogram.append(op)
+            else:
+                nprogram.extend(handler(*op.args))
+        return nprogram
+
+    def assemble_second_pass(self, program):
+        """Run the second pass of the assembler. This pass resolves labels into
+        their actual line numbers. It assumes that labels only appear as the
+        second argument of SETLO and SETHI (the assemble_first_pass method
+        guarantees this).
+        """
         pc = 0
         for op in program:
-            if op.name.lower() == 'label' and len(op.args) == 1:
+            if op.name.lower() == 'label':
                 self.labels[op.args[0]] = pc
             else:
                 pc += 1
 
-    def assemble(self, program):
-        """Verify all instructions and replace pseudo-instructions with real
-        ones.
-        """
-        self.resolve_labels(program)
-
         nprogram = []
         for op in program:
-            nprogram.extend(self.assemble_one(op))
-
+            try:
+                handler = getattr(self, 'assemble2_' + op.name.lower())
+            except AttributeError:
+                nprogram.append(op)
+            else:
+                nop = handler(*op.args)
+                if nop:
+                    nprogram.append(nop)
         return nprogram
 
-    def assemble_one(self, op):
-        """Convert a single operation. The return value is a list of
-        corresponding operations (since some pseudo-instructions map to
-        multiple machine instructions).
-        """
-        try:
-            verifier = getattr(self, 'verify_' + op.name.lower())
-        except AttributeError:
-            pass
+    def assemble1_set(self, d, v):
+        lo = v & 0xff
+        hi = v >> 8
+        if hi:
+            return [
+                Op('SETLO', [d, lo]),
+                Op('SETHI', [d, hi]),
+            ]
         else:
-            verifier(self, op.args)
+            return [Op('SETLO', [d, lo])]
 
-        try:
-            handler = getattr(self, 'assemble_' + op.name.lower())
-        except AttributeError:
-            return [op]
-        else:
-            return handler(*op.args)
-
-    def assemble_set(self, d, v):
-        v = to_u16(v)
-        if v >> 8 > 0:
-            return [Op('SETLO', [d, v & 0xff]), Op('SETHI', [d, v >> 8])]
-        else:
-            return [Op('SETLO', [d, v & 0xff])]
-
-    def assemble_move(self, a, b):
-        return [Op('OR', [a, b, 'R0'])]
-
-    def assemble_con(self):
-        return [Op('FON', [8])]
-
-    def assemble_coff(self):
-        return [Op('FOFF', [8])]
-
-    def assemble_cbon(self):
-        return [Op('FON', [16])]
-
-    def assemble_ccboff(self):
-        return [Op('FOFF', [24])]
-
-    def assemble_label(self, l):
-        return []
-
-    def assemble_cmp(self, a, b):
+    def assemble1_cmp(self, a, b):
         return [Op('FON', [8]), Op('SUB', ['R0', a, b])]
 
-    assemble_bz = branch_assembler('BZ')
-    assemble_br = branch_assembler('BR')
+    def assemble1_con(self):
+        return [Op('FON', [8])]
+
+    def assemble1_cbon(self):
+        return [Op('FON', [16])]
+
+    def assemble1_move(self, a, b):
+        return [Op('OR', [a, b, 'R0'])]
+
+    assemble1_bz = branch_assembler('BZ')
+    assemble1_br = branch_assembler('BR')
+
+    def assemble2_label(self, l):
+        # Labels do not result in any machine code instructions.
+        return None
+
+    def assemble2_setlo(self, d, v):
+        # We must handle the case where the second argument of SETLO is a label.
+        if isinstance(v, Token) and v.type == 'SYMBOL':
+            return Op('SETLO', [d, self.labels[v] & 0xff])
+        else:
+            return Op('SETLO', [d, v])
+
+    def assemble2_sethi(self, d, v):
+        # We must handle the case where the second argument of SETHI is a label.
+        if isinstance(v, Token) and v.type == 'SYMBOL':
+            return Op('SETHI', [d, self.labels[v] >> 8])
+        else:
+            return Op('SETHI', [d, v])

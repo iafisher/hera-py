@@ -2,12 +2,12 @@
 
 Usage:
     hera [--verbose --dump-state] <path>
+    hera assemble <path>
     hera (-h | --help)
     hera (-v | --version)
 
 Options:
     --dump-state     Print the state of the virtual machine after execution.
-    --verbose        Print verbose output.
     -h, --help       Show this message.
     -v, --version    Show the version.
 """
@@ -15,7 +15,7 @@ import sys
 
 from docopt import docopt
 
-from .assembler import Assembler
+from .assembler import assemble
 from .parser import parse
 from .vm import VirtualMachine
 
@@ -49,14 +49,16 @@ def main(argv=None):
             sys.stderr.write(f'Error: could not open file "{path}".\n')
             sys.exit(2)
 
-    execute_program(
-        program,
-        verbose=arguments['--verbose'],
-        opt_dump_state=arguments['--dump-state']
-    )
+    if arguments['assemble']:
+        assemble_program(program)
+    else:
+        execute_program(
+            program,
+            opt_dump_state=arguments['--dump-state']
+        )
 
 
-def execute_program(program, *, verbose=False, opt_dump_state=False):
+def execute_program(program, *, opt_dump_state=False):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
 
@@ -65,20 +67,19 @@ def execute_program(program, *, verbose=False, opt_dump_state=False):
     state.
     """
     vm = VirtualMachine()
-    assembler = Assembler()
-    ops = assembler.assemble(parse(program))
+    program = assemble(parse(program))
 
-    if verbose:
-        print('Assembled program to:')
-        print(deassemble(ops))
-        print()
-
-    vm.exec_many(ops)
+    vm.exec_many(program)
 
     if opt_dump_state:
         dump_state(vm)
 
     return vm
+
+
+def assemble_program(program):
+    program = assemble(parse(program))
+    print(deassemble(program))
 
 
 def deassemble(ops):
@@ -88,7 +89,7 @@ def deassemble(ops):
 
 def deassemble_one(op):
     """Convert a single operation to a string."""
-    return f"\t{op.name}({', '.join(str(a) for a in op.args)})"
+    return f"{op.name}({', '.join(str(a) for a in op.args)})"
 
 
 def dump_state(vm):
