@@ -11,6 +11,10 @@ from .utils import to_u16
 
 
 class Assembler:
+    """A class to convert pseudo-instructions and to statically verify HERA
+    assembly programs.
+    """
+
     def __init__(self):
         self.labels = {}
 
@@ -24,14 +28,22 @@ class Assembler:
                 pc += 1
 
     def assemble(self, program):
+        """Verify all instructions and replace pseudo-instructions with real
+        ones.
+        """
         self.resolve_labels(program)
 
         nprogram = []
         for op in program:
             nprogram.extend(self.assemble_one(op))
+
         return nprogram
 
     def assemble_one(self, op):
+        """Convert a single operation. The return value is a list of
+        corresponding operations (since some pseudo-instructions map to
+        multiple machine instructions).
+        """
         try:
             verifier = getattr(self, 'verify_' + op.name.lower())
         except AttributeError:
@@ -47,6 +59,8 @@ class Assembler:
             return handler(*op.args)
 
     def assemble_set(self, d, v):
+        """Assemble the SET instruction, into a pair of SETLO and SETHI calls.
+        """
         v = to_u16(v)
         if v >> 8 > 0:
             return [Op('SETLO', [d, v & 0xff]), Op('SETHI', [d, v >> 8])]

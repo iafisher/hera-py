@@ -26,7 +26,9 @@ def main(argv=None):
     This function consists mostly of argument parsing. The heavy-lifting begins
     with execute_program later in this module.
     """
-    arguments = docopt(__doc__, argv=argv, version='hera-py 0.1.0')
+    arguments = docopt(
+        __doc__, argv=argv, version='hera-py 0.1.0 for HERA version 2.4'
+    )
     path = arguments['<path>']
 
     if path == '-':
