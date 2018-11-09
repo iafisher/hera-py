@@ -13,6 +13,7 @@ import sys
 
 from docopt import docopt
 
+from .assembler import Assembler
 from .parser import parse
 from .vm import VirtualMachine
 
@@ -20,8 +21,6 @@ from .vm import VirtualMachine
 def main():
     arguments = docopt(__doc__, version='hera-py 0.1.0')
     path = arguments['<path>']
-
-    vm = VirtualMachine()
 
     if path == '-':
         program = sys.stdin.read()
@@ -39,4 +38,7 @@ def main():
             sys.stderr.write(f'Error: could not open file "{path}".\n')
             sys.exit(2)
 
-    vm.exec_many(parse(program))
+    vm = VirtualMachine()
+    assembler = Assembler()
+    ops = assembler.assemble(parse(program))
+    vm.exec_many(ops)
