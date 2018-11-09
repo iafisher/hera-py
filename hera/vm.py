@@ -120,6 +120,8 @@ class VirtualMachine:
         array.
         """
         name = name.lower()
+        if name == 'rt':
+            return 11
         if name.startswith('r'):
             return int(name[1:])
         elif name == 'fp':

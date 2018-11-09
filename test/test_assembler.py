@@ -111,3 +111,17 @@ def test_assemble1_halt(asm):
 
 def test_assemble1_nop(asm):
     assert asm.assemble1_nop() == [Op('BRR', [1])]
+
+
+def test_assemble1_call_with_register(asm):
+    assert asm.assemble1_call('R12', Token('REGISTER', 'R13')) == [
+        Op('CALL', ['R12', 'R13'])
+    ]
+
+
+def test_assemble1_call_with_label(asm):
+    assert asm.assemble1_call('R12', Token('SYMBOL', 'div')) == [
+        Op('SETLO', ['R13', 'div']),
+        Op('SETHI', ['R13', 'div']),
+        Op('CALL', ['R12', 'R13']),
+    ]

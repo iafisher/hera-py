@@ -148,6 +148,16 @@ class AssemblyHelper:
     def assemble1_nop(self):
         return [Op('BRR', [1])]
 
+    def assemble1_call(self, a, l):
+        if isinstance(l, Token) and l.type == 'SYMBOL':
+            return [
+                Op('SETLO', ['R13', l]),
+                Op('SETHI', ['R13', l]),
+                Op('CALL', [a, 'R13']),
+            ]
+        else:
+            return [Op('CALL', [a, l])]
+
     # Assembling branch instructions. Read the docstring of branch_assembler
     # for details.
     assemble1_br = branch_assembler('BR')

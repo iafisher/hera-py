@@ -27,6 +27,22 @@ def test_simple_loop_dot_hera():
         vm = execute_program(f.read())
 
 
+def test_fcall_dot_hera():
+    with open('test/hera/fcall.hera') as f:
+        vm = execute_program(f.read())
+
+    assert vm.registers[1] == 16
+    for r in vm.registers[2:10]:
+        assert r == 0
+    assert vm.flag_sign == False
+    assert vm.flag_zero == False
+    assert vm.flag_overflow == False
+    assert vm.flag_carry == False
+    assert vm.flag_carry_block == False
+    for x in vm.memory:
+        assert x == 0
+
+
 def test_fib_dot_hera():
     with open('test/hera/fib.hera') as f:
         vm = execute_program(f.read())
