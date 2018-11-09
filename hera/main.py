@@ -1,13 +1,14 @@
 """hera: an interpreter for the Haverford Educational RISC Architecture.
 
 Usage:
-    hera <path>
+    hera [--verbose] <path>
     hera (-h | --help)
     hera (-v | --version)
 
 Options:
     -h, --help       Show this message.
     -v, --version    Show the version.
+    --verbose        Print verbose output.
 """
 import sys
 
@@ -41,4 +42,18 @@ def main():
     vm = VirtualMachine()
     assembler = Assembler()
     ops = assembler.assemble(parse(program))
+
+    if '--verbose' in arguments:
+        print('Assembled program to:')
+        print(deassemble(ops))
+        print()
+
     vm.exec_many(ops)
+
+
+def deassemble(ops):
+    return '\n'.join(deassemble_one(op) for op in ops)
+
+
+def deassemble_one(op):
+    return f"\t{op.name}({', '.join(str(a) for a in op.args)})"

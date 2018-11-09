@@ -44,7 +44,7 @@ class Assembler:
         except AttributeError:
             return [op]
         else:
-            return handler(self, *op.args)
+            return handler(*op.args)
 
     def assemble_set(self, d, v):
         v = to_u16(v)
