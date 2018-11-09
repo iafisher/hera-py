@@ -50,6 +50,8 @@ def main(argv=None):
             sys.exit(2)
 
     if arguments['assemble']:
+        if path == '-':
+            print()
         assemble_program(program)
     else:
         execute_program(
@@ -89,7 +91,10 @@ def deassemble(ops):
 
 def deassemble_one(op):
     """Convert a single operation to a string."""
-    return f"{op.name}({', '.join(str(a) for a in op.args)})"
+    return "{}({})".format(
+        op.name,
+        ', '.join(str(a) for a in op.args),
+    )
 
 
 def dump_state(vm):
