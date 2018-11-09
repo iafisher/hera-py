@@ -6,6 +6,7 @@ Version: November 2018
 from lark import Token
 
 from .parser import Op
+from .utils import to_u16
 
 
 def assemble(program):
@@ -106,6 +107,7 @@ class AssemblyHelper:
         return nprogram
 
     def assemble1_set(self, d, v):
+        v = to_u16(v)
         lo = v & 0xff
         hi = v >> 8
         if hi:
@@ -122,8 +124,14 @@ class AssemblyHelper:
     def assemble1_con(self):
         return [Op('FON', [8])]
 
+    def assemble1_coff(self):
+        return [Op('FOFF', [8])]
+
     def assemble1_cbon(self):
         return [Op('FON', [16])]
+
+    def assemble1_ccboff(self):
+        return [Op('FOFF', [24])]
 
     def assemble1_move(self, a, b):
         return [Op('OR', [a, b, 'R0'])]
