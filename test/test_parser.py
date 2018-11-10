@@ -7,6 +7,13 @@ def test_parse_op():
     assert parse('SETLO(R1, 4)') == [Op('SETLO', ['R1', 4])]
 
 
+def test_parse_op_with_label():
+    parsed = parse('SETLO(R1, top)')
+    assert parsed == [Op('SETLO', ['R1', 'top'])]
+    assert parsed[0].args[0].type == 'REGISTER'
+    assert parsed[0].args[1].type == 'SYMBOL'
+
+
 def test_parse_signed_number():
     assert parse('SETLO(R1, -12)') == [Op('SETLO', ['R1', -12])]
 

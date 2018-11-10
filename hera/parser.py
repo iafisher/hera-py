@@ -40,7 +40,7 @@ _parser = Lark(
 
     value: DECIMAL | HEX | OCTAL | BINARY | REGISTER | SYMBOL
 
-    REGISTER: /[rR][0-9]+/
+    REGISTER.2: /[rR][0-9]+/
     SYMBOL: /[A-Za-z_][A-Za-z0-9_]*/
     DECIMAL: /-?[0-9]+/
     HEX: /-?0x[0-9a-fA-F]+/
