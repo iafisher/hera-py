@@ -118,6 +118,8 @@ class AssemblyHelper:
                 self.labels[op.args[0]] = pc
             elif opname == 'dlabel':
                 self.labels[op.args[0]] = dc
+            elif opname == 'constant':
+                self.labels[op.args[0]] = op.args[1]
             elif opname == 'integer':
                 dc += 1
             elif opname == 'dskip':
@@ -215,6 +217,9 @@ class AssemblyHelper:
         return None
 
     def assemble2_dlabel(self, l):
+        return None
+
+    def assemble2_constant(self, s, v):
         return None
 
     def assemble2_setlo(self, d, v):

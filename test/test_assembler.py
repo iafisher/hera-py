@@ -2,7 +2,7 @@ import pytest
 
 from lark import Token
 
-from hera.assembler import AssemblyHelper, HERA_DATA_START
+from hera.assembler import assemble, AssemblyHelper, HERA_DATA_START
 from hera.parser import Op
 
 
@@ -62,6 +62,10 @@ def test_assemble2_label(asm):
 
 def test_assemble2_dlabel(asm):
     assert asm.assemble2_dlabel('whatever') is None
+
+
+def test_assemble2_constant(asm):
+    assert asm.assemble2_constant('whatever', 5) is None
 
 
 def test_assemble1_cmp(asm):
@@ -206,3 +210,12 @@ def test_resolve_labels_with_empty_lp_string(asm):
     assert len(asm.labels) == 2
     assert asm.labels['S'] == HERA_DATA_START
     assert asm.labels['X'] == HERA_DATA_START + 1
+
+
+def test_assemble_constant(asm):
+    program = [
+        Op('CONSTANT', ['n', 100]), Op('SET', ['R1', Token('SYMBOL', 'n')])
+    ]
+    assert assemble(program) == [
+        Op('SETLO', ['R1', 100]), Op('SETHI', ['R1', 0])
+    ]
