@@ -40,8 +40,9 @@ def binary_op(f):
 
 
 def branch(f):
-    """A decorator for HERA register branching ops. Implementing functions only
-    need to return a boolean indicating whether to branch (True) or not (False).
+    """A decorator for HERA register branching instructions. Implementing
+    functions only need to return a boolean indicating whether to branch (True)
+    or not (False).
     """
     @functools.wraps(f)
     def inner(self, dest):
@@ -53,8 +54,9 @@ def branch(f):
 
 
 def relative_branch(f):
-    """A decorator for HERA relative branching ops. Implementing functions only
-    need to return a boolean indicating whether to branch (True) or not (False).
+    """A decorator for HERA relative branching instructions. Implementing
+    functions only need to return a boolean indicating whether to branch (True)
+    or not (False).
     """
     @functools.wraps(f)
     def inner(self, offset):
@@ -73,10 +75,10 @@ class VirtualMachine:
 
     def reset(self):
         """Reset the machine to its initial state."""
-        # Sixteen 16-bit registers. The virtual machine stores integers in their
-        # unsigned representation, so the values of self.registers will always
-        # be non-negative, although values above 2**15 implicitly represent
-        # negative integers under a signed interpretation.
+        # Sixteen 16-bit registers. The virtual machine stores integers in
+        # their unsigned representation, so the values of self.registers will
+        # always be non-negative, although values above 2**15 implicitly
+        # represent negative integers under a signed interpretation.
         self.registers = [0] * 16
         # 16-bit program counter
         self.pc = 0
@@ -154,7 +156,9 @@ class VirtualMachine:
         """Execute the SETHI instruction. `value` must be an integer in the
         range [0, 255].
         """
-        self.store_register(target, (value << 8) + (self.getr(target) & 0x00ff))
+        self.store_register(
+            target, (value << 8) + (self.getr(target) & 0x00ff)
+        )
         self.pc += 1
 
     @ternary_op

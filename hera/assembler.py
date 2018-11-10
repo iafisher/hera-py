@@ -23,9 +23,9 @@ def assemble(program):
 
 
 def branch_assembler(name):
-    """A factory method to create handlers for branch instructions. All of these
-    receive the same first-pass translation, which replaces the use of a label
-    with a SET(R11, label) BRANCH(R11) combination.
+    """A factory method to create handlers for branch instructions. All of
+    these receive the same first-pass translation, which replaces the use of a
+    label with a SET(R11, label) BRANCH(R11) combination.
     """
 
     def assemble1_XXX(self, l):
@@ -192,14 +192,14 @@ class AssemblyHelper:
         return None
 
     def assemble2_setlo(self, d, v):
-        # We must handle the case where the second argument of SETLO is a label.
+        # Label as second argument of SETLO must be replaced with line number.
         if isinstance(v, Token) and v.type == 'SYMBOL':
             return Op('SETLO', [d, self.labels[v] & 0xff])
         else:
             return Op('SETLO', [d, v])
 
     def assemble2_sethi(self, d, v):
-        # We must handle the case where the second argument of SETHI is a label.
+        # Label as second argument of SETHI must be replaced with line number.
         if isinstance(v, Token) and v.type == 'SYMBOL':
             return Op('SETHI', [d, self.labels[v] >> 8])
         else:
