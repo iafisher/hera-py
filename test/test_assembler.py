@@ -182,3 +182,27 @@ def test_resolve_labels_with_dskip(asm):
     assert len(asm.labels) == 2
     assert asm.labels['data'] == HERA_DATA_START
     assert asm.labels['data2'] == HERA_DATA_START + 11
+
+
+def test_resolve_labels_with_lp_string(asm):
+    asm.resolve_labels([
+        Op('DLABEL', ['S']),
+        Op('LP_STRING', ['hello']),
+        Op('DLABEL', ['X']),
+        Op('INTEGER', [42]),
+    ])
+    assert len(asm.labels) == 2
+    assert asm.labels['S'] == HERA_DATA_START
+    assert asm.labels['X'] == HERA_DATA_START + 6
+
+
+def test_resolve_labels_with_empty_lp_string(asm):
+    asm.resolve_labels([
+        Op('DLABEL', ['S']),
+        Op('LP_STRING', ['']),
+        Op('DLABEL', ['X']),
+        Op('INTEGER', [42]),
+    ])
+    assert len(asm.labels) == 2
+    assert asm.labels['S'] == HERA_DATA_START
+    assert asm.labels['X'] == HERA_DATA_START + 1

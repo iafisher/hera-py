@@ -149,6 +149,20 @@ class VirtualMachine:
         self.flag_zero = (value == 0)
         self.flag_sign = (value & 0x8000)
 
+    def assign_memory(self, address, value):
+        """Assign a value to a location in memory."""
+        # Extend the size of the memory array if necessary.
+        if address >= len(self.memory):
+            self.memory.extend([0] * (address-len(self.memory)+1))
+        self.memory[address] = value
+
+    def access_memory(self, address):
+        """Access a value in memory."""
+        if address >= len(self.memory):
+            return 0
+        else:
+            return self.memory[address]
+
     def exec_setlo(self, target, value):
         """Execute the SETLO instruction. Note that unlike other op handlers,
         the `value` argument is allowed to be negative. However, it must be in
@@ -370,23 +384,16 @@ class VirtualMachine:
 
     def exec_load(self, target, offset, address):
         """Execute the LOAD instruction."""
-        address = self.get_register(address) + offset
-        if address < len(self.memory):
-            result = self.memory[address]
-        else:
-            result = 0
-
+        result = self.access_memory(self.get_register(address) + offset)
         self.set_zero_and_sign(result)
         self.store_register(target, result)
         self.pc += 1
 
     def exec_store(self, source, offset, address):
         """Execute the STORE instruction."""
-        address = self.get_register(address) + offset
-        # Extend the size of the memory array if necessary.
-        if address >= len(self.memory):
-            self.memory.extend([0] * (address-len(self.memory)+1))
-        self.memory[address] = self.get_register(source)
+        self.assign_memory(
+            self.get_register(address) + offset, self.get_register(source)
+        )
         self.pc += 1
 
     def exec_br(self, dest):
@@ -551,16 +558,22 @@ class VirtualMachine:
 
     def exec_integer(self, i):
         """Execute the INTEGER data instruction."""
-        # Extend the size of the memory array if necessary.
-        if self.dc >= len(self.memory):
-            self.memory.extend([0] * (self.dc-len(self.memory)+1))
-        self.memory[self.dc] = to_u16(i)
+        self.assign_memory(self.dc, to_u16(i))
         self.dc += 1
         self.pc += 1
 
     def exec_dskip(self, n):
         """Execute the DSKIP data instruction."""
         self.dc += n
+        self.pc += 1
+
+    def exec_lp_string(self, s):
+        """Execute the LP_STRING data instruction."""
+        self.assign_memory(self.dc, len(s))
+        self.dc += 1
+        for c in s:
+            self.assign_memory(self.dc, ord(c))
+            self.dc += 1
         self.pc += 1
 
     def exec_print_reg(self, target):

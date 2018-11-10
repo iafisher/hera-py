@@ -1,6 +1,18 @@
 import pytest
 
-from hera.parser import Op, parse
+from hera.parser import Op, parse, replace_escapes
+
+
+def test_replace_escapes_with_one_escape():
+    assert replace_escapes('abc\\ndef') == 'abc\ndef'
+
+
+def test_replace_escapes_with_many_escapes():
+    assert replace_escapes('\\\\\\n\\ta\\"') == '\\\n\ta"'
+
+
+def test_replace_escapes_with_invalid_escape():
+    assert replace_escapes('\\c') == '\\c'
 
 
 def test_parse_op():
@@ -12,6 +24,22 @@ def test_parse_op_with_label():
     assert parsed == [Op('SETLO', ['R1', 'top'])]
     assert parsed[0].args[0].type == 'REGISTER'
     assert parsed[0].args[1].type == 'SYMBOL'
+
+
+def test_parse_string():
+    parsed = parse('LP_STRING("hello")')
+    assert parsed == [Op('LP_STRING', ['hello'])]
+    assert parsed[0].args[0].type == 'STRING'
+
+
+def test_parse_empty_string():
+    assert parse('LP_STRING("")') == [Op('LP_STRING', [''])]
+
+
+def test_parse_string_with_escapes():
+    assert parse('LP_STRING("multiline\\nstring with quotes: \\"\\"")') == [
+        Op('LP_STRING', ['multiline\nstring with quotes: ""']),
+    ]
 
 
 def test_parse_signed_number():

@@ -3,9 +3,10 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: November 2018
 """
+import re
 from collections import namedtuple
 
-from lark import Lark, Transformer, Tree
+from lark import Lark, Token, Transformer, Tree
 
 
 Op = namedtuple('Op', ['name', 'args'])
@@ -26,6 +27,17 @@ class TreeToOplist(Transformer):
             return int(matches[0], base=8)
         elif matches[0].type == 'BINARY':
             return int(matches[0], base=2)
+        elif matches[0].type == 'STRING':
+            otkn = matches[0]
+            s = replace_escapes(otkn[1:-1])
+            ntkn = Token('STRING', s)
+            # Preserve data from the original token.
+            ntkn.pos_in_stream = otkn.pos_in_stream
+            ntkn.line = otkn.line
+            ntkn.column = otkn.column
+            ntkn.end_line = otkn.end_line
+            ntkn.end_column = otkn.end_column
+            return ntkn
         else:
             return matches[0]
 
@@ -38,7 +50,7 @@ _parser = Lark(
 
     _arglist: ( value "," )* value
 
-    value: DECIMAL | HEX | OCTAL | BINARY | REGISTER | SYMBOL
+    value: DECIMAL | HEX | OCTAL | BINARY | REGISTER | SYMBOL | STRING
 
     REGISTER.2: /[rR][0-9]+/
     SYMBOL: /[A-Za-z_][A-Za-z0-9_]*/
@@ -48,6 +60,7 @@ _parser = Lark(
     // simulator would treat as octal?
     OCTAL: /-?0o[0-7]+/
     BINARY: /-?0b[01]+/
+    STRING: /"(\\.|[^"])*"/
 
     COMMENT: ( "//" /[^\n]*/ | "/*" /([^*]|\*[^\/])*/ "*/" )
 
@@ -67,3 +80,22 @@ def parse(text):
         return tree.children
     else:
         return [tree]
+
+
+def replace_escapes(s):
+    return re.sub(r'\\.', repl, s)
+
+
+def repl(matchobj):
+    c = matchobj.group(0)[1]
+    if c == 'n':
+        return '\n'
+    elif c == 't':
+        return '\t'
+    elif c == '\\':
+        return '\\'
+    elif c == '"':
+        return '"'
+    else:
+        # TODO: Give a warning for this.
+        return '\\' + c

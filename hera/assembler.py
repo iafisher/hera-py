@@ -122,6 +122,8 @@ class AssemblyHelper:
                 dc += 1
             elif opname == 'dskip':
                 dc += op.args[0]
+            elif opname == 'lp_string':
+                dc += len(op.args[0]) + 1
             else:
                 pc += 1
 
