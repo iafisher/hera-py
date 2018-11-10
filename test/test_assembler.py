@@ -2,7 +2,7 @@ import pytest
 
 from lark import Token
 
-from hera.assembler import AssemblyHelper
+from hera.assembler import AssemblyHelper, HERA_DATA_START
 from hera.parser import Op
 
 
@@ -151,3 +151,21 @@ def test_assemble1_not(asm):
         Op('SETHI', ['R11', 0xff]),
         Op('XOR', ['R1', 'R11', 'R2']),
     ]
+
+
+def test_resolve_labels_with_example(asm):
+    asm.resolve_labels([
+        Op('DLABEL', ['data']),
+        Op('INTEGER', [42]),
+        Op('INTEGER', [43]),
+        Op('DLABEL', ['data2']),
+        Op('INTEGER', [100]),
+        Op('LABEL', ['top']),
+        Op('ADD', ['R0', 'R0', 'R0']),
+        Op('LABEL', ['bottom']),
+    ])
+    assert len(asm.labels) == 4
+    assert asm.labels['data'] == HERA_DATA_START
+    assert asm.labels['data2'] == HERA_DATA_START + 2
+    assert asm.labels['top'] == 0
+    assert asm.labels['bottom'] == 1

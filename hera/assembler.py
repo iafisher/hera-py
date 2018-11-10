@@ -92,18 +92,7 @@ class AssemblyHelper:
         second argument of SETLO and SETHI (the assemble_first_pass method
         guarantees this).
         """
-        pc = 0
-        dc = HERA_DATA_START
-        for op in program:
-            opname = op.name.lower()
-            if opname == 'label':
-                self.labels[op.args[0]] = pc
-            elif opname == 'dlabel':
-                self.labels[op.args[0]] = dc
-            elif opname == 'integer':
-                dc += 1
-            else:
-                pc += 1
+        self.resolve_labels(program)
 
         nprogram = []
         for op in program:
@@ -116,6 +105,23 @@ class AssemblyHelper:
                 if nop:
                     nprogram.append(nop)
         return nprogram
+
+    def resolve_labels(self, program):
+        """Populate the `labels` field with the instruction and data labels of
+        the program.
+        """
+        pc = 0
+        dc = HERA_DATA_START
+        for op in program:
+            opname = op.name.lower()
+            if opname == 'label':
+                self.labels[op.args[0]] = pc
+            elif opname == 'dlabel':
+                self.labels[op.args[0]] = dc
+            elif opname == 'integer':
+                dc += 1
+            else:
+                pc += 1
 
     def assemble1_set(self, d, v):
         if isinstance(v, int):
