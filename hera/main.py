@@ -49,9 +49,12 @@ def main(argv=None):
             sys.stderr.write('Error: could not open file "{}".\n'.format(path))
             sys.exit(2)
 
+    # Print a newline if the program came from standard input, so that the
+    # program and its output are visually separate.
+    if path == '-':
+        print()
+
     if arguments['assemble']:
-        if path == '-':
-            print()
         assemble_program(program)
     else:
         execute_program(

@@ -11,6 +11,18 @@ def vm():
     return VirtualMachine()
 
 
+def test_rindex_with_numbered_registers(vm):
+    assert vm.rindex('R0') == 0
+    assert vm.rindex('R7') == 7
+    assert vm.rindex('R13') == 13
+
+
+def test_rindex_with_special_registers(vm):
+    assert vm.rindex('SP') == 15
+    assert vm.rindex('FP') == 14
+    assert vm.rindex('Rt') == 11
+
+
 def test_exec_one_delegates_to_setlo(vm):
     with patch('hera.vm.VirtualMachine.exec_setlo') as mock_exec_setlo:
         vm.exec_one(Op('SETLO', ['R1', 47]))

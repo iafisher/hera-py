@@ -15,8 +15,8 @@ def ternary_op(f):
     """
     @functools.wraps(f)
     def inner(self, target, left, right):
-        left = self.registers[self.rindex(left)]
-        right = self.registers[self.rindex(right)]
+        left = self.get_register(left)
+        right = self.get_register(right)
         result = f(self, left, right)
         self.store_register(target, result)
         self.set_zero_and_sign(result)
@@ -31,7 +31,7 @@ def binary_op(f):
     """
     @functools.wraps(f)
     def inner(self, target, original):
-        original = self.registers[self.rindex(original)]
+        original = self.get_register(original)
         result = f(self, original)
         self.store_register(target, result)
         self.set_zero_and_sign(result)
@@ -47,7 +47,7 @@ def branch(f):
     @functools.wraps(f)
     def inner(self, dest):
         if f(self):
-            self.pc = self.getr(dest)
+            self.pc = self.get_register(dest)
         else:
             self.pc += 1
     return inner
@@ -115,7 +115,7 @@ class VirtualMachine:
             if opc == self.pc:
                 break
 
-    def getr(self, name):
+    def get_register(self, name):
         """Get the contents of the register with the given name."""
         return self.registers[self.rindex(name)]
 
@@ -126,10 +126,12 @@ class VirtualMachine:
         name = name.lower()
         if name == 'rt':
             return 11
-        if name.startswith('r'):
+        elif name.startswith('r'):
             return int(name[1:])
         elif name == 'fp':
             return 14
+        elif name == 'sp':
+            return 15
         else:
             raise KeyError(name)
 
@@ -157,7 +159,7 @@ class VirtualMachine:
         range [0, 255].
         """
         self.store_register(
-            target, (value << 8) + (self.getr(target) & 0x00ff)
+            target, (value << 8) + (self.get_register(target) & 0x00ff)
         )
         self.pc += 1
 
@@ -227,7 +229,7 @@ class VirtualMachine:
 
     def exec_inc(self, target, value):
         """Execute the INC instruction."""
-        original = self.getr(target)
+        original = self.get_register(target)
         result = (value + original) & 0xffff
         self.store_register(target, result)
 
@@ -238,7 +240,7 @@ class VirtualMachine:
 
     def exec_dec(self, target, value):
         """Execute the DEC instruction."""
-        original = self.getr(target)
+        original = self.get_register(target)
         result = to_u16((original - value) & 0xffff)
         self.store_register(target, result)
 
@@ -318,7 +320,7 @@ class VirtualMachine:
 
     def exec_rstrf(self, target):
         """Execute the RSTRF instruction."""
-        value = self.getr(target)
+        value = self.get_register(target)
         self.flag_sign = bool(value & 1)
         self.flag_zero = bool(value & 0b10)
         self.flag_overflow = bool(value & 0b100)
@@ -365,7 +367,7 @@ class VirtualMachine:
 
     def exec_load(self, target, offset, address):
         """Execute the LOAD instruction."""
-        address = self.getr(address) + offset
+        address = self.get_register(address) + offset
         if address < len(self.memory):
             result = self.memory[address]
         else:
@@ -377,16 +379,16 @@ class VirtualMachine:
 
     def exec_store(self, source, offset, address):
         """Execute the STORE instruction."""
-        address = self.getr(address) + offset
+        address = self.get_register(address) + offset
         # Extend the size of the memory array if necessary.
         if address >= len(self.memory):
             self.memory.extend([0] * (address-len(self.memory)+1))
-        self.memory[address] = self.getr(source)
+        self.memory[address] = self.get_register(source)
         self.pc += 1
 
     def exec_br(self, dest):
         """Execute the BR instruction."""
-        self.pc = self.getr(dest)
+        self.pc = self.get_register(dest)
 
     def exec_brr(self, offset):
         """Execute the BRR instruction."""
@@ -535,10 +537,10 @@ class VirtualMachine:
     def exec_call(self, ra, rb):
         """Execute the CALL instruction."""
         old_pc = self.pc
-        self.pc = self.getr(rb)
+        self.pc = self.get_register(rb)
         self.store_register(rb, old_pc + 1)
-        old_fp = self.getr('FP')
-        self.store_register('FP', self.getr(ra))
+        old_fp = self.get_register('FP')
+        self.store_register('FP', self.get_register(ra))
         self.store_register(ra, old_fp)
 
     # CALL and RETURN do the exact same thing.
@@ -546,5 +548,5 @@ class VirtualMachine:
 
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
-        print('{} = {}'.format(target, self.registers[self.rindex(target)]))
+        print('{} = {}'.format(target, self.get_register(target)))
         self.pc += 1
