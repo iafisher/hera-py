@@ -10,3 +10,16 @@ You can install hera-py with pip:
 ```
 $ pip3 install hera-py
 ```
+
+## Usage
+After installation, hera-py can be invoked with the `hera` command to run a HERA program:
+
+```
+$ hera my-hera-file.hera
+```
+
+You can also assemble a HERA program without running it:
+
+```
+$ hera assemble my-hera-file.hera
+```
