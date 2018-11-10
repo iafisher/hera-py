@@ -9,6 +9,10 @@ from .parser import Op
 from .utils import to_u16
 
 
+# Arbitrary value copied over from HERA-C.
+HERA_DATA_START = 16743
+
+
 def assemble(program):
     """Assemble the program (a list of Op objects) into valid input for the
     exec_many method on the VirtualMachine class.
@@ -89,9 +93,15 @@ class AssemblyHelper:
         guarantees this).
         """
         pc = 0
+        dc = HERA_DATA_START
         for op in program:
-            if op.name.lower() == 'label':
+            opname = op.name.lower()
+            if opname == 'label':
                 self.labels[op.args[0]] = pc
+            elif opname == 'dlabel':
+                self.labels[op.args[0]] = dc
+            elif opname == 'integer':
+                dc += 1
             else:
                 pc += 1
 
@@ -108,16 +118,19 @@ class AssemblyHelper:
         return nprogram
 
     def assemble1_set(self, d, v):
-        v = to_u16(v)
-        lo = v & 0xff
-        hi = v >> 8
-        if hi:
-            return [
-                Op('SETLO', [d, lo]),
-                Op('SETHI', [d, hi]),
-            ]
+        if isinstance(v, int):
+            v = to_u16(v)
+            lo = v & 0xff
+            hi = v >> 8
+            if hi:
+                return [
+                    Op('SETLO', [d, lo]),
+                    Op('SETHI', [d, hi]),
+                ]
+            else:
+                return [Op('SETLO', [d, lo])]
         else:
-            return [Op('SETLO', [d, lo])]
+            return [Op('SETLO', [d, v]), Op('SETHI', [d, v])]
 
     def assemble1_cmp(self, a, b):
         return [Op('FON', [8]), Op('SUB', ['R0', a, b])]
@@ -189,6 +202,9 @@ class AssemblyHelper:
 
     def assemble2_label(self, l):
         # Labels do not result in any machine code instructions.
+        return None
+
+    def assemble2_dlabel(self, l):
         return None
 
     def assemble2_setlo(self, d, v):

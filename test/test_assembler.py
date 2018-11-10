@@ -29,6 +29,13 @@ def test_assemble1_set_with_negative(asm):
     ]
 
 
+def test_assemble1_set_with_symbol(asm):
+    assert asm.assemble1_set('R5', 'whatever') == [
+        Op('SETLO', ['R5', 'whatever']),
+        Op('SETHI', ['R5', 'whatever']),
+    ]
+
+
 def test_assemble1_move(asm):
     assert asm.assemble1_move('R5', 'R3') == [Op('OR', ['R5', 'R3', 'R0'])]
 
@@ -51,6 +58,10 @@ def test_assemble1_ccboff(asm):
 
 def test_assemble2_label(asm):
     assert asm.assemble2_label('whatever') is None
+
+
+def test_assemble2_dlabel(asm):
+    assert asm.assemble2_dlabel('whatever') is None
 
 
 def test_assemble1_cmp(asm):

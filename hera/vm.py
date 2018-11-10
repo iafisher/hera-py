@@ -5,7 +5,8 @@ Version: November 2018
 """
 import functools
 
-from hera.utils import from_u16, to_u16, to_u32
+from .assembler import HERA_DATA_START
+from .utils import from_u16, to_u16, to_u32
 
 
 def ternary_op(f):
@@ -82,6 +83,8 @@ class VirtualMachine:
         self.registers = [0] * 16
         # 16-bit program counter
         self.pc = 0
+        # Current memory cell for data instructions
+        self.dc = HERA_DATA_START
         # Status/control flags
         self.flag_sign = False
         self.flag_zero = False
@@ -545,6 +548,15 @@ class VirtualMachine:
 
     # CALL and RETURN do the exact same thing.
     exec_return = exec_call
+
+    def exec_integer(self, i):
+        """Execute the INTEGER data instruction."""
+        # Extend the size of the memory array if necessary.
+        if self.dc >= len(self.memory):
+            self.memory.extend([0] * (self.dc-len(self.memory)+1))
+        self.memory[self.dc] = to_u16(i)
+        self.dc += 1
+        self.pc += 1
 
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
