@@ -78,3 +78,21 @@ def test_data_easy_dot_hera():
     assert vm.flag_carry == False
     assert vm.flag_carry_block == False
     assert vm.memory[HERA_DATA_START] == 42
+
+
+def test_dskip_dot_hera():
+    with open('test/hera/dskip.hera') as f:
+        vm = execute_program(f.read())
+
+    assert vm.registers[1] == HERA_DATA_START
+    assert vm.registers[2] == 42
+    assert vm.registers[3] == 84
+    for r in vm.registers[4:]:
+        assert r == 0
+    assert vm.flag_sign == False
+    assert vm.flag_zero == False
+    assert vm.flag_overflow == False
+    assert vm.flag_carry == False
+    assert vm.flag_carry_block == False
+    assert vm.memory[HERA_DATA_START] == 42
+    assert vm.memory[HERA_DATA_START+11] == 84

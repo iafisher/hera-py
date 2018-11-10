@@ -120,6 +120,8 @@ class AssemblyHelper:
                 self.labels[op.args[0]] = dc
             elif opname == 'integer':
                 dc += 1
+            elif opname == 'dskip':
+                dc += op.args[0]
             else:
                 pc += 1
 

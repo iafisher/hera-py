@@ -558,6 +558,11 @@ class VirtualMachine:
         self.dc += 1
         self.pc += 1
 
+    def exec_dskip(self, n):
+        """Execute the DSKIP data instruction."""
+        self.dc += n
+        self.pc += 1
+
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
         print('{} = {}'.format(target, self.get_register(target)))

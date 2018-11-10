@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch
 
+from hera.assembler import HERA_DATA_START
 from hera.parser import Op
 from hera.utils import to_u16
 from hera.vm import VirtualMachine
@@ -3519,3 +3520,28 @@ def test_return_updates_first_register(vm):
     vm.registers[13] = 40
     vm.exec_return('R12', 'R13')
     assert vm.registers[12] == 550
+
+
+def test_integer_fills_in_memory(vm):
+    vm.exec_integer(42)
+    assert vm.memory[HERA_DATA_START] == 42
+
+
+def test_integer_increments_data_counter(vm):
+    vm.exec_integer(42)
+    assert vm.dc == HERA_DATA_START + 1
+
+
+def test_integer_increments_pc(vm):
+    vm.exec_integer(42)
+    assert vm.pc == 1
+
+
+def test_dskip_increments_data_counter(vm):
+    vm.exec_dskip(10)
+    assert vm.dc == HERA_DATA_START + 10
+
+
+def test_dskip_increments_pc(vm):
+    vm.exec_dskip(10)
+    assert vm.pc == 1

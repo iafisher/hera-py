@@ -169,3 +169,16 @@ def test_resolve_labels_with_example(asm):
     assert asm.labels['data2'] == HERA_DATA_START + 2
     assert asm.labels['top'] == 0
     assert asm.labels['bottom'] == 1
+
+
+def test_resolve_labels_with_dskip(asm):
+    asm.resolve_labels([
+        Op('DLABEL', ['data']),
+        Op('INTEGER', [42]),
+        Op('DSKIP', [10]),
+        Op('DLABEL', ['data2']),
+        Op('INTEGER', [84]),
+    ])
+    assert len(asm.labels) == 2
+    assert asm.labels['data'] == HERA_DATA_START
+    assert asm.labels['data2'] == HERA_DATA_START + 11
