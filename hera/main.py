@@ -2,7 +2,7 @@
 
 Usage:
     hera [--verbose --dump-state] <path>
-    hera assemble <path>
+    hera preprocess <path>
     hera (-h | --help)
     hera (-v | --version)
 
@@ -15,8 +15,8 @@ import sys
 
 from docopt import docopt
 
-from .assembler import assemble
 from .parser import parse
+from .preprocessor import preprocess
 from .vm import VirtualMachine
 
 
@@ -54,8 +54,8 @@ def main(argv=None):
     if path == '-':
         print()
 
-    if arguments['assemble']:
-        assemble_program(program)
+    if arguments['preprocess']:
+        preprocess_program(program)
     else:
         execute_program(
             program,
@@ -72,7 +72,7 @@ def execute_program(program, *, opt_dump_state=False):
     state.
     """
     vm = VirtualMachine()
-    program = assemble(parse(program))
+    program = preprocess(parse(program))
 
     vm.exec_many(program)
 
@@ -82,17 +82,17 @@ def execute_program(program, *, opt_dump_state=False):
     return vm
 
 
-def assemble_program(program):
-    program = assemble(parse(program))
-    print(deassemble(program))
+def preprocess_program(program):
+    program = preprocess(parse(program))
+    print(program_to_string(program))
 
 
-def deassemble(ops):
+def program_to_string(ops):
     """Convert the list of operations to a string."""
-    return '\n'.join(deassemble_one(op) for op in ops)
+    return '\n'.join(op_to_string(op) for op in ops)
 
 
-def deassemble_one(op):
+def op_to_string(op):
     """Convert a single operation to a string."""
     return "{}({})".format(
         op.name,

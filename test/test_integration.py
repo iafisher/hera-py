@@ -1,7 +1,7 @@
 import pytest
 
-from hera.assembler import HERA_DATA_START
 from hera.main import execute_program
+from hera.preprocessor import HERA_DATA_START
 from hera.vm import VirtualMachine
 
 

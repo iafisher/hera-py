@@ -18,8 +18,8 @@ After installation, hera-py can be invoked with the `hera` command to run a HERA
 $ hera my-hera-file.hera
 ```
 
-You can also assemble a HERA program without running it:
+You can also preprocess a HERA program without running it, to see how pseudo-instructions and labels are resolved to HERA code:
 
 ```
-$ hera assemble my-hera-file.hera
+$ hera preprocess my-hera-file.hera
 ```

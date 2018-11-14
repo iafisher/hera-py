@@ -5,7 +5,7 @@ Version: November 2018
 """
 import functools
 
-from .assembler import HERA_DATA_START
+from .preprocessor import HERA_DATA_START
 from .utils import from_u16, to_u16, to_u32
 
 
