@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - A change log.
 - `SP` is now a valid alias for `R15`.
 
+### Changed
+- The `assembly` subcommand has been renamed to `preprocess`.
+
 ## [0.1.1] - 2018-11-09
 ### Added
 - Support for Python 3.4 and 3.5.
