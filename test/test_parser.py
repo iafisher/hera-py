@@ -1,6 +1,7 @@
 import pytest
 
 from hera.parser import Op, parse, replace_escapes
+from hera.utils import HERAError
 
 
 def test_replace_escapes_with_one_escape():
@@ -89,3 +90,18 @@ def test_parse_multiline_comment():
 SETLO(R1, 1)
     '''
     assert parse(program) == [Op('SETLO', ['R1', 1])]
+
+
+def test_parse_missing_comma():
+    with pytest.raises(HERAError):
+        parse('ADD(R1, R2 R3)')
+
+
+def test_parse_missing_parenthesis():
+    with pytest.raises(HERAError):
+        parse('LSL8(R1, R1')
+
+
+def test_parse_missing_end_quote():
+    with pytest.raises(HERAError):
+        parse('LP_STRING("forgot to close my string)')

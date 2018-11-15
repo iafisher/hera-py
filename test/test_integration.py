@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 
 from hera.main import execute_program
 from hera.preprocessor import HERA_DATA_START
@@ -112,3 +113,13 @@ def test_loop_and_constant_dot_hera():
     assert vm.flag_overflow == False
     assert vm.flag_carry == True
     assert vm.flag_carry_block == False
+
+
+def test_error_message_for_missing_comma():
+    line = 'SETLO(R1 40)'
+    with patch('hera.main.error_and_exit') as mock_exit:
+        execute_program(line)
+        msg = mock_exit.call_args[0][0]
+        assert line in msg
+        assert 'line 1' in msg
+        assert 'col 10' in msg

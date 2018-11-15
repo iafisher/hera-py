@@ -5,6 +5,10 @@ Version: November 2018
 """
 
 
+class HERAError(Exception):
+    pass
+
+
 def to_u16(n):
     """Reinterpret the signed integer `n` as a 16-bit unsigned integer.
 

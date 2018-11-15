@@ -1,13 +1,14 @@
 """hera: an interpreter for the Haverford Educational RISC Architecture.
 
 Usage:
-    hera [--verbose --dump-state] <path>
-    hera preprocess <path>
+    hera [options] <path>
+    hera [options] preprocess <path>
     hera (-h | --help)
     hera (-v | --version)
 
 Options:
     --dump-state     Print the state of the virtual machine after execution.
+    --no-color       Do not print colored output.
     -h, --help       Show this message.
     -v, --version    Show the version.
 """
@@ -17,6 +18,7 @@ from docopt import docopt
 
 from .parser import parse
 from .preprocessor import preprocess
+from .utils import HERAError
 from .vm import VirtualMachine
 
 
@@ -26,10 +28,15 @@ def main(argv=None):
     This function consists mostly of argument parsing. The heavy-lifting begins
     with execute_program later in this module.
     """
+    global ANSI_RED_BOLD, ANSI_RESET
+
     arguments = docopt(
         __doc__, argv=argv, version='hera-py 0.2.0 for HERA version 2.4'
     )
     path = arguments['<path>']
+
+    if arguments['--no-color']:
+        ANSI_RED_BOLD = ANSI_RESET = ''
 
     if path == '-':
         program = sys.stdin.read()
@@ -38,16 +45,13 @@ def main(argv=None):
             with open(path, 'r', encoding='utf-8') as f:
                 program = f.read()
         except FileNotFoundError:
-            sys.stderr.write('Error: file "{}" does not exist.\n'.format(path))
-            sys.exit(2)
+            error_and_exit('file "{}" does not exist.\n'.format(path), 2)
         except PermissionError:
-            sys.stderr.write(
-                'Error: permission denied to open file "{}".\n'.format(path)
+            error_and_exit(
+                'permission denied to open file "{}".\n'.format(path), 2
             )
-            sys.exit(2)
         except OSError:
-            sys.stderr.write('Error: could not open file "{}".\n'.format(path))
-            sys.exit(2)
+            error_and_exit('could not open file "{}".\n'.format(path), 2)
 
     # Print a newline if the program came from standard input, so that the
     # program and its output are visually separate.
@@ -72,14 +76,21 @@ def execute_program(program, *, opt_dump_state=False):
     state.
     """
     vm = VirtualMachine()
-    program = preprocess(parse(program))
 
-    vm.exec_many(program)
+    try:
+        program = preprocess(parse(program))
+    except HERAError as e:
+        # Indent all lines of the error message except the first.
+        eline, *others = str(e).splitlines(True)
+        others = ''.join('  ' + line for line in others)
+        error_and_exit(eline + others, type_='Syntax error')
+    else:
+        vm.exec_many(program)
 
-    if opt_dump_state:
-        dump_state(vm)
+        if opt_dump_state:
+            dump_state(vm)
 
-    return vm
+        return vm
 
 
 def preprocess_program(program):
@@ -111,3 +122,21 @@ def dump_state(vm):
     print('\tOverflow flag is ' + ('ON' if vm.flag_overflow else 'OFF'))
     print('\tCarry flag is ' + ('ON' if vm.flag_carry else 'OFF'))
     print('\tCarry block flag is ' + ('ON' if vm.flag_carry_block else 'OFF'))
+
+
+def error_and_exit(msg, exitcode=3, type_='Error'):
+    sys.stderr.write(ANSI_RED_BOLD + type_ + ANSI_RESET + ': ')
+    sys.stderr.write(msg)
+    sys.exit(exitcode)
+
+
+# ANSI color codes (https://stackoverflow.com/questions/4842424/)
+# When the --no-color flag is specified, these constants are set to the empty
+# string, so they can be used unconditionally in your code but will still obey
+# the flag value.
+
+def make_ansi(*params):
+    return '\033[' + ';'.join(map(str, params)) + 'm'
+
+ANSI_RED_BOLD = make_ansi(31, 1)
+ANSI_RESET = make_ansi(0)

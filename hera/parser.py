@@ -7,6 +7,9 @@ import re
 from collections import namedtuple
 
 from lark import Lark, Token, Transformer, Tree
+from lark.exceptions import LarkError
+
+from .utils import HERAError
 
 
 Op = namedtuple('Op', ['name', 'args'])
@@ -75,7 +78,11 @@ _parser = Lark(
 
 def parse(text):
     """Parse a HERA program into a list of Op objects."""
-    tree = _parser.parse(text)
+    try:
+        tree = _parser.parse(text)
+    except LarkError as e:
+        raise HERAError(str(e)) from None
+
     if isinstance(tree, Tree):
         return tree.children
     else:
