@@ -12,7 +12,7 @@ from lark.exceptions import LarkError
 from .utils import HERAError
 
 
-Op = namedtuple('Op', ['name', 'args'])
+Op = namedtuple("Op", ["name", "args"])
 
 
 class TreeToOplist(Transformer):
@@ -22,18 +22,18 @@ class TreeToOplist(Transformer):
         return Op(matches[0], matches[1:])
 
     def value(self, matches):
-        if matches[0].type == 'DECIMAL':
+        if matches[0].type == "DECIMAL":
             return int(matches[0])
-        elif matches[0].type == 'HEX':
+        elif matches[0].type == "HEX":
             return int(matches[0], base=16)
-        elif matches[0].type == 'OCTAL':
+        elif matches[0].type == "OCTAL":
             return int(matches[0], base=8)
-        elif matches[0].type == 'BINARY':
+        elif matches[0].type == "BINARY":
             return int(matches[0], base=2)
-        elif matches[0].type == 'STRING':
+        elif matches[0].type == "STRING":
             otkn = matches[0]
             s = replace_escapes(otkn[1:-1])
-            ntkn = Token('STRING', s)
+            ntkn = Token("STRING", s)
             # Preserve data from the original token.
             ntkn.pos_in_stream = otkn.pos_in_stream
             ntkn.line = otkn.line
@@ -46,7 +46,7 @@ class TreeToOplist(Transformer):
 
 
 _parser = Lark(
-    r'''
+    r"""
     ?start: op*
 
     op: SYMBOL "(" _arglist? ")"
@@ -70,9 +70,9 @@ _parser = Lark(
     %import common.WS
     %ignore WS
     %ignore COMMENT
-    ''',
-    parser='lalr',
-    transformer=TreeToOplist()
+    """,
+    parser="lalr",
+    transformer=TreeToOplist(),
 )
 
 
@@ -90,19 +90,19 @@ def parse(text):
 
 
 def replace_escapes(s):
-    return re.sub(r'\\.', repl, s)
+    return re.sub(r"\\.", repl, s)
 
 
 def repl(matchobj):
     c = matchobj.group(0)[1]
-    if c == 'n':
-        return '\n'
-    elif c == 't':
-        return '\t'
-    elif c == '\\':
-        return '\\'
+    if c == "n":
+        return "\n"
+    elif c == "t":
+        return "\t"
+    elif c == "\\":
+        return "\\"
     elif c == '"':
         return '"'
     else:
         # TODO: Give a warning for this.
-        return '\\' + c
+        return "\\" + c

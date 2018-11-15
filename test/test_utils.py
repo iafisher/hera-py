@@ -84,7 +84,7 @@ def test_to_u32_with_large_positive():
 
 
 def test_to_u32_with_max_positive():
-    assert to_u32(4294967295) == 4294967295 
+    assert to_u32(4294967295) == 4294967295
 
 
 def test_to_u32_with_small_negative():

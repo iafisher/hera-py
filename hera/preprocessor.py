@@ -33,15 +33,11 @@ def branch_preprocessor(name):
     """
 
     def preprocess1_XXX(self, l):
-        if isinstance(l, Token) and l.type == 'SYMBOL':
+        if isinstance(l, Token) and l.type == "SYMBOL":
             # Note that we MUST use SETLO+SETHI and not SET, because the next
             # pass only handles label resolution and does not further expand
             # pseudo-instructions.
-            return [
-                Op('SETLO', ['R11', l]),
-                Op('SETHI', ['R11', l]),
-                Op(name, ['R11'])
-            ]
+            return [Op("SETLO", ["R11", l]), Op("SETHI", ["R11", l]), Op(name, ["R11"])]
         else:
             return [Op(name, [l])]
 
@@ -60,7 +56,7 @@ class Preprocessor:
         """See docstring for module-level preprocess for details."""
         for op in program:
             try:
-                verifier = getattr(self, 'verify_' + op.name.lower())
+                verifier = getattr(self, "verify_" + op.name.lower())
             except AttributeError:
                 pass
             else:
@@ -79,7 +75,7 @@ class Preprocessor:
         nprogram = []
         for op in program:
             try:
-                handler = getattr(self, 'preprocess1_' + op.name.lower())
+                handler = getattr(self, "preprocess1_" + op.name.lower())
             except AttributeError:
                 nprogram.append(op)
             else:
@@ -97,7 +93,7 @@ class Preprocessor:
         nprogram = []
         for op in program:
             try:
-                handler = getattr(self, 'preprocess2_' + op.name.lower())
+                handler = getattr(self, "preprocess2_" + op.name.lower())
             except AttributeError:
                 nprogram.append(op)
             else:
@@ -114,26 +110,26 @@ class Preprocessor:
         dc = HERA_DATA_START
         for op in program:
             opname = op.name.lower()
-            if opname == 'label':
+            if opname == "label":
                 self.labels[op.args[0]] = pc
-            elif opname == 'dlabel':
+            elif opname == "dlabel":
                 self.labels[op.args[0]] = dc
-            elif opname == 'constant':
+            elif opname == "constant":
                 self.labels[op.args[0]] = op.args[1]
-            elif opname == 'integer':
+            elif opname == "integer":
                 dc += 1
-            elif opname == 'dskip':
+            elif opname == "dskip":
                 dc += op.args[0]
-            elif opname == 'lp_string':
+            elif opname == "lp_string":
                 dc += len(op.args[0]) + 1
             else:
                 pc += 1
 
     # Constants to pass to verify_base
-    REGISTER = 'r'
-    STRING = 's'
-    U16 = 'u16'
-    I8 = 'i8'
+    REGISTER = "r"
+    STRING = "s"
+    U16 = "u16"
+    I8 = "i8"
 
     def assert_args(self, name, expected, got):
         """Assert that the given args match the expected ones and raise a
@@ -143,34 +139,34 @@ class Preprocessor:
         a tuple or list of the actual arguments given.
         """
         if len(got) < len(expected):
-            raise HERAError('too few args to ' + name)
+            raise HERAError("too few args to " + name)
 
         if len(expected) < len(got):
-            raise HERAError('too many args to ' + name)
+            raise HERAError("too many args to " + name)
 
-        ordinals = ['first', 'second', 'third']
+        ordinals = ["first", "second", "third"]
         for ordinal, pattern, arg in zip(ordinals, expected, got):
-            prefix = '{} arg to {} '.format(ordinal, name)
+            prefix = "{} arg to {} ".format(ordinal, name)
             if pattern == self.REGISTER:
-                if not isinstance(arg, Token) or arg.type != 'REGISTER':
-                    raise HERAError(prefix + 'not a register')
+                if not isinstance(arg, Token) or arg.type != "REGISTER":
+                    raise HERAError(prefix + "not a register")
             elif pattern == self.U16:
                 if not isinstance(arg, int):
-                    raise HERAError(prefix + 'not an integer')
+                    raise HERAError(prefix + "not an integer")
                 if arg < 0:
-                    raise HERAError(prefix + 'must not be negative')
+                    raise HERAError(prefix + "must not be negative")
                 if arg > 65535:
-                    raise HERAError(prefix + 'out of range')
+                    raise HERAError(prefix + "out of range")
             elif pattern == self.I8:
                 if not isinstance(arg, int):
-                    raise HERAError(prefix + 'not an integer')
+                    raise HERAError(prefix + "not an integer")
                 if not (-128 <= arg <= 127):
-                    raise HERAError(prefix + 'out of range')
+                    raise HERAError(prefix + "out of range")
             else:
-                raise RuntimeError('unknown pattern ' + pattern)
+                raise RuntimeError("unknown pattern " + pattern)
 
     def verify_setlo(self, *args):
-        self.assert_args('SETLO', (self.REGISTER, self.I8), args)
+        self.assert_args("SETLO", (self.REGISTER, self.I8), args)
 
     def preprocess1_set(self, d, v):
         if isinstance(v, int):
@@ -178,82 +174,77 @@ class Preprocessor:
             lo = v & 0xff
             hi = v >> 8
             if hi:
-                return [
-                    Op('SETLO', [d, lo]),
-                    Op('SETHI', [d, hi]),
-                ]
+                return [Op("SETLO", [d, lo]), Op("SETHI", [d, hi])]
             else:
-                return [Op('SETLO', [d, lo])]
+                return [Op("SETLO", [d, lo])]
         else:
-            return [Op('SETLO', [d, v]), Op('SETHI', [d, v])]
+            return [Op("SETLO", [d, v]), Op("SETHI", [d, v])]
 
     def preprocess1_cmp(self, a, b):
-        return [Op('FON', [8]), Op('SUB', ['R0', a, b])]
+        return [Op("FON", [8]), Op("SUB", ["R0", a, b])]
 
     def preprocess1_con(self):
-        return [Op('FON', [8])]
+        return [Op("FON", [8])]
 
     def preprocess1_coff(self):
-        return [Op('FOFF', [8])]
+        return [Op("FOFF", [8])]
 
     def preprocess1_cbon(self):
-        return [Op('FON', [16])]
+        return [Op("FON", [16])]
 
     def preprocess1_ccboff(self):
-        return [Op('FOFF', [24])]
+        return [Op("FOFF", [24])]
 
     def preprocess1_move(self, a, b):
-        return [Op('OR', [a, b, 'R0'])]
+        return [Op("OR", [a, b, "R0"])]
 
     def preprocess1_setrf(self, d, v):
         return self.preprocess1_set(d, v) + self.preprocess1_flags(d)
 
     def preprocess1_flags(self, a):
-        return [Op('FOFF', [8]), Op('ADD', ['R0', a, 'R0'])]
+        return [Op("FOFF", [8]), Op("ADD", ["R0", a, "R0"])]
 
     def preprocess1_halt(self):
-        return [Op('BRR', [0])]
+        return [Op("BRR", [0])]
 
     def preprocess1_nop(self):
-        return [Op('BRR', [1])]
+        return [Op("BRR", [1])]
 
     def preprocess1_call(self, a, l):
-        if isinstance(l, Token) and l.type == 'SYMBOL':
+        if isinstance(l, Token) and l.type == "SYMBOL":
             return [
-                Op('SETLO', ['R13', l]),
-                Op('SETHI', ['R13', l]),
-                Op('CALL', [a, 'R13']),
+                Op("SETLO", ["R13", l]), Op("SETHI", ["R13", l]), Op("CALL", [a, "R13"])
             ]
         else:
-            return [Op('CALL', [a, l])]
+            return [Op("CALL", [a, l])]
 
     def preprocess1_neg(self, d, b):
-        return [Op('FON', [8]), Op('SUB', [d, 'R0', b])]
+        return [Op("FON", [8]), Op("SUB", [d, "R0", b])]
 
     def preprocess1_not(self, d, b):
         return [
-            Op('SETLO', ['R11', 0xff]),
-            Op('SETHI', ['R11', 0xff]),
-            Op('XOR', [d, 'R11', b])
+            Op("SETLO", ["R11", 0xff]),
+            Op("SETHI", ["R11", 0xff]),
+            Op("XOR", [d, "R11", b]),
         ]
 
     # Assembling branch instructions. Read the docstring of branch_preprocessor
     # for details.
-    preprocess1_br = branch_preprocessor('BR')
-    preprocess1_bl = branch_preprocessor('BL')
-    preprocess1_bge = branch_preprocessor('BGE')
-    preprocess1_ble = branch_preprocessor('BLE')
-    preprocess1_bg = branch_preprocessor('BG')
-    preprocess1_bule = branch_preprocessor('BULE')
-    preprocess1_bug = branch_preprocessor('BUG')
-    preprocess1_bz = branch_preprocessor('BZ')
-    preprocess1_bnz = branch_preprocessor('BNZ')
-    preprocess1_bc = branch_preprocessor('BC')
-    preprocess1_bnc = branch_preprocessor('BNC')
-    preprocess1_bs = branch_preprocessor('BS')
-    preprocess1_bns = branch_preprocessor('BNS')
-    preprocess1_bv = branch_preprocessor('BV')
-    preprocess1_bnv = branch_preprocessor('BNV')
+    preprocess1_br = branch_preprocessor("BR")
+    preprocess1_bl = branch_preprocessor("BL")
+    preprocess1_bge = branch_preprocessor("BGE")
+    preprocess1_ble = branch_preprocessor("BLE")
+    preprocess1_bg = branch_preprocessor("BG")
+    preprocess1_bule = branch_preprocessor("BULE")
+    preprocess1_bug = branch_preprocessor("BUG")
+    preprocess1_bz = branch_preprocessor("BZ")
+    preprocess1_bnz = branch_preprocessor("BNZ")
+    preprocess1_bc = branch_preprocessor("BC")
+    preprocess1_bnc = branch_preprocessor("BNC")
+    preprocess1_bs = branch_preprocessor("BS")
+    preprocess1_bns = branch_preprocessor("BNS")
+    preprocess1_bv = branch_preprocessor("BV")
+    preprocess1_bnv = branch_preprocessor("BNV")
 
     def preprocess2_label(self, l):
         # Labels do not result in any machine code instructions.
@@ -267,14 +258,14 @@ class Preprocessor:
 
     def preprocess2_setlo(self, d, v):
         # Label as second argument of SETLO must be replaced with line number.
-        if isinstance(v, Token) and v.type == 'SYMBOL':
-            return Op('SETLO', [d, self.labels[v] & 0xff])
+        if isinstance(v, Token) and v.type == "SYMBOL":
+            return Op("SETLO", [d, self.labels[v] & 0xff])
         else:
-            return Op('SETLO', [d, v])
+            return Op("SETLO", [d, v])
 
     def preprocess2_sethi(self, d, v):
         # Label as second argument of SETHI must be replaced with line number.
-        if isinstance(v, Token) and v.type == 'SYMBOL':
-            return Op('SETHI', [d, self.labels[v] >> 8])
+        if isinstance(v, Token) and v.type == "SYMBOL":
+            return Op("SETHI", [d, self.labels[v] >> 8])
         else:
-            return Op('SETHI', [d, v])
+            return Op("SETHI", [d, v])

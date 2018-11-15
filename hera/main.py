@@ -30,46 +30,36 @@ def main(argv=None):
     """
     global ANSI_RED_BOLD, ANSI_RESET
 
-    arguments = docopt(
-        __doc__, argv=argv, version='hera-py 0.2.0 for HERA version 2.4'
-    )
-    path = arguments['<path>']
+    arguments = docopt(__doc__, argv=argv, version="hera-py 0.2.0 for HERA version 2.4")
+    path = arguments["<path>"]
 
-    if arguments['--no-color']:
-        ANSI_RED_BOLD = ANSI_RESET = ''
+    if arguments["--no-color"]:
+        ANSI_RED_BOLD = ANSI_RESET = ""
 
-    if path == '-':
+    if path == "-":
         program = sys.stdin.read()
     else:
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, "r", encoding="utf-8") as f:
                 program = f.read()
         except FileNotFoundError:
-            error_and_exit(
-                'file "{}" does not exist.\n'.format(path), exitcode=2
-            )
+            error_and_exit('file "{}" does not exist.\n'.format(path), exitcode=2)
         except PermissionError:
             error_and_exit(
-                'permission denied to open file "{}".\n'.format(path),
-                exitcode=2
+                'permission denied to open file "{}".\n'.format(path), exitcode=2
             )
         except OSError:
-            error_and_exit(
-                'could not open file "{}".\n'.format(path), exitcode=2
-            )
+            error_and_exit('could not open file "{}".\n'.format(path), exitcode=2)
 
     # Print a newline if the program came from standard input, so that the
     # program and its output are visually separate.
-    if path == '-':
+    if path == "-":
         print()
 
-    if arguments['preprocess']:
+    if arguments["preprocess"]:
         preprocess_program(program)
     else:
-        execute_program(
-            program,
-            opt_dump_state=arguments['--dump-state']
-        )
+        execute_program(program, opt_dump_state=arguments["--dump-state"])
 
 
 def execute_program(program, *, opt_dump_state=False):
@@ -87,7 +77,7 @@ def execute_program(program, *, opt_dump_state=False):
     except HERAError as e:
         # Indent all lines of the error message except the first.
         eline, *others = str(e).splitlines(True)
-        others = ''.join('  ' + line for line in others)
+        others = "".join("  " + line for line in others)
         error_and_exit(eline + others)
     else:
         vm.exec_many(program)
@@ -105,33 +95,30 @@ def preprocess_program(program):
 
 def program_to_string(ops):
     """Convert the list of operations to a string."""
-    return '\n'.join(op_to_string(op) for op in ops)
+    return "\n".join(op_to_string(op) for op in ops)
 
 
 def op_to_string(op):
     """Convert a single operation to a string."""
-    return "{}({})".format(
-        op.name,
-        ', '.join(str(a) for a in op.args),
-    )
+    return "{}({})".format(op.name, ", ".join(str(a) for a in op.args))
 
 
 def dump_state(vm):
     """Print the state of the virtual machine to standard output."""
-    print('Virtual machine state:')
+    print("Virtual machine state:")
     for i, value in enumerate(vm.registers):
-        print('\tR{} = {}'.format(i, value))
+        print("\tR{} = {}".format(i, value))
     print()
-    print('\tZero flag is ' + ('ON' if vm.flag_zero else 'OFF'))
-    print('\tSign flag is ' + ('ON' if vm.flag_sign else 'OFF'))
-    print('\tOverflow flag is ' + ('ON' if vm.flag_overflow else 'OFF'))
-    print('\tCarry flag is ' + ('ON' if vm.flag_carry else 'OFF'))
-    print('\tCarry block flag is ' + ('ON' if vm.flag_carry_block else 'OFF'))
+    print("\tZero flag is " + ("ON" if vm.flag_zero else "OFF"))
+    print("\tSign flag is " + ("ON" if vm.flag_sign else "OFF"))
+    print("\tOverflow flag is " + ("ON" if vm.flag_overflow else "OFF"))
+    print("\tCarry flag is " + ("ON" if vm.flag_carry else "OFF"))
+    print("\tCarry block flag is " + ("ON" if vm.flag_carry_block else "OFF"))
 
 
 def error_and_exit(msg, *, exitcode=3):
-    sys.stderr.write(ANSI_RED_BOLD + 'Error' + ANSI_RESET + ': ')
-    sys.stderr.write(msg + '\n')
+    sys.stderr.write(ANSI_RED_BOLD + "Error" + ANSI_RESET + ": ")
+    sys.stderr.write(msg + "\n")
     sys.exit(exitcode)
 
 
@@ -140,8 +127,10 @@ def error_and_exit(msg, *, exitcode=3):
 # string, so they can be used unconditionally in your code but will still obey
 # the flag value.
 
+
 def make_ansi(*params):
-    return '\033[' + ';'.join(map(str, params)) + 'm'
+    return "\033[" + ";".join(map(str, params)) + "m"
+
 
 ANSI_RED_BOLD = make_ansi(31, 1)
 ANSI_RESET = make_ansi(0)

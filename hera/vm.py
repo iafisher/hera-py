@@ -14,6 +14,7 @@ def ternary_op(f):
     left and right registers, storing the result in the target register,
     setting the zero and sign flags, and incrementing the program counter.
     """
+
     @functools.wraps(f)
     def inner(self, target, left, right):
         left = self.get_register(left)
@@ -22,6 +23,7 @@ def ternary_op(f):
         self.store_register(target, result)
         self.set_zero_and_sign(result)
         self.pc += 1
+
     return inner
 
 
@@ -30,6 +32,7 @@ def binary_op(f):
     operand register, storing the result in the target register, setting the
     zero and sign flags, and incrementing the program counter.
     """
+
     @functools.wraps(f)
     def inner(self, target, original):
         original = self.get_register(original)
@@ -37,6 +40,7 @@ def binary_op(f):
         self.store_register(target, result)
         self.set_zero_and_sign(result)
         self.pc += 1
+
     return inner
 
 
@@ -45,12 +49,14 @@ def branch(f):
     functions only need to return a boolean indicating whether to branch (True)
     or not (False).
     """
+
     @functools.wraps(f)
     def inner(self, dest):
         if f(self):
             self.pc = self.get_register(dest)
         else:
             self.pc += 1
+
     return inner
 
 
@@ -59,12 +65,14 @@ def relative_branch(f):
     functions only need to return a boolean indicating whether to branch (True)
     or not (False).
     """
+
     @functools.wraps(f)
     def inner(self, offset):
         if f(self):
             self.pc += offset
         else:
             self.pc += 1
+
     return inner
 
 
@@ -94,16 +102,14 @@ class VirtualMachine:
         # A memory array of 16-bit words. The HERA specification requires 2**16
         # words to be addressable, but we start off with a considerably smaller
         # array and expand it as necessary, to keep the start-up time fast.
-        self.memory = [0] * (2**4)
+        self.memory = [0] * (2 ** 4)
 
     def exec_one(self, inst):
         """Execute a single instruction."""
         try:
-            handler = getattr(self, 'exec_' + inst.name.lower())
+            handler = getattr(self, "exec_" + inst.name.lower())
         except AttributeError:
-            raise ValueError(
-                'unknown instruction "{}"'.format(inst.name)
-            ) from None
+            raise ValueError('unknown instruction "{}"'.format(inst.name)) from None
         else:
             handler(*inst.args)
 
@@ -127,13 +133,13 @@ class VirtualMachine:
         array.
         """
         name = name.lower()
-        if name == 'rt':
+        if name == "rt":
             return 11
-        elif name.startswith('r'):
+        elif name.startswith("r"):
             return int(name[1:])
-        elif name == 'fp':
+        elif name == "fp":
             return 14
-        elif name == 'sp':
+        elif name == "sp":
             return 15
         else:
             raise KeyError(name)
@@ -153,7 +159,7 @@ class VirtualMachine:
         """Assign a value to a location in memory."""
         # Extend the size of the memory array if necessary.
         if address >= len(self.memory):
-            self.memory.extend([0] * (address-len(self.memory)+1))
+            self.memory.extend([0] * (address - len(self.memory) + 1))
         self.memory[address] = value
 
     def access_memory(self, address):
@@ -175,9 +181,7 @@ class VirtualMachine:
         """Execute the SETHI instruction. `value` must be an integer in the
         range [0, 255].
         """
-        self.store_register(
-            target, (value << 8) + (self.get_register(target) & 0x00ff)
-        )
+        self.store_register(target, (value << 8) + (self.get_register(target) & 0x00ff))
         self.pc += 1
 
     @ternary_op
@@ -188,9 +192,7 @@ class VirtualMachine:
         result = (left + right + carry) & 0xffff
 
         self.flag_carry = result < (left + right + carry)
-        self.flag_overflow = (
-            from_u16(result) != from_u16(left) + from_u16(right)
-        )
+        self.flag_overflow = (from_u16(result) != from_u16(left) + from_u16(right))
 
         return result
 
@@ -204,9 +206,7 @@ class VirtualMachine:
         result = to_u16((left - right - borrow) & 0xffff)
 
         self.flag_carry = (left >= right)
-        self.flag_overflow = (
-            from_u16(result) != from_u16(left) - from_u16(right)
-        )
+        self.flag_overflow = (from_u16(result) != from_u16(left) - from_u16(right))
 
         return result
 
@@ -223,9 +223,7 @@ class VirtualMachine:
             result = (left * right) & 0xffff
 
         self.flag_carry = result < left * right
-        self.flag_overflow = (
-            from_u16(result) != from_u16(left) * from_u16(right)
-        )
+        self.flag_overflow = (from_u16(result) != from_u16(left) * from_u16(right))
 
         return result
 
@@ -252,7 +250,7 @@ class VirtualMachine:
 
         self.set_zero_and_sign(result)
         self.flag_overflow = (from_u16(result) != from_u16(original) + value)
-        self.flag_carry = (value + original >= 2**16)
+        self.flag_carry = (value + original >= 2 ** 16)
         self.pc += 1
 
     def exec_dec(self, target, value):
@@ -279,7 +277,7 @@ class VirtualMachine:
     @binary_op
     def exec_lsr(self, original):
         """Execute the LSR instruction."""
-        carry = 2**15 if self.flag_carry and not self.flag_carry_block else 0
+        carry = 2 ** 15 if self.flag_carry and not self.flag_carry_block else 0
         result = (original >> 1) + carry
 
         self.flag_carry = original % 2 == 1
@@ -328,9 +326,15 @@ class VirtualMachine:
     def exec_savef(self, target):
         """Execute the SAVE instruction."""
         value = (
-            int(self.flag_sign) + 2*int(self.flag_zero) +
-            4*int(self.flag_overflow) + 8*int(self.flag_carry) +
-            16*int(self.flag_carry_block)
+            int(self.flag_sign)
+            + 2
+            * int(self.flag_zero)
+            + 4
+            * int(self.flag_overflow)
+            + 8
+            * int(self.flag_carry)
+            + 16
+            * int(self.flag_carry_block)
         )
         self.store_register(target, value)
         self.pc += 1
@@ -360,9 +364,7 @@ class VirtualMachine:
         self.flag_zero = self.flag_zero and not bool(value & 0b10)
         self.flag_overflow = self.flag_overflow and not bool(value & 0b100)
         self.flag_carry = self.flag_carry and not bool(value & 0b1000)
-        self.flag_carry_block = (
-            self.flag_carry_block and not bool(value & 0b10000)
-        )
+        self.flag_carry_block = (self.flag_carry_block and not bool(value & 0b10000))
         self.pc += 1
 
     def exec_fset5(self, value):
@@ -549,8 +551,8 @@ class VirtualMachine:
         old_pc = self.pc
         self.pc = self.get_register(rb)
         self.store_register(rb, old_pc + 1)
-        old_fp = self.get_register('FP')
-        self.store_register('FP', self.get_register(ra))
+        old_fp = self.get_register("FP")
+        self.store_register("FP", self.get_register(ra))
         self.store_register(ra, old_fp)
 
     # CALL and RETURN do the exact same thing.
@@ -578,5 +580,5 @@ class VirtualMachine:
 
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
-        print('{} = {}'.format(target, self.get_register(target)))
+        print("{} = {}".format(target, self.get_register(target)))
         self.pc += 1

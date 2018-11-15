@@ -7,7 +7,7 @@ from hera.vm import VirtualMachine
 
 
 def test_addition_dot_hera():
-    with open('test/hera/addition.hera') as f:
+    with open("test/hera/addition.hera") as f:
         vm = execute_program(f.read())
 
     assert vm.registers[1] == 20
@@ -25,12 +25,12 @@ def test_addition_dot_hera():
 
 
 def test_simple_loop_dot_hera():
-    with open('test/hera/simple_loop.hera') as f:
+    with open("test/hera/simple_loop.hera") as f:
         vm = execute_program(f.read())
 
 
 def test_fcall_dot_hera():
-    with open('test/hera/fcall.hera') as f:
+    with open("test/hera/fcall.hera") as f:
         vm = execute_program(f.read())
 
     assert vm.registers[1] == 16
@@ -46,7 +46,7 @@ def test_fcall_dot_hera():
 
 
 def test_fib_dot_hera():
-    with open('test/hera/fib.hera') as f:
+    with open("test/hera/fib.hera") as f:
         vm = execute_program(f.read())
 
     assert vm.registers[1] == 12
@@ -66,7 +66,7 @@ def test_fib_dot_hera():
 
 
 def test_data_easy_dot_hera():
-    with open('test/hera/data_easy.hera') as f:
+    with open("test/hera/data_easy.hera") as f:
         vm = execute_program(f.read())
 
     assert vm.registers[1] == HERA_DATA_START
@@ -82,7 +82,7 @@ def test_data_easy_dot_hera():
 
 
 def test_dskip_dot_hera():
-    with open('test/hera/dskip.hera') as f:
+    with open("test/hera/dskip.hera") as f:
         vm = execute_program(f.read())
 
     assert vm.registers[1] == HERA_DATA_START
@@ -96,11 +96,11 @@ def test_dskip_dot_hera():
     assert vm.flag_carry == False
     assert vm.flag_carry_block == False
     assert vm.memory[HERA_DATA_START] == 42
-    assert vm.memory[HERA_DATA_START+11] == 84
+    assert vm.memory[HERA_DATA_START + 11] == 84
 
 
 def test_loop_and_constant_dot_hera():
-    with open('test/hera/loop_and_constant.hera') as f:
+    with open("test/hera/loop_and_constant.hera") as f:
         vm = execute_program(f.read())
 
     assert vm.registers[1] == 100
@@ -116,10 +116,10 @@ def test_loop_and_constant_dot_hera():
 
 
 def test_error_message_for_missing_comma():
-    line = 'SETLO(R1 40)'
-    with patch('hera.main.error_and_exit') as mock_exit:
+    line = "SETLO(R1 40)"
+    with patch("hera.main.error_and_exit") as mock_exit:
         execute_program(line)
         msg = mock_exit.call_args[0][0]
         assert line in msg
-        assert 'line 1' in msg
-        assert 'col 10' in msg
+        assert "line 1" in msg
+        assert "col 10" in msg

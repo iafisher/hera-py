@@ -13,273 +13,284 @@ def ppr():
 
 
 def REG(s):
-    return Token('REGISTER', s)
+    return Token("REGISTER", s)
 
 
 def test_preprocess1_set_with_small_positive(ppr):
-    assert ppr.preprocess1_set('R5', 18) == [Op('SETLO', ['R5', 18])]
+    assert ppr.preprocess1_set("R5", 18) == [Op("SETLO", ["R5", 18])]
 
 
 def test_preprocess1_set_with_large_positive(ppr):
-    assert ppr.preprocess1_set('R5', 34000) == [
-        Op('SETLO', ['R5', 208]),
-        Op('SETHI', ['R5', 132]),
-    ]
+    assert (
+        ppr.preprocess1_set("R5", 34000)
+        == [Op("SETLO", ["R5", 208]), Op("SETHI", ["R5", 132])]
+    )
 
 
 def test_preprocess1_set_with_negative(ppr):
-    assert ppr.preprocess1_set('R5', -5) == [
-        Op('SETLO', ['R5', 251]),
-        Op('SETHI', ['R5', 255]),
-    ]
+    assert (
+        ppr.preprocess1_set("R5", -5)
+        == [Op("SETLO", ["R5", 251]), Op("SETHI", ["R5", 255])]
+    )
 
 
 def test_preprocess1_set_with_symbol(ppr):
-    assert ppr.preprocess1_set('R5', 'whatever') == [
-        Op('SETLO', ['R5', 'whatever']),
-        Op('SETHI', ['R5', 'whatever']),
-    ]
+    assert (
+        ppr.preprocess1_set("R5", "whatever")
+        == [Op("SETLO", ["R5", "whatever"]), Op("SETHI", ["R5", "whatever"])]
+    )
 
 
 def test_preprocess1_move(ppr):
-    assert ppr.preprocess1_move('R5', 'R3') == [Op('OR', ['R5', 'R3', 'R0'])]
+    assert ppr.preprocess1_move("R5", "R3") == [Op("OR", ["R5", "R3", "R0"])]
 
 
 def test_preprocess1_con(ppr):
-    assert ppr.preprocess1_con() == [Op('FON', [8])]
+    assert ppr.preprocess1_con() == [Op("FON", [8])]
 
 
 def test_preprocess1_coff(ppr):
-    assert ppr.preprocess1_coff() == [Op('FOFF', [8])]
+    assert ppr.preprocess1_coff() == [Op("FOFF", [8])]
 
 
 def test_preprocess1_cbon(ppr):
-    assert ppr.preprocess1_cbon() == [Op('FON', [16])]
+    assert ppr.preprocess1_cbon() == [Op("FON", [16])]
 
 
 def test_preprocess1_ccboff(ppr):
-    assert ppr.preprocess1_ccboff() == [Op('FOFF', [24])]
+    assert ppr.preprocess1_ccboff() == [Op("FOFF", [24])]
 
 
 def test_preprocess2_label(ppr):
-    assert ppr.preprocess2_label('whatever') is None
+    assert ppr.preprocess2_label("whatever") is None
 
 
 def test_preprocess2_dlabel(ppr):
-    assert ppr.preprocess2_dlabel('whatever') is None
+    assert ppr.preprocess2_dlabel("whatever") is None
 
 
 def test_preprocess2_constant(ppr):
-    assert ppr.preprocess2_constant('whatever', 5) is None
+    assert ppr.preprocess2_constant("whatever", 5) is None
 
 
 def test_preprocess1_cmp(ppr):
-    assert ppr.preprocess1_cmp('R1', 'R2') == [
-        Op('FON', [8]),
-        Op('SUB', ['R0', 'R1', 'R2']),
-    ]
+    assert (
+        ppr.preprocess1_cmp("R1", "R2")
+        == [Op("FON", [8]), Op("SUB", ["R0", "R1", "R2"])]
+    )
 
 
 def test_preprocess1_setrf_with_small_positive(ppr):
-    assert ppr.preprocess1_setrf('R5', 18) == [
-        Op('SETLO', ['R5', 18]),
-        Op('FOFF', [8]),
-        Op('ADD', ['R0', 'R5', 'R0']),
-    ]
+    assert (
+        ppr.preprocess1_setrf("R5", 18)
+        == [Op("SETLO", ["R5", 18]), Op("FOFF", [8]), Op("ADD", ["R0", "R5", "R0"])]
+    )
 
 
 def test_preprocess1_setrf_with_large_positive(ppr):
-    assert ppr.preprocess1_setrf('R5', 34000) == [
-        Op('SETLO', ['R5', 208]),
-        Op('SETHI', ['R5', 132]),
-        Op('FOFF', [8]),
-        Op('ADD', ['R0', 'R5', 'R0']),
-    ]
+    assert (
+        ppr.preprocess1_setrf("R5", 34000)
+        == [
+            Op("SETLO", ["R5", 208]),
+            Op("SETHI", ["R5", 132]),
+            Op("FOFF", [8]),
+            Op("ADD", ["R0", "R5", "R0"]),
+        ]
+    )
 
 
 def test_preprocess1_setrf_with_negative(ppr):
-    assert ppr.preprocess1_setrf('R5', -5) == [
-        Op('SETLO', ['R5', 251]),
-        Op('SETHI', ['R5', 255]),
-        Op('FOFF', [8]),
-        Op('ADD', ['R0', 'R5', 'R0']),
-    ]
+    assert (
+        ppr.preprocess1_setrf("R5", -5)
+        == [
+            Op("SETLO", ["R5", 251]),
+            Op("SETHI", ["R5", 255]),
+            Op("FOFF", [8]),
+            Op("ADD", ["R0", "R5", "R0"]),
+        ]
+    )
 
 
 def test_preprocess1_flags(ppr):
-    assert ppr.preprocess1_flags('R8') == [
-        Op('FOFF', [8]),
-        Op('ADD', ['R0', 'R8', 'R0'])
-    ]
+    assert (
+        ppr.preprocess1_flags("R8") == [Op("FOFF", [8]), Op("ADD", ["R0", "R8", "R0"])]
+    )
 
 
 def test_preprocess1_br_with_register(ppr):
-    assert ppr.preprocess1_br(REG('R5')) == [Op('BR', ['R5'])]
+    assert ppr.preprocess1_br(REG("R5")) == [Op("BR", ["R5"])]
 
 
 def test_preprocess1_br_with_label(ppr):
-    assert ppr.preprocess1_br(Token('SYMBOL', 'top')) == [
-        Op('SETLO', ['R11', 'top']),
-        Op('SETHI', ['R11', 'top']),
-        Op('BR', ['R11'])
-    ]
+    assert (
+        ppr.preprocess1_br(Token("SYMBOL", "top"))
+        == [Op("SETLO", ["R11", "top"]), Op("SETHI", ["R11", "top"]), Op("BR", ["R11"])]
+    )
 
 
 def test_preprocess1_halt(ppr):
-    assert ppr.preprocess1_halt() == [Op('BRR', [0])]
+    assert ppr.preprocess1_halt() == [Op("BRR", [0])]
 
 
 def test_preprocess1_nop(ppr):
-    assert ppr.preprocess1_nop() == [Op('BRR', [1])]
+    assert ppr.preprocess1_nop() == [Op("BRR", [1])]
 
 
 def test_preprocess1_call_with_register(ppr):
-    assert ppr.preprocess1_call('R12', REG('R13')) == [
-        Op('CALL', ['R12', 'R13'])
-    ]
+    assert ppr.preprocess1_call("R12", REG("R13")) == [Op("CALL", ["R12", "R13"])]
 
 
 def test_preprocess1_call_with_label(ppr):
-    assert ppr.preprocess1_call('R12', Token('SYMBOL', 'div')) == [
-        Op('SETLO', ['R13', 'div']),
-        Op('SETHI', ['R13', 'div']),
-        Op('CALL', ['R12', 'R13']),
-    ]
+    assert (
+        ppr.preprocess1_call("R12", Token("SYMBOL", "div"))
+        == [
+            Op("SETLO", ["R13", "div"]),
+            Op("SETHI", ["R13", "div"]),
+            Op("CALL", ["R12", "R13"]),
+        ]
+    )
 
 
 def test_preprocess1_neg(ppr):
-    assert ppr.preprocess1_neg('R1', 'R2') == [
-        Op('FON', [8]),
-        Op('SUB', ['R1', 'R0', 'R2']),
-    ]
+    assert (
+        ppr.preprocess1_neg("R1", "R2")
+        == [Op("FON", [8]), Op("SUB", ["R1", "R0", "R2"])]
+    )
 
 
 def test_preprocess1_not(ppr):
-    assert ppr.preprocess1_not('R1', 'R2') == [
-        Op('SETLO', ['R11', 0xff]),
-        Op('SETHI', ['R11', 0xff]),
-        Op('XOR', ['R1', 'R11', 'R2']),
-    ]
+    assert (
+        ppr.preprocess1_not("R1", "R2")
+        == [
+            Op("SETLO", ["R11", 0xff]),
+            Op("SETHI", ["R11", 0xff]),
+            Op("XOR", ["R1", "R11", "R2"]),
+        ]
+    )
 
 
 def test_resolve_labels_with_example(ppr):
-    ppr.resolve_labels([
-        Op('DLABEL', ['data']),
-        Op('INTEGER', [42]),
-        Op('INTEGER', [43]),
-        Op('DLABEL', ['data2']),
-        Op('INTEGER', [100]),
-        Op('LABEL', ['top']),
-        Op('ADD', ['R0', 'R0', 'R0']),
-        Op('LABEL', ['bottom']),
-    ])
+    ppr.resolve_labels(
+        [
+            Op("DLABEL", ["data"]),
+            Op("INTEGER", [42]),
+            Op("INTEGER", [43]),
+            Op("DLABEL", ["data2"]),
+            Op("INTEGER", [100]),
+            Op("LABEL", ["top"]),
+            Op("ADD", ["R0", "R0", "R0"]),
+            Op("LABEL", ["bottom"]),
+        ]
+    )
     assert len(ppr.labels) == 4
-    assert ppr.labels['data'] == HERA_DATA_START
-    assert ppr.labels['data2'] == HERA_DATA_START + 2
-    assert ppr.labels['top'] == 0
-    assert ppr.labels['bottom'] == 1
+    assert ppr.labels["data"] == HERA_DATA_START
+    assert ppr.labels["data2"] == HERA_DATA_START + 2
+    assert ppr.labels["top"] == 0
+    assert ppr.labels["bottom"] == 1
 
 
 def test_resolve_labels_with_dskip(ppr):
-    ppr.resolve_labels([
-        Op('DLABEL', ['data']),
-        Op('INTEGER', [42]),
-        Op('DSKIP', [10]),
-        Op('DLABEL', ['data2']),
-        Op('INTEGER', [84]),
-    ])
+    ppr.resolve_labels(
+        [
+            Op("DLABEL", ["data"]),
+            Op("INTEGER", [42]),
+            Op("DSKIP", [10]),
+            Op("DLABEL", ["data2"]),
+            Op("INTEGER", [84]),
+        ]
+    )
     assert len(ppr.labels) == 2
-    assert ppr.labels['data'] == HERA_DATA_START
-    assert ppr.labels['data2'] == HERA_DATA_START + 11
+    assert ppr.labels["data"] == HERA_DATA_START
+    assert ppr.labels["data2"] == HERA_DATA_START + 11
 
 
 def test_resolve_labels_with_lp_string(ppr):
-    ppr.resolve_labels([
-        Op('DLABEL', ['S']),
-        Op('LP_STRING', ['hello']),
-        Op('DLABEL', ['X']),
-        Op('INTEGER', [42]),
-    ])
+    ppr.resolve_labels(
+        [
+            Op("DLABEL", ["S"]),
+            Op("LP_STRING", ["hello"]),
+            Op("DLABEL", ["X"]),
+            Op("INTEGER", [42]),
+        ]
+    )
     assert len(ppr.labels) == 2
-    assert ppr.labels['S'] == HERA_DATA_START
-    assert ppr.labels['X'] == HERA_DATA_START + 6
+    assert ppr.labels["S"] == HERA_DATA_START
+    assert ppr.labels["X"] == HERA_DATA_START + 6
 
 
 def test_resolve_labels_with_empty_lp_string(ppr):
-    ppr.resolve_labels([
-        Op('DLABEL', ['S']),
-        Op('LP_STRING', ['']),
-        Op('DLABEL', ['X']),
-        Op('INTEGER', [42]),
-    ])
+    ppr.resolve_labels(
+        [
+            Op("DLABEL", ["S"]),
+            Op("LP_STRING", [""]),
+            Op("DLABEL", ["X"]),
+            Op("INTEGER", [42]),
+        ]
+    )
     assert len(ppr.labels) == 2
-    assert ppr.labels['S'] == HERA_DATA_START
-    assert ppr.labels['X'] == HERA_DATA_START + 1
+    assert ppr.labels["S"] == HERA_DATA_START
+    assert ppr.labels["X"] == HERA_DATA_START + 1
 
 
 def test_assemble_constant(ppr):
-    program = [
-        Op('CONSTANT', ['n', 100]), Op('SET', ['R1', Token('SYMBOL', 'n')])
-    ]
-    assert preprocess(program) == [
-        Op('SETLO', ['R1', 100]), Op('SETHI', ['R1', 0])
-    ]
+    program = [Op("CONSTANT", ["n", 100]), Op("SET", ["R1", Token("SYMBOL", "n")])]
+    assert preprocess(program) == [Op("SETLO", ["R1", 100]), Op("SETHI", ["R1", 0])]
 
 
 def test_assert_args_with_too_few(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.assert_args('', [ppr.REGISTER, ppr.REGISTER], [REG('R1')])
-    assert 'too few' in str(e)
+        ppr.assert_args("", [ppr.REGISTER, ppr.REGISTER], [REG("R1")])
+    assert "too few" in str(e)
 
 
 def test_assert_args_with_too_many(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.assert_args('', [ppr.REGISTER], [REG('R1'), 10])
-    assert 'too many' in str(e)
+        ppr.assert_args("", [ppr.REGISTER], [REG("R1"), 10])
+    assert "too many" in str(e)
 
 
 def test_assert_args_with_wrong_type(ppr):
     with pytest.raises(HERAError) as e1:
-        ppr.assert_args('', [ppr.REGISTER], [10])
-    assert 'not a register' in str(e1)
+        ppr.assert_args("", [ppr.REGISTER], [10])
+    assert "not a register" in str(e1)
 
     with pytest.raises(HERAError) as e2:
-        ppr.assert_args('', [ppr.U16], [REG('R1')])
-    assert 'not an integer' in str(e2)
+        ppr.assert_args("", [ppr.U16], [REG("R1")])
+    assert "not an integer" in str(e2)
 
     with pytest.raises(HERAError) as e3:
-        ppr.assert_args('', [ppr.I8], [REG('R1')])
-    assert 'not an integer' in str(e3)
+        ppr.assert_args("", [ppr.I8], [REG("R1")])
+    assert "not an integer" in str(e3)
 
 
 def test_assert_args_with_u16_out_of_range(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.assert_args('', [ppr.U16], [65536])
-    assert 'out of range' in str(e)
+        ppr.assert_args("", [ppr.U16], [65536])
+    assert "out of range" in str(e)
 
 
 def test_assert_args_with_negative_u16(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.assert_args('', [ppr.U16], [-1])
-    assert 'must not be negative' in str(e)
+        ppr.assert_args("", [ppr.U16], [-1])
+    assert "must not be negative" in str(e)
 
 
 def test_assert_args_with_i8_out_of_range(ppr):
     with pytest.raises(HERAError) as e1:
-        ppr.assert_args('', [ppr.I8], [128])
-    assert 'out of range' in str(e1)
+        ppr.assert_args("", [ppr.I8], [128])
+    assert "out of range" in str(e1)
 
     with pytest.raises(HERAError) as e2:
-        ppr.assert_args('', [ppr.I8], [-129])
-    assert 'out of range' in str(e2)
+        ppr.assert_args("", [ppr.I8], [-129])
+    assert "out of range" in str(e2)
 
 
 def test_verify_setlo_good(ppr):
-    ppr.verify_setlo(REG('R1'), -5)
+    ppr.verify_setlo(REG("R1"), -5)
 
 
 def test_verify_setlo_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_setlo(REG('R1'), REG('R2'))
-    assert 'SETLO' in str(e)
-    assert 'not an integer' in str(e)
+        ppr.verify_setlo(REG("R1"), REG("R2"))
+    assert "SETLO" in str(e)
+    assert "not an integer" in str(e)
