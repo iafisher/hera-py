@@ -4,11 +4,16 @@ from lark import Token
 
 from hera.parser import Op
 from hera.preprocessor import preprocess, Preprocessor, HERA_DATA_START
+from hera.utils import HERAError
 
 
 @pytest.fixture
 def ppr():
     return Preprocessor()
+
+
+def REG(s):
+    return Token('REGISTER', s)
 
 
 def test_preprocess1_set_with_small_positive(ppr):
@@ -109,7 +114,7 @@ def test_preprocess1_flags(ppr):
 
 
 def test_preprocess1_br_with_register(ppr):
-    assert ppr.preprocess1_br(Token('REGISTER', 'R5')) == [Op('BR', ['R5'])]
+    assert ppr.preprocess1_br(REG('R5')) == [Op('BR', ['R5'])]
 
 
 def test_preprocess1_br_with_label(ppr):
@@ -129,7 +134,7 @@ def test_preprocess1_nop(ppr):
 
 
 def test_preprocess1_call_with_register(ppr):
-    assert ppr.preprocess1_call('R12', Token('REGISTER', 'R13')) == [
+    assert ppr.preprocess1_call('R12', REG('R13')) == [
         Op('CALL', ['R12', 'R13'])
     ]
 
@@ -219,3 +224,62 @@ def test_assemble_constant(ppr):
     assert preprocess(program) == [
         Op('SETLO', ['R1', 100]), Op('SETHI', ['R1', 0])
     ]
+
+
+def test_assert_args_with_too_few(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.assert_args('', [ppr.REGISTER, ppr.REGISTER], [REG('R1')])
+    assert 'too few' in str(e)
+
+
+def test_assert_args_with_too_many(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.assert_args('', [ppr.REGISTER], [REG('R1'), 10])
+    assert 'too many' in str(e)
+
+
+def test_assert_args_with_wrong_type(ppr):
+    with pytest.raises(HERAError) as e1:
+        ppr.assert_args('', [ppr.REGISTER], [10])
+    assert 'not a register' in str(e1)
+
+    with pytest.raises(HERAError) as e2:
+        ppr.assert_args('', [ppr.U16], [REG('R1')])
+    assert 'not an integer' in str(e2)
+
+    with pytest.raises(HERAError) as e3:
+        ppr.assert_args('', [ppr.I8], [REG('R1')])
+    assert 'not an integer' in str(e3)
+
+
+def test_assert_args_with_u16_out_of_range(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.assert_args('', [ppr.U16], [65536])
+    assert 'out of range' in str(e)
+
+
+def test_assert_args_with_negative_u16(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.assert_args('', [ppr.U16], [-1])
+    assert 'must not be negative' in str(e)
+
+
+def test_assert_args_with_i8_out_of_range(ppr):
+    with pytest.raises(HERAError) as e1:
+        ppr.assert_args('', [ppr.I8], [128])
+    assert 'out of range' in str(e1)
+
+    with pytest.raises(HERAError) as e2:
+        ppr.assert_args('', [ppr.I8], [-129])
+    assert 'out of range' in str(e2)
+
+
+def test_verify_setlo_good(ppr):
+    ppr.verify_setlo(REG('R1'), -5)
+
+
+def test_verify_setlo_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_setlo(REG('R1'), REG('R2'))
+    assert 'SETLO' in str(e)
+    assert 'not an integer' in str(e)

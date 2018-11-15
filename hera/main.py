@@ -45,13 +45,18 @@ def main(argv=None):
             with open(path, 'r', encoding='utf-8') as f:
                 program = f.read()
         except FileNotFoundError:
-            error_and_exit('file "{}" does not exist.\n'.format(path), 2)
+            error_and_exit(
+                'file "{}" does not exist.\n'.format(path), exitcode=2
+            )
         except PermissionError:
             error_and_exit(
-                'permission denied to open file "{}".\n'.format(path), 2
+                'permission denied to open file "{}".\n'.format(path),
+                exitcode=2
             )
         except OSError:
-            error_and_exit('could not open file "{}".\n'.format(path), 2)
+            error_and_exit(
+                'could not open file "{}".\n'.format(path), exitcode=2
+            )
 
     # Print a newline if the program came from standard input, so that the
     # program and its output are visually separate.
@@ -83,7 +88,7 @@ def execute_program(program, *, opt_dump_state=False):
         # Indent all lines of the error message except the first.
         eline, *others = str(e).splitlines(True)
         others = ''.join('  ' + line for line in others)
-        error_and_exit(eline + others, type_='Syntax error')
+        error_and_exit(eline + others)
     else:
         vm.exec_many(program)
 
@@ -124,9 +129,9 @@ def dump_state(vm):
     print('\tCarry block flag is ' + ('ON' if vm.flag_carry_block else 'OFF'))
 
 
-def error_and_exit(msg, exitcode=3, type_='Error'):
-    sys.stderr.write(ANSI_RED_BOLD + type_ + ANSI_RESET + ': ')
-    sys.stderr.write(msg)
+def error_and_exit(msg, *, exitcode=3):
+    sys.stderr.write(ANSI_RED_BOLD + 'Error' + ANSI_RESET + ': ')
+    sys.stderr.write(msg + '\n')
     sys.exit(exitcode)
 
 

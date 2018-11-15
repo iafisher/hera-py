@@ -6,7 +6,7 @@ Version: November 2018
 from lark import Token
 
 from .parser import Op
-from .utils import to_u16
+from .utils import to_u16, HERAError
 
 
 # Arbitrary value copied over from HERA-C.
@@ -128,6 +128,49 @@ class Preprocessor:
                 dc += len(op.args[0]) + 1
             else:
                 pc += 1
+
+    # Constants to pass to verify_base
+    REGISTER = 'r'
+    STRING = 's'
+    U16 = 'u16'
+    I8 = 'i8'
+
+    def assert_args(self, name, expected, got):
+        """Assert that the given args match the expected ones and raise a
+        HERAError otherwise. `name` is the name of the HERA op. `expected` is
+        a tuple or list of constants (REGISTER, U16, etc., defined above)
+        representing the expected argument types to the operation. `args` is
+        a tuple or list of the actual arguments given.
+        """
+        if len(got) < len(expected):
+            raise HERAError('too few args to ' + name)
+
+        if len(expected) < len(got):
+            raise HERAError('too many args to ' + name)
+
+        ordinals = ['first', 'second', 'third']
+        for ordinal, pattern, arg in zip(ordinals, expected, got):
+            prefix = '{} arg to {} '.format(ordinal, name)
+            if pattern == self.REGISTER:
+                if not isinstance(arg, Token) or arg.type != 'REGISTER':
+                    raise HERAError(prefix + 'not a register')
+            elif pattern == self.U16:
+                if not isinstance(arg, int):
+                    raise HERAError(prefix + 'not an integer')
+                if arg < 0:
+                    raise HERAError(prefix + 'must not be negative')
+                if arg > 65535:
+                    raise HERAError(prefix + 'out of range')
+            elif pattern == self.I8:
+                if not isinstance(arg, int):
+                    raise HERAError(prefix + 'not an integer')
+                if not (-128 <= arg <= 127):
+                    raise HERAError(prefix + 'out of range')
+            else:
+                raise RuntimeError('unknown pattern ' + pattern)
+
+    def verify_setlo(self, *args):
+        self.assert_args('SETLO', (self.REGISTER, self.I8), args)
 
     def preprocess1_set(self, d, v):
         if isinstance(v, int):
