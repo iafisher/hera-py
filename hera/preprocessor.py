@@ -143,10 +143,14 @@ class Preprocessor:
         a tuple or list of the actual arguments given.
         """
         if len(got) < len(expected):
-            raise HERAError("too few args to " + name)
+            raise HERAError(
+                "too few args to {} (expected {})".format(name, len(expected))
+            )
 
         if len(expected) < len(got):
-            raise HERAError("too many args to " + name)
+            raise HERAError(
+                "too many args to {} (expected {})".format(name, len(expected))
+            )
 
         ordinals = ["first", "second", "third"]
         for ordinal, pattern, arg in zip(ordinals, expected, got):
