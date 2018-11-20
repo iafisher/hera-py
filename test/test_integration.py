@@ -122,4 +122,3 @@ def test_error_message_for_missing_comma():
         msg = mock_exit.call_args[0][0]
         assert line in msg
         assert "line 1" in msg
-        assert "col 10" in msg
