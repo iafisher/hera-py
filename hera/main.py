@@ -70,15 +70,18 @@ def execute_program(program, *, opt_dump_state=False):
     program is returned, primarily so that integration tests can check its
     state.
     """
+    lines = program.splitlines()
+
     vm = VirtualMachine()
 
     try:
         program = preprocess(parse(program))
     except HERAError as e:
-        # Indent all lines of the error message except the first.
-        eline, *others = str(e).splitlines(True)
-        others = "".join("  " + line for line in others)
-        error_and_exit(eline + others)
+        if e.line:
+            msg = "{0}, line {0.line}\n\n  {1}\n".format(e, lines[e.line - 1])
+        else:
+            msg = str(e)
+        error_and_exit(msg)
     else:
         vm.exec_many(program)
 

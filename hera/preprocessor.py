@@ -60,7 +60,11 @@ class Preprocessor:
             except AttributeError:
                 pass
             else:
-                verifier(*op.args)
+                try:
+                    verifier(*op.args)
+                except HERAError as e:
+                    e.line = op.name.line
+                    raise e
 
         program = self.preprocess_first_pass(program)
         program = self.preprocess_second_pass(program)
@@ -171,7 +175,7 @@ class Preprocessor:
     def preprocess1_set(self, d, v):
         if isinstance(v, int):
             v = to_u16(v)
-            lo = v & 0xff
+            lo = v & 0xFF
             hi = v >> 8
             if hi:
                 return [Op("SETLO", [d, lo]), Op("SETHI", [d, hi])]
@@ -213,7 +217,9 @@ class Preprocessor:
     def preprocess1_call(self, a, l):
         if isinstance(l, Token) and l.type == "SYMBOL":
             return [
-                Op("SETLO", ["R13", l]), Op("SETHI", ["R13", l]), Op("CALL", [a, "R13"])
+                Op("SETLO", ["R13", l]),
+                Op("SETHI", ["R13", l]),
+                Op("CALL", [a, "R13"]),
             ]
         else:
             return [Op("CALL", [a, l])]
@@ -223,8 +229,8 @@ class Preprocessor:
 
     def preprocess1_not(self, d, b):
         return [
-            Op("SETLO", ["R11", 0xff]),
-            Op("SETHI", ["R11", 0xff]),
+            Op("SETLO", ["R11", 0xFF]),
+            Op("SETHI", ["R11", 0xFF]),
             Op("XOR", [d, "R11", b]),
         ]
 
@@ -259,7 +265,7 @@ class Preprocessor:
     def preprocess2_setlo(self, d, v):
         # Label as second argument of SETLO must be replaced with line number.
         if isinstance(v, Token) and v.type == "SYMBOL":
-            return Op("SETLO", [d, self.labels[v] & 0xff])
+            return Op("SETLO", [d, self.labels[v] & 0xFF])
         else:
             return Op("SETLO", [d, v])
 

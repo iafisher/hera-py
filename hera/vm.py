@@ -152,8 +152,8 @@ class VirtualMachine:
 
     def set_zero_and_sign(self, value):
         """Set the zero and sign flags based on the value."""
-        self.flag_zero = (value == 0)
-        self.flag_sign = (value & 0x8000)
+        self.flag_zero = value == 0
+        self.flag_sign = value & 0x8000
 
     def assign_memory(self, address, value):
         """Assign a value to a location in memory."""
@@ -181,7 +181,7 @@ class VirtualMachine:
         """Execute the SETHI instruction. `value` must be an integer in the
         range [0, 255].
         """
-        self.store_register(target, (value << 8) + (self.get_register(target) & 0x00ff))
+        self.store_register(target, (value << 8) + (self.get_register(target) & 0x00FF))
         self.pc += 1
 
     @ternary_op
@@ -189,10 +189,10 @@ class VirtualMachine:
         """Execute the ADD instruction."""
         carry = 1 if not self.flag_carry_block and self.flag_carry else 0
 
-        result = (left + right + carry) & 0xffff
+        result = (left + right + carry) & 0xFFFF
 
         self.flag_carry = result < (left + right + carry)
-        self.flag_overflow = (from_u16(result) != from_u16(left) + from_u16(right))
+        self.flag_overflow = from_u16(result) != from_u16(left) + from_u16(right)
 
         return result
 
@@ -203,10 +203,10 @@ class VirtualMachine:
 
         # to_u16 is necessary because although left and right are necessarily
         # uints, left - right - borrow might not be.
-        result = to_u16((left - right - borrow) & 0xffff)
+        result = to_u16((left - right - borrow) & 0xFFFF)
 
-        self.flag_carry = (left >= right)
-        self.flag_overflow = (from_u16(result) != from_u16(left) - from_u16(right))
+        self.flag_carry = left >= right
+        self.flag_overflow = from_u16(result) != from_u16(left) - from_u16(right)
 
         return result
 
@@ -217,13 +217,13 @@ class VirtualMachine:
             # Take the high 16 bits.
             left = to_u32(from_u16(left))
             right = to_u32(from_u16(right))
-            result = ((left * right) & 0xffff0000) >> 16
+            result = ((left * right) & 0xFFFF0000) >> 16
         else:
             # Take the low 16 bits.
-            result = (left * right) & 0xffff
+            result = (left * right) & 0xFFFF
 
         self.flag_carry = result < left * right
-        self.flag_overflow = (from_u16(result) != from_u16(left) * from_u16(right))
+        self.flag_overflow = from_u16(result) != from_u16(left) * from_u16(right)
 
         return result
 
@@ -245,30 +245,30 @@ class VirtualMachine:
     def exec_inc(self, target, value):
         """Execute the INC instruction."""
         original = self.get_register(target)
-        result = (value + original) & 0xffff
+        result = (value + original) & 0xFFFF
         self.store_register(target, result)
 
         self.set_zero_and_sign(result)
-        self.flag_overflow = (from_u16(result) != from_u16(original) + value)
-        self.flag_carry = (value + original >= 2 ** 16)
+        self.flag_overflow = from_u16(result) != from_u16(original) + value
+        self.flag_carry = value + original >= 2 ** 16
         self.pc += 1
 
     def exec_dec(self, target, value):
         """Execute the DEC instruction."""
         original = self.get_register(target)
-        result = to_u16((original - value) & 0xffff)
+        result = to_u16((original - value) & 0xFFFF)
         self.store_register(target, result)
 
         self.set_zero_and_sign(result)
-        self.flag_overflow = (from_u16(result) != from_u16(original) - value)
-        self.flag_carry = (original < value)
+        self.flag_overflow = from_u16(result) != from_u16(original) - value
+        self.flag_carry = original < value
         self.pc += 1
 
     @binary_op
     def exec_lsl(self, original):
         """Execute the LSL instruction."""
         carry = 1 if self.flag_carry and not self.flag_carry_block else 0
-        result = ((original << 1) + carry) & 0xffff
+        result = ((original << 1) + carry) & 0xFFFF
 
         self.flag_carry = original & 0x8000
 
@@ -287,7 +287,7 @@ class VirtualMachine:
     @binary_op
     def exec_lsl8(self, original):
         """Execute the LSL8 instruction."""
-        return (original << 8) & 0xffff
+        return (original << 8) & 0xFFFF
 
     @binary_op
     def exec_lsr8(self, original):
@@ -298,10 +298,10 @@ class VirtualMachine:
     def exec_asl(self, original):
         """Execute the ASL instruction."""
         carry = 1 if self.flag_carry and not self.flag_carry_block else 0
-        result = ((original << 1) + carry) & 0xffff
+        result = ((original << 1) + carry) & 0xFFFF
 
         self.flag_carry = original & 0x8000
-        self.flag_overflow = (original & 0x8000 and not result & 0x8000)
+        self.flag_overflow = original & 0x8000 and not result & 0x8000
 
         return result
 
@@ -327,14 +327,10 @@ class VirtualMachine:
         """Execute the SAVE instruction."""
         value = (
             int(self.flag_sign)
-            + 2
-            * int(self.flag_zero)
-            + 4
-            * int(self.flag_overflow)
-            + 8
-            * int(self.flag_carry)
-            + 16
-            * int(self.flag_carry_block)
+            + 2 * int(self.flag_zero)
+            + 4 * int(self.flag_overflow)
+            + 8 * int(self.flag_carry)
+            + 16 * int(self.flag_carry_block)
         )
         self.store_register(target, value)
         self.pc += 1
@@ -364,7 +360,7 @@ class VirtualMachine:
         self.flag_zero = self.flag_zero and not bool(value & 0b10)
         self.flag_overflow = self.flag_overflow and not bool(value & 0b100)
         self.flag_carry = self.flag_carry and not bool(value & 0b1000)
-        self.flag_carry_block = (self.flag_carry_block and not bool(value & 0b10000))
+        self.flag_carry_block = self.flag_carry_block and not bool(value & 0b10000)
         self.pc += 1
 
     def exec_fset5(self, value):

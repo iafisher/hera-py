@@ -6,7 +6,9 @@ Version: November 2018
 
 
 class HERAError(Exception):
-    pass
+    def __init__(self, msg, line=None):
+        super().__init__(msg)
+        self.line = line
 
 
 def to_u16(n):

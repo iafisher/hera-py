@@ -20,6 +20,8 @@ def test_op_to_string_with_integer():
 
 def test_program_to_string():
     program = [
-        Op("SET", ["R1", 20]), Op("SET", ["R2", 22]), Op("ADD", ["R3", "R1", "R2"])
+        Op("SET", ["R1", 20]),
+        Op("SET", ["R2", 22]),
+        Op("ADD", ["R3", "R1", "R2"]),
     ]
     assert program_to_string(program) == "SET(R1, 20)\nSET(R2, 22)\nADD(R3, R1, R2)"

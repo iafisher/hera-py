@@ -38,10 +38,9 @@ def test_parse_empty_string():
 
 
 def test_parse_string_with_escapes():
-    assert (
-        parse('LP_STRING("multiline\\nstring with quotes: \\"\\"")')
-        == [Op("LP_STRING", ['multiline\nstring with quotes: ""'])]
-    )
+    assert parse('LP_STRING("multiline\\nstring with quotes: \\"\\"")') == [
+        Op("LP_STRING", ['multiline\nstring with quotes: ""'])
+    ]
 
 
 def test_parse_signed_number():
@@ -49,11 +48,11 @@ def test_parse_signed_number():
 
 
 def test_parse_hex_number():
-    assert parse("SETLO(R4, 0x5f)") == [Op("SETLO", ["R4", 0x5f])]
+    assert parse("SETLO(R4, 0x5f)") == [Op("SETLO", ["R4", 0x5F])]
 
 
 def test_parse_negative_hex_number():
-    assert parse("SETLO(R7, -0x2B)") == [Op("SETLO", ["R7", -0x2b])]
+    assert parse("SETLO(R7, -0x2B)") == [Op("SETLO", ["R7", -0x2B])]
 
 
 def test_parse_binary_number():
@@ -106,3 +105,13 @@ def test_parse_missing_parenthesis():
 def test_parse_missing_end_quote():
     with pytest.raises(HERAError):
         parse('LP_STRING("forgot to close my string)')
+
+
+def test_parse_exception_has_line_number():
+    program = "SETLO(R1, 10)\nSETHI(R1, 255)\nLSL(R1 R1)"
+    try:
+        parse(program)
+    except HERAError as e:
+        assert e.line == 3
+    else:
+        assert False, "expected excepton"

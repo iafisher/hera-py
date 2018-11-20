@@ -81,7 +81,7 @@ def parse(text):
     try:
         tree = _parser.parse(text)
     except LarkError as e:
-        raise HERAError(str(e)) from None
+        raise HERAError("invalid syntax", e.line) from None
 
     if isinstance(tree, Tree):
         return tree.children
