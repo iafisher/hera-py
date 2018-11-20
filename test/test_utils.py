@@ -1,6 +1,6 @@
 import pytest
 
-from hera.utils import from_u16, to_u16, to_u32
+from hera.utils import from_u16, to_u16, to_u32, register_to_index
 
 
 def test_to_u16_with_max_negative():
@@ -125,3 +125,24 @@ def test_to_u32_with_positive_overflow():
 def test_to_u32_with_another_positive_overflow():
     with pytest.raises(OverflowError):
         to_u32(5000000000)
+
+
+def test_register_to_index_with_numbered_registers():
+    for i in range(0, 16):
+        assert register_to_index("R" + str(i)) == i
+        assert register_to_index("r" + str(i)) == i
+
+
+def test_register_to_index_with_named_registers():
+    assert register_to_index("FP") == 14
+    assert register_to_index("fp") == 14
+    assert register_to_index("SP") == 15
+    assert register_to_index("sp") == 15
+    assert register_to_index("Rt") == 11
+    assert register_to_index("rt") == 11
+
+
+def test_register_to_index_with_invalid_register():
+    with pytest.raises(ValueError) as e:
+        register_to_index("R16")
+    assert "R16" in str(e)

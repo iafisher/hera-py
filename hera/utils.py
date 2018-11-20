@@ -49,3 +49,20 @@ def to_u32(n):
         return 2 ** 32 + n
     else:
         return n
+
+
+def register_to_index(rname):
+    """Return the index of the register with the given name in the register array."""
+    original = rname
+    rname = rname.lower()
+    if rname == "rt":
+        return 11
+    elif rname.startswith("r"):
+        v = int(rname[1:])
+        if 0 <= v < 16:
+            return v
+    elif rname == "fp":
+        return 14
+    elif rname == "sp":
+        return 15
+    raise ValueError("{} is not a valid register".format(original))
