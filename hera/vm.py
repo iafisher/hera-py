@@ -6,7 +6,7 @@ Version: November 2018
 import functools
 
 from .preprocessor import HERA_DATA_START
-from .utils import from_u16, to_u16, to_u32, register_to_index
+from .utils import from_u16, to_u16, to_u32, register_to_index, HERAError
 
 
 def ternary_op(f):
@@ -120,17 +120,28 @@ class VirtualMachine:
         self.reset()
         while self.pc < len(program):
             opc = self.pc
-            self.exec_one(program[self.pc])
+            try:
+                self.exec_one(program[self.pc])
+            except HERAError as e:
+                e.line = program[self.pc].name.line
+                raise e
             if opc == self.pc:
                 break
 
     def get_register(self, name):
         """Get the contents of the register with the given name."""
-        return self.registers[register_to_index(name)]
+        try:
+            index = register_to_index(name)
+        except ValueError as e:
+            raise HERAError(str(e)) from None
+        return self.registers[index]
 
     def store_register(self, target, value):
         """Store the value in the target register (a string)."""
-        index = register_to_index(target)
+        try:
+            index = register_to_index(target)
+        except ValueError as e:
+            raise HERAError(str(e)) from None
         if index != 0:
             self.registers[index] = value
 

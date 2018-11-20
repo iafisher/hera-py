@@ -83,7 +83,13 @@ class Preprocessor:
             except AttributeError:
                 nprogram.append(op)
             else:
-                nprogram.extend(handler(*op.args))
+                new_ops = handler(*op.args)
+                # Copy over the line number and column information from the old op.
+                new_ops = [
+                    Op(copy_token(new_op.name, op.name), new_op.args)
+                    for new_op in new_ops
+                ]
+                nprogram.extend(new_ops)
         return nprogram
 
     def preprocess_second_pass(self, program):
@@ -103,7 +109,7 @@ class Preprocessor:
             else:
                 nop = handler(*op.args)
                 if nop:
-                    nprogram.append(nop)
+                    nprogram.append(Op(copy_token(nop.name, op.name), nop.args))
         return nprogram
 
     def resolve_labels(self, program):
@@ -222,6 +228,7 @@ class Preprocessor:
             v = to_u16(v)
             lo = v & 0xFF
             hi = v >> 8
+
             if hi:
                 return [Op("SETLO", [d, lo]), Op("SETHI", [d, hi])]
             else:
@@ -320,3 +327,7 @@ class Preprocessor:
             return Op("SETHI", [d, self.labels[v] >> 8])
         else:
             return Op("SETHI", [d, v])
+
+
+def copy_token(val, otkn):
+    return Token(otkn.type, val, line=otkn.line, column=otkn.column)

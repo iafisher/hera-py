@@ -76,6 +76,7 @@ def execute_program(program, *, opt_dump_state=False):
 
     try:
         program = preprocess(parse(program))
+        vm.exec_many(program)
     except HERAError as e:
         if e.line:
             msg = "{0}, line {0.line}\n\n  {1}\n".format(e, lines[e.line - 1])
@@ -83,8 +84,6 @@ def execute_program(program, *, opt_dump_state=False):
             msg = str(e)
         error_and_exit(msg)
     else:
-        vm.exec_many(program)
-
         if opt_dump_state:
             dump_state(vm)
 

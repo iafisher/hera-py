@@ -122,3 +122,14 @@ def test_error_message_for_missing_comma():
         msg = mock_exit.call_args[0][0]
         assert line in msg
         assert "line 1" in msg
+
+
+def test_error_message_for_invalid_register():
+    line = "SET(R17, 65)"
+    with patch("hera.main.error_and_exit") as mock_exit:
+        execute_program(line)
+        msg = mock_exit.call_args[0][0]
+        assert line in msg
+        assert "line 1" in msg
+        assert "R17" in msg
+        assert "not a valid register" in msg

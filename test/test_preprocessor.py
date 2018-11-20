@@ -224,7 +224,10 @@ def test_resolve_labels_with_empty_lp_string(ppr):
 
 
 def test_assemble_constant(ppr):
-    program = [Op("CONSTANT", ["n", 100]), Op("SET", ["R1", Token("SYMBOL", "n")])]
+    program = [
+        Op("CONSTANT", ["n", 100]),
+        Op(Token("SYMBOL", "SET"), ["R1", Token("SYMBOL", "n")]),
+    ]
     assert preprocess(program) == [Op("SETLO", ["R1", 100]), Op("SETHI", ["R1", 0])]
 
 
