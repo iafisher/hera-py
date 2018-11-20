@@ -132,8 +132,8 @@ class Preprocessor:
     # Constants to pass to verify_base
     REGISTER = "r"
     STRING = "s"
-    U16 = "u16"
-    I8 = "i8"
+    U16 = range(0, 2 ** 16)
+    I8 = range(-128, 128)
 
     def assert_args(self, name, expected, got):
         """Assert that the given args match the expected ones and raise a
@@ -154,23 +154,64 @@ class Preprocessor:
             if pattern == self.REGISTER:
                 if not isinstance(arg, Token) or arg.type != "REGISTER":
                     raise HERAError(prefix + "not a register")
-            elif pattern == self.U16:
+            elif isinstance(pattern, range):
                 if not isinstance(arg, int):
                     raise HERAError(prefix + "not an integer")
-                if arg < 0:
-                    raise HERAError(prefix + "must not be negative")
-                if arg > 65535:
-                    raise HERAError(prefix + "out of range")
-            elif pattern == self.I8:
-                if not isinstance(arg, int):
-                    raise HERAError(prefix + "not an integer")
-                if not (-128 <= arg <= 127):
-                    raise HERAError(prefix + "out of range")
+                if arg not in pattern:
+                    if pattern.start == 0 and arg < 0:
+                        raise HERAError(prefix + "must not be negative")
+                    else:
+                        raise HERAError(prefix + "out of range")
             else:
-                raise RuntimeError("unknown pattern " + pattern)
+                raise RuntimeError("unknown pattern in Preprocessor.assert_args")
 
     def verify_setlo(self, *args):
-        self.assert_args("SETLO", (self.REGISTER, self.I8), args)
+        self.assert_args("SETLO", [self.REGISTER, self.I8], args)
+
+    def verify_sethi(self, *args):
+        self.assert_args("SETHI", [self.REGISTER, self.I8], args)
+
+    def verify_and(self, *args):
+        self.assert_args("AND", [self.REGISTER] * 3, args)
+
+    def verify_or(self, *args):
+        self.assert_args("OR", [self.REGISTER] * 3, args)
+
+    def verify_add(self, *args):
+        self.assert_args("ADD", [self.REGISTER] * 3, args)
+
+    def verify_sub(self, *args):
+        self.assert_args("SUB", [self.REGISTER] * 3, args)
+
+    def verify_mul(self, *args):
+        self.assert_args("MUL", [self.REGISTER] * 3, args)
+
+    def verify_xor(self, *args):
+        self.assert_args("XOR", [self.REGISTER] * 3, args)
+
+    def verify_inc(self, *args):
+        self.assert_args("INC", [self.REGISTER, range(1, 65)], args)
+
+    def verify_dec(self, *args):
+        self.assert_args("DEC", [self.REGISTER, range(1, 65)], args)
+
+    def verify_lsl(self, *args):
+        self.assert_args("LSL", [self.REGISTER] * 2, args)
+
+    def verify_lsr(self, *args):
+        self.assert_args("LSR", [self.REGISTER] * 2, args)
+
+    def verify_lsl8(self, *args):
+        self.assert_args("LSL8", [self.REGISTER] * 2, args)
+
+    def verify_lsr8(self, *args):
+        self.assert_args("LSR8", [self.REGISTER] * 2, args)
+
+    def verify_asl(self, *args):
+        self.assert_args("ASL", [self.REGISTER] * 2, args)
+
+    def verify_asr(self, *args):
+        self.assert_args("ASR", [self.REGISTER] * 2, args)
 
     def preprocess1_set(self, d, v):
         if isinstance(v, int):

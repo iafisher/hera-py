@@ -276,6 +276,23 @@ def test_assert_args_with_i8_out_of_range(ppr):
     assert "out of range" in str(e2)
 
 
+def test_assert_args_with_range_object(ppr):
+    with pytest.raises(HERAError) as e1:
+        ppr.assert_args("", [range(-10, 10)], [-11])
+    assert "out of range" in str(e1)
+
+    with pytest.raises(HERAError) as e2:
+        ppr.assert_args("", [range(-10, 10)], [10])
+    assert "out of range" in str(e2)
+
+    with pytest.raises(HERAError) as e3:
+        ppr.assert_args("", [range(-10, 10)], [REG("R1")])
+    assert "not an integer" in str(e3)
+
+    r = range(-10, 10)
+    ppr.assert_args("", [r, r, r], [5, -10, 9])
+
+
 def test_verify_setlo_good(ppr):
     ppr.verify_setlo(REG("R1"), -5)
 
@@ -285,3 +302,168 @@ def test_verify_setlo_bad(ppr):
         ppr.verify_setlo(REG("R1"), REG("R2"))
     assert "SETLO" in str(e)
     assert "not an integer" in str(e)
+
+
+def test_verify_sethi_good(ppr):
+    ppr.verify_sethi(REG("R1"), -5)
+
+
+def test_verify_sethi_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_sethi(REG("R1"), REG("R2"))
+    assert "SETHI" in str(e)
+    assert "not an integer" in str(e)
+
+
+def test_verify_and_good(ppr):
+    ppr.verify_and(REG("R1"), REG("R2"), REG("R3"))
+
+
+def test_verify_and_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_and(REG("R1"), REG("R2"))
+    assert "AND" in str(e)
+    assert "too few args" in str(e)
+
+
+def test_verify_or_good(ppr):
+    ppr.verify_or(REG("R1"), REG("R2"), REG("R3"))
+
+
+def test_verify_or_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_or(REG("R1"), REG("R2"), REG("R3"), REG("R4"))
+    assert "OR" in str(e)
+    assert "too many args" in str(e)
+
+
+def test_verify_add_good(ppr):
+    ppr.verify_add(REG("R1"), REG("R2"), REG("R3"))
+
+
+def test_verify_add_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_add(REG("R1"), REG("R2"), 17)
+    assert "ADD" in str(e)
+    assert "not a register" in str(e)
+
+
+def test_verify_sub_good(ppr):
+    ppr.verify_sub(REG("R1"), REG("R2"), REG("R3"))
+
+
+def test_verify_sub_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_sub(REG("R1"), REG("R2"), 17)
+    assert "SUB" in str(e)
+    assert "not a register" in str(e)
+
+
+def test_verify_mul_good(ppr):
+    ppr.verify_mul(REG("R1"), REG("R2"), REG("R3"))
+
+
+def test_verify_mul_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_mul(REG("R1"), 17, REG("R2"))
+    assert "MUL" in str(e)
+    assert "not a register" in str(e)
+
+
+def test_verify_xor_good(ppr):
+    ppr.verify_xor(REG("R1"), REG("R2"), REG("R3"))
+
+
+def test_verify_xor_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_xor(REG("R1"), 17, REG("R2"))
+    assert "XOR" in str(e)
+    assert "not a register" in str(e)
+
+
+def test_verify_inc_good(ppr):
+    ppr.verify_inc(REG("R1"), 64)
+
+
+def test_verify_inc_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_inc(REG("R1"), 65)
+    assert "INC" in str(e)
+    assert "out of range" in str(e)
+
+
+def test_verify_dec_good(ppr):
+    ppr.verify_dec(REG("R1"), 64)
+
+
+def test_verify_dec_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_dec(REG("R1"), -1)
+    assert "DEC" in str(e)
+    assert "out of range" in str(e)
+
+
+def test_verify_lsl_good(ppr):
+    ppr.verify_lsl(REG("R8"), REG("R7"))
+
+
+def test_verify_lsl_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_lsl(10, REG("R6"))
+    assert "LSL" in str(e)
+    assert "not a register" in str(e)
+
+
+def test_verify_lsr_good(ppr):
+    ppr.verify_lsr(REG("R8"), REG("R7"))
+
+
+def test_verify_lsr_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_lsr(REG("R6"), 10)
+    assert "LSR" in str(e)
+    assert "not a register" in str(e)
+
+
+def test_verify_lsl8_good(ppr):
+    ppr.verify_lsl8(REG("R8"), REG("R7"))
+
+
+def test_verify_lsl8_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_lsl8(REG("R6"), 10)
+    assert "LSL8" in str(e)
+    assert "not a register" in str(e)
+
+
+def test_verify_lsr8_good(ppr):
+    ppr.verify_lsr8(REG("R8"), REG("R7"))
+
+
+def test_verify_lsr8_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_lsr8(REG("R6"), 10)
+    assert "LSR8" in str(e)
+    assert "not a register" in str(e)
+
+
+def test_verify_asl_good(ppr):
+    ppr.verify_asl(REG("R8"), REG("R7"))
+
+
+def test_verify_asl_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_asl(REG("R6"), 10)
+    assert "ASL" in str(e)
+    assert "not a register" in str(e)
+
+
+def test_verify_asr_good(ppr):
+    ppr.verify_asr(REG("R8"), REG("R7"))
+
+
+def test_verify_asr_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_asr(REG("R6"), 10)
+    assert "ASR" in str(e)
+    assert "not a register" in str(e)
