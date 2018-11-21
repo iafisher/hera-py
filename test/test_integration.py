@@ -145,5 +145,22 @@ def test_error_message_for_invalid_register():
         assert line in msg
         assert "line 1" in msg
         assert "col 5" in msg
+        # Make sure the caret is aligned properly.
+        assert "      ^" in msg
         assert "R17" in msg
+        assert "not a valid register" in msg
+
+
+def test_error_message_for_invalid_register_with_weird_syntax():
+    line = "SET(\n\tR17,\n\t65)"
+    with patch("hera.main.error_and_exit") as mock_exit:
+        execute_program(line)
+        msg = mock_exit.call_args[0][0]
+        assert "\tR17" in msg
+        assert "SET(" not in msg
+        assert "65" not in msg
+        assert "line 2" in msg
+        assert "col 2" in msg
+        # Make sure the caret is aligned properly.
+        assert "  \t^" in msg
         assert "not a valid register" in msg

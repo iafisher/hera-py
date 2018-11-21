@@ -82,8 +82,8 @@ def execute_program(program, *, opt_dump_state=False, vm=None):
     except HERAError as e:
         if e.line:
             if e.column:
-                caret = (" " * (e.column + 1)) + "^"
-                msg = "{0}, line {0.line} col {0.column}\n\n  {1}\n{2}\n".format(
+                caret = align_caret(lines[e.line - 1], e.column) + "^"
+                msg = "{0}, line {0.line} col {0.column}\n\n  {1}\n  {2}\n".format(
                     e, lines[e.line - 1], caret
                 )
             else:
@@ -130,6 +130,13 @@ def error_and_exit(msg, *, exitcode=3):
     sys.stderr.write(ANSI_RED_BOLD + "Error" + ANSI_RESET + ": ")
     sys.stderr.write(msg + "\n")
     sys.exit(exitcode)
+
+
+def align_caret(line, col):
+    """Return the whitespace necessary to align a caret to underline the desired
+    column in the line of text. Mainly this means handling tabs.
+    """
+    return "".join("\t" if c == "\t" else " " for c in line[: col - 1])
 
 
 # ANSI color codes (https://stackoverflow.com/questions/4842424/)
