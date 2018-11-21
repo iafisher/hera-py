@@ -6,7 +6,7 @@ Version: November 2018
 from lark import Token
 
 from .parser import Op
-from .utils import to_u16, HERAError
+from .utils import register_to_index, to_u16, HERAError
 
 
 # Arbitrary value copied over from HERA-C.
@@ -63,7 +63,9 @@ class Preprocessor:
                 try:
                     verifier(*op.args)
                 except HERAError as e:
-                    e.line = op.name.line
+                    # Fill in line number if not already present.
+                    if not e.line:
+                        e.line = op.name.line
                     raise e
 
         program = self.preprocess_first_pass(program)
@@ -163,17 +165,43 @@ class Preprocessor:
             prefix = "{} arg to {} ".format(ordinal, name)
             if pattern == self.REGISTER:
                 if not isinstance(arg, Token) or arg.type != "REGISTER":
-                    raise HERAError(prefix + "not a register")
+                    raise HERAError(
+                        prefix + "not a register", line=arg.line, column=arg.column
+                    )
+
+                try:
+                    register_to_index(arg)
+                except ValueError:
+                    raise HERAError(
+                        prefix + "not a valid register",
+                        line=arg.line,
+                        column=arg.column,
+                    )
             elif isinstance(pattern, range):
+                if isinstance(arg, Token) and arg.type == "SYMBOL":
+                    # Symbols will be resolved later.
+                    continue
+
                 if not isinstance(arg, int):
-                    raise HERAError(prefix + "not an integer")
+                    raise HERAError(
+                        prefix + "not an integer", line=arg.line, column=arg.column
+                    )
                 if arg not in pattern:
                     if pattern.start == 0 and arg < 0:
-                        raise HERAError(prefix + "must not be negative")
+                        raise HERAError(
+                            prefix + "must not be negative",
+                            line=arg.line,
+                            column=arg.column,
+                        )
                     else:
-                        raise HERAError(prefix + "out of range")
+                        raise HERAError(
+                            prefix + "out of range", line=arg.line, column=arg.column
+                        )
             else:
                 raise RuntimeError("unknown pattern in Preprocessor.assert_args")
+
+    def verify_set(self, *args):
+        self.assert_args("SET", [self.REGISTER, range(-32768, 65536)], args)
 
     def verify_setlo(self, *args):
         self.assert_args("SETLO", [self.REGISTER, self.I8], args)

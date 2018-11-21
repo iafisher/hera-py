@@ -67,3 +67,11 @@ def register_to_index(rname):
     elif rname == "sp":
         return 15
     raise ValueError("{} is not a valid register".format(original))
+
+
+class IntToken(int):
+    def __new__(cls, value, line=None, column=None, **kwargs):
+        self = super(IntToken, cls).__new__(cls, value, **kwargs)
+        self.line = line
+        self.column = column
+        return self

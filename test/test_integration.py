@@ -134,6 +134,7 @@ def test_error_message_for_missing_comma():
         msg = mock_exit.call_args[0][0]
         assert line in msg
         assert "line 1" in msg
+        assert "col 10" in msg
 
 
 def test_error_message_for_invalid_register():
@@ -143,5 +144,6 @@ def test_error_message_for_invalid_register():
         msg = mock_exit.call_args[0][0]
         assert line in msg
         assert "line 1" in msg
+        assert "col 5" in msg
         assert "R17" in msg
         assert "not a valid register" in msg

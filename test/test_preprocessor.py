@@ -4,7 +4,7 @@ from lark import Token
 
 from hera.parser import Op
 from hera.preprocessor import preprocess, Preprocessor, HERA_DATA_START
-from hera.utils import HERAError
+from hera.utils import HERAError, IntToken
 
 
 @pytest.fixture
@@ -223,10 +223,10 @@ def test_resolve_labels_with_empty_lp_string(ppr):
     assert ppr.labels["X"] == HERA_DATA_START + 1
 
 
-def test_assemble_constant(ppr):
+def test_preprocess_constant(ppr):
     program = [
-        Op("CONSTANT", ["n", 100]),
-        Op(Token("SYMBOL", "SET"), ["R1", Token("SYMBOL", "n")]),
+        Op("CONSTANT", [Token("SYMBOL", "n"), IntToken(100)]),
+        Op(Token("SYMBOL", "SET"), [REG("R1"), Token("SYMBOL", "n")]),
     ]
     assert preprocess(program) == [Op("SETLO", ["R1", 100]), Op("SETHI", ["R1", 0])]
 
@@ -239,13 +239,13 @@ def test_assert_args_with_too_few(ppr):
 
 def test_assert_args_with_too_many(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.assert_args("", [ppr.REGISTER], [REG("R1"), 10])
+        ppr.assert_args("", [ppr.REGISTER], [REG("R1"), IntToken(10)])
     assert "too many" in str(e)
 
 
 def test_assert_args_with_wrong_type(ppr):
     with pytest.raises(HERAError) as e1:
-        ppr.assert_args("", [ppr.REGISTER], [10])
+        ppr.assert_args("", [ppr.REGISTER], [IntToken(10)])
     assert "not a register" in str(e1)
 
     with pytest.raises(HERAError) as e2:
@@ -259,33 +259,33 @@ def test_assert_args_with_wrong_type(ppr):
 
 def test_assert_args_with_u16_out_of_range(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.assert_args("", [ppr.U16], [65536])
+        ppr.assert_args("", [ppr.U16], [IntToken(65536)])
     assert "out of range" in str(e)
 
 
 def test_assert_args_with_negative_u16(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.assert_args("", [ppr.U16], [-1])
+        ppr.assert_args("", [ppr.U16], [IntToken(-1)])
     assert "must not be negative" in str(e)
 
 
 def test_assert_args_with_i8_out_of_range(ppr):
     with pytest.raises(HERAError) as e1:
-        ppr.assert_args("", [ppr.I8], [128])
+        ppr.assert_args("", [ppr.I8], [IntToken(128)])
     assert "out of range" in str(e1)
 
     with pytest.raises(HERAError) as e2:
-        ppr.assert_args("", [ppr.I8], [-129])
+        ppr.assert_args("", [ppr.I8], [IntToken(-129)])
     assert "out of range" in str(e2)
 
 
 def test_assert_args_with_range_object(ppr):
     with pytest.raises(HERAError) as e1:
-        ppr.assert_args("", [range(-10, 10)], [-11])
+        ppr.assert_args("", [range(-10, 10)], [IntToken(-11)])
     assert "out of range" in str(e1)
 
     with pytest.raises(HERAError) as e2:
-        ppr.assert_args("", [range(-10, 10)], [10])
+        ppr.assert_args("", [range(-10, 10)], [IntToken(10)])
     assert "out of range" in str(e2)
 
     with pytest.raises(HERAError) as e3:
@@ -296,8 +296,23 @@ def test_assert_args_with_range_object(ppr):
     ppr.assert_args("", [r, r, r], [5, -10, 9])
 
 
+def test_assert_args_with_constant_symbol(ppr):
+    ppr.assert_args("", [range(0, 100)], [Token("SYMBOL", "n")])
+
+
+def test_verify_set_good(ppr):
+    ppr.verify_set(REG("R1"), IntToken(-5))
+
+
+def test_verify_set_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_set(IntToken(10), REG("R1"))
+    assert "SET" in str(e)
+    assert "not a register" in str(e)
+
+
 def test_verify_setlo_good(ppr):
-    ppr.verify_setlo(REG("R1"), -5)
+    ppr.verify_setlo(REG("R1"), IntToken(-5))
 
 
 def test_verify_setlo_bad(ppr):
@@ -308,7 +323,7 @@ def test_verify_setlo_bad(ppr):
 
 
 def test_verify_sethi_good(ppr):
-    ppr.verify_sethi(REG("R1"), -5)
+    ppr.verify_sethi(REG("R1"), IntToken(-5))
 
 
 def test_verify_sethi_bad(ppr):
@@ -346,7 +361,7 @@ def test_verify_add_good(ppr):
 
 def test_verify_add_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_add(REG("R1"), REG("R2"), 17)
+        ppr.verify_add(REG("R1"), REG("R2"), IntToken(17))
     assert "ADD" in str(e)
     assert "not a register" in str(e)
 
@@ -357,7 +372,7 @@ def test_verify_sub_good(ppr):
 
 def test_verify_sub_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_sub(REG("R1"), REG("R2"), 17)
+        ppr.verify_sub(REG("R1"), REG("R2"), IntToken(17))
     assert "SUB" in str(e)
     assert "not a register" in str(e)
 
@@ -368,7 +383,7 @@ def test_verify_mul_good(ppr):
 
 def test_verify_mul_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_mul(REG("R1"), 17, REG("R2"))
+        ppr.verify_mul(REG("R1"), IntToken(17), REG("R2"))
     assert "MUL" in str(e)
     assert "not a register" in str(e)
 
@@ -379,29 +394,29 @@ def test_verify_xor_good(ppr):
 
 def test_verify_xor_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_xor(REG("R1"), 17, REG("R2"))
+        ppr.verify_xor(REG("R1"), IntToken(17), REG("R2"))
     assert "XOR" in str(e)
     assert "not a register" in str(e)
 
 
 def test_verify_inc_good(ppr):
-    ppr.verify_inc(REG("R1"), 64)
+    ppr.verify_inc(REG("R1"), IntToken(64))
 
 
 def test_verify_inc_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_inc(REG("R1"), 65)
+        ppr.verify_inc(REG("R1"), IntToken(65))
     assert "INC" in str(e)
     assert "out of range" in str(e)
 
 
 def test_verify_dec_good(ppr):
-    ppr.verify_dec(REG("R1"), 64)
+    ppr.verify_dec(REG("R1"), IntToken(64))
 
 
 def test_verify_dec_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_dec(REG("R1"), -1)
+        ppr.verify_dec(REG("R1"), IntToken(-1))
     assert "DEC" in str(e)
     assert "out of range" in str(e)
 
@@ -412,7 +427,7 @@ def test_verify_lsl_good(ppr):
 
 def test_verify_lsl_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_lsl(10, REG("R6"))
+        ppr.verify_lsl(IntToken(10), REG("R6"))
     assert "LSL" in str(e)
     assert "not a register" in str(e)
 
@@ -423,7 +438,7 @@ def test_verify_lsr_good(ppr):
 
 def test_verify_lsr_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_lsr(REG("R6"), 10)
+        ppr.verify_lsr(REG("R6"), IntToken(10))
     assert "LSR" in str(e)
     assert "not a register" in str(e)
 
@@ -434,7 +449,7 @@ def test_verify_lsl8_good(ppr):
 
 def test_verify_lsl8_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_lsl8(REG("R6"), 10)
+        ppr.verify_lsl8(REG("R6"), IntToken(10))
     assert "LSL8" in str(e)
     assert "not a register" in str(e)
 
@@ -445,7 +460,7 @@ def test_verify_lsr8_good(ppr):
 
 def test_verify_lsr8_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_lsr8(REG("R6"), 10)
+        ppr.verify_lsr8(REG("R6"), IntToken(10))
     assert "LSR8" in str(e)
     assert "not a register" in str(e)
 
@@ -456,7 +471,7 @@ def test_verify_asl_good(ppr):
 
 def test_verify_asl_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_asl(REG("R6"), 10)
+        ppr.verify_asl(REG("R6"), IntToken(10))
     assert "ASL" in str(e)
     assert "not a register" in str(e)
 
@@ -467,6 +482,6 @@ def test_verify_asr_good(ppr):
 
 def test_verify_asr_bad(ppr):
     with pytest.raises(HERAError) as e:
-        ppr.verify_asr(REG("R6"), 10)
+        ppr.verify_asr(REG("R6"), IntToken(10))
     assert "ASR" in str(e)
     assert "not a register" in str(e)

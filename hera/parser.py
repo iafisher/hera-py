@@ -9,7 +9,7 @@ from collections import namedtuple
 from lark import Lark, Token, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
-from .utils import HERAError
+from .utils import HERAError, IntToken
 
 
 Op = namedtuple("Op", ["name", "args"])
@@ -22,14 +22,17 @@ class TreeToOplist(Transformer):
         return Op(matches[0], matches[1:])
 
     def value(self, matches):
+        line = matches[0].line
+        column = matches[0].column
+
         if matches[0].type == "DECIMAL":
-            return int(matches[0])
+            return IntToken(matches[0], line=line, column=column)
         elif matches[0].type == "HEX":
-            return int(matches[0], base=16)
+            return IntToken(matches[0], base=16, line=line, column=column)
         elif matches[0].type == "OCTAL":
-            return int(matches[0], base=8)
+            return IntToken(matches[0], base=8, line=line, column=column)
         elif matches[0].type == "BINARY":
-            return int(matches[0], base=2)
+            return IntToken(matches[0], base=2, line=line, column=column)
         elif matches[0].type == "STRING":
             otkn = matches[0]
             s = replace_escapes(otkn[1:-1])
