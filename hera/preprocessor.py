@@ -163,42 +163,38 @@ class Preprocessor:
         ordinals = ["first", "second", "third"]
         for ordinal, pattern, arg in zip(ordinals, expected, got):
             prefix = "{} arg to {} ".format(ordinal, name)
-            if pattern == self.REGISTER:
-                if not isinstance(arg, Token) or arg.type != "REGISTER":
-                    raise HERAError(
-                        prefix + "not a register", line=arg.line, column=arg.column
-                    )
+            error = self.assert_one_arg(pattern, arg)
+            if error:
+                raise HERAError(prefix + error, line=arg.line, column=arg.column)
 
-                try:
-                    register_to_index(arg)
-                except ValueError:
-                    raise HERAError(
-                        prefix + "not a valid register",
-                        line=arg.line,
-                        column=arg.column,
-                    )
-            elif isinstance(pattern, range):
-                if isinstance(arg, Token) and arg.type == "SYMBOL":
-                    # Symbols will be resolved later.
-                    continue
+    def assert_one_arg(self, pattern, arg):
+        """Assert that the argument matches the pattern. Return a string stating the
+        error if it doesn't, return None otherwise.
+        """
+        if pattern == self.REGISTER:
+            if not isinstance(arg, Token) or arg.type != "REGISTER":
+                return "not a register"
 
-                if not isinstance(arg, int):
-                    raise HERAError(
-                        prefix + "not an integer", line=arg.line, column=arg.column
-                    )
-                if arg not in pattern:
-                    if pattern.start == 0 and arg < 0:
-                        raise HERAError(
-                            prefix + "must not be negative",
-                            line=arg.line,
-                            column=arg.column,
-                        )
-                    else:
-                        raise HERAError(
-                            prefix + "out of range", line=arg.line, column=arg.column
-                        )
-            else:
-                raise RuntimeError("unknown pattern in Preprocessor.assert_args")
+            try:
+                register_to_index(arg)
+            except ValueError:
+                return "not a valid register"
+        elif isinstance(pattern, range):
+            if isinstance(arg, Token) and arg.type == "SYMBOL":
+                # Symbols will be resolved later.
+                return None
+
+            if not isinstance(arg, int):
+                return "not an integer"
+            if arg not in pattern:
+                if pattern.start == 0 and arg < 0:
+                    return "must not be negative"
+                else:
+                    return "out of range"
+        else:
+            raise RuntimeError(
+                "unknown pattern in Preprocessor.assert_one_arg", pattern
+            )
 
     def verify_set(self, *args):
         self.assert_args("SET", [self.REGISTER, range(-32768, 65536)], args)
