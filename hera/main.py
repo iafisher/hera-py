@@ -22,11 +22,13 @@ from .utils import HERAError
 from .vm import VirtualMachine
 
 
-def main(argv=None):
+def main(argv=None, vm=None):
     """The main entry point into hera-py.
 
     This function consists mostly of argument parsing. The heavy-lifting begins
     with execute_program later in this module.
+
+    A virtual machine instance may be passed in for testing purposes.
     """
     global ANSI_RED_BOLD, ANSI_RESET
 
@@ -59,20 +61,20 @@ def main(argv=None):
     if arguments["preprocess"]:
         preprocess_program(program)
     else:
-        execute_program(program, opt_dump_state=arguments["--dump-state"])
+        execute_program(program, opt_dump_state=arguments["--dump-state"], vm=vm)
 
 
-def execute_program(program, *, opt_dump_state=False):
+def execute_program(program, *, opt_dump_state=False, vm=None):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
 
-    The virtual machine instance that this function instantiates to run the
-    program is returned, primarily so that integration tests can check its
-    state.
+    A virtual machine instance may be passed in for testing purposes. If it is not, a
+    new one is instantiated. The virtual machine is returned.
     """
     lines = program.splitlines()
 
-    vm = VirtualMachine()
+    if vm is None:
+        vm = VirtualMachine()
 
     try:
         program = preprocess(parse(program))

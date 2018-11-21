@@ -1,14 +1,14 @@
 import pytest
 from unittest.mock import patch
 
-from hera.main import execute_program
+from hera.main import main, execute_program
 from hera.preprocessor import HERA_DATA_START
 from hera.vm import VirtualMachine
 
 
 def test_addition_dot_hera():
-    with open("test/hera/addition.hera") as f:
-        vm = execute_program(f.read())
+    vm = VirtualMachine()
+    main(["test/hera/addition.hera"], vm)
 
     assert vm.registers[1] == 20
     assert vm.registers[2] == 22
@@ -25,13 +25,25 @@ def test_addition_dot_hera():
 
 
 def test_simple_loop_dot_hera():
-    with open("test/hera/simple_loop.hera") as f:
-        vm = execute_program(f.read())
+    vm = VirtualMachine()
+    main(["test/hera/simple_loop.hera"], vm)
+
+    assert vm.registers[1] == 10
+    assert vm.registers[2] == 10
+    for r in vm.registers[3:10]:
+        assert r == 0
+    assert vm.flag_sign == False
+    assert vm.flag_zero == True
+    assert vm.flag_overflow == False
+    assert vm.flag_carry == True
+    assert vm.flag_carry_block == False
+    for x in vm.memory:
+        assert x == 0
 
 
 def test_fcall_dot_hera():
-    with open("test/hera/fcall.hera") as f:
-        vm = execute_program(f.read())
+    vm = VirtualMachine()
+    main(["test/hera/fcall.hera"], vm)
 
     assert vm.registers[1] == 16
     for r in vm.registers[2:10]:
@@ -46,8 +58,8 @@ def test_fcall_dot_hera():
 
 
 def test_fib_dot_hera():
-    with open("test/hera/fib.hera") as f:
-        vm = execute_program(f.read())
+    vm = VirtualMachine()
+    main(["test/hera/fib.hera"], vm)
 
     assert vm.registers[1] == 12
     assert vm.registers[2] == 144
@@ -66,8 +78,8 @@ def test_fib_dot_hera():
 
 
 def test_data_easy_dot_hera():
-    with open("test/hera/data_easy.hera") as f:
-        vm = execute_program(f.read())
+    vm = VirtualMachine()
+    main(["test/hera/data_easy.hera"], vm)
 
     assert vm.registers[1] == HERA_DATA_START
     assert vm.registers[2] == 42
@@ -82,8 +94,8 @@ def test_data_easy_dot_hera():
 
 
 def test_dskip_dot_hera():
-    with open("test/hera/dskip.hera") as f:
-        vm = execute_program(f.read())
+    vm = VirtualMachine()
+    main(["test/hera/dskip.hera"], vm)
 
     assert vm.registers[1] == HERA_DATA_START
     assert vm.registers[2] == 42
@@ -100,8 +112,8 @@ def test_dskip_dot_hera():
 
 
 def test_loop_and_constant_dot_hera():
-    with open("test/hera/loop_and_constant.hera") as f:
-        vm = execute_program(f.read())
+    vm = VirtualMachine()
+    main(["test/hera/loop_and_constant.hera"], vm)
 
     assert vm.registers[1] == 100
     assert vm.registers[2] == 100
