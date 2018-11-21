@@ -7,7 +7,7 @@ import re
 from collections import namedtuple
 
 from lark import Lark, Token, Transformer, Tree
-from lark.exceptions import LarkError
+from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from .utils import HERAError
 
@@ -80,8 +80,15 @@ def parse(text):
     """Parse a HERA program into a list of Op objects."""
     try:
         tree = _parser.parse(text)
+    except UnexpectedCharacters as e:
+        raise HERAError("unexpected character", e.line, e.column) from None
+    except UnexpectedToken as e:
+        if e.token.type == "$END":
+            raise HERAError("unexpected end of file") from None
+        else:
+            raise HERAError("unexpected character", e.line, e.column) from None
     except LarkError as e:
-        raise HERAError("invalid syntax", e.line) from None
+        raise HERAError("invalid syntax", e.line, e.column) from None
 
     if isinstance(tree, Tree):
         return tree.children

@@ -6,9 +6,10 @@ Version: November 2018
 
 
 class HERAError(Exception):
-    def __init__(self, msg, line=None):
+    def __init__(self, msg, line=None, column=None):
         super().__init__(msg)
         self.line = line
+        self.column = column
 
 
 def to_u16(n):

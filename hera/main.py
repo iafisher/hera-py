@@ -81,7 +81,13 @@ def execute_program(program, *, opt_dump_state=False, vm=None):
         vm.exec_many(program)
     except HERAError as e:
         if e.line:
-            msg = "{0}, line {0.line}\n\n  {1}\n".format(e, lines[e.line - 1])
+            if e.column:
+                caret = (" " * (e.column + 1)) + "^"
+                msg = "{0}, line {0.line} col {0.column}\n\n  {1}\n{2}\n".format(
+                    e, lines[e.line - 1], caret
+                )
+            else:
+                msg = "{0}, line {0.line}\n\n  {1}\n".format(e, lines[e.line - 1])
         else:
             msg = str(e)
         error_and_exit(msg)
