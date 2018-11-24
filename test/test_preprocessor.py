@@ -252,10 +252,6 @@ def test_assert_args_with_wrong_type(ppr):
         ppr.assert_args("", [ppr.U16], [REG("R1")])
     assert "not an integer" in str(e2)
 
-    with pytest.raises(HERAError) as e3:
-        ppr.assert_args("", [ppr.I8], [REG("R1")])
-    assert "not an integer" in str(e3)
-
 
 def test_assert_args_with_u16_out_of_range(ppr):
     with pytest.raises(HERAError) as e:
@@ -269,14 +265,14 @@ def test_assert_args_with_negative_u16(ppr):
     assert "must not be negative" in str(e)
 
 
-def test_assert_args_with_i8_out_of_range(ppr):
+def test_assert_args_with_u4_out_of_range(ppr):
     with pytest.raises(HERAError) as e1:
-        ppr.assert_args("", [ppr.I8], [IntToken(128)])
+        ppr.assert_args("", [ppr.U4], [IntToken(16)])
     assert "out of range" in str(e1)
 
     with pytest.raises(HERAError) as e2:
-        ppr.assert_args("", [ppr.I8], [IntToken(-129)])
-    assert "out of range" in str(e2)
+        ppr.assert_args("", [ppr.U4], [IntToken(-1)])
+    assert "must not be negative" in str(e2)
 
 
 def test_assert_args_with_range_object(ppr):
@@ -323,7 +319,7 @@ def test_verify_setlo_bad(ppr):
 
 
 def test_verify_sethi_good(ppr):
-    ppr.verify_sethi(REG("R1"), IntToken(-5))
+    ppr.verify_sethi(REG("R1"), IntToken(5))
 
 
 def test_verify_sethi_bad(ppr):
@@ -485,3 +481,69 @@ def test_verify_asr_bad(ppr):
         ppr.verify_asr(REG("R6"), IntToken(10))
     assert "ASR" in str(e)
     assert "not a register" in str(e)
+
+
+def test_verify_savef_good(ppr):
+    ppr.verify_savef(REG("R1"))
+
+
+def test_verify_savef_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_savef(REG("R1"), REG("R2"))
+    assert "SAVEF" in str(e)
+    assert "too many" in str(e)
+
+
+def test_verify_rstrf_good(ppr):
+    ppr.verify_rstrf(REG("R1"))
+
+
+def test_verify_rstrf_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_rstrf(REG("R1"), REG("R2"))
+    assert "RSTRF" in str(e)
+    assert "too many" in str(e)
+
+
+def test_verify_fon_good(ppr):
+    ppr.verify_fon(IntToken(4))
+
+
+def test_verify_fon_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_fon(IntToken(16))
+    assert "FON" in str(e)
+    assert "out of range" in str(e)
+
+
+def test_verify_foff_good(ppr):
+    ppr.verify_foff(IntToken(4))
+
+
+def test_verify_foff_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_foff(IntToken(16))
+    assert "FOFF" in str(e)
+    assert "out of range" in str(e)
+
+
+def test_verify_fset5_good(ppr):
+    ppr.verify_fset5(IntToken(4))
+
+
+def test_verify_fset5_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_fset5(IntToken(16))
+    assert "FSET5" in str(e)
+    assert "out of range" in str(e)
+
+
+def test_verify_fset4_good(ppr):
+    ppr.verify_fset4(IntToken(4))
+
+
+def test_verify_fset4_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_fset4(IntToken(16))
+    assert "FSET4" in str(e)
+    assert "out of range" in str(e)

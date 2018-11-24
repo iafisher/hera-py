@@ -140,8 +140,8 @@ class Preprocessor:
     # Constants to pass to verify_base
     REGISTER = "r"
     STRING = "s"
+    U4 = range(0, 2 ** 4)
     U16 = range(0, 2 ** 16)
-    I8 = range(-128, 128)
 
     def assert_args(self, name, expected, got):
         """Assert that the given args match the expected ones and raise a
@@ -246,6 +246,24 @@ class Preprocessor:
 
     def verify_asr(self, *args):
         self.assert_args("ASR", [self.REGISTER] * 2, args)
+
+    def verify_savef(self, *args):
+        self.assert_args("SAVEF", [self.REGISTER], args)
+
+    def verify_rstrf(self, *args):
+        self.assert_args("RSTRF", [self.REGISTER], args)
+
+    def verify_fon(self, *args):
+        self.assert_args("FON", [self.U4], args)
+
+    def verify_foff(self, *args):
+        self.assert_args("FOFF", [self.U4], args)
+
+    def verify_fset5(self, *args):
+        self.assert_args("FSET5", [self.U4], args)
+
+    def verify_fset4(self, *args):
+        self.assert_args("FSET4", [self.U4], args)
 
     def preprocess1_set(self, d, v):
         if isinstance(v, int):
