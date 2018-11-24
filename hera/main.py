@@ -7,18 +7,19 @@ Usage:
     hera (-v | --version)
 
 Options:
-    --dump-state     Print the state of the virtual machine after execution.
+    --no-dump-state  Do not print the state of the virtual machine after execution.
     --no-color       Do not print colored output.
     -h, --help       Show this message.
     -v, --version    Show the version.
 """
 import sys
+import functools
 
 from docopt import docopt
 
 from .parser import parse
 from .preprocessor import preprocess
-from .utils import HERAError
+from .utils import print_register_debug, HERAError
 from .vm import VirtualMachine
 
 
@@ -39,7 +40,11 @@ def main(argv=None, vm=None):
         ANSI_RED_BOLD = ANSI_RESET = ""
 
     if path == "-":
-        program = sys.stdin.read()
+        try:
+            program = sys.stdin.read()
+        except (IOError, KeyboardInterrupt):
+            print()
+            return
     else:
         try:
             with open(path, "r", encoding="utf-8") as f:
@@ -61,10 +66,10 @@ def main(argv=None, vm=None):
     if arguments["preprocess"]:
         preprocess_program(program)
     else:
-        execute_program(program, opt_dump_state=arguments["--dump-state"], vm=vm)
+        execute_program(program, no_dump_state=arguments["--no-dump-state"], vm=vm)
 
 
-def execute_program(program, *, opt_dump_state=False, vm=None):
+def execute_program(program, *, no_dump_state=False, vm=None):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
 
@@ -92,7 +97,7 @@ def execute_program(program, *, opt_dump_state=False, vm=None):
             msg = str(e)
         error_and_exit(msg)
     else:
-        if opt_dump_state:
+        if not no_dump_state:
             dump_state(vm)
 
         return vm
@@ -115,15 +120,21 @@ def op_to_string(op):
 
 def dump_state(vm):
     """Print the state of the virtual machine to standard output."""
-    print("Virtual machine state:")
-    for i, value in enumerate(vm.registers):
-        print("\tR{} = {}".format(i, value))
-    print()
-    print("\tZero flag is " + ("ON" if vm.flag_zero else "OFF"))
-    print("\tSign flag is " + ("ON" if vm.flag_sign else "OFF"))
-    print("\tOverflow flag is " + ("ON" if vm.flag_overflow else "OFF"))
-    print("\tCarry flag is " + ("ON" if vm.flag_carry else "OFF"))
-    print("\tCarry block flag is " + ("ON" if vm.flag_carry_block else "OFF"))
+    sys.stdout.flush()
+
+    # Redefine print in this function to use stderr.
+    nprint = functools.partial(print, file=sys.stderr)
+
+    nprint("\nVirtual machine state after execution:")
+    for i, value in enumerate(vm.registers[1:], start=1):
+        rname = "\tR" + str(i) + (" " if i < 10 else "")
+        print_register_debug(rname, value)
+    nprint()
+    nprint("\tZero flag is " + ("ON" if vm.flag_zero else "OFF"))
+    nprint("\tSign flag is " + ("ON" if vm.flag_sign else "OFF"))
+    nprint("\tOverflow flag is " + ("ON" if vm.flag_overflow else "OFF"))
+    nprint("\tCarry flag is " + ("ON" if vm.flag_carry else "OFF"))
+    nprint("\tCarry block flag is " + ("ON" if vm.flag_carry_block else "OFF"))
 
 
 def error_and_exit(msg, *, exitcode=3):

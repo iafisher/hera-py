@@ -1,5 +1,12 @@
-from hera.main import align_caret, make_ansi, op_to_string, program_to_string
+from hera.main import (
+    align_caret,
+    dump_state,
+    make_ansi,
+    op_to_string,
+    program_to_string,
+)
 from hera.parser import Op
+from hera.vm import VirtualMachine
 
 
 def test_make_ansi_red():
@@ -29,3 +36,17 @@ def test_program_to_string():
 
 def test_align_caret():
     assert align_caret("\t\t  a", 5) == "\t\t  "
+
+
+def test_dump_state(capsys):
+    dump_state(VirtualMachine())
+
+    captured = capsys.readouterr()
+    assert "R1  = 0x0000 = 0" in captured.err
+    assert "R7  = 0x0000 = 0" in captured.err
+    assert "R14 = 0x0000 = 0" in captured.err
+    assert "Zero flag is OFF" in captured.err
+    assert "Sign flag is OFF" in captured.err
+    assert "Overflow flag is OFF" in captured.err
+    assert "Carry flag is OFF" in captured.err
+    assert "Carry block flag is OFF" in captured.err

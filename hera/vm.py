@@ -4,9 +4,17 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: November 2018
 """
 import functools
+import sys
 
 from .preprocessor import HERA_DATA_START
-from .utils import from_u16, to_u16, to_u32, register_to_index, HERAError
+from .utils import (
+    from_u16,
+    to_u16,
+    to_u32,
+    print_register_debug,
+    register_to_index,
+    HERAError,
+)
 
 
 def ternary_op(f):
@@ -571,5 +579,6 @@ class VirtualMachine:
 
     def exec_print_reg(self, target):
         """Execute the print_reg debugging operation."""
-        print("{} = {}".format(target, self.get_register(target)))
+        v = self.get_register(target)
+        print_register_debug(target, v, to_stderr=False)
         self.pc += 1

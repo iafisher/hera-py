@@ -3,6 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: November 2018
 """
+import sys
 
 
 class HERAError(Exception):
@@ -75,3 +76,14 @@ class IntToken(int):
         self.line = line
         self.column = column
         return self
+
+
+def print_register_debug(target, v, *, to_stderr=True):
+    file_ = sys.stderr if to_stderr else sys.stdout
+
+    print("{0} = 0x{1:0>4x} = {1}".format(target, v), end="", file=file_)
+    if v & 0x800:
+        print(" = {}".format(from_u16(v)), end="", file=file_)
+    if v < 128 and chr(v).isprintable():
+        print(" = {!r}".format(chr(v)), end="", file=file_)
+    print(file=file_)
