@@ -175,8 +175,11 @@ class VirtualMachine:
     def exec_setlo(self, target, value):
         """Execute the SETLO instruction. Note that unlike other op handlers,
         the `value` argument is allowed to be negative. However, it must be in
-        the range [-128, 127], as it is only given 8 bits in machine code.
+        the range [-128, 255], as it is only given 8 bits in machine code.
         """
+        if value > 127:
+            value -= 256
+
         self.store_register(target, to_u16(value))
         self.pc += 1
 

@@ -34,6 +34,11 @@ def test_setlo_with_max_positive(vm):
     assert vm.registers[2] == 127
 
 
+def test_setlo_with_255(vm):
+    vm.exec_setlo("R2", 255)
+    assert vm.registers[2] == to_u16(-1)
+
+
 def test_setlo_with_max_negative(vm):
     vm.exec_setlo("R2", -128)
     assert vm.registers[2] == to_u16(-128)

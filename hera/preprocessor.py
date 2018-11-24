@@ -200,10 +200,10 @@ class Preprocessor:
         self.assert_args("SET", [self.REGISTER, range(-32768, 65536)], args)
 
     def verify_setlo(self, *args):
-        self.assert_args("SETLO", [self.REGISTER, self.I8], args)
+        self.assert_args("SETLO", [self.REGISTER, range(-128, 256)], args)
 
     def verify_sethi(self, *args):
-        self.assert_args("SETHI", [self.REGISTER, self.I8], args)
+        self.assert_args("SETHI", [self.REGISTER, range(0, 128)], args)
 
     def verify_and(self, *args):
         self.assert_args("AND", [self.REGISTER] * 3, args)
