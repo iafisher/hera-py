@@ -292,7 +292,7 @@ class Preprocessor:
         self.assert_args("BRR", [self.I8], args)
 
     def verify_bl(self, *args):
-        self.assert_args("BR", [self.REGISTER_OR_LABEL], args)
+        self.assert_args("BL", [self.REGISTER_OR_LABEL], args)
 
     def verify_blr(self, *args):
         self.assert_args("BLR", [self.I8], args)
