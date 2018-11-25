@@ -296,6 +296,11 @@ def test_assert_args_with_constant_symbol(ppr):
     ppr.assert_args("", [range(0, 100)], [Token("SYMBOL", "n")])
 
 
+def test_assert_args_with_register_or_label(ppr):
+    ppr.assert_args("", [ppr.REGISTER_OR_LABEL], [Token("SYMBOL", "n")])
+    ppr.assert_args("", [ppr.REGISTER_OR_LABEL], [REG("R1")])
+
+
 def test_verify_set_good(ppr):
     ppr.verify_set(REG("R1"), IntToken(-5))
 
@@ -547,3 +552,36 @@ def test_verify_fset4_bad(ppr):
         ppr.verify_fset4(IntToken(16))
     assert "FSET4" in str(e)
     assert "out of range" in str(e)
+
+
+def test_verify_load_good(ppr):
+    ppr.verify_load(REG("R1"), IntToken(0), REG("R2"))
+
+
+def test_verify_load_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_load(REG("R1"), REG("R2"))
+    assert "LOAD" in str(e)
+    assert "too few" in str(e)
+
+
+def test_verify_store_good(ppr):
+    ppr.verify_store(REG("R1"), IntToken(0), REG("R2"))
+
+
+def test_verify_store_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_load(REG("R1"), IntToken(32), REG("R2"))
+    assert "LOAD" in str(e)
+    assert "out of range" in str(e)
+
+
+def test_verify_br_good(ppr):
+    ppr.verify_br(REG("R1"))
+
+
+def test_verify_br_bad(ppr):
+    with pytest.raises(HERAError) as e:
+        ppr.verify_br(REG("R1"), REG("R2"))
+    assert "BR" in str(e)
+    assert "too many" in str(e)

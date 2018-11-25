@@ -139,9 +139,12 @@ class Preprocessor:
 
     # Constants to pass to verify_base
     REGISTER = "r"
+    REGISTER_OR_LABEL = "rl"
     STRING = "s"
     U4 = range(0, 2 ** 4)
+    U5 = range(0, 2 ** 5)
     U16 = range(0, 2 ** 16)
+    I8 = range(-128, 256)
 
     def assert_args(self, name, expected, got):
         """Assert that the given args match the expected ones and raise a
@@ -179,6 +182,17 @@ class Preprocessor:
                 register_to_index(arg)
             except ValueError:
                 return "not a valid register"
+        elif pattern == self.REGISTER_OR_LABEL:
+            if not isinstance(arg, Token):
+                return "not a register or label"
+
+            if arg.type == "REGISTER":
+                try:
+                    register_to_index(arg)
+                except ValueError:
+                    return "not a valid register"
+            elif arg.type != "SYMBOL":
+                return "not a register or label"
         elif isinstance(pattern, range):
             if isinstance(arg, Token) and arg.type == "SYMBOL":
                 # Symbols will be resolved later.
@@ -264,6 +278,108 @@ class Preprocessor:
 
     def verify_fset4(self, *args):
         self.assert_args("FSET4", [self.U4], args)
+
+    def verify_load(self, *args):
+        self.assert_args("LOAD", [self.REGISTER, self.U5, self.REGISTER], args)
+
+    def verify_store(self, *args):
+        self.assert_args("STORE", [self.REGISTER, self.U5, self.REGISTER], args)
+
+    def verify_br(self, *args):
+        self.assert_args("BR", [self.REGISTER_OR_LABEL], args)
+
+    def verify_brr(self, *args):
+        self.assert_args("BRR", [self.I8], args)
+
+    def verify_bl(self, *args):
+        self.assert_args("BR", [self.REGISTER_OR_LABEL], args)
+
+    def verify_blr(self, *args):
+        self.assert_args("BLR", [self.I8], args)
+
+    def verify_bge(self, *args):
+        self.assert_args("BGE", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bger(self, *args):
+        self.assert_args("BGER", [self.I8], args)
+
+    def verify_ble(self, *args):
+        self.assert_args("BLE", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bler(self, *args):
+        self.assert_args("BLER", [self.I8], args)
+
+    def verify_bg(self, *args):
+        self.assert_args("BG", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bgr(self, *args):
+        self.assert_args("BGR", [self.I8], args)
+
+    def verify_bule(self, *args):
+        self.assert_args("BULE", [self.REGISTER_OR_LABEL], args)
+
+    def verify_buler(self, *args):
+        self.assert_args("BULER", [self.I8], args)
+
+    def verify_bug(self, *args):
+        self.assert_args("BUG", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bugr(self, *args):
+        self.assert_args("BUGR", [self.I8], args)
+
+    def verify_bz(self, *args):
+        self.assert_args("BZ", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bzr(self, *args):
+        self.assert_args("BZR", [self.I8], args)
+
+    def verify_bnz(self, *args):
+        self.assert_args("BNZ", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bnzr(self, *args):
+        self.assert_args("BNZR", [self.I8], args)
+
+    def verify_bc(self, *args):
+        self.assert_args("BC", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bcr(self, *args):
+        self.assert_args("BCR", [self.I8], args)
+
+    def verify_bnc(self, *args):
+        self.assert_args("BNC", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bncr(self, *args):
+        self.assert_args("BNCR", [self.I8], args)
+
+    def verify_bs(self, *args):
+        self.assert_args("BS", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bsr(self, *args):
+        self.assert_args("BSR", [self.I8], args)
+
+    def verify_bns(self, *args):
+        self.assert_args("BNS", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bnsr(self, *args):
+        self.assert_args("BNSR", [self.I8], args)
+
+    def verify_bv(self, *args):
+        self.assert_args("BV", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bvr(self, *args):
+        self.assert_args("BVR", [self.I8], args)
+
+    def verify_bnv(self, *args):
+        self.assert_args("BNV", [self.REGISTER_OR_LABEL], args)
+
+    def verify_bnvr(self, *args):
+        self.assert_args("BNVR", [self.I8], args)
+
+    def verify_call(self, *args):
+        self.assert_args("CALL", [self.REGISTER, self.REGISTER_OR_LABEL], args)
+
+    def verify_return(self, *args):
+        self.assert_args("RETURN", [self.REGISTER, self.REGISTER_OR_LABEL], args)
 
     def preprocess1_set(self, d, v):
         if isinstance(v, int):
