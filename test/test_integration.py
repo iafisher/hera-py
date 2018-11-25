@@ -15,11 +15,11 @@ def test_addition_dot_hera():
     assert vm.registers[3] == 42
     for r in vm.registers[4:]:
         assert r == 0
-    assert vm.flag_sign == False
-    assert vm.flag_zero == False
-    assert vm.flag_overflow == False
-    assert vm.flag_carry == False
-    assert vm.flag_carry_block == False
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
     for x in vm.memory:
         assert x == 0
 
@@ -32,11 +32,11 @@ def test_simple_loop_dot_hera():
     assert vm.registers[2] == 10
     for r in vm.registers[3:10]:
         assert r == 0
-    assert vm.flag_sign == False
-    assert vm.flag_zero == True
-    assert vm.flag_overflow == False
-    assert vm.flag_carry == True
-    assert vm.flag_carry_block == False
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
+    assert not vm.flag_carry_block
     for x in vm.memory:
         assert x == 0
 
@@ -48,11 +48,11 @@ def test_fcall_dot_hera():
     assert vm.registers[1] == 16
     for r in vm.registers[2:10]:
         assert r == 0
-    assert vm.flag_sign == False
-    assert vm.flag_zero == False
-    assert vm.flag_overflow == False
-    assert vm.flag_carry == False
-    assert vm.flag_carry_block == False
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
     for x in vm.memory:
         assert x == 0
 
@@ -68,11 +68,11 @@ def test_fib_dot_hera():
     assert vm.registers[5] == 89
     for r in vm.registers[6:10]:
         assert r == 0
-    assert vm.flag_sign == False
-    assert vm.flag_zero == True
-    assert vm.flag_overflow == False
-    assert vm.flag_carry == True
-    assert vm.flag_carry_block == True
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
     for x in vm.memory:
         assert x == 0
 
@@ -85,11 +85,11 @@ def test_data_easy_dot_hera():
     assert vm.registers[2] == 42
     for r in vm.registers[3:]:
         assert r == 0
-    assert vm.flag_sign == False
-    assert vm.flag_zero == False
-    assert vm.flag_overflow == False
-    assert vm.flag_carry == False
-    assert vm.flag_carry_block == False
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
     assert vm.memory[HERA_DATA_START] == 42
 
 
@@ -102,11 +102,11 @@ def test_dskip_dot_hera():
     assert vm.registers[3] == 84
     for r in vm.registers[4:]:
         assert r == 0
-    assert vm.flag_sign == False
-    assert vm.flag_zero == False
-    assert vm.flag_overflow == False
-    assert vm.flag_carry == False
-    assert vm.flag_carry_block == False
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
     assert vm.memory[HERA_DATA_START] == 42
     assert vm.memory[HERA_DATA_START + 11] == 84
 
@@ -120,11 +120,11 @@ def test_loop_and_constant_dot_hera():
     assert vm.registers[3] == 5050
     for r in vm.registers[4:10]:
         assert r == 0
-    assert vm.flag_sign == False
-    assert vm.flag_zero == True
-    assert vm.flag_overflow == False
-    assert vm.flag_carry == True
-    assert vm.flag_carry_block == False
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
+    assert not vm.flag_carry_block
 
 
 def test_cs240_dot_hera():
