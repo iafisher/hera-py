@@ -103,3 +103,8 @@ class Instruction:
 class Add(Instruction):
     name = "ADD"
     params = (REGISTER, REGISTER)
+
+
+def make_op(name, args):
+    cls = globals()[name]
+    return cls(*args)

@@ -127,6 +127,28 @@ def test_loop_and_constant_dot_hera():
     assert vm.flag_carry_block == False
 
 
+def test_cs240_dot_hera():
+    vm = VirtualMachine()
+    main(["test/hera/cs240.hera"], vm)
+
+    assert vm.registers[1] == 0xbff2
+    assert vm.registers[2] == 0xf000
+    assert vm.registers[3] == 0x0010
+    assert vm.registers[4] == 0x7000
+    assert vm.registers[5] == 0x8010
+    assert vm.registers[6] == 0x7800
+    assert vm.registers[7] == 0x0070
+    assert vm.registers[8] == 0xe009
+    assert vm.registers[9] == 0xffc8
+    assert vm.registers[10] == 0x3c00
+
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
 def test_error_message_for_missing_comma():
     line = "SETLO(R1 40)"
     with patch("hera.main.error_and_exit") as mock_exit:
