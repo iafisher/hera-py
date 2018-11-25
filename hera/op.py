@@ -1,7 +1,13 @@
 import sys
 
+from lark import Token
+
+from .utils import register_to_index, to_u16
+
 
 REGISTER = "r"
+REGISTER_OR_LABEL = "rl"
+I16 = range(-2**15, 2**16)
 
 
 """
@@ -26,23 +32,23 @@ class Instruction:
         nexpected = len(self.params)
 
         if ngot < nexpected:
-            self.emit_error(
-                "too few args to {} (expected {}, got {})".format(name, nexpected, ngot)
+            emit_error(
+                "too few args to {} (expected {}, got {})".format(self.name, nexpected, ngot)
             )
             ret = False
 
         if nexpected < ngot:
-            self.emit_error(
-                "too many args to {} (expected {}, got {})".format(name, nexpected, ngot)
+            emit_error(
+                "too many args to {} (expected {}, got {})".format(self.name, nexpected, ngot)
             )
             ret = False
 
         ordinals = ["first", "second", "third"]
         for ordinal, pattern, arg in zip(ordinals, self.params, self.args):
-            prefix = "{} arg to {} ".format(ordinal, name)
-            error = self.assert_one_arg(pattern, arg)
+            prefix = "{} arg to {} ".format(ordinal, self.name)
+            error = self._verify_one_arg(pattern, arg)
             if error:
-                self.emit_error(prefix + error, column=arg.column)
+                emit_error(prefix + error, column=arg.column)
                 ret = False
 
         return ret
@@ -51,7 +57,7 @@ class Instruction:
         """Verify that the argument matches the pattern. Return a string stating the
         error if it doesn't, return None otherwise.
         """
-        if pattern == self.REGISTER:
+        if pattern == REGISTER:
             if not isinstance(arg, Token) or arg.type != "REGISTER":
                 return "not a register"
 
@@ -59,7 +65,7 @@ class Instruction:
                 register_to_index(arg)
             except ValueError:
                 return "not a valid register"
-        elif pattern == self.REGISTER_OR_LABEL:
+        elif pattern == REGISTER_OR_LABEL:
             if not isinstance(arg, Token):
                 return "not a register or label"
 
@@ -87,17 +93,49 @@ class Instruction:
                 "unknown pattern in Instruction._verify_one_arg", pattern
             )
 
-    def convert_pseudo(self):
+    def convert(self):
         return [self]
 
-    def exec(self, vm):
+    def execute(self, vm):
         raise NotImplementedError
-
-    def emit_error(self, msg, *, column=None):
-        pass
 
     def __eq__(self, other):
         return self.args == other.args
+
+    def __repr__(self):
+        return '{0.__class__.__name__}({1})'.format(self, ', '.join(map(repr, self.args)))
+
+
+class Set(Instruction):
+    name = "SET"
+    params = (REGISTER, I16)
+
+    def convert(self):
+        d, v = self.args
+        if isinstance(v, int):
+            v = to_u16(v)
+            lo = v & 0xFF
+            hi = v >> 8
+
+            if hi:
+                return [Setlo(d, lo), Sethi(d, hi)]
+            else:
+                return [Setlo(d, lo)]
+        else:
+            return [Setlo(d, v), Sethi(d, v)]
+
+
+class Setlo(Instruction):
+    def execute(self, vm):
+        target, value = self.args
+        if value > 127:
+            value -= 256
+        vm.store_register(target, to_u16(value))
+        vm.pc += 1
+
+
+class Sethi(Instruction):
+    pass
 
 
 class Add(Instruction):
@@ -105,6 +143,6 @@ class Add(Instruction):
     params = (REGISTER, REGISTER)
 
 
-def make_op(name, args):
-    cls = globals()[name]
-    return cls(*args)
+def emit_error(msg, *, column=None):
+    # TODO: Should probably move this to utils
+    sys.stderr.write(msg + "\n")

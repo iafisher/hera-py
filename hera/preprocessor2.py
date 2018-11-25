@@ -8,7 +8,7 @@ def preprocess(program):
 
     nprogram = []
     for inst in program:
-        nprogram.extend(inst.convert_pseudo())
+        nprogram.extend(inst.convert())
 
     labels = get_labels(nprogram)
     for inst in program:
