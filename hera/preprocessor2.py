@@ -14,7 +14,9 @@ def preprocess(program):
     for inst in program:
         inst.resolve_labels(labels)
 
-    return [inst for inst in nprogram if inst.name not in ("LABEL", "DLABEL", "CONSTANT")]
+    return [
+        inst for inst in nprogram if inst.name not in ("LABEL", "DLABEL", "CONSTANT")
+    ]
 
 
 def get_labels(program):

@@ -3,7 +3,7 @@ import pytest
 from lark import Token
 
 from hera.op import Set, Sethi, Setlo
-from hera.utils import HERAError, to_u16
+from hera.utils import HERAError, IntToken, to_u16
 from hera.vm import VirtualMachine
 
 
@@ -12,8 +12,12 @@ def vm():
     return VirtualMachine()
 
 
-def REG(s):
+def R(s):
     return Token("REGISTER", s)
+
+
+def I(n):
+    return IntToken(n)
 
 
 def test_SET_convert_with_small_positive():
@@ -37,20 +41,71 @@ def test_SET_convert_with_symbol():
 
 
 def test_SET_verify_with_too_few_args(capsys):
-    Set(REG("R1")).verify()
+    assert not Set(R("R1")).verify()
     captured = capsys.readouterr()
     assert "SET" in captured.err
     assert "too few" in captured.err
 
 
 def test_SET_verify_with_too_many_args(capsys):
-    Set(REG("R1"), 10, 11).verify()
+    assert not Set(R("R1"), 10, 11).verify()
     captured = capsys.readouterr()
     assert "SET" in captured.err
     assert "too many" in captured.err
 
 
-# TODO: test_SETLO_verify_*
+def test_SET_verify_with_integer_out_of_range(capsys):
+    assert not Set(R("R1"), I(-32769)).verify()
+    captured = capsys.readouterr()
+    assert "SET" in captured.err
+    assert "out of range" in captured.err
+
+
+def test_SET_verify_with_another_integer_out_of_range(capsys):
+    assert not Set(R("R1"), I(65536)).verify()
+    captured = capsys.readouterr()
+    assert "SET" in captured.err
+    assert "out of range" in captured.err
+
+
+def test_SET_verify_with_correct_args():
+    assert Set(R("R1"), -32768).verify()
+    assert Set(R("R1"), 65535).verify()
+    assert Set(R("R1"), 0).verify()
+
+
+def test_SETLO_verify_with_too_many_args(capsys):
+    assert not Setlo(R("R5"), 1, 2).verify()
+    captured = capsys.readouterr()
+    assert "SETLO" in captured.err
+    assert "too many" in captured.err
+
+
+def test_SETLO_verify_with_too_few_args(capsys):
+    assert not Setlo(R("R5")).verify()
+    captured = capsys.readouterr()
+    assert "SETLO" in captured.err
+    assert "too few" in captured.err
+
+
+def test_SETLO_verify_with_integer_out_of_range(capsys):
+    assert not Setlo(R("R5"), I(-129)).verify()
+    captured = capsys.readouterr()
+    assert "SETLO" in captured.err
+    assert "out of range" in captured.err
+
+
+def test_SETLO_verify_with_another_integer_out_of_range(capsys):
+    assert not Setlo(R("R5"), I(256)).verify()
+    captured = capsys.readouterr()
+    assert "SETLO" in captured.err
+    assert "out of range" in captured.err
+
+
+def test_SETLO_verify_with_correct_args():
+    assert Setlo(R("R5"), -128).verify()
+    assert Setlo(R("R5"), 255).verify()
+    assert Setlo(R("R5"), 0).verify()
 
 
 def test_SETLO_with_positive(vm):

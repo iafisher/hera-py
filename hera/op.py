@@ -7,7 +7,8 @@ from .utils import register_to_index, to_u16
 
 REGISTER = "r"
 REGISTER_OR_LABEL = "rl"
-I16 = range(-2**15, 2**16)
+I8 = range(-2 ** 7, 2 ** 8)
+I16 = range(-2 ** 15, 2 ** 16)
 
 
 """
@@ -33,13 +34,17 @@ class Instruction:
 
         if ngot < nexpected:
             emit_error(
-                "too few args to {} (expected {}, got {})".format(self.name, nexpected, ngot)
+                "too few args to {} (expected {}, got {})".format(
+                    self.name, nexpected, ngot
+                )
             )
             ret = False
 
         if nexpected < ngot:
             emit_error(
-                "too many args to {} (expected {}, got {})".format(self.name, nexpected, ngot)
+                "too many args to {} (expected {}, got {})".format(
+                    self.name, nexpected, ngot
+                )
             )
             ret = False
 
@@ -103,7 +108,9 @@ class Instruction:
         return self.args == other.args
 
     def __repr__(self):
-        return '{0.__class__.__name__}({1})'.format(self, ', '.join(map(repr, self.args)))
+        return "{0.__class__.__name__}({1})".format(
+            self, ", ".join(map(repr, self.args))
+        )
 
 
 class Set(Instruction):
@@ -126,6 +133,9 @@ class Set(Instruction):
 
 
 class Setlo(Instruction):
+    name = "SETLO"
+    params = (REGISTER, I8)
+
     def execute(self, vm):
         target, value = self.args
         if value > 127:
