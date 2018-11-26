@@ -8,7 +8,7 @@ from hera.vm import VirtualMachine
 
 def test_addition_dot_hera():
     vm = VirtualMachine()
-    main(["test/hera/addition.hera"], vm)
+    main(["test/assets/addition.hera"], vm)
 
     assert vm.registers[1] == 20
     assert vm.registers[2] == 22
@@ -26,7 +26,7 @@ def test_addition_dot_hera():
 
 def test_simple_loop_dot_hera():
     vm = VirtualMachine()
-    main(["test/hera/simple_loop.hera"], vm)
+    main(["test/assets/simple_loop.hera"], vm)
 
     assert vm.registers[1] == 10
     assert vm.registers[2] == 10
@@ -43,7 +43,7 @@ def test_simple_loop_dot_hera():
 
 def test_fcall_dot_hera():
     vm = VirtualMachine()
-    main(["test/hera/fcall.hera"], vm)
+    main(["test/assets/fcall.hera"], vm)
 
     assert vm.registers[1] == 16
     for r in vm.registers[2:10]:
@@ -59,7 +59,7 @@ def test_fcall_dot_hera():
 
 def test_fib_dot_hera():
     vm = VirtualMachine()
-    main(["test/hera/fib.hera"], vm)
+    main(["test/assets/fib.hera"], vm)
 
     assert vm.registers[1] == 12
     assert vm.registers[2] == 144
@@ -79,7 +79,7 @@ def test_fib_dot_hera():
 
 def test_data_easy_dot_hera():
     vm = VirtualMachine()
-    main(["test/hera/data_easy.hera"], vm)
+    main(["test/assets/data_easy.hera"], vm)
 
     assert vm.registers[1] == HERA_DATA_START
     assert vm.registers[2] == 42
@@ -95,7 +95,7 @@ def test_data_easy_dot_hera():
 
 def test_dskip_dot_hera():
     vm = VirtualMachine()
-    main(["test/hera/dskip.hera"], vm)
+    main(["test/assets/dskip.hera"], vm)
 
     assert vm.registers[1] == HERA_DATA_START
     assert vm.registers[2] == 42
@@ -113,7 +113,7 @@ def test_dskip_dot_hera():
 
 def test_loop_and_constant_dot_hera():
     vm = VirtualMachine()
-    main(["test/hera/loop_and_constant.hera"], vm)
+    main(["test/assets/loop_and_constant.hera"], vm)
 
     assert vm.registers[1] == 100
     assert vm.registers[2] == 100
@@ -129,7 +129,7 @@ def test_loop_and_constant_dot_hera():
 
 def test_cs240_dot_hera():
     vm = VirtualMachine()
-    main(["test/hera/cs240.hera"], vm)
+    main(["test/assets/cs240.hera"], vm)
 
     assert vm.registers[1] == 0xBFF2
     assert vm.registers[2] == 0xF000
