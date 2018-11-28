@@ -192,6 +192,42 @@ class Dec(Instruction):
         vm.pc += 1
 
 
+class TernaryInstruction(Instruction):
+    params = (REGISTER, REGISTER, REGISTER)
+
+    def execute(self, vm):
+        left = vm.get_register(self.args[1])
+        right = vm.get_register(self.args[2])
+        result = self.compute(left, right)
+        vm.store_register(self.args[0], result)
+        vm.set_zero_and_sign(result)
+        vm.pc += 1
+
+    def compute(self, left, right):
+        raise NotImplementedError
+
+
+class And(TernaryInstruction):
+    name = "AND"
+
+    def compute(self, left, right):
+        return left & right
+
+
+class Or(TernaryInstruction):
+    name = "OR"
+
+    def compute(self, left, right):
+        return left | right
+
+
+class Xor(TernaryInstruction):
+    name = "XOR"
+
+    def compute(self, left, right):
+        return left ^ right
+
+
 class Add(Instruction):
     name = "ADD"
     params = (REGISTER, REGISTER)
