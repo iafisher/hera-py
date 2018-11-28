@@ -1,4 +1,5 @@
 import sys
+from collections import namedtuple
 
 from lark import Token
 
@@ -18,6 +19,10 @@ I16 = range(-2 ** 15, 2 ** 16)
 """
 
 
+VerifyErrorInfo = namedtuple("VerifyErrorInfo", ["msg", "line", "col"])
+VerifyErrorInfo.__new__.__defaults__ = (None,)
+
+
 class Instruction:
     def __init__(self, *args, lineno=None, line=None):
         self.args = list(args)
@@ -25,38 +30,39 @@ class Instruction:
         self.line = line
 
     def verify(self):
-        # Return this value at the end instead of immediately after an error is
-        # detected so that as many errors as possible are caught, not just the first.
-        ret = True
+        errors = []
 
         ngot = len(self.args)
         nexpected = len(self.params)
 
         if ngot < nexpected:
-            emit_error(
-                "too few args to {} (expected {}, got {})".format(
-                    self.name, nexpected, ngot
+            errors.append(
+                VerifyErrorInfo(
+                    "too few args to {} (expected {}, got {})".format(
+                        self.name, nexpected, ngot
+                    ),
+                    self.lineno,
                 )
             )
-            ret = False
 
         if nexpected < ngot:
-            emit_error(
-                "too many args to {} (expected {}, got {})".format(
-                    self.name, nexpected, ngot
+            errors.append(
+                VerifyErrorInfo(
+                    "too many args to {} (expected {}, got {})".format(
+                        self.name, nexpected, ngot
+                    ),
+                    self.lineno,
                 )
             )
-            ret = False
 
         ordinals = ["first", "second", "third"]
         for ordinal, pattern, arg in zip(ordinals, self.params, self.args):
             prefix = "{} arg to {} ".format(ordinal, self.name)
             error = self._verify_one_arg(pattern, arg)
             if error:
-                emit_error(prefix + error, column=arg.column)
-                ret = False
+                errors.append(VerifyErrorInfo(prefix + error, self.lineno, arg.column))
 
-        return ret
+        return errors
 
     def _verify_one_arg(self, pattern, arg):
         """Verify that the argument matches the pattern. Return a string stating the

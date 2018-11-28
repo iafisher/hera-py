@@ -40,72 +40,72 @@ def test_SET_convert_with_symbol():
     assert inst.convert() == [Setlo("R1", "whatever"), Sethi("R1", "whatever")]
 
 
-def test_SET_verify_with_too_few_args(capsys):
-    assert not Set(R("R1")).verify()
-    captured = capsys.readouterr()
-    assert "SET" in captured.err
-    assert "too few" in captured.err
+def test_SET_verify_with_too_few_args():
+    errors = Set(R("R1")).verify()
+    assert len(errors) == 1
+    assert "SET" in errors[0].msg
+    assert "too few" in errors[0].msg
 
 
-def test_SET_verify_with_too_many_args(capsys):
-    assert not Set(R("R1"), 10, 11).verify()
-    captured = capsys.readouterr()
-    assert "SET" in captured.err
-    assert "too many" in captured.err
+def test_SET_verify_with_too_many_args():
+    errors = Set(R("R1"), 10, 11).verify()
+    assert len(errors) == 1
+    assert "SET" in errors[0].msg
+    assert "too many" in errors[0].msg
 
 
-def test_SET_verify_with_integer_out_of_range(capsys):
-    assert not Set(R("R1"), I(-32769)).verify()
-    captured = capsys.readouterr()
-    assert "SET" in captured.err
-    assert "out of range" in captured.err
+def test_SET_verify_with_integer_out_of_range():
+    errors = Set(R("R1"), I(-32769)).verify()
+    assert len(errors) == 1
+    assert "SET" in errors[0].msg
+    assert "out of range" in errors[0].msg
 
 
-def test_SET_verify_with_another_integer_out_of_range(capsys):
-    assert not Set(R("R1"), I(65536)).verify()
-    captured = capsys.readouterr()
-    assert "SET" in captured.err
-    assert "out of range" in captured.err
+def test_SET_verify_with_another_integer_out_of_range():
+    errors = Set(R("R1"), I(65536)).verify()
+    assert len(errors) == 1
+    assert "SET" in errors[0].msg
+    assert "out of range" in errors[0].msg
 
 
 def test_SET_verify_with_correct_args():
-    assert Set(R("R1"), -32768).verify()
-    assert Set(R("R1"), 65535).verify()
-    assert Set(R("R1"), 0).verify()
+    assert Set(R("R1"), -32768).verify() == []
+    assert Set(R("R1"), 65535).verify() == []
+    assert Set(R("R1"), 0).verify() == []
 
 
-def test_SETLO_verify_with_too_many_args(capsys):
-    assert not Setlo(R("R5"), 1, 2).verify()
-    captured = capsys.readouterr()
-    assert "SETLO" in captured.err
-    assert "too many" in captured.err
+def test_SETLO_verify_with_too_many_args():
+    errors = Setlo(R("R5"), 1, 2).verify()
+    assert len(errors) == 1
+    assert "SETLO" in errors[0].msg
+    assert "too many" in errors[0].msg
 
 
-def test_SETLO_verify_with_too_few_args(capsys):
-    assert not Setlo(R("R5")).verify()
-    captured = capsys.readouterr()
-    assert "SETLO" in captured.err
-    assert "too few" in captured.err
+def test_SETLO_verify_with_too_few_args():
+    errors = Setlo(R("R5")).verify()
+    assert len(errors) == 1
+    assert "SETLO" in errors[0].msg
+    assert "too few" in errors[0].msg
 
 
-def test_SETLO_verify_with_integer_out_of_range(capsys):
-    assert not Setlo(R("R5"), I(-129)).verify()
-    captured = capsys.readouterr()
-    assert "SETLO" in captured.err
-    assert "out of range" in captured.err
+def test_SETLO_verify_with_integer_out_of_range():
+    errors = Setlo(R("R5"), I(-129)).verify()
+    assert len(errors) == 1
+    assert "SETLO" in errors[0].msg
+    assert "out of range" in errors[0].msg
 
 
-def test_SETLO_verify_with_another_integer_out_of_range(capsys):
-    assert not Setlo(R("R5"), I(256)).verify()
-    captured = capsys.readouterr()
-    assert "SETLO" in captured.err
-    assert "out of range" in captured.err
+def test_SETLO_verify_with_another_integer_out_of_range():
+    errors = Setlo(R("R5"), I(256)).verify()
+    assert len(errors) == 1
+    assert "SETLO" in errors[0].msg
+    assert "out of range" in errors[0].msg
 
 
 def test_SETLO_verify_with_correct_args():
-    assert Setlo(R("R5"), -128).verify()
-    assert Setlo(R("R5"), 255).verify()
-    assert Setlo(R("R5"), 0).verify()
+    assert Setlo(R("R5"), -128).verify() == []
+    assert Setlo(R("R5"), 255).verify() == []
+    assert Setlo(R("R5"), 0).verify() == []
 
 
 def test_SETLO_with_positive(vm):
@@ -171,24 +171,24 @@ def test_SETLO_does_not_change_R0(vm):
     assert vm.registers[0] == 0
 
 
-def test_SETHI_verify_with_integer_out_of_range(capsys):
-    assert not Sethi(R("R5"), I(-129)).verify()
-    captured = capsys.readouterr()
-    assert "SETHI" in captured.err
-    assert "out of range" in captured.err
+def test_SETHI_verify_with_integer_out_of_range():
+    errors = Sethi(R("R5"), I(-129)).verify()
+    assert len(errors) == 1
+    assert "SETHI" in errors[0].msg
+    assert "out of range" in errors[0].msg
 
 
-def test_SETHI_verify_with_another_integer_out_of_range(capsys):
-    assert not Sethi(R("R5"), I(256)).verify()
-    captured = capsys.readouterr()
-    assert "SETHI" in captured.err
-    assert "out of range" in captured.err
+def test_SETHI_verify_with_another_integer_out_of_range():
+    errors = Sethi(R("R5"), I(256)).verify()
+    assert len(errors) == 1
+    assert "SETHI" in errors[0].msg
+    assert "out of range" in errors[0].msg
 
 
 def test_SETHI_verify_with_correct_args():
-    assert Sethi(R("R5"), -128).verify()
-    assert Sethi(R("R5"), 255).verify()
-    assert Sethi(R("R5"), 0).verify()
+    assert Sethi(R("R5"), -128).verify() == []
+    assert Sethi(R("R5"), 255).verify() == []
+    assert Sethi(R("R5"), 0).verify() == []
 
 
 def test_SETHI_with_positive(vm):
@@ -239,38 +239,38 @@ def test_SETHI_does_not_change_R0(vm):
     assert vm.registers[0] == 0
 
 
-def test_INC_verify_with_integer_out_of_range(capsys):
-    assert not Inc(R("R1"), I(65)).verify()
-    captured = capsys.readouterr()
-    assert "INC" in captured.err
-    assert "out of range" in captured.err
+def test_INC_verify_with_integer_out_of_range():
+    errors = Inc(R("R1"), I(65)).verify()
+    assert len(errors) == 1
+    assert "INC" in errors[0].msg
+    assert "out of range" in errors[0].msg
 
 
-def test_INC_verify_with_zero(capsys):
-    assert not Inc(R("R1"), I(0)).verify()
-    captured = capsys.readouterr()
-    assert "INC" in captured.err
-    assert "out of range" in captured.err
+def test_INC_verify_with_zero():
+    errors = Inc(R("R1"), I(0)).verify()
+    assert len(errors) == 1
+    assert "INC" in errors[0].msg
+    assert "out of range" in errors[0].msg
 
 
-def test_INC_verify_with_negative_integer(capsys):
-    assert not Inc(R("R1"), I(-1)).verify()
-    captured = capsys.readouterr()
-    assert "INC" in captured.err
-    assert "out of range" in captured.err
+def test_INC_verify_with_negative_integer():
+    errors = Inc(R("R1"), I(-1)).verify()
+    assert len(errors) == 1
+    assert "INC" in errors[0].msg
+    assert "out of range" in errors[0].msg
 
 
-def test_INC_verify_with_negative_integer(capsys):
-    assert not Inc(R("R1"), I(-1)).verify()
-    captured = capsys.readouterr()
-    assert "INC" in captured.err
-    assert "out of range" in captured.err
+def test_INC_verify_with_negative_integer():
+    errors = Inc(R("R1"), I(-1)).verify()
+    assert len(errors) == 1
+    assert "INC" in errors[0].msg
+    assert "out of range" in errors[0].msg
 
 
 def test_INC_verify_with_correct_args():
-    assert Inc(R("R1"), 64).verify()
-    assert Inc(R("R1"), 1).verify()
-    assert Inc(R("R1"), 24).verify()
+    assert Inc(R("R1"), 64).verify() == []
+    assert Inc(R("R1"), 1).verify() == []
+    assert Inc(R("R1"), 24).verify() == []
 
 
 def test_INC_with_small_positive(vm):
