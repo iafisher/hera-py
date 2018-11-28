@@ -2,7 +2,7 @@ import pytest
 
 from lark import Token
 
-from hera.op import Inc, Set, Sethi, Setlo
+from hera.op import Dec, Inc, Set, Sethi, Setlo
 from hera.utils import HERAError, IntToken, to_u16
 from hera.vm import VirtualMachine
 
@@ -279,8 +279,8 @@ def test_INC_with_small_positive(vm):
 
 
 def test_INC_with_max(vm):
-    Inc("R2", 32).execute(vm)
-    assert vm.registers[2] == 32
+    Inc("R2", 64).execute(vm)
+    assert vm.registers[2] == 64
 
 
 def test_INC_with_previous_value(vm):
@@ -339,4 +339,108 @@ def test_INC_ignores_incoming_carry(vm):
 
 def test_INC_does_not_affect_R0(vm):
     Inc("R0", 1).execute(vm)
+    assert vm.registers[0] == 0
+
+
+def test_DEC_verify_with_integer_out_of_range():
+    errors = Dec(R("R1"), I(65)).verify()
+    assert len(errors) == 1
+    assert "DEC" in errors[0].msg
+    assert "out of range" in errors[0].msg
+
+
+def test_DEC_verify_with_zero():
+    errors = Dec(R("R1"), I(0)).verify()
+    assert len(errors) == 1
+    assert "DEC" in errors[0].msg
+    assert "out of range" in errors[0].msg
+
+
+def test_DEC_verify_with_negative_integer():
+    errors = Dec(R("R1"), I(-1)).verify()
+    assert len(errors) == 1
+    assert "DEC" in errors[0].msg
+    assert "out of range" in errors[0].msg
+
+
+def test_DEC_verify_with_negative_integer():
+    errors = Dec(R("R1"), I(-1)).verify()
+    assert len(errors) == 1
+    assert "DEC" in errors[0].msg
+    assert "out of range" in errors[0].msg
+
+
+def test_DEC_verify_with_correct_args():
+    assert Dec(R("R1"), 64).verify() == []
+    assert Dec(R("R1"), 1).verify() == []
+    assert Dec(R("R1"), 24).verify() == []
+
+
+def test_DEC_with_small_positive(vm):
+    Dec("R8", 6).execute(vm)
+    assert vm.registers[8] == to_u16(-6)
+
+
+def test_DEC_with_max(vm):
+    Dec("R2", 64).execute(vm)
+    assert vm.registers[2] == to_u16(-64)
+
+
+def test_DEC_with_previous_value(vm):
+    vm.registers[5] = 4000
+    Dec("R5", 2).execute(vm)
+    assert vm.registers[5] == 3998
+
+
+def test_DEC_with_previous_negative_value(vm):
+    vm.registers[9] = to_u16(-12)
+    Dec("R9", 10).execute(vm)
+    assert vm.registers[9] == to_u16(-22)
+
+
+def test_DEC_increments_pc(vm):
+    Dec("R1", 1).execute(vm)
+    assert vm.pc == 1
+
+
+def test_DEC_sets_zero_flag(vm):
+    vm.registers[7] = 1
+    Dec("R7", 1).execute(vm)
+    assert vm.registers[7] == 0
+    assert vm.flag_zero
+    assert not vm.flag_sign
+
+
+def test_DEC_sets_sign_flag(vm):
+    vm.registers[1] = 1
+    Dec("R1", 5).execute(vm)
+    assert vm.registers[1] == to_u16(-4)
+    assert not vm.flag_zero
+    assert vm.flag_sign
+
+
+def test_DEC_sets_carry_flag(vm):
+    Dec("R8", 1).execute(vm)
+    assert vm.flag_carry
+    assert not vm.flag_overflow
+
+
+def test_DEC_sets_overflow_flag(vm):
+    vm.registers[8] = to_u16(-32768)
+    Dec("R8", 5).execute(vm)
+    assert vm.registers[8] == 32763
+    assert not vm.flag_carry
+    assert vm.flag_overflow
+
+
+def test_DEC_ignores_incoming_carry(vm):
+    vm.flag_carry = True
+    vm.registers[8] = 10
+    Dec("R8", 5).execute(vm)
+    assert vm.registers[8] == 5
+    assert not vm.flag_carry
+
+
+def test_DEC_does_not_affect_R0(vm):
+    Dec("R0", 1).execute(vm)
     assert vm.registers[0] == 0

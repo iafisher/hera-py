@@ -176,6 +176,22 @@ class Inc(Instruction):
         vm.pc += 1
 
 
+class Dec(Instruction):
+    name = "DEC"
+    params = (REGISTER, range(1, 65))
+
+    def execute(self, vm):
+        target, value = self.args
+        original = vm.get_register(target)
+        result = to_u16((original - value) & 0xFFFF)
+        vm.store_register(target, result)
+
+        vm.set_zero_and_sign(result)
+        vm.flag_overflow = from_u16(result) != from_u16(original) - value
+        vm.flag_carry = original < value
+        vm.pc += 1
+
+
 class Add(Instruction):
     name = "ADD"
     params = (REGISTER, REGISTER)
