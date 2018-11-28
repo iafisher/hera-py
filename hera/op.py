@@ -2,7 +2,7 @@ import sys
 
 from lark import Token
 
-from .utils import register_to_index, to_u16
+from .utils import from_u16, register_to_index, to_u16
 
 
 REGISTER = "r"
@@ -145,7 +145,29 @@ class Setlo(Instruction):
 
 
 class Sethi(Instruction):
-    pass
+    name = "SETHI"
+    params = (REGISTER, I8)
+
+    def execute(self, vm):
+        target, value = self.args
+        vm.store_register(target, (value << 8) + (vm.get_register(target) & 0x00FF))
+        vm.pc += 1
+
+
+class Inc(Instruction):
+    name = "INC"
+    params = (REGISTER, range(1, 65))
+
+    def execute(self, vm):
+        target, value = self.args
+        original = vm.get_register(target)
+        result = (value + original) & 0xFFFF
+        vm.store_register(target, result)
+
+        vm.set_zero_and_sign(result)
+        vm.flag_overflow = from_u16(result) != from_u16(original) + value
+        vm.flag_carry = value + original >= 2 ** 16
+        vm.pc += 1
 
 
 class Add(Instruction):
