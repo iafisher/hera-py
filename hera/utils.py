@@ -5,6 +5,8 @@ Version: November 2018
 """
 import sys
 
+from lark import Token
+
 
 class HERAError(Exception):
     def __init__(self, msg, line=None, column=None):
@@ -87,3 +89,17 @@ def print_register_debug(target, v, *, to_stderr=True):
     if v < 128 and chr(v).isprintable():
         print(" = {!r}".format(chr(v)), end="", file=file_)
     print(file=file_)
+
+
+def copy_token(val, otkn):
+    """Convert the string `val` into a Token with the same line and column numbers as
+    `otkn`.
+    """
+    if isinstance(otkn, Token):
+        return Token(otkn.type, val, line=otkn.line, column=otkn.column)
+    else:
+        return val
+
+
+def is_symbol(s):
+    return isinstance(s, Token) and s.type == "SYMBOL"

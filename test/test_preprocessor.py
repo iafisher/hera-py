@@ -1,5 +1,3 @@
-import pytest
-
 from lark import Token
 
 from hera.parser import Op
@@ -8,14 +6,9 @@ from hera.preprocessor import (
     convert_set,
     get_labels,
     preprocess,
-    verify_args,
     HERA_DATA_START,
-    REGISTER,
-    REGISTER_OR_LABEL,
-    U4,
-    U16,
 )
-from hera.utils import HERAError, IntToken
+from hera.utils import IntToken
 
 
 def R(s):
@@ -34,10 +27,7 @@ def test_convert_set_with_large_positive():
 
 
 def test_convert_set_with_negative():
-    assert convert_set("R5", -5) == [
-        Op("SETLO", ["R5", 251]),
-        Op("SETHI", ["R5", 255]),
-    ]
+    assert convert_set("R5", -5) == [Op("SETLO", ["R5", 251]), Op("SETHI", ["R5", 255])]
 
 
 def test_convert_set_with_symbol():
@@ -101,7 +91,10 @@ def test_convert_setrf_with_negative():
 
 
 def test_convert_flags():
-    assert convert(Op("FLAGS", ["R8"])) == [Op("FOFF", [8]), Op("ADD", ["R0", "R8", "R0"])]
+    assert convert(Op("FLAGS", ["R8"])) == [
+        Op("FOFF", [8]),
+        Op("ADD", ["R0", "R8", "R0"]),
+    ]
 
 
 def test_convert_halt():
@@ -208,73 +201,3 @@ def test_preprocess_constant():
         Op(Token("SYMBOL", "SET"), [R("R1"), Token("SYMBOL", "n")]),
     ]
     assert preprocess(program) == [Op("SETLO", ["R1", 100]), Op("SETHI", ["R1", 0])]
-
-
-def test_verify_args_with_too_few():
-    with pytest.raises(HERAError) as e:
-        verify_args("", [REGISTER, REGISTER], [R("R1")])
-    assert "too few" in str(e)
-
-
-def test_verify_args_with_too_many():
-    with pytest.raises(HERAError) as e:
-        verify_args("", [REGISTER], [R("R1"), IntToken(10)])
-    assert "too many" in str(e)
-
-
-def test_verify_args_with_wrong_type():
-    with pytest.raises(HERAError) as e1:
-        verify_args("", [REGISTER], [IntToken(10)])
-    assert "not a register" in str(e1)
-
-    with pytest.raises(HERAError) as e2:
-        verify_args("", [U16], [R("R1")])
-    assert "not an integer" in str(e2)
-
-
-def test_verify_args_with_u16_out_of_range():
-    with pytest.raises(HERAError) as e:
-        verify_args("", [U16], [IntToken(65536)])
-    assert "out of range" in str(e)
-
-
-def test_verify_args_with_negative_u16():
-    with pytest.raises(HERAError) as e:
-        verify_args("", [U16], [IntToken(-1)])
-    assert "must not be negative" in str(e)
-
-
-def test_verify_args_with_u4_out_of_range():
-    with pytest.raises(HERAError) as e1:
-        verify_args("", [U4], [IntToken(16)])
-    assert "out of range" in str(e1)
-
-    with pytest.raises(HERAError) as e2:
-        verify_args("", [U4], [IntToken(-1)])
-    assert "must not be negative" in str(e2)
-
-
-def test_verify_args_with_range_object():
-    with pytest.raises(HERAError) as e1:
-        verify_args("", [range(-10, 10)], [IntToken(-11)])
-    assert "out of range" in str(e1)
-
-    with pytest.raises(HERAError) as e2:
-        verify_args("", [range(-10, 10)], [IntToken(10)])
-    assert "out of range" in str(e2)
-
-    with pytest.raises(HERAError) as e3:
-        verify_args("", [range(-10, 10)], [R("R1")])
-    assert "not an integer" in str(e3)
-
-    r = range(-10, 10)
-    verify_args("", [r, r, r], [5, -10, 9])
-
-
-def test_verify_args_with_constant_symbol():
-    verify_args("", [range(0, 100)], [Token("SYMBOL", "n")])
-
-
-def test_verify_args_with_register_or_label():
-    verify_args("", [REGISTER_OR_LABEL], [Token("SYMBOL", "n")])
-    verify_args("", [REGISTER_OR_LABEL], [R("R1")])

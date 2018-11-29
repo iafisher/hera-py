@@ -19,6 +19,7 @@ from docopt import docopt
 
 from .parser import parse
 from .preprocessor import preprocess
+from .typechecker import typecheck
 from .utils import print_register_debug, HERAError
 from .vm import VirtualMachine
 
@@ -82,7 +83,9 @@ def execute_program(program, *, no_dump_state=False, vm=None):
         vm = VirtualMachine()
 
     try:
-        program = preprocess(parse(program))
+        program = parse(program)
+        typecheck(program)
+        program = preprocess(program)
         vm.exec_many(program)
     except HERAError as e:
         if e.line:
