@@ -38,56 +38,28 @@ def preprocess(program):
                     e.line = op.name.line
                 raise e
 
-    program = convert_pseudo_instructions(program)
-    program = preprocess_second_pass(program)
+    program = [op for old_op in program for op in convert(old_op)]
+
+    labels = get_labels(program)
+
+    program = [substitute_label(op, labels) for op in program]
+    program = [op for op in program if op.name not in ("LABEL", "DLABEL", "CONSTANT")]
+
     return program
 
 
-def convert_pseudo_instructions(program):
-    """Convert the pseudo-instructions in the program. It guarantees that labels will
-    only appear as the second argument of SETLO and SETHI.
-    """
-    nprogram = []
-    for op in program:
-        if op.name.upper().startswith("B") and is_symbol(op.args[0]):
-            l = op.args[0]
-            # Note that we MUST use SETLO+SETHI and not SET, because the next
-            # pass only handles label resolution and does not further expand
-            # pseudo-instructions.
-            new_ops = [Op("SETLO", ["R11", l]), Op("SETHI", ["R11", l]), Op(op.name, ["R11"])]
-        else:
-            new_ops = convert(op)
-        # Copy over the line number and column information from the old op.
-        new_ops = [
-            Op(copy_token(new_op.name, op.name), new_op.args)
-            for new_op in new_ops
-        ]
-        nprogram.extend(new_ops)
-    return nprogram
-
-
-def preprocess_second_pass(program):
-    """Run the second pass of the preprocessor. This pass resolves labels into their
-    actual line numbers. It assumes that labels only appear as the second argument of 
-    SETLO and SETHI (the convert_pseudo_instructions method guarantees this).
-    """
-    labels = get_labels(program)
-
-    nprogram = []
-    for op in program:
-        if op.name.upper() == "SETLO" and is_symbol(op.args[1]):
-            d, v = op.args
-            name = copy_token("SETLO", op.name)
-            nprogram.append(Op(name, [d, labels[v] & 0xFF]))
-        elif op.name.upper() == "SETHI" and is_symbol(op.args[1]):
-            d, v = op.args
-            name = copy_token("SETHI", op.name)
-            nprogram.append(Op(name, [d, labels[v] >> 8]))
-        elif op.name.upper() in ("LABEL", "DLABEL", "CONSTANT"):
-            continue
-        else:
-            nprogram.append(op)
-    return nprogram
+def substitute_label(op, labels):
+    """Substitute any label in the instruction with its concrete value."""
+    if op.name == "SETLO" and is_symbol(op.args[1]):
+        d, v = op.args
+        name = copy_token("SETLO", op.name)
+        return Op(name, [d, labels[v] & 0xFF])
+    elif op.name == "SETHI" and is_symbol(op.args[1]):
+        d, v = op.args
+        name = copy_token("SETHI", op.name)
+        return Op(name, [d, labels[v] >> 8])
+    else:
+        return op
 
 
 def get_labels(program):
@@ -116,40 +88,45 @@ def get_labels(program):
 
 def convert(op):
     """Convert a pseudo-instruction into a list of real instructions."""
-    if op.name == "SET":
-        return convert_set(*op.args)
+    if op.name.startswith("B") and is_symbol(op.args[0]):
+        l = op.args[0]
+        new_ops = [Op("SETLO", ["R11", l]), Op("SETHI", ["R11", l]), Op(op.name, ["R11"])]
+    elif op.name == "SET":
+        new_ops = convert_set(*op.args)
     elif op.name == "CMP":
-        return [Op("FON", [8]), Op("SUB", ["R0", op.args[0], op.args[1]])]
+        new_ops = [Op("FON", [8]), Op("SUB", ["R0", op.args[0], op.args[1]])]
     elif op.name == "CON":
-        return [Op("FON", [8])]
+        new_ops = [Op("FON", [8])]
     elif op.name == "COFF":
-        return [Op("FOFF", [8])]
+        new_ops = [Op("FOFF", [8])]
     elif op.name == "CBON":
-        return [Op("FON", [16])]
+        new_ops = [Op("FON", [16])]
     elif op.name == "CCBOFF":
-        return [Op("FOFF", [24])]
+        new_ops = [Op("FOFF", [24])]
     elif op.name == "MOVE":
-        return [Op("OR", [op.args[0], op.args[1], "R0"])]
+        new_ops = [Op("OR", [op.args[0], op.args[1], "R0"])]
     elif op.name == "SETRF":
-        return convert_set(*op.args) + convert(Op("FLAGS", [op.args[0]]))
+        new_ops = convert_set(*op.args) + convert(Op("FLAGS", [op.args[0]]))
     elif op.name == "FLAGS":
-        return [Op("FOFF", [8]), Op("ADD", ["R0", op.args[0], "R0"])]
+        new_ops = [Op("FOFF", [8]), Op("ADD", ["R0", op.args[0], "R0"])]
     elif op.name == "HALT":
-        return [Op("BRR", [0])]
+        new_ops = [Op("BRR", [0])]
     elif op.name == "NOP":
-        return [Op("BRR", [1])]
+        new_ops = [Op("BRR", [1])]
     elif op.name == "CALL":
-        return convert_call(*op.args)
+        new_ops = convert_call(*op.args)
     elif op.name == "NEG":
-        return [Op("FON", [8]), Op("SUB", [op.args[0], "R0", op.args[1]])]
+        new_ops = [Op("FON", [8]), Op("SUB", [op.args[0], "R0", op.args[1]])]
     elif op.name == "NOT":
-        return [
+        new_ops = [
             Op("SETLO", ["R11", 0xFF]),
             Op("SETHI", ["R11", 0xFF]),
             Op("XOR", [op.args[0], "R11", op.args[1]]),
         ]
     else:
-        return [op]
+        new_ops = [op]
+    # Copy over the line and column information from the original token.
+    return [Op(copy_token(new_op.name, op.name), new_op.args) for new_op in new_ops]
 
 
 def convert_set(d, v):
@@ -281,7 +258,13 @@ def verify_one_arg(pattern, arg):
 
 
 def copy_token(val, otkn):
-    return Token(otkn.type, val, line=otkn.line, column=otkn.column)
+    """Convert the string `val` into a Token with the same line and column numbers as
+    `otkn`.
+    """
+    if isinstance(otkn, Token):
+        return Token(otkn.type, val, line=otkn.line, column=otkn.column)
+    else:
+        return val
 
 
 def is_symbol(s):
