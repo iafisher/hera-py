@@ -16,80 +16,68 @@ def REG(s):
     return Token("REGISTER", s)
 
 
-def test_preprocess1_set_with_small_positive(ppr):
-    assert ppr.preprocess1_set("R5", 18) == [Op("SETLO", ["R5", 18])]
+def test_convert_set_with_small_positive(ppr):
+    assert ppr.convert_set("R5", 18) == [Op("SETLO", ["R5", 18])]
 
 
-def test_preprocess1_set_with_large_positive(ppr):
-    assert ppr.preprocess1_set("R5", 34000) == [
+def test_convert_set_with_large_positive(ppr):
+    assert ppr.convert_set("R5", 34000) == [
         Op("SETLO", ["R5", 208]),
         Op("SETHI", ["R5", 132]),
     ]
 
 
-def test_preprocess1_set_with_negative(ppr):
-    assert ppr.preprocess1_set("R5", -5) == [
+def test_convert_set_with_negative(ppr):
+    assert ppr.convert_set("R5", -5) == [
         Op("SETLO", ["R5", 251]),
         Op("SETHI", ["R5", 255]),
     ]
 
 
-def test_preprocess1_set_with_symbol(ppr):
-    assert ppr.preprocess1_set("R5", "whatever") == [
+def test_convert_set_with_symbol(ppr):
+    assert ppr.convert_set("R5", "whatever") == [
         Op("SETLO", ["R5", "whatever"]),
         Op("SETHI", ["R5", "whatever"]),
     ]
 
 
-def test_preprocess1_move(ppr):
-    assert ppr.preprocess1_move("R5", "R3") == [Op("OR", ["R5", "R3", "R0"])]
+def test_convert_move(ppr):
+    assert ppr.convert_move("R5", "R3") == [Op("OR", ["R5", "R3", "R0"])]
 
 
-def test_preprocess1_con(ppr):
-    assert ppr.preprocess1_con() == [Op("FON", [8])]
+def test_convert_con(ppr):
+    assert ppr.convert_con() == [Op("FON", [8])]
 
 
-def test_preprocess1_coff(ppr):
-    assert ppr.preprocess1_coff() == [Op("FOFF", [8])]
+def test_convert_coff(ppr):
+    assert ppr.convert_coff() == [Op("FOFF", [8])]
 
 
-def test_preprocess1_cbon(ppr):
-    assert ppr.preprocess1_cbon() == [Op("FON", [16])]
+def test_convert_cbon(ppr):
+    assert ppr.convert_cbon() == [Op("FON", [16])]
 
 
-def test_preprocess1_ccboff(ppr):
-    assert ppr.preprocess1_ccboff() == [Op("FOFF", [24])]
+def test_convert_ccboff(ppr):
+    assert ppr.convert_ccboff() == [Op("FOFF", [24])]
 
 
-def test_preprocess2_label(ppr):
-    assert ppr.preprocess2_label("whatever") is None
-
-
-def test_preprocess2_dlabel(ppr):
-    assert ppr.preprocess2_dlabel("whatever") is None
-
-
-def test_preprocess2_constant(ppr):
-    assert ppr.preprocess2_constant("whatever", 5) is None
-
-
-def test_preprocess1_cmp(ppr):
-    assert ppr.preprocess1_cmp("R1", "R2") == [
+def test_convert_cmp(ppr):
+    assert ppr.convert_cmp("R1", "R2") == [
         Op("FON", [8]),
         Op("SUB", ["R0", "R1", "R2"]),
     ]
 
 
-def test_preprocess1_setrf_with_small_positive(ppr):
-    assert ppr.preprocess1_setrf("R5", 18) == [
+def test_convert_setrf_with_small_positive(ppr):
+    assert ppr.convert_setrf("R5", 18) == [
         Op("SETLO", ["R5", 18]),
         Op("FOFF", [8]),
         Op("ADD", ["R0", "R5", "R0"]),
     ]
 
 
-def test_preprocess1_setrf_with_large_positive(ppr):
-    assert ppr.preprocess1_setrf("R5", 34000) == [
+def test_convert_setrf_with_large_positive(ppr):
+    assert ppr.convert_setrf("R5", 34000) == [
         Op("SETLO", ["R5", 208]),
         Op("SETHI", ["R5", 132]),
         Op("FOFF", [8]),
@@ -97,8 +85,8 @@ def test_preprocess1_setrf_with_large_positive(ppr):
     ]
 
 
-def test_preprocess1_setrf_with_negative(ppr):
-    assert ppr.preprocess1_setrf("R5", -5) == [
+def test_convert_setrf_with_negative(ppr):
+    assert ppr.convert_setrf("R5", -5) == [
         Op("SETLO", ["R5", 251]),
         Op("SETHI", ["R5", 255]),
         Op("FOFF", [8]),
@@ -106,62 +94,47 @@ def test_preprocess1_setrf_with_negative(ppr):
     ]
 
 
-def test_preprocess1_flags(ppr):
-    assert ppr.preprocess1_flags("R8") == [
-        Op("FOFF", [8]),
-        Op("ADD", ["R0", "R8", "R0"]),
-    ]
+def test_convert_flags(ppr):
+    assert ppr.convert_flags("R8") == [Op("FOFF", [8]), Op("ADD", ["R0", "R8", "R0"])]
 
 
-def test_preprocess1_br_with_register(ppr):
-    assert ppr.preprocess1_br(REG("R5")) == [Op("BR", ["R5"])]
+def test_convert_halt(ppr):
+    assert ppr.convert_halt() == [Op("BRR", [0])]
 
 
-def test_preprocess1_br_with_label(ppr):
-    assert ppr.preprocess1_br(Token("SYMBOL", "top")) == [
-        Op("SETLO", ["R11", "top"]),
-        Op("SETHI", ["R11", "top"]),
-        Op("BR", ["R11"]),
-    ]
+def test_convert_nop(ppr):
+    assert ppr.convert_nop() == [Op("BRR", [1])]
 
 
-def test_preprocess1_halt(ppr):
-    assert ppr.preprocess1_halt() == [Op("BRR", [0])]
+def test_convert_call_with_register(ppr):
+    assert ppr.convert_call("R12", REG("R13")) == [Op("CALL", ["R12", "R13"])]
 
 
-def test_preprocess1_nop(ppr):
-    assert ppr.preprocess1_nop() == [Op("BRR", [1])]
-
-
-def test_preprocess1_call_with_register(ppr):
-    assert ppr.preprocess1_call("R12", REG("R13")) == [Op("CALL", ["R12", "R13"])]
-
-
-def test_preprocess1_call_with_label(ppr):
-    assert ppr.preprocess1_call("R12", Token("SYMBOL", "div")) == [
+def test_convert_call_with_label(ppr):
+    assert ppr.convert_call("R12", Token("SYMBOL", "div")) == [
         Op("SETLO", ["R13", "div"]),
         Op("SETHI", ["R13", "div"]),
         Op("CALL", ["R12", "R13"]),
     ]
 
 
-def test_preprocess1_neg(ppr):
-    assert ppr.preprocess1_neg("R1", "R2") == [
+def test_convert_neg(ppr):
+    assert ppr.convert_neg("R1", "R2") == [
         Op("FON", [8]),
         Op("SUB", ["R1", "R0", "R2"]),
     ]
 
 
-def test_preprocess1_not(ppr):
-    assert ppr.preprocess1_not("R1", "R2") == [
+def test_convert_not(ppr):
+    assert ppr.convert_not("R1", "R2") == [
         Op("SETLO", ["R11", 0xFF]),
         Op("SETHI", ["R11", 0xFF]),
         Op("XOR", ["R1", "R11", "R2"]),
     ]
 
 
-def test_resolve_labels_with_example(ppr):
-    ppr.resolve_labels(
+def test_get_labels_with_example(ppr):
+    ppr.get_labels(
         [
             Op("DLABEL", ["data"]),
             Op("INTEGER", [42]),
@@ -180,8 +153,8 @@ def test_resolve_labels_with_example(ppr):
     assert ppr.labels["bottom"] == 1
 
 
-def test_resolve_labels_with_dskip(ppr):
-    ppr.resolve_labels(
+def test_get_labels_with_dskip(ppr):
+    ppr.get_labels(
         [
             Op("DLABEL", ["data"]),
             Op("INTEGER", [42]),
@@ -195,8 +168,8 @@ def test_resolve_labels_with_dskip(ppr):
     assert ppr.labels["data2"] == HERA_DATA_START + 11
 
 
-def test_resolve_labels_with_lp_string(ppr):
-    ppr.resolve_labels(
+def test_get_labels_with_lp_string(ppr):
+    ppr.get_labels(
         [
             Op("DLABEL", ["S"]),
             Op("LP_STRING", ["hello"]),
@@ -209,8 +182,8 @@ def test_resolve_labels_with_lp_string(ppr):
     assert ppr.labels["X"] == HERA_DATA_START + 6
 
 
-def test_resolve_labels_with_empty_lp_string(ppr):
-    ppr.resolve_labels(
+def test_get_labels_with_empty_lp_string(ppr):
+    ppr.get_labels(
         [
             Op("DLABEL", ["S"]),
             Op("LP_STRING", [""]),

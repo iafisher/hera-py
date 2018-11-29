@@ -26,24 +26,6 @@ def preprocess(program):
     return helper.preprocess(program)
 
 
-def branch_preprocessor(name):
-    """A factory method to create handlers for branch instructions. All of
-    these receive the same first-pass translation, which replaces the use of a
-    label with a SET(R11, label) BRANCH(R11) combination.
-    """
-
-    def preprocess1_XXX(self, l):
-        if isinstance(l, Token) and l.type == "SYMBOL":
-            # Note that we MUST use SETLO+SETHI and not SET, because the next
-            # pass only handles label resolution and does not further expand
-            # pseudo-instructions.
-            return [Op("SETLO", ["R11", l]), Op("SETHI", ["R11", l]), Op(name, ["R11"])]
-        else:
-            return [Op(name, [l])]
-
-    return preprocess1_XXX
-
-
 class Preprocessor:
     """A helper class for preprocessing programs. Do not instantiate this class
     directly. Use the module-level assemble function instead.
@@ -68,22 +50,31 @@ class Preprocessor:
                         e.line = op.name.line
                     raise e
 
-        program = self.preprocess_first_pass(program)
+        program = self.convert_pseudo_instructions(program)
         program = self.preprocess_second_pass(program)
         return program
 
-    def preprocess_first_pass(self, program):
-        """Run the first pass of the preprocessor. This pass converts pseudo-
-        instructions to real ones, but does not resolve labels. It does however
-        guarantee that labels will only appear as the second argument of SETLO
-        and SETHI.
+    def convert_pseudo_instructions(self, program):
+        """Convert the pseudo-instructions in the program. It guarantees that labels
+        will only appear as the second argument of SETLO and SETHI.
         """
         nprogram = []
         for op in program:
             try:
-                handler = getattr(self, "preprocess1_" + op.name.lower())
+                handler = getattr(self, "convert_" + op.name.lower())
             except AttributeError:
-                nprogram.append(op)
+                if op.name.upper().startswith("B") and is_symbol(op.args[0]):
+                    l = op.args[0]
+                    # Note that we MUST use SETLO+SETHI and not SET, because the next
+                    # pass only handles label resolution and does not further expand
+                    # pseudo-instructions.
+                    setlo = copy_token("SETLO", op.name)
+                    sethi = copy_token("SETHI", op.name)
+                    nprogram.append(Op(setlo, ["R11", l]))
+                    nprogram.append(Op(sethi, ["R11", l]))
+                    nprogram.append(Op(op.name, ["R11"]))
+                else:
+                    nprogram.append(op)
             else:
                 new_ops = handler(*op.args)
                 # Copy over the line number and column information from the old op.
@@ -97,24 +88,28 @@ class Preprocessor:
     def preprocess_second_pass(self, program):
         """Run the second pass of the preprocessor. This pass resolves labels
         into their actual line numbers. It assumes that labels only appear as
-        the second argument of SETLO and SETHI (the preprocess_first_pass
+        the second argument of SETLO and SETHI (the convert_pseudo_instructions
         method guarantees this).
         """
-        self.resolve_labels(program)
+        self.get_labels(program)
 
         nprogram = []
         for op in program:
-            try:
-                handler = getattr(self, "preprocess2_" + op.name.lower())
-            except AttributeError:
-                nprogram.append(op)
+            if op.name.upper() == "SETLO" and is_symbol(op.args[1]):
+                d, v = op.args
+                name = copy_token("SETLO", op.name)
+                nprogram.append(Op(name, [d, self.labels[v] & 0xFF]))
+            elif op.name.upper() == "SETHI" and is_symbol(op.args[1]):
+                d, v = op.args
+                name = copy_token("SETHI", op.name)
+                nprogram.append(Op(name, [d, self.labels[v] >> 8]))
+            elif op.name.upper() in ("LABEL", "DLABEL", "CONSTANT"):
+                continue
             else:
-                nop = handler(*op.args)
-                if nop:
-                    nprogram.append(Op(copy_token(nop.name, op.name), nop.args))
+                nprogram.append(op)
         return nprogram
 
-    def resolve_labels(self, program):
+    def get_labels(self, program):
         """Populate the `labels` field with the instruction and data labels of
         the program.
         """
@@ -194,7 +189,7 @@ class Preprocessor:
             elif arg.type != "SYMBOL":
                 return "not a register or label"
         elif isinstance(pattern, range):
-            if isinstance(arg, Token) and arg.type == "SYMBOL":
+            if is_symbol(arg):
                 # Symbols will be resolved later.
                 return None
 
@@ -381,7 +376,7 @@ class Preprocessor:
     def verify_return(self, *args):
         self.assert_args("RETURN", [self.REGISTER, self.REGISTER_OR_LABEL], args)
 
-    def preprocess1_set(self, d, v):
+    def convert_set(self, d, v):
         if isinstance(v, int):
             v = to_u16(v)
             lo = v & 0xFF
@@ -394,38 +389,38 @@ class Preprocessor:
         else:
             return [Op("SETLO", [d, v]), Op("SETHI", [d, v])]
 
-    def preprocess1_cmp(self, a, b):
+    def convert_cmp(self, a, b):
         return [Op("FON", [8]), Op("SUB", ["R0", a, b])]
 
-    def preprocess1_con(self):
+    def convert_con(self):
         return [Op("FON", [8])]
 
-    def preprocess1_coff(self):
+    def convert_coff(self):
         return [Op("FOFF", [8])]
 
-    def preprocess1_cbon(self):
+    def convert_cbon(self):
         return [Op("FON", [16])]
 
-    def preprocess1_ccboff(self):
+    def convert_ccboff(self):
         return [Op("FOFF", [24])]
 
-    def preprocess1_move(self, a, b):
+    def convert_move(self, a, b):
         return [Op("OR", [a, b, "R0"])]
 
-    def preprocess1_setrf(self, d, v):
-        return self.preprocess1_set(d, v) + self.preprocess1_flags(d)
+    def convert_setrf(self, d, v):
+        return self.convert_set(d, v) + self.convert_flags(d)
 
-    def preprocess1_flags(self, a):
+    def convert_flags(self, a):
         return [Op("FOFF", [8]), Op("ADD", ["R0", a, "R0"])]
 
-    def preprocess1_halt(self):
+    def convert_halt(self):
         return [Op("BRR", [0])]
 
-    def preprocess1_nop(self):
+    def convert_nop(self):
         return [Op("BRR", [1])]
 
-    def preprocess1_call(self, a, l):
-        if isinstance(l, Token) and l.type == "SYMBOL":
+    def convert_call(self, a, l):
+        if is_symbol(l):
             return [
                 Op("SETLO", ["R13", l]),
                 Op("SETHI", ["R13", l]),
@@ -434,58 +429,20 @@ class Preprocessor:
         else:
             return [Op("CALL", [a, l])]
 
-    def preprocess1_neg(self, d, b):
+    def convert_neg(self, d, b):
         return [Op("FON", [8]), Op("SUB", [d, "R0", b])]
 
-    def preprocess1_not(self, d, b):
+    def convert_not(self, d, b):
         return [
             Op("SETLO", ["R11", 0xFF]),
             Op("SETHI", ["R11", 0xFF]),
             Op("XOR", [d, "R11", b]),
         ]
 
-    # Assembling branch instructions. Read the docstring of branch_preprocessor
-    # for details.
-    preprocess1_br = branch_preprocessor("BR")
-    preprocess1_bl = branch_preprocessor("BL")
-    preprocess1_bge = branch_preprocessor("BGE")
-    preprocess1_ble = branch_preprocessor("BLE")
-    preprocess1_bg = branch_preprocessor("BG")
-    preprocess1_bule = branch_preprocessor("BULE")
-    preprocess1_bug = branch_preprocessor("BUG")
-    preprocess1_bz = branch_preprocessor("BZ")
-    preprocess1_bnz = branch_preprocessor("BNZ")
-    preprocess1_bc = branch_preprocessor("BC")
-    preprocess1_bnc = branch_preprocessor("BNC")
-    preprocess1_bs = branch_preprocessor("BS")
-    preprocess1_bns = branch_preprocessor("BNS")
-    preprocess1_bv = branch_preprocessor("BV")
-    preprocess1_bnv = branch_preprocessor("BNV")
-
-    def preprocess2_label(self, l):
-        # Labels do not result in any machine code instructions.
-        return None
-
-    def preprocess2_dlabel(self, l):
-        return None
-
-    def preprocess2_constant(self, s, v):
-        return None
-
-    def preprocess2_setlo(self, d, v):
-        # Label as second argument of SETLO must be replaced with line number.
-        if isinstance(v, Token) and v.type == "SYMBOL":
-            return Op("SETLO", [d, self.labels[v] & 0xFF])
-        else:
-            return Op("SETLO", [d, v])
-
-    def preprocess2_sethi(self, d, v):
-        # Label as second argument of SETHI must be replaced with line number.
-        if isinstance(v, Token) and v.type == "SYMBOL":
-            return Op("SETHI", [d, self.labels[v] >> 8])
-        else:
-            return Op("SETHI", [d, v])
-
 
 def copy_token(val, otkn):
     return Token(otkn.type, val, line=otkn.line, column=otkn.column)
+
+
+def is_symbol(s):
+    return isinstance(s, Token) and s.type == "SYMBOL"
