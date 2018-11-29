@@ -18,184 +18,163 @@ def preprocess(program):
     exec_many method on the VirtualMachine class.
 
     This function does the following
-        - Replaces pseudo-instructions with real ones
-        - Verifies the correct usage of instructions
+        - Replaces pseudo-instructions with real ones.
+        - Verifies the correct usage of instructions.
         - Resolves labels into their line numbers.
     """
-    helper = Preprocessor()
-    return helper.preprocess(program)
-
-
-class Preprocessor:
-    """A helper class for preprocessing programs. Do not instantiate this class
-    directly. Use the module-level assemble function instead.
-    """
-
-    def __init__(self):
-        self.labels = {}
-
-    def preprocess(self, program):
-        """See docstring for module-level preprocess for details."""
-        for op in program:
-            params = _params_map.get(op.name.upper())
-            if params is None and op.name.upper().startswith("B"):
-                if op.name.upper().endswith("R") and len(op.name) > 2:
-                    params = (I8,)
-                else:
-                    params = (REGISTER_OR_LABEL,)
-            if params is not None:
-                try:
-                    verify_args(op.name, params, op.args)
-                except HERAError as e:
-                    # Fill in line number if not already present.
-                    if not e.line:
-                        e.line = op.name.line
-                    raise e
-
-        program = self.convert_pseudo_instructions(program)
-        program = self.preprocess_second_pass(program)
-        return program
-
-    def convert_pseudo_instructions(self, program):
-        """Convert the pseudo-instructions in the program. It guarantees that labels
-        will only appear as the second argument of SETLO and SETHI.
-        """
-        nprogram = []
-        for op in program:
+    for op in program:
+        params = _params_map.get(op.name.upper())
+        if params is None and op.name.upper().startswith("B"):
+            if op.name.upper().endswith("R") and len(op.name) > 2:
+                params = (I8,)
+            else:
+                params = (REGISTER_OR_LABEL,)
+        if params is not None:
             try:
-                handler = getattr(self, "convert_" + op.name.lower())
-            except AttributeError:
-                if op.name.upper().startswith("B") and is_symbol(op.args[0]):
-                    l = op.args[0]
-                    # Note that we MUST use SETLO+SETHI and not SET, because the next
-                    # pass only handles label resolution and does not further expand
-                    # pseudo-instructions.
-                    setlo = copy_token("SETLO", op.name)
-                    sethi = copy_token("SETHI", op.name)
-                    nprogram.append(Op(setlo, ["R11", l]))
-                    nprogram.append(Op(sethi, ["R11", l]))
-                    nprogram.append(Op(op.name, ["R11"]))
-                else:
-                    nprogram.append(op)
-            else:
-                new_ops = handler(*op.args)
-                # Copy over the line number and column information from the old op.
-                new_ops = [
-                    Op(copy_token(new_op.name, op.name), new_op.args)
-                    for new_op in new_ops
-                ]
-                nprogram.extend(new_ops)
-        return nprogram
+                verify_args(op.name, params, op.args)
+            except HERAError as e:
+                # Fill in line number if not already present.
+                if not e.line:
+                    e.line = op.name.line
+                raise e
 
-    def preprocess_second_pass(self, program):
-        """Run the second pass of the preprocessor. This pass resolves labels
-        into their actual line numbers. It assumes that labels only appear as
-        the second argument of SETLO and SETHI (the convert_pseudo_instructions
-        method guarantees this).
-        """
-        self.get_labels(program)
+    program = convert_pseudo_instructions(program)
+    program = preprocess_second_pass(program)
+    return program
 
-        nprogram = []
-        for op in program:
-            if op.name.upper() == "SETLO" and is_symbol(op.args[1]):
-                d, v = op.args
-                name = copy_token("SETLO", op.name)
-                nprogram.append(Op(name, [d, self.labels[v] & 0xFF]))
-            elif op.name.upper() == "SETHI" and is_symbol(op.args[1]):
-                d, v = op.args
-                name = copy_token("SETHI", op.name)
-                nprogram.append(Op(name, [d, self.labels[v] >> 8]))
-            elif op.name.upper() in ("LABEL", "DLABEL", "CONSTANT"):
-                continue
-            else:
-                nprogram.append(op)
-        return nprogram
 
-    def get_labels(self, program):
-        """Populate the `labels` field with the instruction and data labels of
-        the program.
-        """
-        pc = 0
-        dc = HERA_DATA_START
-        for op in program:
-            opname = op.name.lower()
-            if opname == "label":
-                self.labels[op.args[0]] = pc
-            elif opname == "dlabel":
-                self.labels[op.args[0]] = dc
-            elif opname == "constant":
-                self.labels[op.args[0]] = op.args[1]
-            elif opname == "integer":
-                dc += 1
-            elif opname == "dskip":
-                dc += op.args[0]
-            elif opname == "lp_string":
-                dc += len(op.args[0]) + 1
-            else:
-                pc += 1
-
-    def convert_set(self, d, v):
-        if isinstance(v, int):
-            v = to_u16(v)
-            lo = v & 0xFF
-            hi = v >> 8
-
-            if hi:
-                return [Op("SETLO", [d, lo]), Op("SETHI", [d, hi])]
-            else:
-                return [Op("SETLO", [d, lo])]
+def convert_pseudo_instructions(program):
+    """Convert the pseudo-instructions in the program. It guarantees that labels will
+    only appear as the second argument of SETLO and SETHI.
+    """
+    nprogram = []
+    for op in program:
+        if op.name.upper().startswith("B") and is_symbol(op.args[0]):
+            l = op.args[0]
+            # Note that we MUST use SETLO+SETHI and not SET, because the next
+            # pass only handles label resolution and does not further expand
+            # pseudo-instructions.
+            new_ops = [Op("SETLO", ["R11", l]), Op("SETHI", ["R11", l]), Op(op.name, ["R11"])]
         else:
-            return [Op("SETLO", [d, v]), Op("SETHI", [d, v])]
+            new_ops = convert(op)
+        # Copy over the line number and column information from the old op.
+        new_ops = [
+            Op(copy_token(new_op.name, op.name), new_op.args)
+            for new_op in new_ops
+        ]
+        nprogram.extend(new_ops)
+    return nprogram
 
-    def convert_cmp(self, a, b):
-        return [Op("FON", [8]), Op("SUB", ["R0", a, b])]
 
-    def convert_con(self):
+def preprocess_second_pass(program):
+    """Run the second pass of the preprocessor. This pass resolves labels into their
+    actual line numbers. It assumes that labels only appear as the second argument of 
+    SETLO and SETHI (the convert_pseudo_instructions method guarantees this).
+    """
+    labels = get_labels(program)
+
+    nprogram = []
+    for op in program:
+        if op.name.upper() == "SETLO" and is_symbol(op.args[1]):
+            d, v = op.args
+            name = copy_token("SETLO", op.name)
+            nprogram.append(Op(name, [d, labels[v] & 0xFF]))
+        elif op.name.upper() == "SETHI" and is_symbol(op.args[1]):
+            d, v = op.args
+            name = copy_token("SETHI", op.name)
+            nprogram.append(Op(name, [d, labels[v] >> 8]))
+        elif op.name.upper() in ("LABEL", "DLABEL", "CONSTANT"):
+            continue
+        else:
+            nprogram.append(op)
+    return nprogram
+
+
+def get_labels(program):
+    """Return a dictionary mapping all labels and constants to their values."""
+    labels = {}
+    pc = 0
+    dc = HERA_DATA_START
+    for op in program:
+        opname = op.name.lower()
+        if opname == "label":
+            labels[op.args[0]] = pc
+        elif opname == "dlabel":
+            labels[op.args[0]] = dc
+        elif opname == "constant":
+            labels[op.args[0]] = op.args[1]
+        elif opname == "integer":
+            dc += 1
+        elif opname == "dskip":
+            dc += op.args[0]
+        elif opname == "lp_string":
+            dc += len(op.args[0]) + 1
+        else:
+            pc += 1
+    return labels
+
+
+def convert(op):
+    """Convert a pseudo-instruction into a list of real instructions."""
+    if op.name == "SET":
+        return convert_set(*op.args)
+    elif op.name == "CMP":
+        return [Op("FON", [8]), Op("SUB", ["R0", op.args[0], op.args[1]])]
+    elif op.name == "CON":
         return [Op("FON", [8])]
-
-    def convert_coff(self):
+    elif op.name == "COFF":
         return [Op("FOFF", [8])]
-
-    def convert_cbon(self):
+    elif op.name == "CBON":
         return [Op("FON", [16])]
-
-    def convert_ccboff(self):
+    elif op.name == "CCBOFF":
         return [Op("FOFF", [24])]
-
-    def convert_move(self, a, b):
-        return [Op("OR", [a, b, "R0"])]
-
-    def convert_setrf(self, d, v):
-        return self.convert_set(d, v) + self.convert_flags(d)
-
-    def convert_flags(self, a):
-        return [Op("FOFF", [8]), Op("ADD", ["R0", a, "R0"])]
-
-    def convert_halt(self):
+    elif op.name == "MOVE":
+        return [Op("OR", [op.args[0], op.args[1], "R0"])]
+    elif op.name == "SETRF":
+        return convert_set(*op.args) + convert(Op("FLAGS", [op.args[0]]))
+    elif op.name == "FLAGS":
+        return [Op("FOFF", [8]), Op("ADD", ["R0", op.args[0], "R0"])]
+    elif op.name == "HALT":
         return [Op("BRR", [0])]
-
-    def convert_nop(self):
+    elif op.name == "NOP":
         return [Op("BRR", [1])]
-
-    def convert_call(self, a, l):
-        if is_symbol(l):
-            return [
-                Op("SETLO", ["R13", l]),
-                Op("SETHI", ["R13", l]),
-                Op("CALL", [a, "R13"]),
-            ]
-        else:
-            return [Op("CALL", [a, l])]
-
-    def convert_neg(self, d, b):
-        return [Op("FON", [8]), Op("SUB", [d, "R0", b])]
-
-    def convert_not(self, d, b):
+    elif op.name == "CALL":
+        return convert_call(*op.args)
+    elif op.name == "NEG":
+        return [Op("FON", [8]), Op("SUB", [op.args[0], "R0", op.args[1]])]
+    elif op.name == "NOT":
         return [
             Op("SETLO", ["R11", 0xFF]),
             Op("SETHI", ["R11", 0xFF]),
-            Op("XOR", [d, "R11", b]),
+            Op("XOR", [op.args[0], "R11", op.args[1]]),
         ]
+    else:
+        return [op]
+
+
+def convert_set(d, v):
+    if isinstance(v, int):
+        v = to_u16(v)
+        lo = v & 0xFF
+        hi = v >> 8
+
+        if hi:
+            return [Op("SETLO", [d, lo]), Op("SETHI", [d, hi])]
+        else:
+            return [Op("SETLO", [d, lo])]
+    else:
+        return [Op("SETLO", [d, v]), Op("SETHI", [d, v])]
+
+
+def convert_call(a, l):
+    if is_symbol(l):
+        return [
+            Op("SETLO", ["R13", l]),
+            Op("SETHI", ["R13", l]),
+            Op("CALL", [a, "R13"]),
+        ]
+    else:
+        return [Op("CALL", [a, l])]
 
 
 # Constants to pass to verify_base
