@@ -7,6 +7,7 @@ Usage:
     hera (-v | --version)
 
 Options:
+    --lines=<n>      Only execute the first n lines of the program.
     --no-dump-state  Do not print the state of the virtual machine after execution.
     --no-color       Do not print colored output.
     -h, --help       Show this message.
@@ -67,10 +68,16 @@ def main(argv=None, vm=None):
     if arguments["preprocess"]:
         preprocess_program(program)
     else:
-        execute_program(program, no_dump_state=arguments["--no-dump-state"], vm=vm)
+        lines_to_exec = int(arguments["--lines"]) if arguments["--lines"] else None
+        execute_program(
+            program,
+            lines_to_exec=lines_to_exec,
+            no_dump_state=arguments["--no-dump-state"],
+            vm=vm,
+        )
 
 
-def execute_program(program, *, no_dump_state=False, vm=None):
+def execute_program(program, *, lines_to_exec=None, no_dump_state=False, vm=None):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
 
@@ -86,7 +93,7 @@ def execute_program(program, *, no_dump_state=False, vm=None):
         program = parse(program)
         typecheck(program)
         program = preprocess(program)
-        vm.exec_many(program)
+        vm.exec_many(program, lines=lines_to_exec)
     except HERAError as e:
         if e.line:
             if e.column:

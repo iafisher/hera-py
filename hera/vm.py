@@ -121,12 +121,13 @@ class VirtualMachine:
         else:
             handler(*inst.args)
 
-    def exec_many(self, program):
+    def exec_many(self, program, *, lines=None):
         """Execute a program (i.e., a list of instructions), resetting the
         machine's state beforehand.
         """
+        terminate_at = min(lines, len(program)) if lines is not None else len(program)
         self.reset()
-        while self.pc < len(program):
+        while self.pc < terminate_at:
             opc = self.pc
             try:
                 self.exec_one(program[self.pc])
@@ -212,7 +213,9 @@ class VirtualMachine:
         result = to_u16((left - right - borrow) & 0xFFFF)
 
         self.flag_carry = left >= right
-        self.flag_overflow = from_u16(result) != from_u16(left) - from_u16(right)
+        self.flag_overflow = (
+            from_u16(result) != from_u16(left) - from_u16(right) - borrow
+        )
 
         return result
 

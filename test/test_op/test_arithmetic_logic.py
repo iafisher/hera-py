@@ -280,6 +280,13 @@ def test_sub_overflow_from_borrow(vm):
     assert vm.flag_overflow
 
 
+def test_sub_overflow_takes_borrow_into_account(vm):
+    vm.registers[1] = 10
+    vm.registers[2] = 11
+    vm.exec_sub("R0", "R1", "R2")
+    assert not vm.flag_overflow
+
+
 def test_sub_sets_carry_for_equal_operands(vm):
     vm.flag_carry = True
     vm.registers[1] = 12
