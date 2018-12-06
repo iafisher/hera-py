@@ -3,12 +3,18 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: November 2018
 """
+from collections import namedtuple
+
 from lark import Token
 
 from .utils import is_symbol, register_to_index, HERAError
 
 
+ErrorInfo = namedtuple("ErrorInfo", ["msg", "line", "column"])
+
+
 def typecheck(program):
+    """Type-check the program and return a list of errors encountered."""
     for op in program:
         params = _types_map.get(op.name)
         if params is None and op.name.upper().startswith("B"):
@@ -57,9 +63,9 @@ _types_map = {
     "ASR": (REGISTER, REGISTER),
     "SAVEF": (REGISTER,),
     "RSTRF": (REGISTER,),
-    "FON": (U4,),
-    "FOFF": (U4,),
-    "FSET5": (U4,),
+    "FON": (U5,),
+    "FOFF": (U5,),
+    "FSET5": (U5,),
     "FSET4": (U4,),
     "LOAD": (REGISTER, U5, REGISTER),
     "STORE": (REGISTER, U5, REGISTER),
