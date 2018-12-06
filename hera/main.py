@@ -91,21 +91,35 @@ def execute_program(program, *, lines_to_exec=None, no_dump_state=False, vm=None
 
     try:
         program = parse(program)
-        typecheck(program)
+    except HERAError as e:
+        report_hera_error(e, lines)
+
+    # TODO: Seems like typechecking should happen after preprocessing.
+    errors = typecheck(program)
+    if errors:
+        for error in errors:
+            # TODO: Remove duplication with report_hera_error and error_and_exit.
+            if error.line:
+                if error.column:
+                    caret = align_caret(lines[error.line - 1], error.column) + "^"
+                    msg = "{0.msg}, line {0.line} col {0.column}\n\n  {1}\n  {2}\n".format(
+                        error, lines[error.line - 1], caret
+                    )
+                else:
+                    msg = "{0.msg}, line {0.line}\n\n  {1}\n".format(
+                        error, lines[error.line - 1]
+                    )
+            else:
+                msg = error.msg
+            sys.stderr.write(ANSI_RED_BOLD + "Error" + ANSI_RESET + ": ")
+            sys.stderr.write(msg + "\n")
+        sys.exit(3)
+
+    try:
         program = preprocess(program)
         vm.exec_many(program, lines=lines_to_exec)
     except HERAError as e:
-        if e.line:
-            if e.column:
-                caret = align_caret(lines[e.line - 1], e.column) + "^"
-                msg = "{0}, line {0.line} col {0.column}\n\n  {1}\n  {2}\n".format(
-                    e, lines[e.line - 1], caret
-                )
-            else:
-                msg = "{0}, line {0.line}\n\n  {1}\n".format(e, lines[e.line - 1])
-        else:
-            msg = str(e)
-        error_and_exit(msg)
+        report_hera_error(e, lines)
     else:
         if not no_dump_state:
             dump_state(vm)
@@ -145,6 +159,20 @@ def dump_state(vm):
     nprint("\tOverflow flag is " + ("ON" if vm.flag_overflow else "OFF"))
     nprint("\tCarry flag is " + ("ON" if vm.flag_carry else "OFF"))
     nprint("\tCarry block flag is " + ("ON" if vm.flag_carry_block else "OFF"))
+
+
+def report_hera_error(exc, lines):
+    if exc.line:
+        if exc.column:
+            caret = align_caret(lines[exc.line - 1], exc.column) + "^"
+            msg = "{0}, line {0.line} col {0.column}\n\n  {1}\n  {2}\n".format(
+                exc, lines[exc.line - 1], caret
+            )
+        else:
+            msg = "{0}, line {0.line}\n\n  {1}\n".format(exc, lines[exc.line - 1])
+    else:
+        msg = str(exc)
+    error_and_exit(msg)
 
 
 def error_and_exit(msg, *, exitcode=3):

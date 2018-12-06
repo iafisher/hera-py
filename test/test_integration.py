@@ -149,40 +149,57 @@ def test_cs240_dot_hera():
     assert not vm.flag_carry_block
 
 
-def test_error_message_for_missing_comma():
+def test_error_message_for_missing_comma(capsys):
     line = "SETLO(R1 40)"
-    with patch("hera.main.error_and_exit") as mock_exit:
+    with pytest.raises(SystemExit):
         execute_program(line)
-        msg = mock_exit.call_args[0][0]
-        assert line in msg
-        assert "line 1" in msg
-        assert "col 10" in msg
+
+    captured = capsys.readouterr()
+    assert line in captured.err
+    assert "line 1" in captured.err
+    assert "col 10" in captured.err
 
 
-def test_error_message_for_invalid_register():
+def test_error_message_for_invalid_register(capsys):
     line = "SET(R17, 65)"
-    with patch("hera.main.error_and_exit") as mock_exit:
+    with pytest.raises(SystemExit):
         execute_program(line)
-        msg = mock_exit.call_args[0][0]
-        assert line in msg
-        assert "line 1" in msg
-        assert "col 5" in msg
-        # Make sure the caret is aligned properly.
-        assert "      ^" in msg
-        assert "R17" in msg
-        assert "not a valid register" in msg
+
+    captured = capsys.readouterr()
+    assert line in captured.err
+    assert "line 1" in captured.err
+    assert "col 5" in captured.err
+    # Make sure the caret is aligned properly.
+    assert "      ^" in captured.err
+    assert "R17" in captured.err
+    assert "not a valid register" in captured.err
 
 
-def test_error_message_for_invalid_register_with_weird_syntax():
+def test_error_message_for_invalid_register_with_weird_syntax(capsys):
     line = "SET(\n\tR17,\n\t65)"
-    with patch("hera.main.error_and_exit") as mock_exit:
+    with pytest.raises(SystemExit):
         execute_program(line)
-        msg = mock_exit.call_args[0][0]
-        assert "\tR17" in msg
-        assert "SET(" not in msg
-        assert "65" not in msg
-        assert "line 2" in msg
-        assert "col 2" in msg
-        # Make sure the caret is aligned properly.
-        assert "  \t^" in msg
-        assert "not a valid register" in msg
+
+    captured = capsys.readouterr()
+    assert "\tR17" in captured.err
+    assert "SET(" not in captured.err
+    assert "65" not in captured.err
+    assert "line 2" in captured.err
+    assert "col 2" in captured.err
+    # Make sure the caret is aligned properly.
+    assert "  \t^" in captured.err
+    assert "not a valid register" in captured.err
+
+
+def test_multiple_error_messages(capsys):
+    line = "ADD(R1, 10)\nINC(R4)"
+    with pytest.raises(SystemExit):
+        execute_program(line)
+
+    captured = capsys.readouterr()
+    assert "ADD" in captured.err
+    assert "too few" in captured.err
+    assert "not a register" in captured.err
+    assert "line 1" in captured.err
+    assert "INC" in captured.err
+    assert "line 2" in captured.err

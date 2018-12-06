@@ -139,18 +139,12 @@ class VirtualMachine:
 
     def get_register(self, name):
         """Get the contents of the register with the given name."""
-        try:
-            index = register_to_index(name)
-        except ValueError as e:
-            raise HERAError(str(e)) from None
+        index = register_to_index(name)
         return self.registers[index]
 
     def store_register(self, target, value):
         """Store the value in the target register (a string)."""
-        try:
-            index = register_to_index(target)
-        except ValueError as e:
-            raise HERAError(str(e)) from None
+        index = register_to_index(target)
         if index != 0:
             self.registers[index] = value
 

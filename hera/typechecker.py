@@ -7,7 +7,7 @@ from collections import namedtuple
 
 from lark import Token
 
-from .utils import is_symbol, register_to_index, HERAError
+from .utils import is_symbol, register_to_index
 
 
 ErrorInfo = namedtuple("ErrorInfo", ["msg", "line", "column"])
@@ -15,21 +15,23 @@ ErrorInfo = namedtuple("ErrorInfo", ["msg", "line", "column"])
 
 def typecheck(program):
     """Type-check the program and return a list of errors encountered."""
+    errors = []
     for op in program:
         params = _types_map.get(op.name)
+        # Generate parametres for branching instructions programmatically.
         if params is None and op.name.upper().startswith("B"):
             if op.name.upper().endswith("R") and len(op.name) > 2:
                 params = (I8,)
             else:
                 params = (REGISTER_OR_LABEL,)
+
         if params is not None:
-            try:
-                check_types(op.name, params, op.args)
-            except HERAError as e:
-                # Fill in line number if not already present.
-                if not e.line:
-                    e.line = op.name.line
-                raise e
+            errors.extend(check_types(op.name, params, op.args))
+        else:
+            # TODO: What should happen here?
+            pass
+
+    return errors
 
 
 # Constants to pass to check_types
@@ -75,23 +77,39 @@ _types_map = {
 
 
 def check_types(name, expected, got):
-    """Verify that the given args match the expected ones and raise a HERAError 
-    otherwise. `name` is the name of the HERA op. `expected` is a tuple or list of 
-    constants (REGISTER, U16, etc., defined above) representing the expected argument 
+    """Verify that the given args match the expected ones and return a list of errors.
+    `name` is the name of the HERA op, as a Token object. `expected` is a tuple or list
+    of constants (REGISTER, U16, etc., defined above) representing the expected argument 
     types to the operation. `args` is a tuple or list of the actual arguments given.
     """
+    errors = []
+
     if len(got) < len(expected):
-        raise HERAError("too few args to {} (expected {})".format(name, len(expected)))
+        errors.append(
+            ErrorInfo(
+                "too few args to {} (expected {})".format(name, len(expected)),
+                name.line,
+                None,
+            )
+        )
 
     if len(expected) < len(got):
-        raise HERAError("too many args to {} (expected {})".format(name, len(expected)))
+        errors.append(
+            ErrorInfo(
+                "too many args to {} (expected {})".format(name, len(expected)),
+                name.line,
+                None,
+            )
+        )
 
     ordinals = ["first", "second", "third"]
     for ordinal, pattern, arg in zip(ordinals, expected, got):
         prefix = "{} arg to {} ".format(ordinal, name)
         error = check_one_type(pattern, arg)
         if error:
-            raise HERAError(prefix + error, line=arg.line, column=arg.column)
+            errors.append(ErrorInfo(prefix + error, arg.line, arg.column))
+
+    return errors
 
 
 def check_one_type(pattern, arg):
