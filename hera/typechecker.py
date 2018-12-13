@@ -8,9 +8,19 @@ from lark import Token
 from .utils import emit_error, is_symbol, register_to_index
 
 
+DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
+
+
 def typecheck(program):
     """Type-check the program and emit errors as appropriate."""
+    end_of_data = False
     for op in program:
+        if not end_of_data:
+            if op.name not in DATA_STATEMENTS:
+                end_of_data = True
+        else:
+            if op.name in DATA_STATEMENTS:
+                emit_error("data statement after instruction", line=op.name.line)
         typecheck_one(op)
 
 

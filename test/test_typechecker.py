@@ -677,3 +677,12 @@ def test_typecheck_multiple_errors():
         call_args = mock_emit_error.call_args_list[2][0]
         assert "INC" in call_args[0]
         assert "too few" in call_args[0]
+
+
+def test_typecheck_data_statement_after_instruction():
+    program = [Op("SET", [R("R1"), 42]), Op(SYM("DLABEL"), [SYM("N")])]
+
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        typecheck(program)
+        assert mock_emit_error.call_count == 1
+        assert "data statement after instruction" in mock_emit_error.call_args[0][0]
