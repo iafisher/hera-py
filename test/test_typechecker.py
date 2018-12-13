@@ -5,10 +5,11 @@ from lark import Token
 from hera.parser import Op
 from hera.typechecker import (
     check_types,
-    typecheck,
-    typecheck_one,
+    LABEL,
     REGISTER,
     REGISTER_OR_LABEL,
+    typecheck,
+    typecheck_one,
     U4,
     U16,
 )
@@ -91,6 +92,10 @@ def test_check_types_with_constant_symbol():
 def test_check_types_with_register_or_label():
     assert check_types("", [REGISTER_OR_LABEL], [Token("SYMBOL", "n")]) == []
     assert check_types("", [REGISTER_OR_LABEL], [R("R1")]) == []
+
+
+def test_check_types_with_label():
+    assert check_types("", [LABEL], [Token("SYMBOL", "n")]) == []
 
 
 def test_typecheck_SET():
@@ -375,6 +380,90 @@ def test_typecheck_BNV():
 def test_typecheck_BNVR():
     assert typecheck_one(Op("BNVR", [0xFF])) == []
     assert typecheck_one(Op("BNVR", [-0x7F])) == []
+
+
+def test_typecheck_SETRF():
+    assert typecheck_one(Op("SETRF", [R("R1"), 42])) == []
+    assert typecheck_one(Op("SETRF", [R("R1"), 0xFFFF])) == []
+    assert typecheck_one(Op("SETRF", [R("R1"), -0x7FFF])) == []
+
+
+def test_typecheck_MOVE():
+    assert typecheck_one(Op("MOVE", [R("R1"), R("R2")])) == []
+
+
+def test_typecheck_CMP():
+    assert typecheck_one(Op("CMP", [R("R1"), R("R2")])) == []
+
+
+def test_typecheck_NEG():
+    assert typecheck_one(Op("NEG", [R("R1"), R("R2")])) == []
+
+
+def test_typecheck_NOT():
+    assert typecheck_one(Op("NOT", [R("R1"), R("R2")])) == []
+
+
+def test_typecheck_CBON():
+    assert typecheck_one(Op("CBON", [])) == []
+
+
+def test_typecheck_CON():
+    assert typecheck_one(Op("CON", [])) == []
+
+
+def test_typecheck_COFF():
+    assert typecheck_one(Op("COFF", [])) == []
+
+
+def test_typecheck_CCBOFF():
+    assert typecheck_one(Op("CCBOFF", [])) == []
+
+
+def test_typecheck_FLAGS():
+    assert typecheck_one(Op("FLAGS", [R("R1")])) == []
+
+
+def test_typecheck_NOP():
+    assert typecheck_one(Op("NOP", [])) == []
+
+
+def test_typecheck_HALT():
+    assert typecheck_one(Op("HALT", [])) == []
+
+
+def test_typecheck_LABEL():
+    assert typecheck_one(Op("LABEL", [SYM("l")])) == []
+
+
+def test_typecheck_CONSTANT():
+    assert typecheck_one(Op("CONSTANT", [SYM("N"), 0xFFFF])) == []
+    assert typecheck_one(Op("CONSTANT", [SYM("N"), -0x7FFF])) == []
+
+
+def test_typecheck_DLABEL():
+    assert typecheck_one(Op("DLABEL", [SYM("l")])) == []
+
+
+def test_typecheck_INTEGER():
+    assert typecheck_one(Op("INTEGER", [0xFFFF])) == []
+    assert typecheck_one(Op("INTEGER", [-0x7FFF])) == []
+
+
+def test_typecheck_LP_STRING():
+    assert typecheck_one(Op("LP_STRING", [Token("STRING", "hello!")])) == []
+
+
+def test_typecheck_DSKIP():
+    assert typecheck_one(Op("DSKIP", [0xFFFF])) == []
+    assert typecheck_one(Op("DSKIP", [0])) == []
+
+
+def test_typecheck_unknown_instruction():
+    errors = typecheck_one(Op(SYM("IF"), [R("R1")]))
+    assert len(errors) == 1
+    assert "unknown instruction" in errors[0].msg
+    assert "IF" in errors[0].msg
 
 
 def test_typecheck_unknown_instruction():

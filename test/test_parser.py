@@ -76,7 +76,9 @@ def test_parse_single_line_comment():
 
 
 def test_parse_hera_boilerplate():
-    assert parse("#include <HERA.h>\nvoid HERA_main() {SETLO(R1, 42)}") == [Op("SETLO", ["R1", 42])]
+    assert parse("#include <HERA.h>\nvoid HERA_main() {SETLO(R1, 42)}") == [
+        Op("SETLO", ["R1", 42])
+    ]
 
 
 def test_parse_hera_boilerplate_weird_whitespace_and_spelling():

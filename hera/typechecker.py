@@ -27,12 +27,15 @@ def typecheck_one(op):
     if params is not None:
         return check_types(op.name, params, op.args)
     else:
-        return [ErrorInfo("unknown instruction `{}`".format(op.name), op.name.line, None)]
+        return [
+            ErrorInfo("unknown instruction `{}`".format(op.name), op.name.line, None)
+        ]
 
 
 # Constants to pass to check_types
 REGISTER = "r"
 REGISTER_OR_LABEL = "rl"
+LABEL = "l"
 STRING = "s"
 U4 = range(0, 2 ** 4)
 U5 = range(0, 2 ** 5)
@@ -42,31 +45,35 @@ I16 = range(-2 ** 15, 2 ** 16)
 
 
 _types_map = {
-    "SET": (REGISTER, I16),
+    # Set and increment instructions
     "SETLO": (REGISTER, I8),
     "SETHI": (REGISTER, I8),
+    "INC": (REGISTER, range(1, 65)),
+    "DEC": (REGISTER, range(1, 65)),
+    # Arithmetic, logical and shift instructions
     "AND": (REGISTER, REGISTER, REGISTER),
     "OR": (REGISTER, REGISTER, REGISTER),
     "ADD": (REGISTER, REGISTER, REGISTER),
     "SUB": (REGISTER, REGISTER, REGISTER),
     "MUL": (REGISTER, REGISTER, REGISTER),
     "XOR": (REGISTER, REGISTER, REGISTER),
-    "INC": (REGISTER, range(1, 65)),
-    "DEC": (REGISTER, range(1, 65)),
     "LSL": (REGISTER, REGISTER),
     "LSR": (REGISTER, REGISTER),
     "LSL8": (REGISTER, REGISTER),
     "LSR8": (REGISTER, REGISTER),
     "ASL": (REGISTER, REGISTER),
     "ASR": (REGISTER, REGISTER),
+    # Flag manipulation
     "SAVEF": (REGISTER,),
     "RSTRF": (REGISTER,),
     "FON": (U5,),
     "FOFF": (U5,),
     "FSET5": (U5,),
     "FSET4": (U4,),
+    # Memory instructions
     "LOAD": (REGISTER, U5, REGISTER),
     "STORE": (REGISTER, U5, REGISTER),
+    # Branch instructions
     "CALL": (REGISTER, REGISTER_OR_LABEL),
     "RETURN": (REGISTER, REGISTER_OR_LABEL),
     "BR": (REGISTER_OR_LABEL,),
@@ -99,6 +106,27 @@ _types_map = {
     "BVR": (I8,),
     "BNV": (REGISTER_OR_LABEL,),
     "BNVR": (I8,),
+    # Pseudo-instructions
+    "SET": (REGISTER, I16),
+    "SETRF": (REGISTER, I16),
+    "MOVE": (REGISTER, REGISTER),
+    "CMP": (REGISTER, REGISTER),
+    "NEG": (REGISTER, REGISTER),
+    "NOT": (REGISTER, REGISTER),
+    "CBON": (),
+    "CON": (),
+    "COFF": (),
+    "CCBOFF": (),
+    "FLAGS": (REGISTER,),
+    "NOP": (),
+    "HALT": (),
+    "LABEL": (LABEL,),
+    # Data statements
+    "CONSTANT": (LABEL, I16),
+    "DLABEL": (LABEL,),
+    "INTEGER": (I16,),
+    "LP_STRING": (STRING,),
+    "DSKIP": (U16,),
 }
 
 
@@ -161,6 +189,12 @@ def check_one_type(pattern, arg):
                 return "not a valid register"
         elif arg.type != "SYMBOL":
             return "not a register or label"
+    elif pattern == LABEL:
+        if not isinstance(arg, Token) or arg.type != "SYMBOL":
+            return "not a symbol"
+    elif pattern == STRING:
+        if not isinstance(arg, Token) or arg.type != "STRING":
+            return "not a string"
     elif isinstance(pattern, range):
         if is_symbol(arg):
             # Symbols will be resolved later.
