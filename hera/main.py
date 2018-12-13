@@ -96,15 +96,15 @@ def execute_program(program, *, lines_to_exec=None, no_dump_state=False, vm=None
     except HERAError as e:
         emit_error(str(e), line=e.line, column=e.column, exit=True)
 
-    # TODO: Seems like typechecking should happen after preprocessing.
-    errors = typecheck(program)
-    if errors:
-        for error in errors:
-            emit_error(error.msg, line=error.line, column=error.column)
+    typecheck(program)
+    if config.SEEN_ERROR:
+        sys.exit(3)
+
+    program = preprocess(program)
+    if config.SEEN_ERROR:
         sys.exit(3)
 
     try:
-        program = preprocess(program)
         vm.exec_many(program, lines=lines_to_exec)
     except HERAError as e:
         emit_error(str(e), line=e.line, column=e.column, exit=True)

@@ -4,6 +4,10 @@
 LINES = None
 
 
+# Whether or not an error has been registered.
+SEEN_ERROR = False
+
+
 def _make_ansi(*params):
     return "\033[" + ";".join(map(str, params)) + "m"
 

@@ -110,6 +110,7 @@ def is_symbol(s):
 def emit_error(msg, *, line=None, column=None, exit=False):
     """Print an error message to stderr."""
     msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
+    config.SEEN_ERROR = True
     _emit_msg(msg, line=line, column=column, exit=exit)
 
 

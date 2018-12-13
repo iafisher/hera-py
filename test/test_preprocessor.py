@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 
 from lark import Token
 
@@ -45,8 +46,9 @@ def test_substitute_label_with_other_op():
 
 
 def test_substitute_label_with_undefined_label():
-    with pytest.raises(HERAError):
+    with patch("hera.utils._emit_msg") as mock_emit_error:
         substitute_label(Op(SYM("SETLO"), [R("R1"), SYM("N")]), {})
+        assert mock_emit_error.call_count == 1
 
 
 def test_convert_set_with_small_positive():

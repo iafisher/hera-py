@@ -3,33 +3,24 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
-from collections import namedtuple
-
 from lark import Token
 
-from .utils import is_symbol, register_to_index
-
-
-ErrorInfo = namedtuple("ErrorInfo", ["msg", "line", "column"])
+from .utils import emit_error, is_symbol, register_to_index
 
 
 def typecheck(program):
-    """Type-check the program and return a list of errors encountered."""
-    errors = []
+    """Type-check the program and emit errors as appropriate."""
     for op in program:
-        errors.extend(typecheck_one(op))
-    return errors
+        typecheck_one(op)
 
 
 def typecheck_one(op):
-    """Type-check a single HERA op and return a list of errors encountered."""
+    """Type-check a single HERA op and emit errors as appropriate."""
     params = _types_map.get(op.name)
     if params is not None:
-        return check_types(op.name, params, op.args)
+        check_types(op.name, params, op.args)
     else:
-        return [
-            ErrorInfo("unknown instruction `{}`".format(op.name), op.name.line, None)
-        ]
+        emit_error("unknown instruction `{}`".format(op.name), line=op.name.line)
 
 
 # Constants to pass to check_types
@@ -131,29 +122,22 @@ _types_map = {
 
 
 def check_types(name, expected, got):
-    """Verify that the given args match the expected ones and return a list of errors.
-    `name` is the name of the HERA op, as a Token object. `expected` is a tuple or list
-    of constants (REGISTER, U16, etc., defined above) representing the expected argument 
-    types to the operation. `args` is a tuple or list of the actual arguments given.
+    """Verify that the given args match the expected ones and emit errors as
+    appropriate. `name` is the name of the HERA op, as a Token object. `expected` is a
+    tuple or list of constants (REGISTER, U16, etc., defined above) representing the
+    expected argument types to the operation. `args` is a tuple or list of the actual
+    arguments given.
     """
-    errors = []
-
     if len(got) < len(expected):
-        errors.append(
-            ErrorInfo(
-                "too few args to {} (expected {})".format(name, len(expected)),
-                name.line,
-                None,
-            )
+        emit_error(
+            "too few args to {} (expected {})".format(name, len(expected)),
+            line=name.line,
         )
 
     if len(expected) < len(got):
-        errors.append(
-            ErrorInfo(
-                "too many args to {} (expected {})".format(name, len(expected)),
-                name.line,
-                None,
-            )
+        emit_error(
+            "too many args to {} (expected {})".format(name, len(expected)),
+            line=name.line,
         )
 
     ordinals = ["first", "second", "third"]
@@ -161,9 +145,7 @@ def check_types(name, expected, got):
         prefix = "{} arg to {} ".format(ordinal, name)
         error = check_one_type(pattern, arg)
         if error:
-            errors.append(ErrorInfo(prefix + error, arg.line, arg.column))
-
-    return errors
+            emit_error(prefix + error, line=arg.line, column=arg.column)
 
 
 def check_one_type(pattern, arg):
