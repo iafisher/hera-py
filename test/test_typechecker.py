@@ -227,6 +227,156 @@ def test_typecheck_RETURN():
     assert typecheck_one(Op("RETURN", [R("R12"), SYM("f")])) == []
 
 
+def test_typecheck_BR():
+    assert typecheck_one(Op("BR", [R("R11")])) == []
+    assert typecheck_one(Op("BR", [SYM("l")])) == []
+
+
+def test_typecheck_BRR():
+    assert typecheck_one(Op("BRR", [0xFF])) == []
+    assert typecheck_one(Op("BRR", [-0x7F])) == []
+
+
+def test_typecheck_BL():
+    assert typecheck_one(Op("BL", [R("R11")])) == []
+    assert typecheck_one(Op("BL", [SYM("l")])) == []
+
+
+def test_typecheck_BLR():
+    assert typecheck_one(Op("BLR", [0xFF])) == []
+    assert typecheck_one(Op("BLR", [-0x7F])) == []
+
+
+def test_typecheck_BGE():
+    assert typecheck_one(Op("BGE", [R("R11")])) == []
+    assert typecheck_one(Op("BGE", [SYM("l")])) == []
+
+
+def test_typecheck_BGER():
+    assert typecheck_one(Op("BGER", [0xFF])) == []
+    assert typecheck_one(Op("BGER", [-0x7F])) == []
+
+
+def test_typecheck_BLE():
+    assert typecheck_one(Op("BLE", [R("R11")])) == []
+    assert typecheck_one(Op("BLE", [SYM("l")])) == []
+
+
+def test_typecheck_BLER():
+    assert typecheck_one(Op("BLER", [0xFF])) == []
+    assert typecheck_one(Op("BLER", [-0x7F])) == []
+
+
+def test_typecheck_BG():
+    assert typecheck_one(Op("BG", [R("R11")])) == []
+    assert typecheck_one(Op("BG", [SYM("l")])) == []
+
+
+def test_typecheck_BGR():
+    assert typecheck_one(Op("BGR", [0xFF])) == []
+    assert typecheck_one(Op("BGR", [-0x7F])) == []
+
+
+def test_typecheck_BULE():
+    assert typecheck_one(Op("BULE", [R("R11")])) == []
+    assert typecheck_one(Op("BULE", [SYM("l")])) == []
+
+
+def test_typecheck_BULER():
+    assert typecheck_one(Op("BULER", [0xFF])) == []
+    assert typecheck_one(Op("BULER", [-0x7F])) == []
+
+
+def test_typecheck_BUG():
+    assert typecheck_one(Op("BUG", [R("R11")])) == []
+    assert typecheck_one(Op("BUG", [SYM("l")])) == []
+
+
+def test_typecheck_BUGR():
+    assert typecheck_one(Op("BUGR", [0xFF])) == []
+    assert typecheck_one(Op("BUGR", [-0x7F])) == []
+
+
+def test_typecheck_BZ():
+    assert typecheck_one(Op("BZ", [R("R11")])) == []
+    assert typecheck_one(Op("BZ", [SYM("l")])) == []
+
+
+def test_typecheck_BZR():
+    assert typecheck_one(Op("BZR", [0xFF])) == []
+    assert typecheck_one(Op("BZR", [-0x7F])) == []
+
+
+def test_typecheck_BNZ():
+    assert typecheck_one(Op("BNZ", [R("R11")])) == []
+    assert typecheck_one(Op("BNZ", [SYM("l")])) == []
+
+
+def test_typecheck_BNZR():
+    assert typecheck_one(Op("BNZR", [0xFF])) == []
+    assert typecheck_one(Op("BNZR", [-0x7F])) == []
+
+
+def test_typecheck_BC():
+    assert typecheck_one(Op("BC", [R("R11")])) == []
+    assert typecheck_one(Op("BC", [SYM("l")])) == []
+
+
+def test_typecheck_BCR():
+    assert typecheck_one(Op("BCR", [0xFF])) == []
+    assert typecheck_one(Op("BCR", [-0x7F])) == []
+
+
+def test_typecheck_BNC():
+    assert typecheck_one(Op("BNC", [R("R11")])) == []
+    assert typecheck_one(Op("BNC", [SYM("l")])) == []
+
+
+def test_typecheck_BNCR():
+    assert typecheck_one(Op("BNCR", [0xFF])) == []
+    assert typecheck_one(Op("BNCR", [-0x7F])) == []
+
+
+def test_typecheck_BS():
+    assert typecheck_one(Op("BS", [R("R11")])) == []
+    assert typecheck_one(Op("BS", [SYM("l")])) == []
+
+
+def test_typecheck_BSR():
+    assert typecheck_one(Op("BSR", [0xFF])) == []
+    assert typecheck_one(Op("BSR", [-0x7F])) == []
+
+
+def test_typecheck_BNS():
+    assert typecheck_one(Op("BNS", [R("R11")])) == []
+    assert typecheck_one(Op("BNS", [SYM("l")])) == []
+
+
+def test_typecheck_BNSR():
+    assert typecheck_one(Op("BNSR", [0xFF])) == []
+    assert typecheck_one(Op("BNSR", [-0x7F])) == []
+
+
+def test_typecheck_BV():
+    assert typecheck_one(Op("BV", [R("R11")])) == []
+    assert typecheck_one(Op("BV", [SYM("l")])) == []
+
+
+def test_typecheck_BVR():
+    assert typecheck_one(Op("BVR", [0xFF])) == []
+    assert typecheck_one(Op("BVR", [-0x7F])) == []
+
+
+def test_typecheck_BNV():
+    assert typecheck_one(Op("BNV", [R("R11")])) == []
+    assert typecheck_one(Op("BNV", [SYM("l")])) == []
+
+
+def test_typecheck_BNVR():
+    assert typecheck_one(Op("BNVR", [0xFF])) == []
+    assert typecheck_one(Op("BNVR", [-0x7F])) == []
+
+
 def test_typecheck_single_error():
     # Second argument to SETHI is out of range.
     program = [

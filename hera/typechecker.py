@@ -24,14 +24,6 @@ def typecheck(program):
 def typecheck_one(op):
     """Type-check a single HERA op and return a list of errors encountered."""
     params = _types_map.get(op.name)
-    # Generate parameters for branching instructions programmatically.
-    if params is None and op.name.upper().startswith("B"):
-        # TODO: This might hide an error for non-existent branching instructions, e.g. BYR.
-        if op.name.upper().endswith("R") and len(op.name) > 2:
-            params = (I8,)
-        else:
-            params = (REGISTER_OR_LABEL,)
-
     if params is not None:
         return check_types(op.name, params, op.args)
     else:
@@ -78,6 +70,36 @@ _types_map = {
     "STORE": (REGISTER, U5, REGISTER),
     "CALL": (REGISTER, REGISTER_OR_LABEL),
     "RETURN": (REGISTER, REGISTER_OR_LABEL),
+    "BR": (REGISTER_OR_LABEL,),
+    "BRR": (I8,),
+    "BL": (REGISTER_OR_LABEL,),
+    "BLR": (I8,),
+    "BGE": (REGISTER_OR_LABEL,),
+    "BGER": (I8,),
+    "BLE": (REGISTER_OR_LABEL,),
+    "BLER": (I8,),
+    "BG": (REGISTER_OR_LABEL,),
+    "BGR": (I8,),
+    "BULE": (REGISTER_OR_LABEL,),
+    "BULER": (I8,),
+    "BUG": (REGISTER_OR_LABEL,),
+    "BUGR": (I8,),
+    "BZ": (REGISTER_OR_LABEL,),
+    "BZR": (I8,),
+    "BNZ": (REGISTER_OR_LABEL,),
+    "BNZR": (I8,),
+    "BC": (REGISTER_OR_LABEL,),
+    "BCR": (I8,),
+    "BNC": (REGISTER_OR_LABEL,),
+    "BNCR": (I8,),
+    "BS": (REGISTER_OR_LABEL,),
+    "BSR": (I8,),
+    "BNS": (REGISTER_OR_LABEL,),
+    "BNSR": (I8,),
+    "BV": (REGISTER_OR_LABEL,),
+    "BVR": (I8,),
+    "BNV": (REGISTER_OR_LABEL,),
+    "BNVR": (I8,),
 }
 
 
