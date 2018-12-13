@@ -71,6 +71,10 @@ def test_parse_negative_octal_number():
     assert parse("SETLO(R3, -0o173)") == [Op("SETLO", ["R3", -123])]
 
 
+def test_parse_label_starting_with_register_name():
+    assert parse("LABEL(R1_INIT)") == [Op("LABEL", ["R1_INIT"])]
+
+
 def test_parse_single_line_comment():
     assert parse("SETLO(R1, 0)  // R1 <- 0") == [Op("SETLO", ["R1", 0])]
 

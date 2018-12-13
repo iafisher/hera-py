@@ -44,6 +44,10 @@ class TreeToOplist(Transformer):
             ntkn.end_line = otkn.end_line
             ntkn.end_column = otkn.end_column
             return ntkn
+        elif matches[0].type == "SYMBOL":
+            if matches[0][0] in "rR" and matches[0][1:].isdigit():
+                matches[0].type = "REGISTER"
+            return matches[0]
         else:
             return matches[0]
 
@@ -65,10 +69,9 @@ _parser = Lark(
 
     _arglist: ( value "," )* value
 
-    value: DECIMAL | HEX | OCTAL | BINARY | REGISTER | SYMBOL | STRING
+    value: DECIMAL | HEX | OCTAL | BINARY | SYMBOL | STRING
 
-    REGISTER.3: /[rR][0-9]+/
-    SYMBOL.2: /[A-Za-z_][A-Za-z0-9_]*/
+    SYMBOL: /[A-Za-z_][A-Za-z0-9_]*/
     DECIMAL: /-?[0-9]+/
     HEX: /-?0x[0-9a-fA-F]+/
     // TODO: How should I handle zero-prefixed numbers, which the HERA-C
