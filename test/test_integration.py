@@ -149,6 +149,20 @@ def test_cs240_dot_hera():
     assert not vm.flag_carry_block
 
 
+def test_hera_boilerplate_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/hera_boilerplate.hera"], vm)
+
+    assert vm.registers[1] == 42
+    assert vm.registers[2] == 42
+
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
 def test_error_message_for_missing_comma(capsys):
     line = "SETLO(R1 40)"
     with pytest.raises(SystemExit):

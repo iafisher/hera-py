@@ -50,16 +50,25 @@ class TreeToOplist(Transformer):
 
 _parser = Lark(
     r"""
-    ?start: op*
+    ?start: cpp_program | _hera_program
 
-    op: SYMBOL "(" _arglist? ")"
+    cpp_program: _INCLUDE* _cpp_open op* _CPP_CLOSE
+    _hera_program: op*
+
+    // Underscores before everything so that no tokens end up in the tree.
+    _INCLUDE: /#include.*/
+    _cpp_open: "void" _SYMBOL "(" ")" "{"
+    _CPP_CLOSE: "}"
+    _SYMBOL: SYMBOL
+
+    op: SYMBOL "(" _arglist? ")" ";"?
 
     _arglist: ( value "," )* value
 
     value: DECIMAL | HEX | OCTAL | BINARY | REGISTER | SYMBOL | STRING
 
-    REGISTER.2: /[rR][0-9]+/
-    SYMBOL: /[A-Za-z_][A-Za-z0-9_]*/
+    REGISTER.3: /[rR][0-9]+/
+    SYMBOL.2: /[A-Za-z_][A-Za-z0-9_]*/
     DECIMAL: /-?[0-9]+/
     HEX: /-?0x[0-9a-fA-F]+/
     // TODO: How should I handle zero-prefixed numbers, which the HERA-C

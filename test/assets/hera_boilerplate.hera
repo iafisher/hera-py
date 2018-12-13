@@ -1,0 +1,6 @@
+#include <HERA.h>
+
+void HERA_main() {
+   SET(R1, 42);
+   SET(R2, 42)
+}
