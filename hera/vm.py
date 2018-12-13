@@ -1,7 +1,7 @@
 """The virtual HERA machine.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: November 2018
+Version: December 2018
 """
 import functools
 import sys

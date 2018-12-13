@@ -1,7 +1,7 @@
 """Preprocess HERA programs to convert pseudo-instructions and resolve labels.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: November 2018
+Version: December 2018
 """
 from lark import Token
 

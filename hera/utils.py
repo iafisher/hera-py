@@ -1,7 +1,7 @@
 """Utilities for the HERA interpreter.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: November 2018
+Version: December 2018
 """
 import sys
 
