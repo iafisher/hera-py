@@ -13,6 +13,7 @@ Options:
     -h, --help       Show this message.
     -v, --version    Show the version.
 """
+import readline
 import sys
 import functools
 
@@ -42,11 +43,15 @@ def main(argv=None, vm=None):
         ANSI_RED_BOLD = ANSI_RESET = ""
 
     if path == "-":
+        program = ""
         try:
-            program = sys.stdin.read()
+            while True:
+                program += input()
         except (IOError, KeyboardInterrupt):
             print()
             return
+        except EOFError:
+            pass
     else:
         try:
             with open(path, "r", encoding="utf-8") as f:
