@@ -7,6 +7,8 @@ import sys
 
 from lark import Token
 
+from . import config
+
 
 class HERAError(Exception):
     def __init__(self, msg, line=None, column=None):
@@ -105,20 +107,34 @@ def is_symbol(s):
     return isinstance(s, Token) and s.type == "SYMBOL"
 
 
-def emit_warning(msg):
-    sys.stderr.write(ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg + "\n")
+def emit_error(msg, *, line=None, column=None, exit=False):
+    """Print an error message to stderr."""
+    msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
+    _emit_msg(msg, line=line, column=column, exit=exit)
 
 
-# ANSI color codes (https://stackoverflow.com/questions/4842424/)
-# When the --no-color flag is specified, these constants are set to the empty
-# string, so they can be used unconditionally in your code but will still obey
-# the flag value.
+def emit_warning(msg, *, line=None, column=None):
+    """Print a error warning to stderr."""
+    msg = config.ANSI_MAGENTA_BOLD + "Warning" + config.ANSI_RESET + ": " + msg
+    _emit_msg(msg, line=line, column=column, exit=False)
 
 
-def make_ansi(*params):
-    return "\033[" + ";".join(map(str, params)) + "m"
+def _emit_msg(msg, *, line=None, column=None, exit=False):
+    if line is not None and config.LINES is not None:
+        if column is not None:
+            caret = _align_caret(config.LINES[line - 1], column) + "^"
+            msg += ", line {} col {}\n\n  {}\n  {}\n".format(
+                line, column, config.LINES[line - 1], caret
+            )
+        else:
+            msg += ", line {}\n\n  {}\n".format(line, config.LINES[line - 1])
+    sys.stderr.write(msg + "\n")
+    if exit:
+        sys.exit(exit)
 
 
-ANSI_RED_BOLD = make_ansi(31, 1)
-ANSI_MAGENTA_BOLD = make_ansi(35, 1)
-ANSI_RESET = make_ansi(0)
+def _align_caret(line, col):
+    """Return the whitespace necessary to align a caret to underline the desired
+    column in the line of text. Mainly this means handling tabs.
+    """
+    return "".join("\t" if c == "\t" else " " for c in line[: col - 1])

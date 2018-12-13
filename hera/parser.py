@@ -31,7 +31,11 @@ class TreeToOplist(Transformer):
             return IntToken(matches[0], base=16, line=line, column=column)
         elif matches[0].type == "OCTAL":
             if not matches[0].startswith("0o"):
-                emit_warning("zero-prefixed numbers are interpreted as octal")
+                emit_warning(
+                    "zero-prefixed numbers are interpreted as octal",
+                    line=matches[0].line,
+                    column=matches[0].column,
+                )
             return IntToken(matches[0], base=8, line=line, column=column)
         elif matches[0].type == "BINARY":
             return IntToken(matches[0], base=2, line=line, column=column)

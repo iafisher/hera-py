@@ -18,15 +18,15 @@ import functools
 
 from docopt import docopt
 
-from . import utils
+from . import config
 from .parser import parse
 from .preprocessor import preprocess
 from .typechecker import typecheck
-from .utils import print_register_debug, HERAError
+from .utils import emit_error, print_register_debug, HERAError
 from .vm import VirtualMachine
 
 
-lines = None
+LINES = None
 
 
 def main(argv=None, vm=None):
@@ -41,7 +41,7 @@ def main(argv=None, vm=None):
     path = arguments["<path>"]
 
     if arguments["--no-color"]:
-        utils.ANSI_MAGENTA_BOLD = utils.ANSI_RED_BOLD = utils.ANSI_RESET = ""
+        config.ANSI_MAGENTA_BOLD = config.ANSI_RED_BOLD = config.ANSI_RESET = ""
 
     if path == "-":
         try:
@@ -86,7 +86,7 @@ def execute_program(program, *, lines_to_exec=None, no_dump_state=False, vm=None
     A virtual machine instance may be passed in for testing purposes. If it is not, a
     new one is instantiated. The virtual machine is returned.
     """
-    lines = program.splitlines()
+    config.LINES = program.splitlines()
 
     if vm is None:
         vm = VirtualMachine()
@@ -94,34 +94,20 @@ def execute_program(program, *, lines_to_exec=None, no_dump_state=False, vm=None
     try:
         program = parse(program)
     except HERAError as e:
-        report_hera_error(e, lines)
+        emit_error(str(e), line=e.line, column=e.column, exit=True)
 
     # TODO: Seems like typechecking should happen after preprocessing.
     errors = typecheck(program)
     if errors:
         for error in errors:
-            # TODO: Remove duplication with report_hera_error and error_and_exit.
-            if error.line:
-                if error.column:
-                    caret = align_caret(lines[error.line - 1], error.column) + "^"
-                    msg = "{0.msg}, line {0.line} col {0.column}\n\n  {1}\n  {2}\n".format(
-                        error, lines[error.line - 1], caret
-                    )
-                else:
-                    msg = "{0.msg}, line {0.line}\n\n  {1}\n".format(
-                        error, lines[error.line - 1]
-                    )
-            else:
-                msg = error.msg
-            sys.stderr.write(utils.ANSI_RED_BOLD + "Error" + utils.ANSI_RESET + ": ")
-            sys.stderr.write(msg + "\n")
+            emit_error(error.msg, line=error.line, column=error.column)
         sys.exit(3)
 
     try:
         program = preprocess(program)
         vm.exec_many(program, lines=lines_to_exec)
     except HERAError as e:
-        report_hera_error(e, lines)
+        emit_error(str(e), line=e.line, column=e.column, exit=True)
     else:
         if not no_dump_state:
             dump_state(vm)
@@ -161,30 +147,3 @@ def dump_state(vm):
     nprint("\tOverflow flag is " + ("ON" if vm.flag_overflow else "OFF"))
     nprint("\tCarry flag is " + ("ON" if vm.flag_carry else "OFF"))
     nprint("\tCarry block flag is " + ("ON" if vm.flag_carry_block else "OFF"))
-
-
-def report_hera_error(exc, lines):
-    if exc.line:
-        if exc.column:
-            caret = align_caret(lines[exc.line - 1], exc.column) + "^"
-            msg = "{0}, line {0.line} col {0.column}\n\n  {1}\n  {2}\n".format(
-                exc, lines[exc.line - 1], caret
-            )
-        else:
-            msg = "{0}, line {0.line}\n\n  {1}\n".format(exc, lines[exc.line - 1])
-    else:
-        msg = str(exc)
-    error_and_exit(msg)
-
-
-def error_and_exit(msg, *, exitcode=3):
-    sys.stderr.write(utils.ANSI_RED_BOLD + "Error" + utils.ANSI_RESET + ": ")
-    sys.stderr.write(msg + "\n")
-    sys.exit(exitcode)
-
-
-def align_caret(line, col):
-    """Return the whitespace necessary to align a caret to underline the desired
-    column in the line of text. Mainly this means handling tabs.
-    """
-    return "".join("\t" if c == "\t" else " " for c in line[: col - 1])

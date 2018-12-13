@@ -1,12 +1,6 @@
-from hera.main import (
-    align_caret,
-    dump_state,
-    op_to_string,
-    program_to_string,
-)
+from hera.main import dump_state, op_to_string, program_to_string
 from hera.parser import Op
 from hera.vm import VirtualMachine
-
 
 
 def test_op_to_string():
@@ -24,10 +18,6 @@ def test_program_to_string():
         Op("ADD", ["R3", "R1", "R2"]),
     ]
     assert program_to_string(program) == "SET(R1, 20)\nSET(R2, 22)\nADD(R3, R1, R2)"
-
-
-def test_align_caret():
-    assert align_caret("\t\t  a", 5) == "\t\t  "
 
 
 def test_dump_state(capsys):

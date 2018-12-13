@@ -1,14 +1,6 @@
 import pytest
 
-from hera.utils import from_u16, make_ansi, register_to_index, to_u16, to_u32
-
-
-def test_make_ansi_red():
-    assert make_ansi(31, 1) == "\033[31;1m"
-
-
-def test_make_ansi_reset():
-    assert make_ansi(0) == "\033[0m"
+from hera.utils import from_u16, register_to_index, to_u16, to_u32, _align_caret
 
 
 def test_to_u16_with_max_negative():
@@ -154,3 +146,7 @@ def test_register_to_index_with_invalid_register():
     with pytest.raises(ValueError) as e:
         register_to_index("R16")
     assert "R16" in str(e)
+
+
+def test_align_caret():
+    assert _align_caret("\t\t  a", 5) == "\t\t  "
