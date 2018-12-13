@@ -1,20 +1,12 @@
 from hera.main import (
     align_caret,
     dump_state,
-    make_ansi,
     op_to_string,
     program_to_string,
 )
 from hera.parser import Op
 from hera.vm import VirtualMachine
 
-
-def test_make_ansi_red():
-    assert make_ansi(31, 1) == "\033[31;1m"
-
-
-def test_make_ansi_reset():
-    assert make_ansi(0) == "\033[0m"
 
 
 def test_op_to_string():

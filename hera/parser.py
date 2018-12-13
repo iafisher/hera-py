@@ -9,7 +9,7 @@ from collections import namedtuple
 from lark import Lark, Token, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
-from .utils import HERAError, IntToken
+from .utils import emit_warning, HERAError, IntToken
 
 
 Op = namedtuple("Op", ["name", "args"])
@@ -30,6 +30,8 @@ class TreeToOplist(Transformer):
         elif matches[0].type == "HEX":
             return IntToken(matches[0], base=16, line=line, column=column)
         elif matches[0].type == "OCTAL":
+            if not matches[0].startswith("0o"):
+                emit_warning("zero-prefixed numbers are interpreted as octal")
             return IntToken(matches[0], base=8, line=line, column=column)
         elif matches[0].type == "BINARY":
             return IntToken(matches[0], base=2, line=line, column=column)
@@ -72,12 +74,10 @@ _parser = Lark(
     value: DECIMAL | HEX | OCTAL | BINARY | SYMBOL | STRING
 
     SYMBOL: /[A-Za-z_][A-Za-z0-9_]*/
-    DECIMAL: /-?[0-9]+/
-    HEX: /-?0x[0-9a-fA-F]+/
-    // TODO: How should I handle zero-prefixed numbers, which the HERA-C
-    // simulator would treat as octal?
-    OCTAL: /-?0o[0-7]+/
-    BINARY: /-?0b[01]+/
+    DECIMAL: /-?[1-9][0-9]*/ | "0"
+    HEX.2: /-?0x[0-9a-fA-F]+/
+    OCTAL.2: /-?0o[0-7]+/ | /-?0[1-9]+/
+    BINARY.2: /-?0b[01]+/
     STRING: /"(\\.|[^"])*"/
 
     COMMENT: ( "//" /[^\n]*/ | "/*" /([^*]|\*[^\/])*/ "*/" )

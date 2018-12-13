@@ -103,3 +103,22 @@ def copy_token(val, otkn):
 
 def is_symbol(s):
     return isinstance(s, Token) and s.type == "SYMBOL"
+
+
+def emit_warning(msg):
+    sys.stderr.write(ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg + "\n")
+
+
+# ANSI color codes (https://stackoverflow.com/questions/4842424/)
+# When the --no-color flag is specified, these constants are set to the empty
+# string, so they can be used unconditionally in your code but will still obey
+# the flag value.
+
+
+def make_ansi(*params):
+    return "\033[" + ";".join(map(str, params)) + "m"
+
+
+ANSI_RED_BOLD = make_ansi(31, 1)
+ANSI_MAGENTA_BOLD = make_ansi(35, 1)
+ANSI_RESET = make_ansi(0)

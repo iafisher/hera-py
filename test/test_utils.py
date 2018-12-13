@@ -1,6 +1,14 @@
 import pytest
 
-from hera.utils import from_u16, to_u16, to_u32, register_to_index
+from hera.utils import from_u16, make_ansi, register_to_index, to_u16, to_u32
+
+
+def test_make_ansi_red():
+    assert make_ansi(31, 1) == "\033[31;1m"
+
+
+def test_make_ansi_reset():
+    assert make_ansi(0) == "\033[0m"
 
 
 def test_to_u16_with_max_negative():

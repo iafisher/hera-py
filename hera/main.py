@@ -18,11 +18,15 @@ import functools
 
 from docopt import docopt
 
+from . import utils
 from .parser import parse
 from .preprocessor import preprocess
 from .typechecker import typecheck
 from .utils import print_register_debug, HERAError
 from .vm import VirtualMachine
+
+
+lines = None
 
 
 def main(argv=None, vm=None):
@@ -33,13 +37,11 @@ def main(argv=None, vm=None):
 
     A virtual machine instance may be passed in for testing purposes.
     """
-    global ANSI_RED_BOLD, ANSI_RESET
-
     arguments = docopt(__doc__, argv=argv, version="hera-py 0.2.0 for HERA version 2.4")
     path = arguments["<path>"]
 
     if arguments["--no-color"]:
-        ANSI_RED_BOLD = ANSI_RESET = ""
+        utils.ANSI_MAGENTA_BOLD = utils.ANSI_RED_BOLD = utils.ANSI_RESET = ""
 
     if path == "-":
         try:
@@ -111,7 +113,7 @@ def execute_program(program, *, lines_to_exec=None, no_dump_state=False, vm=None
                     )
             else:
                 msg = error.msg
-            sys.stderr.write(ANSI_RED_BOLD + "Error" + ANSI_RESET + ": ")
+            sys.stderr.write(utils.ANSI_RED_BOLD + "Error" + utils.ANSI_RESET + ": ")
             sys.stderr.write(msg + "\n")
         sys.exit(3)
 
@@ -176,7 +178,7 @@ def report_hera_error(exc, lines):
 
 
 def error_and_exit(msg, *, exitcode=3):
-    sys.stderr.write(ANSI_RED_BOLD + "Error" + ANSI_RESET + ": ")
+    sys.stderr.write(utils.ANSI_RED_BOLD + "Error" + utils.ANSI_RESET + ": ")
     sys.stderr.write(msg + "\n")
     sys.exit(exitcode)
 
@@ -186,17 +188,3 @@ def align_caret(line, col):
     column in the line of text. Mainly this means handling tabs.
     """
     return "".join("\t" if c == "\t" else " " for c in line[: col - 1])
-
-
-# ANSI color codes (https://stackoverflow.com/questions/4842424/)
-# When the --no-color flag is specified, these constants are set to the empty
-# string, so they can be used unconditionally in your code but will still obey
-# the flag value.
-
-
-def make_ansi(*params):
-    return "\033[" + ";".join(map(str, params)) + "m"
-
-
-ANSI_RED_BOLD = make_ansi(31, 1)
-ANSI_RESET = make_ansi(0)
