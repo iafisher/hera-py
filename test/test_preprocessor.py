@@ -1,3 +1,5 @@
+import pytest
+
 from lark import Token
 
 from hera.parser import Op
@@ -5,14 +7,46 @@ from hera.preprocessor import (
     convert,
     convert_set,
     get_labels,
-    preprocess,
     HERA_DATA_START,
+    preprocess,
+    substitute_label,
 )
-from hera.utils import IntToken
+from hera.utils import HERAError, IntToken
 
 
 def R(s):
     return Token("REGISTER", s)
+
+
+def SYM(s):
+    return Token("SYMBOL", s)
+
+
+def test_substitute_label_with_SETLO():
+    labels = {"N": 10}
+    assert substitute_label(Op(SYM("SETLO"), [R("R1"), SYM("N")]), labels) == Op(
+        "SETLO", ["R1", 10]
+    )
+
+
+def test_substitute_label_with_SETHI():
+    labels = {"N": 10}
+    # 0 is substituted and not 10 because only the high bits are taken.
+    assert substitute_label(Op(SYM("SETHI"), [R("R1"), SYM("N")]), labels) == Op(
+        "SETHI", ["R1", 0]
+    )
+
+
+def test_substitute_label_with_other_op():
+    labels = {"N": 10}
+    assert substitute_label(Op(SYM("INC"), [R("R1"), SYM("N")]), labels) == Op(
+        "INC", ["R1", "N"]
+    )
+
+
+def test_substitute_label_with_undefined_label():
+    with pytest.raises(HERAError):
+        substitute_label(Op(SYM("SETLO"), [R("R1"), SYM("N")]), {})
 
 
 def test_convert_set_with_small_positive():

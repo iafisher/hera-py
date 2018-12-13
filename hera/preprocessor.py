@@ -6,7 +6,7 @@ Version: November 2018
 from lark import Token
 
 from .parser import Op
-from .utils import copy_token, is_symbol, to_u16
+from .utils import copy_token, HERAError, is_symbol, to_u16
 
 
 # Arbitrary value copied over from HERA-C.
@@ -36,7 +36,14 @@ def substitute_label(op, labels):
     if op.name == "SETLO" and is_symbol(op.args[1]):
         d, v = op.args
         name = copy_token("SETLO", op.name)
-        return Op(name, [d, labels[v] & 0xFF])
+        try:
+            label = labels[v]
+        except KeyError:
+            raise HERAError(
+                "undefined symbol `{}`".format(v), line=op.name.line, column=v.column
+            ) from None
+        else:
+            return Op(name, [d, label & 0xFF])
     elif op.name == "SETHI" and is_symbol(op.args[1]):
         d, v = op.args
         name = copy_token("SETHI", op.name)
