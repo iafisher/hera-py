@@ -6,7 +6,7 @@ Version: December 2018
 from lark import Token
 
 from .parser import Op
-from .utils import copy_token, HERAError, is_symbol, to_u16
+from .utils import copy_token, emit_error, HERAError, is_symbol, to_u16
 
 
 # Arbitrary value copied over from HERA-C.
@@ -58,21 +58,24 @@ def get_labels(program):
     pc = 0
     dc = HERA_DATA_START
     for op in program:
-        opname = op.name.lower()
-        if opname == "label":
+        odc = dc
+        if op.name == "LABEL":
             labels[op.args[0]] = pc
-        elif opname == "dlabel":
+        elif op.name == "DLABEL":
             labels[op.args[0]] = dc
-        elif opname == "constant":
+        elif op.name == "CONSTANT":
             labels[op.args[0]] = op.args[1]
-        elif opname == "integer":
+        elif op.name == "INTEGER":
             dc += 1
-        elif opname == "dskip":
+        elif op.name == "DSKIP":
             dc += op.args[0]
-        elif opname == "lp_string":
+        elif op.name == "LP_STRING":
             dc += len(op.args[0]) + 1
         else:
             pc += 1
+
+        if dc >= 0xFFFF and odc < 0xFFFF:
+            emit_error("past the end of available memory", line=op.name.line)
     return labels
 
 

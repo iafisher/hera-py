@@ -163,6 +163,16 @@ def test_hera_boilerplate_dot_hera():
     assert not vm.flag_carry_block
 
 
+def test_dskip_overflow_dot_hera(capsys):
+    vm = VirtualMachine()
+    with pytest.raises(SystemExit):
+        main(["test/assets/dskip_overflow.hera"], vm)
+
+    captured = capsys.readouterr()
+    assert "DSKIP(0xFFFF)" in captured.err
+    assert "line 1" in captured.err
+
+
 def test_error_message_for_missing_comma(capsys):
     line = "SETLO(R1 40)"
     with pytest.raises(SystemExit):
