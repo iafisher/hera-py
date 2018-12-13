@@ -17,21 +17,26 @@ def typecheck(program):
     """Type-check the program and return a list of errors encountered."""
     errors = []
     for op in program:
-        params = _types_map.get(op.name)
-        # Generate parametres for branching instructions programmatically.
-        if params is None and op.name.upper().startswith("B"):
-            if op.name.upper().endswith("R") and len(op.name) > 2:
-                params = (I8,)
-            else:
-                params = (REGISTER_OR_LABEL,)
-
-        if params is not None:
-            errors.extend(check_types(op.name, params, op.args))
-        else:
-            # TODO: What should happen here?
-            pass
-
+        errors.extend(typecheck_one(op))
     return errors
+
+
+def typecheck_one(op):
+    """Type-check a single HERA op and return a list of errors encountered."""
+    params = _types_map.get(op.name)
+    # Generate parameters for branching instructions programmatically.
+    if params is None and op.name.upper().startswith("B"):
+        # TODO: This might hide an error for non-existent branching instructions, e.g. BYR.
+        if op.name.upper().endswith("R") and len(op.name) > 2:
+            params = (I8,)
+        else:
+            params = (REGISTER_OR_LABEL,)
+
+    if params is not None:
+        return check_types(op.name, params, op.args)
+    else:
+        #errors.append(ErrorInfo("unknown instruction `{}`".format(op.name), op.name.line, None))
+        return []
 
 
 # Constants to pass to check_types
