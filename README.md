@@ -24,3 +24,11 @@ You can also preprocess a HERA program without running it, to see how pseudo-ins
 ```
 $ hera preprocess my-hera-file.hera
 ```
+
+## Design
+Running a HERA program takes a few steps:
+
+1. The text of the program is parsed into a list of instruction objects.  (`hera/parser.py`)
+2. The program is type-checked to ensure that all operations take the proper number and type of operands.  (`hera/typechecker.py`)
+3. Pseudo-instructions are converted into actual instructions, and labels and constants are resolved into their values.  (`hera/preprocessor.py`)
+4. The instructions are executed on a virtual HERA machine.  (`hera/vm.py`)
