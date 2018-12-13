@@ -377,6 +377,20 @@ def test_typecheck_BNVR():
     assert typecheck_one(Op("BNVR", [-0x7F])) == []
 
 
+def test_typecheck_unknown_instruction():
+    errors = typecheck_one(Op(SYM("IF"), [R("R1")]))
+    assert len(errors) == 1
+    assert "unknown instruction" in errors[0].msg
+    assert "IF" in errors[0].msg
+
+
+def test_typecheck_unknown_branch_instruction():
+    errors = typecheck_one(Op(SYM("BNW"), [R("R1")]))
+    assert len(errors) == 1
+    assert "unknown instruction" in errors[0].msg
+    assert "BNW" in errors[0].msg
+
+
 def test_typecheck_single_error():
     # Second argument to SETHI is out of range.
     program = [

@@ -27,8 +27,7 @@ def typecheck_one(op):
     if params is not None:
         return check_types(op.name, params, op.args)
     else:
-        #errors.append(ErrorInfo("unknown instruction `{}`".format(op.name), op.name.line, None))
-        return []
+        return [ErrorInfo("unknown instruction `{}`".format(op.name), op.name.line, None)]
 
 
 # Constants to pass to check_types
