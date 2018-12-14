@@ -4,7 +4,6 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
 import functools
-import sys
 
 from .symtab import HERA_DATA_START
 from .utils import (

@@ -29,9 +29,8 @@ def typecheck(program, symtab):
 
         if op.name in RELATIVE_BRANCHES:
             if len(op.args) == 1 and is_symbol(op.args[0]):
-                msg = "relative branches cannot use labels (why not use {} instead?)".format(
-                    op.name[:-1]
-                )
+                msg = "relative branches cannot use labels"
+                msg += " (why not use {} instead?)".format(op.name[:-1])
                 emit_error(msg, line=op.name.line, column=op.args[0].column)
 
 
