@@ -119,7 +119,9 @@ def execute_program(program, *, lines_to_exec=None, no_dump_state=False, vm=None
 
 
 def preprocess_program(program):
-    program = preprocess(parse(program))
+    program = parse(program)
+    symtab = get_symtab(program)
+    program = preprocess(program, symtab)
     print(program_to_string(program))
 
 

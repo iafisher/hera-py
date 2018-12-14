@@ -51,11 +51,15 @@ class TreeToOplist(Transformer):
             ntkn.end_column = otkn.end_column
             return ntkn
         elif matches[0].type == "SYMBOL":
-            if matches[0][0] in "rR" and matches[0][1:].isdigit():
+            if is_register(matches[0]):
                 matches[0].type = "REGISTER"
             return matches[0]
         else:
             return matches[0]
+
+
+def is_register(s):
+    return (s[0] in "rR" and s[1:].isdigit()) or s in ("Rt", "FP", "SP")
 
 
 _parser = Lark(

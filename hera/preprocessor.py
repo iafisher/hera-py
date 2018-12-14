@@ -17,36 +17,32 @@ def preprocess(program, symtab):
         - Replaces pseudo-instructions with real ones.
         - Resolves labels into their line numbers.
     """
-    program = [op for old_op in program for op in convert(old_op)]
     program = [substitute_label(op, symtab) for op in program]
+    program = [op for old_op in program for op in convert(old_op)]
     program = [op for op in program if op.name not in ("LABEL", "DLABEL", "CONSTANT")]
     return program
 
 
 def substitute_label(op, symtab):
     """Substitute any label in the instruction with its concrete value."""
-    if op.name == "SETLO" and is_symbol(op.args[1]):
-        d, v = op.args
-        name = copy_token("SETLO", op.name)
-        try:
-            label = symtab[v]
-        except KeyError:
-            emit_error(
-                "undefined symbol `{}`".format(v), line=op.name.line, column=v.column
-            )
-        else:
-            return Op(name, [d, label & 0xFF])
-    elif op.name == "SETHI" and is_symbol(op.args[1]):
-        d, v = op.args
-        name = copy_token("SETHI", op.name)
-        return Op(name, [d, symtab[v] >> 8])
-    else:
-        return op
+    for i, arg in enumerate(op.args):
+        if isinstance(arg, Token) and arg.type == "SYMBOL":
+            op.args[i] = symtab[arg]
+    return op
 
 
 def convert(op):
     """Convert a pseudo-instruction into a list of real instructions."""
-    if op.name.startswith("B") and is_symbol(op.args[0]):
+    if op.name.startswith("B") and isinstance(op.args[0], int):
+        l = op.args[0]
+        new_ops = [
+            Op("SETLO", ["R11", l & 0xFF]),
+            Op("SETHI", ["R11", l >> 8]),
+            Op(op.name, ["R11"]),
+        ]
+    elif op.name.startswith("B") and is_symbol(op.args[0]):
+        # This clause is only necessary for the symbol table generator--see the note in
+        # `convert_call` below.
         l = op.args[0]
         new_ops = [
             Op("SETLO", ["R11", l]),
@@ -96,17 +92,23 @@ def convert_set(d, v):
         v = to_u16(v)
         lo = v & 0xFF
         hi = v >> 8
-
-        if hi:
-            return [Op("SETLO", [d, lo]), Op("SETHI", [d, hi])]
-        else:
-            return [Op("SETLO", [d, lo])]
+        return [Op("SETLO", [d, lo]), Op("SETHI", [d, hi])]
     else:
         return [Op("SETLO", [d, v]), Op("SETHI", [d, v])]
 
 
 def convert_call(a, l):
-    if is_symbol(l):
+    if isinstance(l, int):
+        return [
+            Op("SETLO", ["R13", l & 0xFF]),
+            Op("SETHI", ["R13", l >> 8]),
+            Op("CALL", [a, "R13"]),
+        ]
+    elif is_symbol(l):
+        # This clause is only necessary for when the symbol table generator calls
+        # `convert` to calculate the values of labels in the final program. At that
+        # point, labels have not yet been resolved, but we want to make sure we generate
+        # the same number of instructions so that the label offsets are correct.
         return [
             Op("SETLO", ["R13", l]),
             Op("SETHI", ["R13", l]),

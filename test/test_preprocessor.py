@@ -25,27 +25,20 @@ def test_substitute_label_with_SETLO():
 
 def test_substitute_label_with_SETHI():
     labels = {"N": 10}
-    # 0 is substituted and not 10 because only the high bits are taken.
     assert substitute_label(Op(SYM("SETHI"), [R("R1"), SYM("N")]), labels) == Op(
-        "SETHI", ["R1", 0]
+        "SETHI", ["R1", 10]
     )
 
 
 def test_substitute_label_with_other_op():
     labels = {"N": 10}
     assert substitute_label(Op(SYM("INC"), [R("R1"), SYM("N")]), labels) == Op(
-        "INC", ["R1", "N"]
+        "INC", ["R1", 10]
     )
 
 
-def test_substitute_label_with_undefined_label():
-    with patch("hera.utils._emit_msg") as mock_emit_error:
-        substitute_label(Op(SYM("SETLO"), [R("R1"), SYM("N")]), {})
-        assert mock_emit_error.call_count == 1
-
-
 def test_convert_set_with_small_positive():
-    assert convert_set("R5", 18) == [Op("SETLO", ["R5", 18])]
+    assert convert_set("R5", 18) == [Op("SETLO", ["R5", 18]), Op("SETHI", ["R5", 0])]
 
 
 def test_convert_set_with_large_positive():
@@ -96,6 +89,7 @@ def test_convert_cmp():
 def test_convert_setrf_with_small_positive():
     assert convert(Op("SETRF", ["R5", 18])) == [
         Op("SETLO", ["R5", 18]),
+        Op("SETHI", ["R5", 0]),
         Op("FOFF", [8]),
         Op("ADD", ["R0", "R5", "R0"]),
     ]
