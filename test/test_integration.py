@@ -173,6 +173,31 @@ def test_dskip_overflow_dot_hera(capsys):
     assert "line 1" in captured.err
 
 
+def test_manual_strings_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/manual/strings.hera"], vm)
+
+    assert vm.registers[1] == 3
+    assert vm.registers[2] == 0xC033
+    assert vm.registers[3] == 0
+    assert vm.registers[4] == 63
+    assert vm.registers[5] == 63
+
+    for r in vm.registers[6:10]:
+        assert r == 0
+
+    s = "Is this an example? With three questions? Really?"
+    assert vm.memory[HERA_DATA_START] == len(s)
+    for i in range(len(s)):
+        assert vm.memory[HERA_DATA_START + i + 1] == ord(s[i])
+
+    assert vm.flag_carry_block
+    assert not vm.flag_carry
+    assert not vm.flag_overflow
+    assert vm.flag_zero
+    assert not vm.flag_sign
+
+
 def test_error_message_for_missing_comma(capsys):
     line = "SETLO(R1 40)"
     with pytest.raises(SystemExit):

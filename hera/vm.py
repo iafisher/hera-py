@@ -8,6 +8,7 @@ import sys
 
 from .symtab import HERA_DATA_START
 from .utils import (
+    DATA_STATEMENTS,
     emit_warning,
     from_u16,
     print_register_debug,
@@ -125,8 +126,14 @@ class VirtualMachine:
         """Execute a program (i.e., a list of instructions), resetting the
         machine's state beforehand.
         """
-        terminate_at = min(lines, len(program)) if lines is not None else len(program)
         self.reset()
+
+        while program and program[0].name in DATA_STATEMENTS:
+            data_statement = program.pop(0)
+            self.exec_one(data_statement)
+
+        self.pc = 0
+        terminate_at = min(lines, len(program)) if lines is not None else len(program)
         while self.pc < terminate_at:
             opc = self.pc
             self.exec_one(program[self.pc])

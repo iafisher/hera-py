@@ -58,9 +58,7 @@ def main(argv=None, vm=None):
         except FileNotFoundError:
             emit_error('file "{}" does not exist.'.format(path), exit=True)
         except PermissionError:
-            emit_error(
-                'permission denied to open file "{}".'.format(path), exit=True
-            )
+            emit_error('permission denied to open file "{}".'.format(path), exit=True)
         except OSError:
             emit_error('could not open file "{}".'.format(path), exit=True)
 
@@ -82,13 +80,16 @@ def main(argv=None, vm=None):
         )
 
 
-def execute_program(program, *, lines_to_exec=None, verbose=False, quiet=False, vm=None):
+def execute_program(
+    program, *, lines_to_exec=None, verbose=False, quiet=False, vm=None
+):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
 
     A virtual machine instance may be passed in for testing purposes. If it is not, a
     new one is instantiated. The virtual machine is returned.
     """
+    config.ERROR_COUNT = config.WARNING_COUNT = 0
     config.LINES = program.splitlines()
 
     if vm is None:
@@ -152,14 +153,18 @@ def dump_state(vm, *, verbose=False):
             last_register -= 1
 
     nprint("\nVirtual machine state after execution:")
-    for i, value in enumerate(vm.registers[1:last_register+1], start=1):
+    for i, value in enumerate(vm.registers[1 : last_register + 1], start=1):
         rname = "\tR" + str(i) + (" " if i < 10 else "")
         print_register_debug(rname, value)
 
     nprint()
 
     flags = [
-        vm.flag_carry_block, vm.flag_carry, vm.flag_overflow, vm.flag_zero, vm.flag_sign
+        vm.flag_carry_block,
+        vm.flag_carry,
+        vm.flag_overflow,
+        vm.flag_zero,
+        vm.flag_sign,
     ]
     if not verbose and all(flags):
         nprint("\tAll flags are ON")

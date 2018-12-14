@@ -1,0 +1,27 @@
+/* section 6.3, p. 35 of the HERA manual */
+DLABEL(The_string)
+  LP_STRING("Is this an example? With three questions? Really?")
+
+DLABEL(N_questions)
+  INTEGER(0)
+
+CBON()
+SET(R1, 0)
+SET(R2, The_string)
+LOAD(R3, 0, R2)
+INC(R2, 1)
+
+LABEL(top_of_loop)
+  LOAD(R4, 0, R2)
+  SET(R5, 63)
+  SUB(R0, R4, R5)
+BNZ(not_a_question)
+  INC(R1, 1)
+LABEL(not_a_question)
+  INC(R2, 1)
+  DEC(R3, 1)
+BNZ(top_of_loop)
+
+SET(R2, N_questions)
+STORE(R1, 0, R2)
+HALT()
