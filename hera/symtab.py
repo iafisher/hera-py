@@ -3,7 +3,7 @@ from .utils import emit_error
 
 
 # Arbitrary value copied over from HERA-C.
-HERA_DATA_START = 16743
+HERA_DATA_START = 0xC001
 
 
 def get_symtab(program):
