@@ -169,10 +169,7 @@ class VirtualMachine:
             return self.memory[address]
 
     def exec_setlo(self, target, value):
-        """Execute the SETLO instruction. Note that unlike other op handlers,
-        the `value` argument is allowed to be negative. However, it must be in
-        the range [-128, 255], as it is only given 8 bits in machine code.
-        """
+        """Execute the SETLO instruction."""
         if value > 127:
             value -= 256
 
@@ -180,9 +177,7 @@ class VirtualMachine:
         self.pc += 1
 
     def exec_sethi(self, target, value):
-        """Execute the SETHI instruction. `value` must be an integer in the
-        range [0, 255].
-        """
+        """Execute the SETHI instruction."""
         self.store_register(target, (value << 8) + (self.get_register(target) & 0x00FF))
         self.pc += 1
 
@@ -247,7 +242,7 @@ class VirtualMachine:
         return left ^ right
 
     def exec_inc(self, target, value):
-        """Execute the INC instruction."""
+        """Execute the INC (increment) instruction."""
         original = self.get_register(target)
         result = (value + original) & 0xFFFF
         self.store_register(target, result)
@@ -258,7 +253,7 @@ class VirtualMachine:
         self.pc += 1
 
     def exec_dec(self, target, value):
-        """Execute the DEC instruction."""
+        """Execute the DEC (decrement) instruction."""
         original = self.get_register(target)
         result = to_u16((original - value) & 0xFFFF)
         self.store_register(target, result)
@@ -270,7 +265,7 @@ class VirtualMachine:
 
     @binary_op
     def exec_lsl(self, original):
-        """Execute the LSL instruction."""
+        """Execute the LSL (logical shift left) instruction."""
         carry = 1 if self.flag_carry and not self.flag_carry_block else 0
         result = ((original << 1) + carry) & 0xFFFF
 
@@ -280,7 +275,7 @@ class VirtualMachine:
 
     @binary_op
     def exec_lsr(self, original):
-        """Execute the LSR instruction."""
+        """Execute the LSR (logical shift right) instruction."""
         carry = 2 ** 15 if self.flag_carry and not self.flag_carry_block else 0
         result = (original >> 1) + carry
 
@@ -290,17 +285,17 @@ class VirtualMachine:
 
     @binary_op
     def exec_lsl8(self, original):
-        """Execute the LSL8 instruction."""
+        """Execute the LSL8 (logical shift left by 8) instruction."""
         return (original << 8) & 0xFFFF
 
     @binary_op
     def exec_lsr8(self, original):
-        """Execute the LSR8 instruction."""
+        """Execute the LSR8 (logical shift right by 8) instruction."""
         return original >> 8
 
     @binary_op
     def exec_asl(self, original):
-        """Execute the ASL instruction."""
+        """Execute the ASL (arithmetic shift left) instruction."""
         carry = 1 if self.flag_carry and not self.flag_carry_block else 0
         result = ((original << 1) + carry) & 0xFFFF
 
@@ -311,7 +306,7 @@ class VirtualMachine:
 
     @binary_op
     def exec_asr(self, original):
-        """Execute the ASR instruction."""
+        """Execute the ASR (arithmetic shift right) instruction."""
         # This is a little messy because right shift in Python rounds towards
         # negative infinity (7 >> 1 == -4) but in HERA it rounds towards zero
         # (7 >> 1 == -3).
@@ -328,7 +323,7 @@ class VirtualMachine:
         return result
 
     def exec_savef(self, target):
-        """Execute the SAVE instruction."""
+        """Execute the SAVEF (save flags) instruction."""
         value = (
             int(self.flag_sign)
             + 2 * int(self.flag_zero)
@@ -340,7 +335,7 @@ class VirtualMachine:
         self.pc += 1
 
     def exec_rstrf(self, target):
-        """Execute the RSTRF instruction."""
+        """Execute the RSTRF (restore flags) instruction."""
         value = self.get_register(target)
         self.flag_sign = bool(value & 1)
         self.flag_zero = bool(value & 0b10)
@@ -399,151 +394,151 @@ class VirtualMachine:
         self.pc += 1
 
     def exec_br(self, dest):
-        """Execute the BR instruction."""
+        """Execute the BR (unconditional branch) instruction."""
         self.pc = self.get_register(dest)
 
     def exec_brr(self, offset):
-        """Execute the BRR instruction."""
+        """Execute the BRR (unconditional branch) instruction."""
         self.pc += offset
 
     @branch
     def exec_bl(self):
-        """Execute the BL instruction."""
+        """Execute the BL (branch if less than) instruction."""
         return self.flag_sign ^ self.flag_overflow
 
     @relative_branch
     def exec_blr(self):
-        """Execute the BLR instruction."""
+        """Execute the BLR (branch if less than) instruction."""
         return self.flag_sign ^ self.flag_overflow
 
     @branch
     def exec_bge(self):
-        """Execute the BGE instruction."""
+        """Execute the BGE (branch if greater than or equal) instruction."""
         return not (self.flag_sign ^ self.flag_overflow)
 
     @relative_branch
     def exec_bger(self):
-        """Execute the BGER instruction."""
+        """Execute the BGER (branch if greater than or equal) instruction."""
         return not (self.flag_sign ^ self.flag_overflow)
 
     @branch
     def exec_ble(self):
-        """Execute the BLE instruction."""
+        """Execute the BLE (branch if less than or equal) instruction."""
         return (self.flag_sign ^ self.flag_overflow) or self.flag_zero
 
     @relative_branch
     def exec_bler(self):
-        """Execute the BLER instruction."""
+        """Execute the BLER (branch if less than or equal) instruction."""
         return (self.flag_sign ^ self.flag_overflow) or self.flag_zero
 
     @branch
     def exec_bg(self):
-        """Execute the BG instruction."""
+        """Execute the BG (branch if greater than) instruction."""
         return not (self.flag_sign ^ self.flag_overflow) and not self.flag_zero
 
     @relative_branch
     def exec_bgr(self):
-        """Execute the BGR instruction."""
+        """Execute the BGR (branch if greater than) instruction."""
         return not (self.flag_sign ^ self.flag_overflow) and not self.flag_zero
 
     @branch
     def exec_bule(self):
-        """Execute the BULE instruction."""
+        """Execute the BULE (branch if unsigned less than or equal) instruction."""
         return not self.flag_carry or self.flag_zero
 
     @relative_branch
     def exec_buler(self):
-        """Execute the BULER instruction."""
+        """Execute the BULER (branch if unsigned less than or equal) instruction."""
         return not self.flag_carry or self.flag_zero
 
     @branch
     def exec_bug(self):
-        """Execute the BUG instruction."""
+        """Execute the BUG (branch if unsigned greater than) instruction."""
         return self.flag_carry and not self.flag_zero
 
     @relative_branch
     def exec_bugr(self):
-        """Execute the BUGR instruction."""
+        """Execute the BUGR (branch if unsigned greater than) instruction."""
         return self.flag_carry and not self.flag_zero
 
     @branch
     def exec_bz(self):
-        """Execute the BZ instruction."""
+        """Execute the BZ (branch on zero flag) instruction."""
         return self.flag_zero
 
     @relative_branch
     def exec_bzr(self):
-        """Execute the BZR instruction."""
+        """Execute the BZR (branch on zero flag) instruction."""
         return self.flag_zero
 
     @branch
     def exec_bnz(self):
-        """Execute the BNZ instruction."""
+        """Execute the BNZ (branch on not zero flag) instruction."""
         return not self.flag_zero
 
     @relative_branch
     def exec_bnzr(self):
-        """Execute the BNZR instruction."""
+        """Execute the BNZR (branch on not zero flag) instruction."""
         return not self.flag_zero
 
     @branch
     def exec_bc(self):
-        """Execute the BC instruction."""
+        """Execute the BC (branch on carry flag) instruction."""
         return self.flag_carry
 
     @relative_branch
     def exec_bcr(self):
-        """Execute the BCR instruction."""
+        """Execute the BCR (branch on carry flag) instruction."""
         return self.flag_carry
 
     @branch
     def exec_bnc(self):
-        """Execute the BNC instruction."""
+        """Execute the BNC (branch on not carry flag) instruction."""
         return not self.flag_carry
 
     @relative_branch
     def exec_bncr(self):
-        """Execute the BNCR instruction."""
+        """Execute the BNCR (branch on not carry flag) instruction."""
         return not self.flag_carry
 
     @branch
     def exec_bs(self):
-        """Execute the BS instruction."""
+        """Execute the BS (branch on sign flag) instruction."""
         return self.flag_sign
 
     @relative_branch
     def exec_bsr(self):
-        """Execute the BSR instruction."""
+        """Execute the BSR (branch on sign flag) instruction."""
         return self.flag_sign
 
     @branch
     def exec_bns(self):
-        """Execute the BNS instruction."""
+        """Execute the BNS (branch on not sign flag) instruction."""
         return not self.flag_sign
 
     @relative_branch
     def exec_bnsr(self):
-        """Execute the BNSR instruction."""
+        """Execute the BNSR (branch on not sign flag) instruction."""
         return not self.flag_sign
 
     @branch
     def exec_bv(self):
-        """Execute the BV instruction."""
+        """Execute the BV (branch on overflow flag) instruction."""
         return self.flag_overflow
 
     @relative_branch
     def exec_bvr(self):
-        """Execute the BVR instruction."""
+        """Execute the BVR (branch on overflow flag) instruction."""
         return self.flag_overflow
 
     @branch
     def exec_bnv(self):
-        """Execute the BNV instruction."""
+        """Execute the BNV (branch on not overflow flag) instruction."""
         return not self.flag_overflow
 
     @relative_branch
     def exec_bnvr(self):
-        """Execute the BNVR instruction."""
+        """Execute the BNVR (branch on not overflow flag) instruction."""
         return not self.flag_overflow
 
     def exec_call(self, ra, rb):
@@ -559,10 +554,12 @@ class VirtualMachine:
     exec_return = exec_call
 
     def exec_swi(self, i):
+        """Execute the SWI (software interrupt) instruction."""
         emit_warning("SWI is a no-op in this simulator")
         self.pc += 1
 
     def exec_rti(self):
+        """Execute the RTI (return from interrupt) instruction."""
         emit_warning("RTI is a no-op in this simulator")
         self.pc += 1
 
@@ -587,7 +584,7 @@ class VirtualMachine:
         self.pc += 1
 
     def exec_print_reg(self, target):
-        """Execute the print_reg debugging operation."""
+        """Execute the print_reg debugging instruction."""
         v = self.get_register(target)
         print_register_debug(target, v, to_stderr=False)
         self.pc += 1
