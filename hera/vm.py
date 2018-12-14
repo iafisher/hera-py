@@ -588,3 +588,13 @@ class VirtualMachine:
         v = self.get_register(target)
         print_register_debug(target, v, to_stderr=False)
         self.pc += 1
+
+    def exec_print(self, target):
+        """Execute the print debugging instruction."""
+        print(target, end="")
+        self.pc += 1
+
+    def exec_println(self, target):
+        """Execute the println debugging instruction."""
+        print(target)
+        self.pc += 1

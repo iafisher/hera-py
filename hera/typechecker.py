@@ -5,7 +5,13 @@ Version: December 2018
 """
 from lark import Token
 
-from .utils import DATA_STATEMENTS, emit_error, is_symbol, register_to_index, RELATIVE_BRANCHES
+from .utils import (
+    DATA_STATEMENTS,
+    emit_error,
+    is_symbol,
+    register_to_index,
+    RELATIVE_BRANCHES,
+)
 
 
 def typecheck(program, symtab):
@@ -138,6 +144,8 @@ _types_map = {
     "DSKIP": (U16,),
     # Debugging instructions
     "print_reg": (REGISTER,),
+    "print": (STRING,),
+    "println": (STRING,),
 }
 
 

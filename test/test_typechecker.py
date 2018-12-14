@@ -30,6 +30,10 @@ def SYM(s=""):
     return Token("SYMBOL", s)
 
 
+def STR(s):
+    return Token("STRING", s)
+
+
 def test_check_types_with_too_few():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         check_types(SYM(), [REGISTER, REGISTER], [R("R1")], {})
@@ -650,6 +654,18 @@ def test_typecheck_RTI():
 def test_typecheck_print_reg():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         typecheck_one(Op("print_reg", [R("R1")]))
+        assert mock_emit_error.call_count == 0
+
+
+def test_typecheck_print():
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        typecheck_one(Op(SYM("print"), [STR("hello, world!")]))
+        assert mock_emit_error.call_count == 0
+
+
+def test_typecheck_println():
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        typecheck_one(Op(SYM("println"), [STR("hello, world!")]))
         assert mock_emit_error.call_count == 0
 
 
