@@ -56,13 +56,13 @@ def main(argv=None, vm=None):
             with open(path, "r", encoding="utf-8") as f:
                 program = f.read()
         except FileNotFoundError:
-            error_and_exit('file "{}" does not exist.\n'.format(path), exitcode=2)
+            emit_error('file "{}" does not exist.'.format(path), exit=True)
         except PermissionError:
-            error_and_exit(
-                'permission denied to open file "{}".\n'.format(path), exitcode=2
+            emit_error(
+                'permission denied to open file "{}".'.format(path), exit=True
             )
         except OSError:
-            error_and_exit('could not open file "{}".\n'.format(path), exitcode=2)
+            emit_error('could not open file "{}".'.format(path), exit=True)
 
     # Print a newline if the program came from standard input, so that the
     # program and its output are visually separate.

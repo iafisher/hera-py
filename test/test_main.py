@@ -1,4 +1,6 @@
-from hera.main import dump_state, op_to_string, program_to_string
+import pytest
+
+from hera.main import dump_state, main, op_to_string, program_to_string
 from hera.parser import Op
 from hera.vm import VirtualMachine
 
@@ -32,3 +34,11 @@ def test_dump_state(capsys):
     assert "Overflow flag is OFF" in captured.err
     assert "Carry flag is OFF" in captured.err
     assert "Carry-block flag is OFF" in captured.err
+
+
+def test_main_non_existent_file(capsys):
+    with pytest.raises(SystemExit):
+        main("unicorn.hera")
+
+    captured = capsys.readouterr()
+    assert 'file "unicorn.hera" does not exist' in captured.err

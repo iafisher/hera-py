@@ -142,7 +142,7 @@ def _emit_msg(msg, *, line=None, column=None, exit=False):
             msg += ", line {}\n\n  {}\n".format(line, config.LINES[line - 1])
     sys.stderr.write(msg + "\n")
     if exit:
-        sys.exit(exit)
+        sys.exit(3)
 
 
 def _align_caret(line, col):
