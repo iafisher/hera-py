@@ -4,8 +4,9 @@
 LINES = None
 
 
-# Whether or not an error has been registered.
-SEEN_ERROR = False
+# Number of errors and warnings emitted.
+ERROR_COUNT = 0
+WARNING_COUNT = 0
 
 
 def _make_ansi(*params):

@@ -120,13 +120,14 @@ DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
 def emit_error(msg, *, line=None, column=None, exit=False):
     """Print an error message to stderr."""
     msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
-    config.SEEN_ERROR = True
+    config.ERROR_COUNT += 1
     _emit_msg(msg, line=line, column=column, exit=exit)
 
 
 def emit_warning(msg, *, line=None, column=None):
     """Print a error warning to stderr."""
     msg = config.ANSI_MAGENTA_BOLD + "Warning" + config.ANSI_RESET + ": " + msg
+    config.WARNING_COUNT += 1
     _emit_msg(msg, line=line, column=column, exit=False)
 
 

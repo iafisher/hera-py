@@ -102,11 +102,11 @@ def execute_program(program, *, lines_to_exec=None, verbose=False, quiet=False, 
     symtab = get_symtab(program)
 
     typecheck(program, symtab)
-    if config.SEEN_ERROR:
+    if config.ERROR_COUNT > 0:
         sys.exit(3)
 
     program = preprocess(program, symtab)
-    if config.SEEN_ERROR:
+    if config.ERROR_COUNT > 0:
         sys.exit(3)
 
     try:
@@ -171,3 +171,7 @@ def dump_state(vm, *, verbose=False):
         nprint("\tOverflow flag is " + ("ON" if vm.flag_overflow else "OFF"))
         nprint("\tZero flag is " + ("ON" if vm.flag_zero else "OFF"))
         nprint("\tSign flag is " + ("ON" if vm.flag_sign else "OFF"))
+
+    if config.WARNING_COUNT > 0:
+        c = config.WARNING_COUNT
+        nprint("\n{} warning{} emitted.".format(c, "" if c == 1 else "s"))
