@@ -2,7 +2,6 @@
 
 [![Build Status](https://travis-ci.com/iafisher/hera-py.png)](https://travis-ci.com/iafisher/hera-py)
 [![Coverage Status](https://coveralls.io/repos/github/iafisher/hera-py/badge.svg?branch=master)](https://coveralls.io/github/iafisher/hera-py?branch=master)
-
 [![PyPI](https://img.shields.io/pypi/v/hera-py.svg?label=version)](https://pypi.org/project/hera-py/)
 
 An interpreter for the [Haverford Educational RISC Architecture](https://www.haverford.edu/computer-science/resources/hera) (HERA) assembly language.
