@@ -21,7 +21,6 @@ from hera.utils import HERAError, IntToken
 # TODO: Get rid of these and explicitly pass the empty symbol table in.
 typecheck = functools.partial(typecheck, symtab={})
 typecheck_one = functools.partial(typecheck_one, symtab={})
-check_types = functools.partial(check_types, symtab={})
 
 
 def R(s):
@@ -34,94 +33,94 @@ def SYM(s=""):
 
 def test_check_types_with_too_few():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [REGISTER, REGISTER], [R("R1")])
+        check_types(SYM(), [REGISTER, REGISTER], [R("R1")], {})
         assert mock_emit_error.call_count == 1
         assert "too few" in mock_emit_error.call_args[0][0]
 
 
 def test_check_types_with_too_many():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [REGISTER], [R("R1"), IntToken(10)])
+        check_types(SYM(), [REGISTER], [R("R1"), IntToken(10)], {})
         assert mock_emit_error.call_count == 1
         assert "too many" in mock_emit_error.call_args[0][0]
 
 
 def test_check_types_with_wrong_type():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [REGISTER], [IntToken(10)])
+        check_types(SYM(), [REGISTER], [IntToken(10)], {})
         assert mock_emit_error.call_count == 1
         assert "not a register" in mock_emit_error.call_args[0][0]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [U16], [R("R1")])
+        check_types(SYM(), [U16], [R("R1")], {})
         assert mock_emit_error.call_count == 1
         assert "not an integer" in mock_emit_error.call_args[0][0]
 
 
 def test_check_types_with_u16_out_of_range():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [U16], [IntToken(65536)])
+        check_types(SYM(), [U16], [IntToken(65536)], {})
         assert mock_emit_error.call_count == 1
         assert "out of range" in mock_emit_error.call_args[0][0]
 
 
 def test_check_types_with_negative_u16():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [U16], [IntToken(-1)])
+        check_types(SYM(), [U16], [IntToken(-1)], {})
         assert mock_emit_error.call_count == 1
         assert "must not be negative" in mock_emit_error.call_args[0][0]
 
 
 def test_check_types_with_u4_out_of_range():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [U4], [IntToken(16)])
+        check_types(SYM(), [U4], [IntToken(16)], {})
         assert mock_emit_error.call_count == 1
         assert "out of range" in mock_emit_error.call_args[0][0]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [U4], [IntToken(-1)])
+        check_types(SYM(), [U4], [IntToken(-1)], {})
         assert mock_emit_error.call_count == 1
         assert "must not be negative" in mock_emit_error.call_args[0][0]
 
 
 def test_check_types_with_range_object():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [range(-10, 10)], [IntToken(-11)])
+        check_types(SYM(), [range(-10, 10)], [IntToken(-11)], {})
         assert mock_emit_error.call_count == 1
         assert "out of range" in mock_emit_error.call_args[0][0]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [range(-10, 10)], [IntToken(10)])
+        check_types(SYM(), [range(-10, 10)], [IntToken(10)], {})
         assert mock_emit_error.call_count == 1
         assert "out of range" in mock_emit_error.call_args[0][0]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types(SYM(), [range(-10, 10)], [R("R1")])
+        check_types(SYM(), [range(-10, 10)], [R("R1")], {})
         assert mock_emit_error.call_count == 1
         assert "not an integer" in mock_emit_error.call_args[0][0]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
         r = range(-10, 10)
-        check_types("", [r, r, r], [5, -10, 9])
+        check_types("", [r, r, r], [5, -10, 9], {})
         assert mock_emit_error.call_count == 0
 
 
 def test_check_types_with_constant_symbol():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types("", [range(0, 100)], [Token("SYMBOL", "n")])
+        check_types("", [range(0, 100)], [Token("SYMBOL", "n")], {"n": 42})
         assert mock_emit_error.call_count == 0
 
 
 def test_check_types_with_register_or_label():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types("", [REGISTER_OR_LABEL], [Token("SYMBOL", "n")])
-        check_types("", [REGISTER_OR_LABEL], [R("R1")])
+        check_types("", [REGISTER_OR_LABEL], [Token("SYMBOL", "n")], {"n": 42})
+        check_types("", [REGISTER_OR_LABEL], [R("R1")], {})
         assert mock_emit_error.call_count == 0
 
 
 def test_check_types_with_label():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        check_types("", [LABEL], [Token("SYMBOL", "n")])
+        check_types("", [LABEL], [Token("SYMBOL", "n")], {"n": 42})
         assert mock_emit_error.call_count == 0
 
 
@@ -634,6 +633,13 @@ def test_typecheck_DSKIP():
         typecheck_one(Op("DSKIP", [0xFFFF]))
         typecheck_one(Op("DSKIP", [0]))
         assert mock_emit_error.call_count == 0
+
+
+def test_typecheck_undefined_symbol():
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        typecheck_one(Op(SYM("SET"), [R("R1"), SYM("N")]))
+        assert mock_emit_error.call_count == 1
+        assert "undefined constant" in mock_emit_error.call_args[0][0]
 
 
 def test_typecheck_unknown_instruction():

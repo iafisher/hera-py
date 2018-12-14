@@ -153,12 +153,12 @@ def check_types(name, expected, got, symtab):
     ordinals = ["first", "second", "third"]
     for ordinal, pattern, arg in zip(ordinals, expected, got):
         prefix = "{} arg to {} ".format(ordinal, name)
-        error = check_one_type(pattern, arg)
+        error = check_one_type(pattern, arg, symtab)
         if error:
             emit_error(prefix + error, line=arg.line, column=arg.column)
 
 
-def check_one_type(pattern, arg):
+def check_one_type(pattern, arg, symtab):
     """Verify that the argument matches the pattern. Return a string stating the error
     if it doesn't, return None otherwise.
     """
@@ -189,8 +189,10 @@ def check_one_type(pattern, arg):
             return "not a string"
     elif isinstance(pattern, range):
         if is_symbol(arg):
-            # Symbols will be resolved later.
-            return None
+            try:
+                arg = symtab[arg]
+            except KeyError:
+                return "undefined constant"
 
         if not isinstance(arg, int):
             return "not an integer"
