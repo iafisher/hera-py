@@ -31,4 +31,4 @@ def test_dump_state(capsys):
     assert "Sign flag is OFF" in captured.err
     assert "Overflow flag is OFF" in captured.err
     assert "Carry flag is OFF" in captured.err
-    assert "Carry block flag is OFF" in captured.err
+    assert "Carry-block flag is OFF" in captured.err
