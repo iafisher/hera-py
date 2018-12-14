@@ -10,7 +10,6 @@ from .symtab import HERA_DATA_START
 from .utils import (
     emit_warning,
     from_u16,
-    HERAError,
     print_register_debug,
     register_to_index,
     to_u16,
@@ -130,11 +129,7 @@ class VirtualMachine:
         self.reset()
         while self.pc < terminate_at:
             opc = self.pc
-            try:
-                self.exec_one(program[self.pc])
-            except HERAError as e:
-                e.line = program[self.pc].name.line
-                raise e
+            self.exec_one(program[self.pc])
             if opc == self.pc:
                 break
 
