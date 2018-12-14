@@ -1,6 +1,12 @@
 import pytest
 
-from hera.main import dump_state, main, op_to_string, program_to_string
+from hera.main import (
+    dump_state,
+    main,
+    op_to_string,
+    preprocess_program,
+    program_to_string,
+)
 from hera.parser import Op
 from hera.vm import VirtualMachine
 
@@ -42,3 +48,10 @@ def test_main_non_existent_file(capsys):
 
     captured = capsys.readouterr()
     assert 'file "unicorn.hera" does not exist' in captured.err
+
+
+def test_preprocess_program(capsys):
+    preprocess_program("SET(R1, 10)")
+
+    captured = capsys.readouterr()
+    assert captured.out == "SETLO(R1, 10)\nSETHI(R1, 0)\n"

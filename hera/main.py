@@ -122,6 +122,7 @@ def execute_program(
 
 
 def preprocess_program(program):
+    """Preprocess the program and print it to standard output."""
     program = parse(program)
     symtab = get_symtab(program)
     program = preprocess(program, symtab)
