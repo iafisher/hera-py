@@ -5,10 +5,7 @@ Version: December 2018
 """
 from lark import Token
 
-from .utils import emit_error, is_symbol, register_to_index, RELATIVE_BRANCHES
-
-
-DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
+from .utils import DATA_STATEMENTS, emit_error, is_symbol, register_to_index, RELATIVE_BRANCHES
 
 
 def typecheck(program, symtab):
@@ -115,6 +112,9 @@ _types_map = {
     "BVR": (I8,),
     "BNV": (REGISTER_OR_LABEL,),
     "BNVR": (I8,),
+    # Interrupt processing
+    "SWI": (U4,),
+    "RTI": (),
     # Pseudo-instructions
     "SET": (REGISTER, I16),
     "SETRF": (REGISTER, I16),

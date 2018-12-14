@@ -114,6 +114,7 @@ REGISTER_BRANCHES = set(
     + ["BNS", "BV", "BNV"]
 )
 RELATIVE_BRANCHES = set(b + "R" for b in REGISTER_BRANCHES)
+DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
 
 
 def emit_error(msg, *, line=None, column=None, exit=False):

@@ -634,6 +634,19 @@ def test_typecheck_DSKIP():
         assert mock_emit_error.call_count == 0
 
 
+def test_typecheck_SWI():
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        typecheck_one(Op("SWI", [0b1111]))
+        typecheck_one(Op("SWI", [0b0110]))
+        assert mock_emit_error.call_count == 0
+
+
+def test_typecheck_RTI():
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        typecheck_one(Op("RTI", []))
+        assert mock_emit_error.call_count == 0
+
+
 def test_typecheck_undefined_symbol():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         typecheck_one(Op(SYM("SET"), [R("R1"), SYM("N")]))

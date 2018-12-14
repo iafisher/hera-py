@@ -8,12 +8,13 @@ import sys
 
 from .symtab import HERA_DATA_START
 from .utils import (
+    emit_warning,
     from_u16,
-    to_u16,
-    to_u32,
+    HERAError,
     print_register_debug,
     register_to_index,
-    HERAError,
+    to_u16,
+    to_u32,
 )
 
 
@@ -556,6 +557,14 @@ class VirtualMachine:
 
     # CALL and RETURN do the exact same thing.
     exec_return = exec_call
+
+    def exec_swi(self, i):
+        emit_warning("SWI is a no-op in this simulator")
+        self.pc += 1
+
+    def exec_rti(self):
+        emit_warning("RTI is a no-op in this simulator")
+        self.pc += 1
 
     def exec_integer(self, i):
         """Execute the INTEGER data instruction."""
