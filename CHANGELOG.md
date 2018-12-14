@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 Nothing yet.
 
+## [0.3.0] - 2018-12-14
+### Added
+- Static type-checking.
+- `--verbose` and `--quiet` flags.
+- Zero-prefixed octal numbers (with a warning), for backwards compatibility with HERA-C.
+- Limited support for the `SWI` and `RTI` operations.
+- Character literals can be used in HERA code.
+
+### Changed
+- Order of flags in debugging output, to match HERA-C.
+- Static data begins at memory address `0xc000`, per the HERA manual.
+
+### Fixed
+- Label names can begin with a valid register (e.g., `R1_INIT`).
+- Data statements no longer cause labels to resolve to the incorrect line number.
+
+### Removed
+- `--no-dump-state` flag (use `--quiet` instead).
+
 ## [0.2.0] - 2018-11-14
 ### Added
 - Data statements: `CONSTANT`, `DLABEL`, `INTEGER`, `LP_STRING`, and `DSKIP`.
