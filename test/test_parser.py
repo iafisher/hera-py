@@ -44,6 +44,14 @@ def test_parse_string_with_escapes():
     ]
 
 
+def test_parse_character_literal():
+    assert parse("SETLO(R1, 'X')") == [Op("SETLO", ["R1", 88])]
+
+
+def test_parse_character_literal_with_escape():
+    assert parse("SETLO(R1, '\\t')") == [Op("SETLO", ["R1", 9])]
+
+
 def test_parse_signed_number():
     assert parse("SETLO(R1, -12)") == [Op("SETLO", ["R1", -12])]
 

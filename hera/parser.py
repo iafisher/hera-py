@@ -54,6 +54,14 @@ class TreeToOplist(Transformer):
             ntkn.end_line = otkn.end_line
             ntkn.end_column = otkn.end_column
             return ntkn
+        elif matches[0].type == "CHAR":
+            # Strip the leading and trailing quote.
+            s = matches[0][1:-1]
+            if s.startswith("\\"):
+                c = replace_one_escape(s[1])
+            else:
+                c = s
+            return IntToken(ord(c), line=line, column=column)
         elif matches[0].type == "SYMBOL":
             if is_register(matches[0]):
                 matches[0].type = "REGISTER"
@@ -83,7 +91,7 @@ _parser = Lark(
 
     _arglist: ( value "," )* value
 
-    value: DECIMAL | HEX | OCTAL | BINARY | SYMBOL | STRING
+    value: DECIMAL | HEX | OCTAL | BINARY | SYMBOL | STRING | CHAR
 
     SYMBOL: /[A-Za-z_][A-Za-z0-9_]*/
     DECIMAL: /-?[1-9][0-9]*/ | "0"
@@ -91,6 +99,7 @@ _parser = Lark(
     OCTAL.2: /-?0o[0-7]+/ | /-?0[1-9]+/
     BINARY.2: /-?0b[01]+/
     STRING: /"(\\.|[^"])*"/
+    CHAR: /'(\\.|.)'/
 
     COMMENT: ( "//" /[^\n]*/ | "/*" /([^*]|\*[^\/])*/ "*/" )
 
@@ -131,6 +140,10 @@ def replace_escapes(s):
 
 def repl(matchobj):
     c = matchobj.group(0)[1]
+    return replace_one_escape(c)
+
+
+def replace_one_escape(c):
     if c == "n":
         return "\n"
     elif c == "t":
