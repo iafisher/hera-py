@@ -21,6 +21,7 @@ from docopt import docopt
 from . import config
 from .parser import parse
 from .preprocessor import preprocess
+from .symtab import get_symtab
 from .typechecker import typecheck
 from .utils import emit_error, print_register_debug, HERAError
 from .vm import VirtualMachine
@@ -96,11 +97,13 @@ def execute_program(program, *, lines_to_exec=None, no_dump_state=False, vm=None
     except HERAError as e:
         emit_error(str(e), line=e.line, column=e.column, exit=True)
 
-    typecheck(program)
+    symtab = get_symtab(program)
+
+    typecheck(program, symtab)
     if config.SEEN_ERROR:
         sys.exit(3)
 
-    program = preprocess(program)
+    program = preprocess(program, symtab)
     if config.SEEN_ERROR:
         sys.exit(3)
 

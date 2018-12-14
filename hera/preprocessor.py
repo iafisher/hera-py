@@ -6,11 +6,10 @@ Version: December 2018
 from lark import Token
 
 from .parser import Op
-from .symtab import get_symtab
 from .utils import copy_token, emit_error, is_symbol, to_u16
 
 
-def preprocess(program):
+def preprocess(program, symtab):
     """Preprocess the program (a list of Op objects) into valid input for the
     exec_many method on the VirtualMachine class.
 
@@ -19,22 +18,18 @@ def preprocess(program):
         - Resolves labels into their line numbers.
     """
     program = [op for old_op in program for op in convert(old_op)]
-
-    labels = get_symtab(program)
-
-    program = [substitute_label(op, labels) for op in program]
+    program = [substitute_label(op, symtab) for op in program]
     program = [op for op in program if op.name not in ("LABEL", "DLABEL", "CONSTANT")]
-
     return program
 
 
-def substitute_label(op, labels):
+def substitute_label(op, symtab):
     """Substitute any label in the instruction with its concrete value."""
     if op.name == "SETLO" and is_symbol(op.args[1]):
         d, v = op.args
         name = copy_token("SETLO", op.name)
         try:
-            label = labels[v]
+            label = symtab[v]
         except KeyError:
             emit_error(
                 "undefined symbol `{}`".format(v), line=op.name.line, column=v.column
@@ -44,7 +39,7 @@ def substitute_label(op, labels):
     elif op.name == "SETHI" and is_symbol(op.args[1]):
         d, v = op.args
         name = copy_token("SETHI", op.name)
-        return Op(name, [d, labels[v] >> 8])
+        return Op(name, [d, symtab[v] >> 8])
     else:
         return op
 

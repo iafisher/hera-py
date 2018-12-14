@@ -1,3 +1,4 @@
+from .preprocessor import convert
 from .utils import emit_error
 
 
@@ -25,7 +26,7 @@ def get_symtab(program):
         elif op.name == "LP_STRING":
             dc += len(op.args[0]) + 1
         else:
-            pc += 1
+            pc += len(convert(op))
 
         if dc >= 0xFFFF and odc < 0xFFFF:
             emit_error("past the end of available memory", line=op.name.line)

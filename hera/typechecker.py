@@ -11,7 +11,7 @@ from .utils import emit_error, is_symbol, register_to_index
 DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
 
 
-def typecheck(program):
+def typecheck(program, symtab):
     """Type-check the program and emit errors as appropriate."""
     end_of_data = False
     for op in program:
@@ -21,14 +21,14 @@ def typecheck(program):
         else:
             if op.name in DATA_STATEMENTS:
                 emit_error("data statement after instruction", line=op.name.line)
-        typecheck_one(op)
+        typecheck_one(op, symtab)
 
 
-def typecheck_one(op):
+def typecheck_one(op, symtab):
     """Type-check a single HERA op and emit errors as appropriate."""
     params = _types_map.get(op.name)
     if params is not None:
-        check_types(op.name, params, op.args)
+        check_types(op.name, params, op.args, symtab)
     else:
         emit_error("unknown instruction `{}`".format(op.name), line=op.name.line)
 
@@ -131,7 +131,7 @@ _types_map = {
 }
 
 
-def check_types(name, expected, got):
+def check_types(name, expected, got, symtab):
     """Verify that the given args match the expected ones and emit errors as
     appropriate. `name` is the name of the HERA op, as a Token object. `expected` is a
     tuple or list of constants (REGISTER, U16, etc., defined above) representing the

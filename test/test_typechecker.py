@@ -1,3 +1,4 @@
+import functools
 import pytest
 from unittest.mock import patch
 
@@ -15,6 +16,12 @@ from hera.typechecker import (
     U16,
 )
 from hera.utils import HERAError, IntToken
+
+
+# TODO: Get rid of these and explicitly pass the empty symbol table in.
+typecheck = functools.partial(typecheck, symtab={})
+typecheck_one = functools.partial(typecheck_one, symtab={})
+check_types = functools.partial(check_types, symtab={})
 
 
 def R(s):

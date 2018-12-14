@@ -4,12 +4,7 @@ from unittest.mock import patch
 from lark import Token
 
 from hera.parser import Op
-from hera.preprocessor import (
-    convert,
-    convert_set,
-    preprocess,
-    substitute_label,
-)
+from hera.preprocessor import convert, convert_set, preprocess, substitute_label
 from hera.utils import HERAError, IntToken
 
 
@@ -167,8 +162,8 @@ def test_convert_not():
 
 
 def test_preprocess_constant():
-    program = [
-        Op(Token("SYMBOL", "CONSTANT"), [Token("SYMBOL", "n"), IntToken(100)]),
-        Op(Token("SYMBOL", "SET"), [R("R1"), Token("SYMBOL", "n")]),
+    program = [Op(Token("SYMBOL", "SET"), [R("R1"), Token("SYMBOL", "n")])]
+    assert preprocess(program, {"n": 100}) == [
+        Op("SETLO", ["R1", 100]),
+        Op("SETHI", ["R1", 0]),
     ]
-    assert preprocess(program) == [Op("SETLO", ["R1", 100]), Op("SETHI", ["R1", 0])]
