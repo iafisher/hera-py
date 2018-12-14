@@ -5,7 +5,7 @@ Version: December 2018
 """
 from lark import Token
 
-from .utils import emit_error, is_relative_branch, is_symbol, register_to_index
+from .utils import emit_error, is_symbol, register_to_index, RELATIVE_BRANCHES
 
 
 DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
@@ -24,19 +24,12 @@ def typecheck(program, symtab):
 
         typecheck_one(op, symtab)
 
-        if is_relative_branch(op.name):
-            if (
-                len(op.args) == 1
-                and isinstance(op.args[0], Token)
-                and op.args[0].type == "SYMBOL"
-            ):
-                emit_error(
-                    "relative branches cannot use labels (why not use {} instead?)".format(
-                        op.name[:-1]
-                    ),
-                    line=op.name.line,
-                    column=op.args[0].column,
+        if op.name in RELATIVE_BRANCHES:
+            if len(op.args) == 1 and is_symbol(op.args[0]):
+                msg = "relative branches cannot use labels (why not use {} instead?)".format(
+                    op.name[:-1]
                 )
+                emit_error(msg, line=op.name.line, column=op.args[0].column)
 
 
 def typecheck_one(op, symtab):

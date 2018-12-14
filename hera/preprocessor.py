@@ -6,7 +6,7 @@ Version: December 2018
 from lark import Token
 
 from .parser import Op
-from .utils import copy_token, emit_error, is_symbol, to_u16
+from .utils import copy_token, emit_error, is_symbol, REGISTER_BRANCHES, to_u16
 
 
 def preprocess(program, symtab):
@@ -33,14 +33,14 @@ def substitute_label(op, symtab):
 
 def convert(op):
     """Convert a pseudo-instruction into a list of real instructions."""
-    if is_register_branch(op.name) and isinstance(op.args[0], int):
+    if op.name in REGISTER_BRANCHES and isinstance(op.args[0], int):
         l = op.args[0]
         new_ops = [
             Op("SETLO", ["R11", l & 0xFF]),
             Op("SETHI", ["R11", l >> 8]),
             Op(op.name, ["R11"]),
         ]
-    elif is_register_branch(op.name) and is_symbol(op.args[0]):
+    elif op.name in REGISTER_BRANCHES and is_symbol(op.args[0]):
         # This clause is only necessary for the symbol table generator--see the note in
         # `convert_call` below.
         l = op.args[0]
@@ -116,7 +116,3 @@ def convert_call(a, l):
         ]
     else:
         return [Op("CALL", [a, l])]
-
-
-def is_register_branch(opname):
-    return (opname.startswith("B") and not opname.endswith("R")) or opname == "BR"

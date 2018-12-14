@@ -107,8 +107,13 @@ def is_symbol(s):
     return isinstance(s, Token) and s.type == "SYMBOL"
 
 
-def is_relative_branch(opname):
-    return opname.startswith("B") and opname.endswith("R") and opname != "BR"
+REGISTER_BRANCHES = set(
+    # Two lists instead of one so that the code formatter doesn't make this into a
+    # dozen lines.
+    ["BR", "BL", "BGE", "BLE", "BG", "BULE", "BUG", "BZ", "BNZ", "BC", "BNC", "BS"]
+    + ["BNS", "BV", "BNV"]
+)
+RELATIVE_BRANCHES = set(b + "R" for b in REGISTER_BRANCHES)
 
 
 def emit_error(msg, *, line=None, column=None, exit=False):

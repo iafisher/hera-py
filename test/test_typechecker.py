@@ -651,10 +651,10 @@ def test_typecheck_unknown_instruction():
 
 def test_typecheck_unknown_branch_instruction():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        typecheck_one(Op(SYM("BNW"), [R("R1")]))
+        typecheck_one(Op(SYM("BNWR"), [R("R1")]))
         assert mock_emit_error.call_count == 1
         assert "unknown instruction" in mock_emit_error.call_args[0][0]
-        assert "BNW" in mock_emit_error.call_args[0][0]
+        assert "BNWR" in mock_emit_error.call_args[0][0]
 
 
 def test_typecheck_single_error():
