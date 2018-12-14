@@ -39,7 +39,7 @@ def main(argv=None, vm=None):
 
     A virtual machine instance may be passed in for testing purposes.
     """
-    arguments = docopt(__doc__, argv=argv, version="hera-py 0.2.0 for HERA version 2.4")
+    arguments = docopt(__doc__, argv=argv, version="hera-py 0.3.0 for HERA version 2.4")
     path = arguments["<path>"]
 
     if arguments["--no-color"]:
