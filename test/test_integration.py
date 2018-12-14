@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 
 from hera.main import main, execute_program
-from hera.preprocessor import HERA_DATA_START
+from hera.symtab import HERA_DATA_START
 from hera.vm import VirtualMachine
 
 

@@ -1,7 +1,7 @@
 import pytest
 
 from hera.parser import Op
-from hera.preprocessor import HERA_DATA_START
+from hera.symtab import HERA_DATA_START
 from hera.vm import VirtualMachine
 
 

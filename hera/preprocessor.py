@@ -6,11 +6,8 @@ Version: December 2018
 from lark import Token
 
 from .parser import Op
+from .symtab import get_symtab
 from .utils import copy_token, emit_error, is_symbol, to_u16
-
-
-# Arbitrary value copied over from HERA-C.
-HERA_DATA_START = 16743
 
 
 def preprocess(program):
@@ -23,7 +20,7 @@ def preprocess(program):
     """
     program = [op for old_op in program for op in convert(old_op)]
 
-    labels = get_labels(program)
+    labels = get_symtab(program)
 
     program = [substitute_label(op, labels) for op in program]
     program = [op for op in program if op.name not in ("LABEL", "DLABEL", "CONSTANT")]
@@ -50,33 +47,6 @@ def substitute_label(op, labels):
         return Op(name, [d, labels[v] >> 8])
     else:
         return op
-
-
-def get_labels(program):
-    """Return a dictionary mapping all labels and constants to their values."""
-    labels = {}
-    pc = 0
-    dc = HERA_DATA_START
-    for op in program:
-        odc = dc
-        if op.name == "LABEL":
-            labels[op.args[0]] = pc
-        elif op.name == "DLABEL":
-            labels[op.args[0]] = dc
-        elif op.name == "CONSTANT":
-            labels[op.args[0]] = op.args[1]
-        elif op.name == "INTEGER":
-            dc += 1
-        elif op.name == "DSKIP":
-            dc += op.args[0]
-        elif op.name == "LP_STRING":
-            dc += len(op.args[0]) + 1
-        else:
-            pc += 1
-
-        if dc >= 0xFFFF and odc < 0xFFFF:
-            emit_error("past the end of available memory", line=op.name.line)
-    return labels
 
 
 def convert(op):

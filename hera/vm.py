@@ -6,7 +6,7 @@ Version: December 2018
 import functools
 import sys
 
-from .preprocessor import HERA_DATA_START
+from .symtab import HERA_DATA_START
 from .utils import (
     from_u16,
     to_u16,
