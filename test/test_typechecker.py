@@ -19,7 +19,6 @@ from hera.utils import HERAError, IntToken
 
 
 # TODO: Get rid of these and explicitly pass the empty symbol table in.
-typecheck = functools.partial(typecheck, symtab={})
 typecheck_one = functools.partial(typecheck_one, symtab={})
 
 
@@ -666,7 +665,7 @@ def test_typecheck_single_error():
     ]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        errors = typecheck(program)
+        errors = typecheck(program, {})
         assert mock_emit_error.call_count == 1
         assert "SETHI" in mock_emit_error.call_args[0][0]
         assert "out of range" in mock_emit_error.call_args[0][0]
@@ -676,7 +675,7 @@ def test_typecheck_multiple_errors():
     program = [Op(SYM("ADD"), [R("R1"), IntToken(10)]), Op(SYM("INC"), [R("R3")])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        typecheck(program)
+        typecheck(program, {})
         assert mock_emit_error.call_count == 3
 
         call_args = mock_emit_error.call_args_list[0][0]
@@ -696,6 +695,16 @@ def test_typecheck_data_statement_after_instruction():
     program = [Op("SET", [R("R1"), 42]), Op(SYM("DLABEL"), [SYM("N")])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        typecheck(program)
+        typecheck(program, {})
         assert mock_emit_error.call_count == 1
         assert "data statement after instruction" in mock_emit_error.call_args[0][0]
+
+
+def test_typecheck_relative_branch_with_label():
+    program = [Op(SYM("BRR"), [SYM("l")])]
+
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        typecheck(program, {"l": 7})
+        assert mock_emit_error.call_count == 1
+        assert "relative branches cannot use labels" in mock_emit_error.call_args[0][0]
+        assert "why not use BR instead" in mock_emit_error.call_args[0][0]

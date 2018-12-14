@@ -107,6 +107,10 @@ def is_symbol(s):
     return isinstance(s, Token) and s.type == "SYMBOL"
 
 
+def is_relative_branch(opname):
+    return opname.startswith("B") and opname.endswith("R") and opname != "BR"
+
+
 def emit_error(msg, *, line=None, column=None, exit=False):
     """Print an error message to stderr."""
     msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
