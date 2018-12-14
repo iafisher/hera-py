@@ -1,14 +1,15 @@
 """hera: an interpreter for the Haverford Educational RISC Architecture.
 
 Usage:
-    hera [options] <path>
-    hera [options] preprocess <path>
+    hera [--lines=<n>] [-q | --verbose] [--no-color] <path>
+    hera [-q | --verbose] [--no-color] preprocess <path>
     hera (-h | --help)
     hera (-v | --version)
 
 Options:
     --lines=<n>      Only execute the first n lines of the program.
-    --no-dump-state  Do not print the state of the virtual machine after execution.
+    --verbose        Set output level to verbose.
+    -q --quiet       Set output level to quiet.
     --no-color       Do not print colored output.
     -h, --help       Show this message.
     -v, --version    Show the version.
@@ -75,12 +76,13 @@ def main(argv=None, vm=None):
         execute_program(
             program,
             lines_to_exec=lines_to_exec,
-            no_dump_state=arguments["--no-dump-state"],
+            verbose=arguments["--verbose"],
+            quiet=arguments["--quiet"],
             vm=vm,
         )
 
 
-def execute_program(program, *, lines_to_exec=None, no_dump_state=False, vm=None):
+def execute_program(program, *, lines_to_exec=None, verbose=False, quiet=False, vm=None):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
 
@@ -112,8 +114,8 @@ def execute_program(program, *, lines_to_exec=None, no_dump_state=False, vm=None
     except HERAError as e:
         emit_error(str(e), line=e.line, column=e.column, exit=True)
     else:
-        if not no_dump_state:
-            dump_state(vm)
+        if not quiet:
+            dump_state(vm, verbose=verbose)
 
         return vm
 
@@ -135,20 +137,37 @@ def op_to_string(op):
     return "{}({})".format(op.name, ", ".join(str(a) for a in op.args))
 
 
-def dump_state(vm):
+def dump_state(vm, *, verbose=False):
     """Print the state of the virtual machine to standard output."""
     sys.stdout.flush()
 
     # Redefine print in this function to use stderr.
     nprint = functools.partial(print, file=sys.stderr)
 
+    if verbose:
+        last_register = 15
+    else:
+        last_register = 10
+        while last_register > 0 and vm.registers[last_register] == 0:
+            last_register -= 1
+
     nprint("\nVirtual machine state after execution:")
-    for i, value in enumerate(vm.registers[1:], start=1):
+    for i, value in enumerate(vm.registers[1:last_register+1], start=1):
         rname = "\tR" + str(i) + (" " if i < 10 else "")
         print_register_debug(rname, value)
+
     nprint()
-    nprint("\tCarry-block flag is " + ("ON" if vm.flag_carry_block else "OFF"))
-    nprint("\tCarry flag is " + ("ON" if vm.flag_carry else "OFF"))
-    nprint("\tOverflow flag is " + ("ON" if vm.flag_overflow else "OFF"))
-    nprint("\tZero flag is " + ("ON" if vm.flag_zero else "OFF"))
-    nprint("\tSign flag is " + ("ON" if vm.flag_sign else "OFF"))
+
+    flags = [
+        vm.flag_carry_block, vm.flag_carry, vm.flag_overflow, vm.flag_zero, vm.flag_sign
+    ]
+    if not verbose and all(flags):
+        nprint("\tAll flags are ON")
+    elif not verbose and all(not f for f in flags):
+        nprint("\tAll flags are OFF")
+    else:
+        nprint("\tCarry-block flag is " + ("ON" if vm.flag_carry_block else "OFF"))
+        nprint("\tCarry flag is " + ("ON" if vm.flag_carry else "OFF"))
+        nprint("\tOverflow flag is " + ("ON" if vm.flag_overflow else "OFF"))
+        nprint("\tZero flag is " + ("ON" if vm.flag_zero else "OFF"))
+        nprint("\tSign flag is " + ("ON" if vm.flag_sign else "OFF"))
