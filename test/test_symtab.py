@@ -63,3 +63,9 @@ def test_get_symtab_with_empty_lp_string():
     assert len(labels) == 2
     assert labels["S"] == HERA_DATA_START
     assert labels["X"] == HERA_DATA_START + 1
+
+
+def test_get_symtab_with_invalid_instructions():
+    labels = get_symtab([Op("CONSTANT", ["N"]), Op("CONSTANT", ["X", 42])])
+    assert len(labels) == 1
+    assert labels["X"] == 42

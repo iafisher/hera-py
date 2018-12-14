@@ -13,17 +13,19 @@ def get_symtab(program):
     dc = HERA_DATA_START
     for op in program:
         odc = dc
-        if op.name == "LABEL":
+        if op.name == "LABEL" and len(op.args) == 1:
             labels[op.args[0]] = pc
-        elif op.name == "DLABEL":
+        elif op.name == "DLABEL" and len(op.args) == 1:
             labels[op.args[0]] = dc
-        elif op.name == "CONSTANT":
+        elif op.name == "CONSTANT" and len(op.args) == 2:
             labels[op.args[0]] = op.args[1]
         elif op.name == "INTEGER":
             dc += 1
-        elif op.name == "DSKIP":
+        elif op.name == "DSKIP" and len(op.args) == 1 and isinstance(op.args[0], int):
             dc += op.args[0]
-        elif op.name == "LP_STRING":
+        elif (
+            op.name == "LP_STRING" and len(op.args) == 1 and isinstance(op.args[0], str)
+        ):
             dc += len(op.args[0]) + 1
         else:
             pc += len(convert(op))
