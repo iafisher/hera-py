@@ -647,6 +647,12 @@ def test_typecheck_RTI():
         assert mock_emit_error.call_count == 0
 
 
+def test_typecheck_print_reg():
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        typecheck_one(Op("print_reg", [R("R1")]))
+        assert mock_emit_error.call_count == 0
+
+
 def test_typecheck_undefined_symbol():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         typecheck_one(Op(SYM("SET"), [R("R1"), SYM("N")]))

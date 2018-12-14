@@ -136,6 +136,8 @@ _types_map = {
     "INTEGER": (I16,),
     "LP_STRING": (STRING,),
     "DSKIP": (U16,),
+    # Debugging instructions
+    "print_reg": (REGISTER,),
 }
 
 
