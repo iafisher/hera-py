@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 
 from hera.parser import Op, parse, replace_escapes
 from hera.utils import HERAError
@@ -95,6 +96,15 @@ def test_parse_hera_boilerplate_weird_whitespace_and_spelling():
 
 def test_parse_hera_boilerplate_no_includes():
     assert parse("void HERA_main() {SETLO(R1, 42)}") == [Op("SETLO", ["R1", 42])]
+
+
+def test_parse_hera_boilerplate_gives_warning():
+    with patch("hera.utils._emit_msg") as mock_emit_warning:
+        parse("void HERA_main() {SETLO(R1, 42)}")
+        assert mock_emit_warning.call_count == 1
+        assert "Warning" in mock_emit_warning.call_args[0][0]
+        assert "HERA_main" in mock_emit_warning.call_args[0][0]
+        assert "not necessary" in mock_emit_warning.call_args[0][0]
 
 
 def test_parse_another_single_line_comments():

@@ -21,7 +21,7 @@ def test_program_to_string():
 
 
 def test_dump_state(capsys):
-    dump_state(VirtualMachine())
+    dump_state(VirtualMachine(), verbose=True)
 
     captured = capsys.readouterr()
     assert "R1  = 0x0000 = 0" in captured.err

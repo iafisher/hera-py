@@ -18,6 +18,10 @@ Op = namedtuple("Op", ["name", "args"])
 class TreeToOplist(Transformer):
     """Transform Lark's parse tree into a list of HERA ops."""
 
+    def cpp_program(self, matches):
+        emit_warning("void HERA_main() { ... } is not necessary")
+        return matches
+
     def op(self, matches):
         return Op(matches[0], matches[1:])
 
@@ -115,8 +119,10 @@ def parse(text):
 
     if isinstance(tree, Tree):
         return tree.children
-    else:
+    elif isinstance(tree, Op):
         return [tree]
+    else:
+        return tree
 
 
 def replace_escapes(s):
