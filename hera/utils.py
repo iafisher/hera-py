@@ -57,7 +57,7 @@ def to_u32(n):
         return n
 
 
-NAMED_REGISTERS = {"rt": 11, "fp": 14, "sp": 15, "pc_ret": 13}
+NAMED_REGISTERS = {"rt": 11, "fp": 14, "sp": 15, "pc_ret": 13, "fp_alt": 12}
 
 
 def register_to_index(rname):
