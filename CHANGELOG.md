@@ -6,7 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 **NOTE**: As permitted by semantic versioning, backward compatibility is NOT maintained for initial development, i.e. releases before 1.0.0.
 
 ## [Unreleased]
-Nothing yet.
+### Added
+- Support for `PC_ret` and `FP_alt` named registers.
 
 ## [0.3.0] - 2018-12-14
 ### Added
