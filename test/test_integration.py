@@ -127,9 +127,9 @@ def test_loop_and_constant_dot_hera():
     assert not vm.flag_carry_block
 
 
-def test_cs240_dot_hera():
+def test_cs240_aslu_dot_hera():
     vm = VirtualMachine()
-    main(["test/assets/cs240.hera"], vm)
+    main(["test/assets/cs240/aslu.hera"], vm)
 
     assert vm.registers[1] == 0xBFF2
     assert vm.registers[2] == 0xF000
@@ -147,6 +147,146 @@ def test_cs240_dot_hera():
     assert not vm.flag_overflow
     assert not vm.flag_carry
     assert not vm.flag_carry_block
+
+
+def test_cs240_branches_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/cs240/branches.hera"], vm)
+
+    assert vm.registers[1] == 1
+    assert vm.registers[2] == 2
+    assert vm.registers[3] == 3
+    assert vm.registers[4] == 4
+    assert vm.registers[5] == 5
+    assert vm.registers[6] == 6
+
+    for r in vm.registers[7:11]:
+        assert r == 0
+
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
+    assert not vm.flag_carry_block
+
+
+def test_cs240_fib_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/cs240/fib.hera"], vm)
+
+    assert vm.registers[1] == 0
+    assert vm.registers[2] == 0
+    assert vm.registers[3] == 0
+    assert vm.registers[4] == 0x000A
+    assert vm.registers[5] == 0x0037
+    assert vm.registers[6] == 0x0022
+    assert vm.registers[7] == 0x0022
+    assert vm.registers[8] == 0x000B
+    assert vm.registers[9] == 0
+    assert vm.registers[10] == 0
+
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_cs240_flag_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/cs240/flag.hera"], vm)
+
+    assert vm.registers[1] == 0x0015
+    assert vm.registers[2] == 0x0000
+    assert vm.registers[3] == 0x001B
+    assert vm.registers[4] == 0x0009
+    assert vm.registers[5] == 0x0019
+    assert vm.registers[6] == 0x0003
+    assert vm.registers[7] == 0x0003
+    assert vm.registers[8] == 0x0015
+    assert vm.registers[9] == 0x0000
+    assert vm.registers[10] == 0x0007
+
+    assert vm.flag_sign
+    assert not vm.flag_zero
+    assert vm.flag_overflow
+    assert not vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_cs240_stein_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/cs240/stein.hera"], vm)
+
+    assert vm.registers[1] == 1
+    assert vm.registers[2] == 1
+    assert vm.registers[3] == 2
+    assert vm.registers[4] == 1
+
+    for r in vm.registers[5:11]:
+        assert r == 0
+
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_cs240_factorial_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/cs240/factorial.hera"], vm)
+
+    assert vm.registers[1] == 7
+    assert vm.registers[2] == 5040
+
+    for r in vm.registers[3:11]:
+        assert r == 0
+
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flag_overflow
+    assert vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_cs240_extended_stein_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/cs240/extended_stein.hera"], vm)
+
+    assert vm.registers[1] == 0x001
+    assert vm.registers[2] == 0x001
+    assert vm.registers[3] == 0x001
+    assert vm.registers[4] == 0x0011
+    assert vm.registers[5] == 0x0027
+    assert vm.registers[6] == 0x0017
+    assert vm.registers[7] == 0xfff6
+    assert vm.registers[8] == 0xfff0
+    assert vm.registers[9] == 0x0007
+    assert vm.registers[10] == 0x0001
+
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert vm.flag_carry_block
+
+
+def test_cs240_callret_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/cs240/callret.hera"], vm)
+
+    assert vm.registers[1] == 0x0009
+    assert vm.registers[2] == 0x0013
+
+    for r in vm.registers[3:11]:
+        assert r == 0
+
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert vm.flag_carry_block
 
 
 def test_hera_boilerplate_dot_hera():

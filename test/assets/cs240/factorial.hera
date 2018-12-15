@@ -1,0 +1,18 @@
+CBON()
+// n in R1, answer in R2
+SET(R1, 7)
+SET(R2, 1)
+CMP(R0, R1)
+BZ(end)
+
+// i in R3
+MOVE(R3, R1)
+LABEL(loop)
+CMP(R3, R0)
+BZ(end)
+MUL(R2, R2, R3)
+DEC(R3, 1)
+BR(loop)
+
+LABEL(end)
+

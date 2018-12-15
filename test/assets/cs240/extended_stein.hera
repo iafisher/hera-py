@@ -1,0 +1,144 @@
+/* Copied from CS240 common test suite, fall 2018 */
+
+#include <HERA.h>
+#include <HERA-print.h>
+
+void HERA_main()
+{
+    CBON()
+    
+    //SET(R2, R1_INIT)
+    //SET(R3, R2_INIT)
+
+    SET(R1, 1) // multiplier
+    SET(R2, 17) // a
+    SET(R3, 39) // b
+
+    LABEL(FIRST_LOOP)
+
+        LSR(Rt, R2)
+        BC(BREAK_OUT)
+        LSR(Rt, R3)
+        BC(BREAK_OUT)
+
+        SET(Rt, 2)
+        MUL(R1, Rt, R1)
+        LSR(R2, R2)
+        LSR(R3, R3)
+
+        BR(FIRST_LOOP)
+
+    LABEL(BREAK_OUT)
+
+    // Alpha will be in register 4, Beta in register 5
+    MOVE(R4, R2) // alpha
+    MOVE(R5, R3) // beta
+    SET(R6, 1) // u 
+    SET(R7, 0) // v
+    SET(R8, 0) // s
+    SET(R9, 1) // t
+
+    // From here on out, a = (R6 * R4) + (R7 * R5) and...
+    // b = (R8 * R4) + (R9 * R5)
+    LABEL(SECOND_LOOP)
+        LSR(Rt, R2)
+        BC(BREAK_OUT_TWO)
+        LSR(R2, R2)
+
+        // if u % 2 == 0 and v % 2 == 0    
+        ASR(Rt,R6)
+        BC(ELSEFIRSTWHILE)
+        ASR(Rt,R7)
+        BC(ELSEFIRSTWHILE)
+
+        ASR(R6, R6)
+        ASR(R7, R7)
+
+        BR(ENDFIRSTWHILE)
+        LABEL(ELSEFIRSTWHILE)
+
+        ADD(Rt, R6, R5)
+        ASR(R6, Rt)
+
+        SUB(Rt, R7, R4)
+        ASR(R7, Rt)        
+
+        LABEL(ENDFIRSTWHILE)
+        BR(SECOND_LOOP)
+        
+    LABEL(BREAK_OUT_TWO)
+
+    LABEL(THIRD_LOOP)
+        SUB(Rt, R2, R3)
+        BZ(BREAK_OUT_THREE)
+
+        LSR(Rt, R3)
+        BC(ELIF)
+
+        LSR(R3, R3)
+
+        // if s % 2 == 0 and t % 2 == 0
+        ASR(Rt, R8)
+        BC(NESTEDELSE)
+        ASR(Rt, R9)
+        BC(NESTEDELSE)
+
+        ASR(R8, R8)
+        ASR(R9,R9)
+
+        BR(ENDIFS)
+        LABEL(NESTEDELSE)
+
+        ADD(Rt, R8, R5)
+        ASR(R8, Rt)
+
+        SUB(Rt, R9, R4)
+        ASR(R9, Rt)
+
+        BR(ENDIFS)
+        LABEL(ELIF)
+        SUB(Rt, R2, R3)
+        BNC(ELSE)
+
+        MOVE(Rt, R2)
+        MOVE(R2, R3)
+        MOVE(R3, Rt)
+
+        // u 
+        MOVE(Rt, R6)    
+        MOVE(R6, R8)
+        MOVE(R8, Rt)
+
+        //v
+        MOVE(Rt, R7)
+        MOVE(R7, R9)
+        MOVE(R9, Rt)
+
+        BR(ENDIFS)
+        LABEL(ELSE)
+
+        SUB(R3, R3, R2)
+        SUB(R8, R8, R6)
+        SUB(R9, R9, R7)
+
+        LABEL(ENDIFS)
+
+        BR(THIRD_LOOP)
+
+    LABEL(BREAK_OUT_THREE)
+
+    MUL(R10, R1, R2)
+
+    // R8 R9 R10
+
+    //DLABEL(string)
+    //LP_STRING("The gcd is")
+    //SET(R1, string)
+    //CALL(FP_alt, print) 
+
+    MOVE(R3, R10)
+
+    HALT()
+
+}
+

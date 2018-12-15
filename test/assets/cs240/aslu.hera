@@ -1,3 +1,4 @@
+/* Copied from CS240 common test suite, fall 2018 */
 SETHI(R1, 0x80)
 SETHI(R2, 0xf0)
 SETLO(R3, 16)

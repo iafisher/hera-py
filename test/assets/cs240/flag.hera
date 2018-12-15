@@ -1,0 +1,26 @@
+/* Copied from CS240 common test suite, fall 2018 */
+
+#include <HERA.h>
+
+void HERA_main() {
+    SETLO(R1, 0x1b)
+    RSTRF(R1)
+    SAVEF(R3)
+    FOFF(0x16)
+    SAVEF(R4)
+    FON(0x18)
+    SAVEF(R5)
+    SETLO(R6, 0x3)
+    RSTRF(R6)
+    SAVEF(R7)
+    FSET5(0x15)
+    SAVEF(R8)
+    FOFF(0x1f)
+    SAVEF(R9)
+    FSET4(0x7)
+    SAVEF(R10)
+    FSET5(0x15)
+    SAVEF(R1)
+    HALT()
+}
+

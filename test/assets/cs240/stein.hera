@@ -1,0 +1,83 @@
+/* Copied from CS240 common test suite, fall 2018 */
+
+void HERA_main()
+{
+  SET(R1, 0x7dae) 
+SET(R2, 0x7cae) 
+SET(R3, 1) 
+SAVEF(R5)
+
+  
+LABEL(START_OF_LOOP)
+
+  RSTRF(R5)
+  CMP(R1, R2) //while R1 != R2
+
+BZ(END_OF_LOOP)
+  RSTRF(R5)
+  LSR(R4, R1)
+  BC(R1_ODD)
+
+  RSTRF(R5)
+  LSR(R4, R2)
+
+  BC(R1_EVEN_R2_ODD)
+  RSTRF(R5)
+
+  //IF BOTH EVEN
+    LSR(R1, R1)
+    RSTRF(R5)
+    LSR(R2, R2)
+    RSTRF(R5)
+    LSL(R3, R3)
+ RSTRF(R5)
+    BR(START_OF_LOOP)
+
+
+
+  LABEL(R1_EVEN_R2_ODD)
+    RSTRF(R5)
+    LSR(R1, R1)
+
+    RSTRF(R5)
+
+    BR(START_OF_LOOP)
+
+  LABEL(R1_ODD)
+  RSTRF(R5)
+    LSR(R4, R2)//CHECK R2 PARITY
+    BC(BOTH_ODD)
+    //R2_EVEN R1 ODD
+    RSTRF(R5)
+      LSR(R2, R2)
+      BR(START_OF_LOOP)
+
+  LABEL(BOTH_ODD)
+    RSTRF(R5)
+    CMP(R1, R2)
+  BC(BOTH_ODD_R1)
+  BS(BOTH_ODD_R2)
+    BR(BOTH_ODD_R2)
+
+  LABEL(BOTH_ODD_R1)
+    RSTRF(R5)
+  CON()
+    SUB(R1, R1, R2)
+  RSTRF(R5)
+
+    BR(START_OF_LOOP)
+
+
+  LABEL(BOTH_ODD_R2)
+    RSTRF(R5)
+  CON()
+    SUB(R2, R2, R1)
+  RSTRF(R5)
+
+    BR(START_OF_LOOP)
+  LABEL(END_OF_LOOP)
+  CBON()
+  MUL(R3, R3, R1)
+  HALT()
+}
+

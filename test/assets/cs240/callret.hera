@@ -1,0 +1,80 @@
+/* Copied from CS240 common test suite, fall 2018 */
+
+FON(0x15)
+
+    // Begin let decs
+    // Function 1 add defined
+
+
+
+    // Begin let body
+    SET(R1, 10)
+    MOVE(R2, R1)
+
+    // Calling add
+    INC(SP, 5)
+    MOVE(R12, FP)
+    INC(FP, 5)
+    INC(SP, 3)
+    STORE(R12, 2, FP)
+    SET(R1, 4)
+    DEC(SP, 3)
+    DEC(FP, 5)
+    STORE(R1, 3, FP)
+    MOVE(R12, FP)
+    INC(FP, 5)
+    INC(SP, 3)
+    STORE(R12, 2, FP)
+    SET(R1, 5)
+    DEC(SP, 3)
+    DEC(FP, 5)
+    STORE(R1, 4, FP)
+    MOVE(R12, FP)
+    // Setting up Static Link. This function was defined in frame 1
+    // Starting in stackframe id 1
+    MOVE(R1, FP)
+    // Got to stackframe id 1
+    STORE(R1, 2, R12)
+    CALL(R12, Function_1)
+    LOAD(R1, 3, R12)
+    DEC(SP, 5)
+    // End calling add
+
+    ADD(R2, R1, R2)
+    MOVE(R2, R2)
+
+    MOVE(R2, R2)
+    // End let
+
+
+HALT()
+
+    // Begin function add
+LABEL(Function_1)
+    STORE(PC_ret, 0, FP)
+    STORE(R12, 1, FP)
+    INC(SP, 2)
+    STORE(R1, 5, FP)
+    STORE(R2, 6, FP)
+    // Starting in stackframe id 2
+    MOVE(R1, FP)
+    // Got to stackframe id 2
+    LOAD(R1, 4, R1)
+    // Loaded Variable b into R1
+    MOVE(R2, R1)
+    // Starting in stackframe id 2
+    MOVE(R1, FP)
+    // Got to stackframe id 2
+    LOAD(R1, 3, R1)
+    // Loaded Variable a into R1
+    ADD(R2, R1, R2)
+    STORE(R2, 3, FP)
+    LOAD(R1, 5, FP)
+    LOAD(R2, 6, FP)
+    DEC(SP, 2)
+    LOAD(PC_ret, 0, FP)
+    LOAD(R12, 1, FP)
+    RETURN(R12, PC_ret)
+    // End function add
+HALT()
+

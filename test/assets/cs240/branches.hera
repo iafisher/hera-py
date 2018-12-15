@@ -1,0 +1,55 @@
+/* Copied from CS240 common test suite, fall 2018 */
+
+#include <HERA.h>
+
+void HERA_main() {
+
+    //absolute branching
+    FSET4(0xf)
+    BGE(Not_s_xor_v)
+    LABEL(Jump_back_v)
+    BL(s_xor_v)
+    LABEL(Jump_back_sv)
+    BLE(s_xor_v_or_z)
+    LABEL(Jump_back_s_xor_v_or_z)
+    BG(s_xor_v_or_z_not)
+    LABEL(Jump_back_s_xor_v_or_z_not)
+    BULE(Notc_or_z)
+    LABEL(Jump_back_notc_or_z)
+    BUG(Not_Notc_or_z)
+    LABEL(Jump_back_Not_Notc_or_z)
+    BR(End_of_test)
+
+
+    LABEL(Not_s_xor_v)
+    SET(R1, 1)
+    FOFF(0x4) // turn off the v flag
+    BR(Jump_back_v)
+
+    LABEL(s_xor_v)
+    SET(R2, 2)
+    BR(Jump_back_sv)
+
+    LABEL(s_xor_v_or_z)
+    SET(R3, 3)
+    FOFF(0x3) // turn off the z and s flags
+    BR(Jump_back_s_xor_v_or_z)
+
+    LABEL(s_xor_v_or_z_not)
+    SET(R4, 4)
+    FON(0x2) // turn on the z flag
+    BR(Jump_back_s_xor_v_or_z_not)
+
+    LABEL(Notc_or_z)
+    SET(R5, 5)
+    FOFF(0x2) // turn off the z flag
+    BR(Jump_back_notc_or_z)
+
+    LABEL(Not_Notc_or_z)
+    SET(R6, 6)
+    BR(Jump_back_Not_Notc_or_z)
+
+    LABEL(End_of_test)
+    HALT()
+
+}
