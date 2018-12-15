@@ -57,21 +57,24 @@ def to_u32(n):
         return n
 
 
+NAMED_REGISTERS = {"rt": 11, "fp": 14, "sp": 15, "pc_ret": 13}
+
+
 def register_to_index(rname):
     """Return the index of the register with the given name in the register array."""
     original = rname
     rname = rname.lower()
-    if rname == "rt":
-        return 11
+    if rname in NAMED_REGISTERS:
+        return NAMED_REGISTERS[rname]
     elif rname.startswith("r"):
         v = int(rname[1:])
         if 0 <= v < 16:
             return v
-    elif rname == "fp":
-        return 14
-    elif rname == "sp":
-        return 15
     raise ValueError("{} is not a valid register".format(original))
+
+
+def is_register(s):
+    return (s[0] in "rR" and s[1:].isdigit()) or s.lower() in NAMED_REGISTERS
 
 
 class IntToken(int):

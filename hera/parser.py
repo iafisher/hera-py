@@ -9,7 +9,7 @@ from collections import namedtuple
 from lark import Lark, Token, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
-from .utils import emit_warning, HERAError, IntToken
+from .utils import emit_warning, HERAError, IntToken, is_register
 
 
 Op = namedtuple("Op", ["name", "args"])
@@ -35,11 +35,9 @@ class TreeToOplist(Transformer):
             return IntToken(matches[0], base=16, line=line, column=column)
         elif matches[0].type == "OCTAL":
             if not matches[0].startswith("0o"):
-                emit_warning(
-                    "zero-prefixed numbers are interpreted as octal",
-                    line=matches[0].line,
-                    column=matches[0].column,
-                )
+                msg = "zero-prefixed numbers are interpreted as octal"
+                msg += " (consider using 0o prefix instead)"
+                emit_warning(msg, line=matches[0].line, column=matches[0].column)
             return IntToken(matches[0], base=8, line=line, column=column)
         elif matches[0].type == "BINARY":
             return IntToken(matches[0], base=2, line=line, column=column)
@@ -68,10 +66,6 @@ class TreeToOplist(Transformer):
             return matches[0]
         else:
             return matches[0]
-
-
-def is_register(s):
-    return (s[0] in "rR" and s[1:].isdigit()) or s in ("Rt", "FP", "SP")
 
 
 _parser = Lark(

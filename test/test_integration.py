@@ -260,8 +260,8 @@ def test_cs240_extended_stein_dot_hera():
     assert vm.registers[4] == 0x0011
     assert vm.registers[5] == 0x0027
     assert vm.registers[6] == 0x0017
-    assert vm.registers[7] == 0xfff6
-    assert vm.registers[8] == 0xfff0
+    assert vm.registers[7] == 0xFFF6
+    assert vm.registers[8] == 0xFFF0
     assert vm.registers[9] == 0x0007
     assert vm.registers[10] == 0x0001
 

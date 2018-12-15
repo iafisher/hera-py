@@ -140,6 +140,8 @@ def test_register_to_index_with_named_registers():
     assert register_to_index("sp") == 15
     assert register_to_index("Rt") == 11
     assert register_to_index("rt") == 11
+    assert register_to_index("PC_ret") == 13
+    assert register_to_index("pc_ret") == 13
 
 
 def test_register_to_index_with_invalid_register():
