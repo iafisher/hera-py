@@ -1,0 +1,7 @@
+BR(end_of_add)
+
+LABEL(add)
+  ADD(R3, R1, R2)
+  RETURN(R12, R13)
+
+LABEL(end_of_add)

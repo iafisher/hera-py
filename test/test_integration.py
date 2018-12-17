@@ -338,6 +338,24 @@ def test_manual_strings_dot_hera():
     assert not vm.flag_sign
 
 
+def test_simple_include_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/simple_include.hera"], vm)
+
+    assert vm.registers[1] == 20
+    assert vm.registers[2] == 22
+    assert vm.registers[3] == 42
+
+    for r in vm.registers[4:11]:
+        assert r == 0
+
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block
+
+
 def test_error_message_for_missing_comma(capsys):
     line = "SETLO(R1 40)"
     with pytest.raises(SystemExit):

@@ -18,12 +18,30 @@ Op = namedtuple("Op", ["name", "args"])
 class TreeToOplist(Transformer):
     """Transform Lark's parse tree into a list of HERA ops."""
 
+    def start(self, matches):
+        # TODO: Figure out why all this is necessary.
+        if len(matches) == 2:
+            if isinstance(matches[0], tuple):
+                return [matches[0]] + matches[1]
+            else:
+                return matches[0] + matches[1]
+        elif len(matches) > 2:
+            return matches[:-1] + matches[-1]
+        else:
+            return matches[0]
+
     def cpp_program(self, matches):
         emit_warning("void HERA_main() { ... } is not necessary")
         return matches
 
+    def hera_program(self, matches):
+        return matches
+
     def op(self, matches):
         return Op(matches[0], matches[1:])
+
+    def include(self, matches):
+        return Op("#include", [matches[0]])
 
     def value(self, matches):
         line = matches[0].line
@@ -70,16 +88,17 @@ class TreeToOplist(Transformer):
 
 _parser = Lark(
     r"""
-    ?start: cpp_program | _hera_program
+    start: include* (cpp_program | hera_program)
 
-    cpp_program: _INCLUDE* _cpp_open op* _CPP_CLOSE
-    _hera_program: op*
+    cpp_program: _cpp_open (op | include)* _CPP_CLOSE
+    hera_program: op (op | include)* |
 
     // Underscores before everything so that no tokens end up in the tree.
-    _INCLUDE: /#include.*/
     _cpp_open: "void" _SYMBOL "(" ")" "{"
     _CPP_CLOSE: "}"
     _SYMBOL: SYMBOL
+
+    include: "#include" ( STRING | /<[^>]+>/ )
 
     op: SYMBOL "(" _arglist? ")" ";"?
 
@@ -106,7 +125,7 @@ _parser = Lark(
 )
 
 
-def parse(text):
+def parse(text, *, expand_includes=False):
     """Parse a HERA program into a list of Op objects."""
     try:
         tree = _parser.parse(text)
@@ -121,11 +140,25 @@ def parse(text):
         raise HERAError("invalid syntax", e.line, e.column) from None
 
     if isinstance(tree, Tree):
-        return tree.children
+        ops = tree.children
     elif isinstance(tree, Op):
-        return [tree]
+        ops = [tree]
     else:
-        return tree
+        ops = tree
+
+    if expand_includes:
+        expanded_ops = []
+        for op in ops:
+            if op.name == "#include" and len(op.args) == 1 and not op.args[0].startswith("<"):
+                # Strip off the leading and trailing quote.
+                fpath = op.args[0][1:-1]
+                with open(fpath) as f:
+                    expanded_ops.extend(parse(f.read()))
+            else:
+                expanded_ops.append(op)
+        return expanded_ops
+    else:
+        return ops
 
 
 def replace_escapes(s):

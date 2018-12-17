@@ -96,9 +96,12 @@ def execute_program(
         vm = VirtualMachine()
 
     try:
-        program = parse(program)
+        program = parse(program, expand_includes=True)
     except HERAError as e:
         emit_error(str(e), line=e.line, column=e.column, exit=True)
+
+    # Filter out #include statements for now.
+    program = [op for op in program if op.name != "#include"]
 
     symtab = get_symtab(program)
 

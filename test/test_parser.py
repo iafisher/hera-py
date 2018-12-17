@@ -94,12 +94,13 @@ def test_parse_single_line_comment():
 
 def test_parse_hera_boilerplate():
     assert parse("#include <HERA.h>\nvoid HERA_main() {SETLO(R1, 42)}") == [
-        Op("SETLO", ["R1", 42])
+        Op("#include", ["<HERA.h>"]),
+        Op("SETLO", ["R1", 42]),
     ]
 
 
 def test_parse_hera_boilerplate_weird_whitespace_and_spelling():
-    assert parse("#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}") == []
+    assert parse("#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}") == [Op("#include", ["<HERA.h>"])]
 
 
 def test_parse_hera_boilerplate_no_includes():
@@ -132,6 +133,11 @@ SETLO(R1, 1)
     assert parse(program) == [Op("SETLO", ["R1", 1])]
 
 
+def test_parse_include_amidst_instructions():
+    program = 'SETLO(R1, 42)\n#include "whatever"\n'
+    assert parse(program) == [Op("SETLO", ["R1", 42]), Op("#include", ['"whatever"'])]
+
+
 def test_parse_missing_comma():
     with pytest.raises(HERAError):
         parse("ADD(R1, R2 R3)")
@@ -155,3 +161,14 @@ def test_parse_exception_has_line_number():
         assert e.line == 3
     else:
         assert False, "expected excepton"
+
+
+def test_parse_expands_include():
+    program = '#include "test/assets/lib/add.hera"'
+    assert parse(program, expand_includes=True) == [
+        Op("BR", ["end_of_add"]),
+        Op("LABEL", ["add"]),
+        Op("ADD", ["R3", "R1", "R2"]),
+        Op("RETURN", ["R12", "R13"]),
+        Op("LABEL", ["end_of_add"]),
+    ]
