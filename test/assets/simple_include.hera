@@ -1,5 +1,4 @@
-// TODO: This should be just "lib/add.hera"
-#include "test/assets/lib/add.hera"
+#include "lib/add.hera"
 
 SET(R1, 20)
 SET(R2, 22)

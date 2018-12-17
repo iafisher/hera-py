@@ -83,7 +83,7 @@ def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=
         vm = VirtualMachine()
 
     try:
-        program = parse_file(path, expand_includes=True)
+        program = parse_file(path, expand_includes=True, allow_stdin=True)
     except HERAError as e:
         emit_error(str(e), line=e.line, column=e.column, exit=True)
     except FileNotFoundError:

@@ -3,6 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
+import os
 import re
 from collections import namedtuple
 
@@ -147,9 +148,10 @@ def parse(text, *, expand_includes=False):
         return tree
 
 
-def parse_file(fpath, *, expand_includes=True):
+def parse_file(fpath, *, expand_includes=True, allow_stdin=False):
     """Parse a file containing a HERA program into a list of Op objects."""
-    if fpath == "-":
+    if allow_stdin and fpath == "-":
+        # TODO: If I put #include "-" in a HERA file, this will go badly.
         program = sys.stdin.read()
     else:
         with open(fpath) as f:
@@ -166,8 +168,9 @@ def parse_file(fpath, *, expand_includes=True):
                 and not op.args[0].startswith("<")
             ):
                 # Strip off the leading and trailing quote.
-                fpath = op.args[0][1:-1]
-                with open(fpath) as f:
+                include_path = op.args[0][1:-1]
+                include_path = os.path.join(os.path.dirname(fpath), include_path)
+                with open(include_path) as f:
                     expanded_ops.extend(parse(f.read()))
             else:
                 expanded_ops.append(op)
