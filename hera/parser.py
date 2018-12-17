@@ -140,16 +140,31 @@ def parse(text, *, expand_includes=False):
         raise HERAError("invalid syntax", e.line, e.column) from None
 
     if isinstance(tree, Tree):
-        ops = tree.children
+        return tree.children
     elif isinstance(tree, Op):
-        ops = [tree]
+        return [tree]
     else:
-        ops = tree
+        return tree
+
+
+def parse_file(fpath, *, expand_includes=True):
+    """Parse a file containing a HERA program into a list of Op objects."""
+    if fpath == "-":
+        program = sys.stdin.read()
+    else:
+        with open(fpath) as f:
+            program = f.read()
+
+    ops = parse(program)
 
     if expand_includes:
         expanded_ops = []
         for op in ops:
-            if op.name == "#include" and len(op.args) == 1 and not op.args[0].startswith("<"):
+            if (
+                op.name == "#include"
+                and len(op.args) == 1
+                and not op.args[0].startswith("<")
+            ):
                 # Strip off the leading and trailing quote.
                 fpath = op.args[0][1:-1]
                 with open(fpath) as f:

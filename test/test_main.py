@@ -51,7 +51,8 @@ def test_main_non_existent_file(capsys):
 
 
 def test_preprocess_program(capsys):
-    preprocess_program("SET(R1, 10)")
+    # SET(R1, 10)
+    preprocess_program("test/assets/toy/set.hera")
 
     captured = capsys.readouterr()
     assert captured.out == "SETLO(R1, 10)\nSETHI(R1, 0)\n"

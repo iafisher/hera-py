@@ -357,23 +357,23 @@ def test_simple_include_dot_hera():
 
 
 def test_error_message_for_missing_comma(capsys):
-    line = "SETLO(R1 40)"
     with pytest.raises(SystemExit):
-        execute_program(line)
+        # SETLO(R1 40)
+        execute_program("test/assets/toy/missing_comma.hera")
 
     captured = capsys.readouterr()
-    assert line in captured.err
+    assert "SETLO(R1 40)" in captured.err
     assert "line 1" in captured.err
     assert "col 10" in captured.err
 
 
 def test_error_message_for_invalid_register(capsys):
-    line = "SET(R17, 65)"
     with pytest.raises(SystemExit):
-        execute_program(line)
+        # SET(R17, 65)
+        execute_program("test/assets/toy/invalid_register.hera")
 
     captured = capsys.readouterr()
-    assert line in captured.err
+    assert "SET(R17, 65)" in captured.err
     assert "line 1" in captured.err
     assert "col 5" in captured.err
     # Make sure the caret is aligned properly.
@@ -383,9 +383,11 @@ def test_error_message_for_invalid_register(capsys):
 
 
 def test_error_message_for_invalid_register_with_weird_syntax(capsys):
-    line = "SET(\n\tR17,\n\t65)"
     with pytest.raises(SystemExit):
-        execute_program(line)
+        # SET(
+        # 	R17,
+        # 	65)
+        execute_program("test/assets/toy/invalid_register_weird.hera")
 
     captured = capsys.readouterr()
     assert "\tR17" in captured.err
@@ -399,9 +401,10 @@ def test_error_message_for_invalid_register_with_weird_syntax(capsys):
 
 
 def test_multiple_error_messages(capsys):
-    line = "ADD(R1, 10)\nINC(R4)"
     with pytest.raises(SystemExit):
-        execute_program(line)
+        # ADD(R1, 10)
+        # INC(R4)
+        execute_program("test/assets/toy/multiple_errors.hera")
 
     captured = capsys.readouterr()
     assert "ADD" in captured.err

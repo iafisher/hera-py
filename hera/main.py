@@ -20,7 +20,7 @@ import functools
 from docopt import docopt
 
 from . import config
-from .parser import parse
+from .parser import parse, parse_file
 from .preprocessor import preprocess
 from .symtab import get_symtab
 from .typechecker import typecheck
@@ -45,34 +45,17 @@ def main(argv=None, vm=None):
     if arguments["--no-color"]:
         config.ANSI_MAGENTA_BOLD = config.ANSI_RED_BOLD = config.ANSI_RESET = ""
 
-    if path == "-":
-        try:
-            program = sys.stdin.read()
-        except (IOError, KeyboardInterrupt):
-            print()
-            return
-    else:
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                program = f.read()
-        except FileNotFoundError:
-            emit_error('file "{}" does not exist.'.format(path), exit=True)
-        except PermissionError:
-            emit_error('permission denied to open file "{}".'.format(path), exit=True)
-        except OSError:
-            emit_error('could not open file "{}".'.format(path), exit=True)
-
     # Print a newline if the program came from standard input, so that the
     # program and its output are visually separate.
     if path == "-":
         print()
 
     if arguments["preprocess"]:
-        preprocess_program(program)
+        preprocess_program(path)
     else:
         lines_to_exec = int(arguments["--lines"]) if arguments["--lines"] else None
         execute_program(
-            program,
+            path,
             lines_to_exec=lines_to_exec,
             verbose=arguments["--verbose"],
             quiet=arguments["--quiet"],
@@ -80,9 +63,7 @@ def main(argv=None, vm=None):
         )
 
 
-def execute_program(
-    program, *, lines_to_exec=None, verbose=False, quiet=False, vm=None
-):
+def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=None):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
 
@@ -90,15 +71,30 @@ def execute_program(
     new one is instantiated. The virtual machine is returned.
     """
     config.ERROR_COUNT = config.WARNING_COUNT = 0
-    config.LINES = program.splitlines()
+
+    try:
+        # TODO: Find a way to only read file once (it's done again in parse_file).
+        with open(path) as f:
+            config.LINES = f.read().splitlines()
+    except:
+        pass
 
     if vm is None:
         vm = VirtualMachine()
 
     try:
-        program = parse(program, expand_includes=True)
+        program = parse_file(path, expand_includes=True)
     except HERAError as e:
         emit_error(str(e), line=e.line, column=e.column, exit=True)
+    except FileNotFoundError:
+        emit_error('file "{}" does not exist.'.format(path), exit=True)
+    except PermissionError:
+        emit_error('permission denied to open file "{}".'.format(path), exit=True)
+    except OSError:
+        emit_error('could not open file "{}".'.format(path), exit=True)
+    except (IOError, KeyboardInterrupt):
+        print()
+        return
 
     # Filter out #include statements for now.
     program = [op for op in program if op.name != "#include"]
@@ -124,9 +120,9 @@ def execute_program(
         return vm
 
 
-def preprocess_program(program):
+def preprocess_program(path):
     """Preprocess the program and print it to standard output."""
-    program = parse(program)
+    program = parse_file(path)
     symtab = get_symtab(program)
     program = preprocess(program, symtab)
     print(program_to_string(program))

@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-from hera.parser import Op, parse, replace_escapes
+from hera.parser import Op, parse, parse_file, replace_escapes
 from hera.utils import HERAError
 
 
@@ -100,7 +100,9 @@ def test_parse_hera_boilerplate():
 
 
 def test_parse_hera_boilerplate_weird_whitespace_and_spelling():
-    assert parse("#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}") == [Op("#include", ["<HERA.h>"])]
+    assert parse("#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}") == [
+        Op("#include", ["<HERA.h>"])
+    ]
 
 
 def test_parse_hera_boilerplate_no_includes():
@@ -164,11 +166,13 @@ def test_parse_exception_has_line_number():
 
 
 def test_parse_expands_include():
-    program = '#include "test/assets/lib/add.hera"'
-    assert parse(program, expand_includes=True) == [
+    assert parse_file("test/assets/simple_include.hera", expand_includes=True) == [
         Op("BR", ["end_of_add"]),
         Op("LABEL", ["add"]),
         Op("ADD", ["R3", "R1", "R2"]),
         Op("RETURN", ["R12", "R13"]),
         Op("LABEL", ["end_of_add"]),
+        Op("SET", ["R1", 20]),
+        Op("SET", ["R2", 22]),
+        Op("CALL", ["R12", "add"]),
     ]
