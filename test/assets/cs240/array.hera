@@ -1,0 +1,88 @@
+CONSTANT(N, 100)
+DLABEL(ARRAY)
+DSKIP(N)
+DLABEL(SUM)
+INTEGER(0)
+
+// R3: pointer to current array cell
+SET(R3, ARRAY)
+SET(Rt, N)
+// R4: upper bound
+ADD(R4, Rt, R3)
+// R5: current array index plus 1 (i.e., R3 - ARRAY + 1)
+SET(R5, 1)
+
+LABEL(fill_loop)
+CMP(R3, R4)
+BZ(fill_end)
+STORE(R5, 0, R3)
+INC(R3, 1)
+INC(R5, 1)
+BR(fill_loop)
+LABEL(fill_end)
+
+// R3: pointer to current array cell
+SET(R3, ARRAY)
+// R5: current sum
+SET(R5, 0)
+
+LABEL(sum_loop)
+CMP(R3, R4)
+BZ(sum_end)
+LOAD(Rt, 0, R3)
+ADD(R5, R5, Rt)
+INC(R3, 1)
+BR(sum_loop)
+LABEL(sum_end)
+
+SET(R1, SUM)
+STORE(R5, 0, R1)
+
+/*
+CODE:
+e301
+f3c0
+eb64
+fb00
+a4b3
+e501
+f500
+3068
+b034
+eb12
+fb00
+180b
+6503
+3380
+3580
+eb07
+fb00
+100b
+e301
+f3c0
+e500
+f500
+3068
+b034
+eb21
+fb00
+180b
+4b03
+a55b
+3380
+eb16
+fb00
+100b
+e165
+f1c0
+6501
+
+OUTPUT:
+r1 = 0x41cb = 040713 = 16843
+r2 = 0x0000 = 00 = 0
+r3 = 0x41cb = 040713 = 16843
+r4 = 0x41cb = 040713 = 16843
+r5 = 0x13ba = 011672 = 5050
+
+Carry and zero are ON
+*/

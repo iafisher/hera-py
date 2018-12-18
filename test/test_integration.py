@@ -356,6 +356,26 @@ def test_simple_include_dot_hera():
     assert not vm.flag_carry_block
 
 
+def test_cs240_array_dot_hera():
+    vm = VirtualMachine()
+    main(["test/assets/cs240/array.hera"], vm)
+
+    assert vm.registers[5] == 5050
+
+    for r in vm.registers[6:11]:
+        assert r == 0
+
+    assert not vm.flag_sign
+    assert vm.flag_zero
+    assert not vm.flagoverflow
+    assert vm.flag_carry
+    assert not vm.flag_carry_block
+
+    for i in range(100):
+        assert vm.memory[HERA_DATA_START+i] == i+1
+    assert vm.memory[HERA_DATA_START+100] == 5050
+
+
 def test_error_message_for_missing_comma(capsys):
     with pytest.raises(SystemExit):
         # SETLO(R1 40)
