@@ -6,58 +6,73 @@ from hera.symtab import HERA_DATA_START
 from hera.vm import VirtualMachine
 
 
-def test_addition_dot_hera():
+def test_addition_dot_hera(capsys):
     vm = VirtualMachine()
     main(["test/assets/addition.hera"], vm)
 
     assert vm.registers[1] == 20
     assert vm.registers[2] == 22
     assert vm.registers[3] == 42
+
     for r in vm.registers[4:]:
         assert r == 0
+
     assert not vm.flag_sign
     assert not vm.flag_zero
     assert not vm.flag_overflow
     assert not vm.flag_carry
     assert not vm.flag_carry_block
+
     for x in vm.memory:
         assert x == 0
 
+    assert "Warning" not in capsys.readouterr().err
 
-def test_simple_loop_dot_hera():
+
+def test_simple_loop_dot_hera(capsys):
     vm = VirtualMachine()
     main(["test/assets/simple_loop.hera"], vm)
 
     assert vm.registers[1] == 10
     assert vm.registers[2] == 10
+
     for r in vm.registers[3:10]:
         assert r == 0
+
     assert not vm.flag_sign
     assert vm.flag_zero
     assert not vm.flag_overflow
     assert vm.flag_carry
     assert not vm.flag_carry_block
+
     for x in vm.memory:
         assert x == 0
 
+    assert "Warning" not in capsys.readouterr().err
 
-def test_fcall_dot_hera():
+
+def test_fcall_dot_hera(capsys):
     vm = VirtualMachine()
     main(["test/assets/fcall.hera"], vm)
 
     assert vm.registers[1] == 16
+
     for r in vm.registers[2:10]:
         assert r == 0
+
     assert not vm.flag_sign
     assert not vm.flag_zero
     assert not vm.flag_overflow
     assert not vm.flag_carry
     assert not vm.flag_carry_block
+
     for x in vm.memory:
         assert x == 0
 
+    assert "Warning" not in capsys.readouterr().err
 
-def test_fib_dot_hera():
+
+def test_fib_dot_hera(capsys):
     vm = VirtualMachine()
     main(["test/assets/fib.hera"], vm)
 
@@ -66,68 +81,87 @@ def test_fib_dot_hera():
     assert vm.registers[3] == 89
     assert vm.registers[4] == 12
     assert vm.registers[5] == 89
+
     for r in vm.registers[6:10]:
         assert r == 0
+
     assert not vm.flag_sign
     assert vm.flag_zero
     assert not vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
     for x in vm.memory:
         assert x == 0
 
+    assert "Warning" not in capsys.readouterr().err
 
-def test_data_easy_dot_hera():
+
+def test_data_easy_dot_hera(capsys):
     vm = VirtualMachine()
     main(["test/assets/data_easy.hera"], vm)
 
     assert vm.registers[1] == HERA_DATA_START
     assert vm.registers[2] == 42
+
     for r in vm.registers[3:]:
         assert r == 0
+
     assert not vm.flag_sign
     assert not vm.flag_zero
     assert not vm.flag_overflow
     assert not vm.flag_carry
     assert not vm.flag_carry_block
+
     assert vm.memory[HERA_DATA_START] == 42
 
+    assert "Warning" not in capsys.readouterr().err
 
-def test_dskip_dot_hera():
+
+def test_dskip_dot_hera(capsys):
     vm = VirtualMachine()
     main(["test/assets/dskip.hera"], vm)
 
     assert vm.registers[1] == HERA_DATA_START
     assert vm.registers[2] == 42
     assert vm.registers[3] == 84
+
     for r in vm.registers[4:]:
         assert r == 0
+
     assert not vm.flag_sign
     assert not vm.flag_zero
     assert not vm.flag_overflow
     assert not vm.flag_carry
     assert not vm.flag_carry_block
+
     assert vm.memory[HERA_DATA_START] == 42
     assert vm.memory[HERA_DATA_START + 11] == 84
 
+    assert "Warning" not in capsys.readouterr().err
 
-def test_loop_and_constant_dot_hera():
+
+def test_loop_and_constant_dot_hera(capsys):
     vm = VirtualMachine()
     main(["test/assets/loop_and_constant.hera"], vm)
 
     assert vm.registers[1] == 100
     assert vm.registers[2] == 100
     assert vm.registers[3] == 5050
+
     for r in vm.registers[4:10]:
         assert r == 0
+
     assert not vm.flag_sign
     assert vm.flag_zero
     assert not vm.flag_overflow
     assert vm.flag_carry
     assert not vm.flag_carry_block
 
+    assert "Warning" not in capsys.readouterr().err
 
-def test_cs240_aslu_dot_hera():
+
+def test_cs240_aslu_dot_hera(capsys):
     vm = VirtualMachine()
     main(["test/assets/cs240/aslu.hera"], vm)
 
@@ -147,6 +181,8 @@ def test_cs240_aslu_dot_hera():
     assert not vm.flag_overflow
     assert not vm.flag_carry
     assert not vm.flag_carry_block
+
+    assert "Warning" not in capsys.readouterr().err
 
 
 def test_cs240_branches_dot_hera():
@@ -168,6 +204,8 @@ def test_cs240_branches_dot_hera():
     assert not vm.flag_overflow
     assert vm.flag_carry
     assert not vm.flag_carry_block
+
+    # This code does give a warning on account of C++ boilerplate.
 
 
 def test_cs240_fib_dot_hera():
@@ -191,6 +229,8 @@ def test_cs240_fib_dot_hera():
     assert not vm.flag_carry
     assert vm.flag_carry_block
 
+    # This code does give a warning on account of C++ boilerplate.
+
 
 def test_cs240_flag_dot_hera():
     vm = VirtualMachine()
@@ -213,6 +253,8 @@ def test_cs240_flag_dot_hera():
     assert not vm.flag_carry
     assert vm.flag_carry_block
 
+    # This code does give a warning on account of C++ boilerplate.
+
 
 def test_cs240_stein_dot_hera():
     vm = VirtualMachine()
@@ -232,8 +274,10 @@ def test_cs240_stein_dot_hera():
     assert not vm.flag_carry
     assert vm.flag_carry_block
 
+    # This code does give a warning on account of C++ boilerplate.
 
-def test_cs240_factorial_dot_hera():
+
+def test_cs240_factorial_dot_hera(capsys):
     vm = VirtualMachine()
     main(["test/assets/cs240/factorial.hera"], vm)
 
@@ -248,6 +292,8 @@ def test_cs240_factorial_dot_hera():
     assert not vm.flag_overflow
     assert vm.flag_carry
     assert vm.flag_carry_block
+
+    assert "Warning" not in capsys.readouterr().err
 
 
 def test_cs240_extended_stein_dot_hera():
@@ -271,8 +317,10 @@ def test_cs240_extended_stein_dot_hera():
     assert not vm.flag_carry
     assert vm.flag_carry_block
 
+    # This code does give a warning on account of C++ boilerplate.
 
-def test_cs240_callret_dot_hera():
+
+def test_cs240_callret_dot_hera(capsys):
     vm = VirtualMachine()
     main(["test/assets/cs240/callret.hera"], vm)
 
@@ -287,6 +335,8 @@ def test_cs240_callret_dot_hera():
     assert not vm.flag_overflow
     assert not vm.flag_carry
     assert vm.flag_carry_block
+
+    assert "Warning" not in capsys.readouterr().err
 
 
 def test_hera_boilerplate_dot_hera():
