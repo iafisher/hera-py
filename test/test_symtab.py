@@ -37,6 +37,21 @@ def test_get_symtab_with_dskip():
     assert labels["data2"] == HERA_DATA_START + 11
 
 
+def test_get_symtab_with_dskip_and_constant():
+    labels = get_symtab(
+        [
+            Op("CONSTANT", ["N", 50]),
+            Op("DLABEL", ["x"]),
+            Op("DSKIP", ["N"]),  # Using constant value in DSKIP.
+            Op("DLABEL", ["y"]),
+        ]
+    )
+    assert len(labels) == 3
+    assert labels["N"] == 50
+    assert labels["x"] == HERA_DATA_START
+    assert labels["y"] == HERA_DATA_START + 50
+
+
 def test_get_symtab_with_lp_string():
     labels = get_symtab(
         [
