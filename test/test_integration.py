@@ -367,13 +367,13 @@ def test_cs240_array_dot_hera():
 
     assert not vm.flag_sign
     assert vm.flag_zero
-    assert not vm.flagoverflow
+    assert not vm.flag_overflow
     assert vm.flag_carry
     assert not vm.flag_carry_block
 
     for i in range(100):
-        assert vm.memory[HERA_DATA_START+i] == i+1
-    assert vm.memory[HERA_DATA_START+100] == 5050
+        assert vm.memory[HERA_DATA_START + i] == i + 1
+    assert vm.memory[HERA_DATA_START + 100] == 5050
 
 
 def test_error_message_for_missing_comma(capsys):
