@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 ### Added
 - Support for `PC_ret` and `FP_alt` named registers.
+- Support for `#include` directive.
+
+### Fixed
+- DSKIP with a named constant argument works correctly.
 
 ## [0.3.0] - 2018-12-14
 ### Added
