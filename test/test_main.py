@@ -1,4 +1,6 @@
 import pytest
+from io import StringIO
+from unittest.mock import patch
 
 from hera.main import (
     dump_state,
@@ -56,3 +58,21 @@ def test_preprocess_program(capsys):
 
     captured = capsys.readouterr()
     assert captured.out == "SETLO(R1, 10)\nSETHI(R1, 0)\n"
+
+
+def test_execute_from_stdin():
+    vm = VirtualMachine()
+
+    with patch("sys.stdin", StringIO("SET(R1, 42)")):
+        main(["-"], vm)
+
+    assert vm.registers[1] == 42
+
+
+def test_preprocess_from_stdin(capsys):
+    with patch("sys.stdin", StringIO("SET(R1, 42)")):
+        main(["preprocess", "-"])
+
+    captured = capsys.readouterr()
+    assert "SETLO(R1, 42)" in captured.out
+    assert "SETHI(R1, 0)" in captured.out

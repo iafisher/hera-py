@@ -45,11 +45,6 @@ def main(argv=None, vm=None):
     if arguments["--no-color"]:
         config.ANSI_MAGENTA_BOLD = config.ANSI_RED_BOLD = config.ANSI_RESET = ""
 
-    # Print a newline if the program came from standard input, so that the
-    # program and its output are visually separate.
-    if path == "-":
-        print()
-
     if arguments["preprocess"]:
         preprocess_program(path)
     else:
@@ -96,6 +91,11 @@ def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=
         print()
         return
 
+    # Print a newline if the program came from standard input, so that the
+    # program and its output are visually separate.
+    if path == "-":
+        print()
+
     # Filter out #include statements for now.
     program = [op for op in program if op.name != "#include"]
 
@@ -122,7 +122,13 @@ def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=
 
 def preprocess_program(path):
     """Preprocess the program and print it to standard output."""
-    program = parse_file(path)
+    program = parse_file(path, expand_includes=True, allow_stdin=True)
+
+    # Print a newline if the program came from standard input, so that the
+    # program and its output are visually separate.
+    if path == "-":
+        print()
+
     symtab = get_symtab(program)
     program = preprocess(program, symtab)
     print(program_to_string(program))
