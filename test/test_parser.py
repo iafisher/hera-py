@@ -166,7 +166,7 @@ def test_parse_exception_has_line_number():
 
 
 def test_parse_expands_include():
-    assert parse_file("test/assets/simple_include.hera", expand_includes=True) == [
+    assert parse_file("test/assets/include/simple.hera", expand_includes=True) == [
         Op("BR", ["end_of_add"]),
         Op("LABEL", ["add"]),
         Op("ADD", ["R3", "R1", "R2"]),
