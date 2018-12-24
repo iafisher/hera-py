@@ -11,6 +11,7 @@ from collections import namedtuple
 from lark import Lark, Token, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
+from . import config
 from .utils import emit_warning, HERAError, IntToken, is_register
 
 
@@ -157,6 +158,8 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False):
     else:
         with open(fpath) as f:
             program = f.read()
+
+    config.LINES = program.splitlines()
 
     ops = parse(program)
 

@@ -67,13 +67,6 @@ def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=
     """
     config.ERROR_COUNT = config.WARNING_COUNT = 0
 
-    try:
-        # TODO: Find a way to only read file once (it's done again in parse_file).
-        with open(path) as f:
-            config.LINES = f.read().splitlines()
-    except:
-        pass
-
     if vm is None:
         vm = VirtualMachine()
 
