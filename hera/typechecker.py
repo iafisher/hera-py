@@ -169,10 +169,18 @@ def check_types(name, expected, got, symtab):
 
     ordinals = ["first", "second", "third"]
     for ordinal, pattern, arg in zip(ordinals, expected, got):
-        prefix = "{} arg to {} ".format(ordinal, name)
-        error = check_one_type(pattern, arg, symtab)
-        if error:
-            emit_error(prefix + error, line=arg.line, column=arg.column)
+        if isinstance(arg, Token) and arg.type == "REGISTER" and arg.lower() == "pc":
+            # TODO: This error-handling logic is a little messy.
+            emit_error(
+                "program counter cannot be accessed or changed directly",
+                line=arg.line,
+                column=arg.column,
+            )
+        else:
+            prefix = "{} arg to {} ".format(ordinal, name)
+            error = check_one_type(pattern, arg, symtab)
+            if error:
+                emit_error(prefix + error, line=arg.line, column=arg.column)
 
 
 def check_one_type(pattern, arg, symtab):

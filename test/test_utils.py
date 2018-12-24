@@ -144,6 +144,8 @@ def test_register_to_index_with_named_registers():
     assert register_to_index("pc_ret") == 13
     assert register_to_index("FP_alt") == 12
     assert register_to_index("fp_alt") == 12
+    # Make sure program counter does not correspond to actual register.
+    assert not (0 <= register_to_index("pc") <= 15)
 
 
 def test_register_to_index_with_invalid_register():

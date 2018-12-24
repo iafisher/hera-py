@@ -57,6 +57,16 @@ def test_check_types_with_wrong_type():
         assert "not an integer" in mock_emit_error.call_args[0][0]
 
 
+def test_check_types_with_program_counter():
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        check_types(SYM(), [REGISTER], [R("PC")], {})
+        assert mock_emit_error.call_count == 1
+        assert (
+            "program counter cannot be accessed or changed directly"
+            in mock_emit_error.call_args[0][0]
+        )
+
+
 def test_check_one_type_with_u16_out_of_range():
     assert check_one_type(U16, IntToken(65536), {}) == "out of range"
 
