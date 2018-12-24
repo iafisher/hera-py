@@ -1,0 +1,3 @@
+#include "included.hera"  // error!
+
+SET(R1, R2)  // error!

@@ -1,0 +1,3 @@
+SET(R1, 10)
+SET(R2, 32)
+ADD(R1, R2)  // error!

@@ -12,10 +12,19 @@ from lark import Lark, Token, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from . import config
-from .utils import emit_warning, HERAError, IntToken, is_register
+from .utils import emit_warning, get_canonical_path, HERAError, IntToken, is_register
 
 
-Op = namedtuple("Op", ["name", "args"])
+class Op(namedtuple("Op", ["name", "args", "location"])):
+    def __new__(cls, name, args, location=None):
+        return tuple.__new__(cls, (name, args, location))
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Op)
+            and self.name == other.name
+            and self.args == other.args
+        )
 
 
 class TreeToOplist(Transformer):
@@ -159,9 +168,11 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False):
         with open(fpath) as f:
             program = f.read()
 
-    config.LINES = program.splitlines()
+    canonical_path = get_canonical_path(fpath)
+    config.LINES[canonical_path] = program.splitlines()
 
     ops = parse(program)
+    ops = [op._replace(location=fpath) for op in ops]
 
     if expand_includes:
         expanded_ops = []
@@ -174,8 +185,7 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False):
                 # Strip off the leading and trailing quote.
                 include_path = op.args[0][1:-1]
                 include_path = os.path.join(os.path.dirname(fpath), include_path)
-                with open(include_path) as f:
-                    expanded_ops.extend(parse(f.read()))
+                expanded_ops.extend(parse_file(include_path))
             else:
                 expanded_ops.append(op)
         return expanded_ops

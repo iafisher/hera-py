@@ -1,13 +1,12 @@
 import pytest
 
-from hera.main import execute_program, main
-from hera.vm import VirtualMachine
+from hera.main import main
 
 
 def test_error_message_for_missing_comma(capsys):
     with pytest.raises(SystemExit):
         # SETLO(R1 40)
-        execute_program("test/assets/error/missing_comma.hera")
+        main(["test/assets/error/missing_comma.hera"])
 
     captured = capsys.readouterr()
     assert "SETLO(R1 40)" in captured.err
@@ -18,7 +17,7 @@ def test_error_message_for_missing_comma(capsys):
 def test_error_message_for_invalid_register(capsys):
     with pytest.raises(SystemExit):
         # SET(R17, 65)
-        execute_program("test/assets/error/invalid_register.hera")
+        main(["test/assets/error/invalid_register.hera"])
 
     captured = capsys.readouterr()
     assert "SET(R17, 65)" in captured.err
@@ -35,7 +34,7 @@ def test_error_message_for_invalid_register_with_weird_syntax(capsys):
         # SET(
         # 	R17,
         # 	65)
-        execute_program("test/assets/error/invalid_register_weird.hera")
+        main(["test/assets/error/invalid_register_weird.hera"])
 
     captured = capsys.readouterr()
     assert "\tR17" in captured.err
@@ -52,7 +51,7 @@ def test_multiple_error_messages(capsys):
     with pytest.raises(SystemExit):
         # ADD(R1, 10)
         # INC(R4)
-        execute_program("test/assets/error/multiple_errors.hera")
+        main(["test/assets/error/multiple_errors.hera"])
 
     captured = capsys.readouterr()
     assert "ADD" in captured.err
@@ -63,10 +62,20 @@ def test_multiple_error_messages(capsys):
     assert "line 2" in captured.err
 
 
-def test_dskip_overflow_program(capsys):
-    vm = VirtualMachine()
+def test_error_message_from_include(capsys):
     with pytest.raises(SystemExit):
-        main(["test/assets/error/dskip_overflow.hera"], vm)
+        main(["test/assets/error/from_include.hera"])
+
+    captured = capsys.readouterr()
+    assert "SET(R1, R2)  // error!" in captured.err
+    assert "ADD(R1, R2)  // error!" in captured.err
+    assert "test/assets/error/from_include.hera" in captured.err
+    assert "test/assets/error/included.hera" in captured.err
+
+
+def test_dskip_overflow_program(capsys):
+    with pytest.raises(SystemExit):
+        main(["test/assets/error/dskip_overflow.hera"])
 
     captured = capsys.readouterr()
     assert "DSKIP(0xFFFF)" in captured.err

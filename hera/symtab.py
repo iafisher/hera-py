@@ -37,5 +37,7 @@ def get_symtab(program):
             pc += len(convert(op))
 
         if dc >= 0xFFFF and odc < 0xFFFF:
-            emit_error("past the end of available memory", line=op.name.line)
+            emit_error(
+                "past the end of available memory", fpath=op.location, line=op.name.line
+            )
     return labels

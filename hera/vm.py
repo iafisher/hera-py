@@ -556,6 +556,7 @@ class VirtualMachine:
 
     def exec_swi(self, i):
         """Execute the SWI (software interrupt) instruction."""
+        # TODO: Line number for this warning.
         emit_warning("SWI is a no-op in this simulator")
         self.pc += 1
 

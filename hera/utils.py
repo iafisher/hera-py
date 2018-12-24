@@ -3,6 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
+import os.path
 import sys
 
 from lark import Token
@@ -120,29 +121,40 @@ RELATIVE_BRANCHES = set(b + "R" for b in REGISTER_BRANCHES)
 DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
 
 
-def emit_error(msg, *, line=None, column=None, exit=False):
+def emit_error(msg, *, fpath=None, line=None, column=None, exit=False):
     """Print an error message to stderr."""
     msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
     config.ERROR_COUNT += 1
-    _emit_msg(msg, line=line, column=column, exit=exit)
+    _emit_msg(msg, fpath=fpath, line=line, column=column, exit=exit)
 
 
-def emit_warning(msg, *, line=None, column=None):
+def emit_warning(msg, *, fpath=None, line=None, column=None):
     """Print a error warning to stderr."""
     msg = config.ANSI_MAGENTA_BOLD + "Warning" + config.ANSI_RESET + ": " + msg
     config.WARNING_COUNT += 1
-    _emit_msg(msg, line=line, column=column, exit=False)
+    _emit_msg(msg, fpath=fpath, line=line, column=column, exit=False)
 
 
-def _emit_msg(msg, *, line=None, column=None, exit=False):
-    if line is not None and config.LINES is not None:
+def _emit_msg(msg, *, fpath=None, line=None, column=None, exit=False):
+    # TODO: Messy.
+    if fpath is not None:
+        cpath = get_canonical_path(fpath)
+    else:
+        cpath = None
+
+    if fpath == "-":
+        fpath = "<stdin>"
+
+    if line is not None and cpath in config.LINES:
         if column is not None:
-            caret = _align_caret(config.LINES[line - 1], column) + "^"
-            msg += ", line {} col {}\n\n  {}\n  {}\n".format(
-                line, column, config.LINES[line - 1], caret
+            caret = _align_caret(config.LINES[cpath][line - 1], column) + "^"
+            msg += ", line {} col {} of {}\n\n  {}\n  {}\n".format(
+                line, column, fpath, config.LINES[cpath][line - 1], caret
             )
         else:
-            msg += ", line {}\n\n  {}\n".format(line, config.LINES[line - 1])
+            msg += ", line {} of {}\n\n  {}\n".format(
+                line, fpath, config.LINES[cpath][line - 1]
+            )
     sys.stderr.write(msg + "\n")
     if exit:
         sys.exit(3)
@@ -153,3 +165,10 @@ def _align_caret(line, col):
     column in the line of text. Mainly this means handling tabs.
     """
     return "".join("\t" if c == "\t" else " " for c in line[: col - 1])
+
+
+def get_canonical_path(fpath):
+    if fpath == "-":
+        return fpath
+    else:
+        return os.path.realpath(fpath)

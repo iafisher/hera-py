@@ -1,7 +1,8 @@
 """Global configuration set by the main function."""
 
-# The lines of the program being processed (a list of strings). Used for error messages.
-LINES = None
+# Mapping from (canonical) file paths to the lines of the program (a list of strings).
+# Used for error messages.
+LINES = {}
 
 
 # Number of errors and warnings emitted.

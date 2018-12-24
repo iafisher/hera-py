@@ -73,7 +73,7 @@ def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=
     try:
         program = parse_file(path, expand_includes=True, allow_stdin=True)
     except HERAError as e:
-        emit_error(str(e), line=e.line, column=e.column, exit=True)
+        emit_error(str(e), fpath=path, line=e.line, column=e.column, exit=True)
     except FileNotFoundError:
         emit_error('file "{}" does not exist.'.format(path), exit=True)
     except PermissionError:
@@ -102,15 +102,12 @@ def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=
     if config.ERROR_COUNT > 0:
         sys.exit(3)
 
-    try:
-        vm.exec_many(program, lines=lines_to_exec)
-    except HERAError as e:
-        emit_error(str(e), line=e.line, column=e.column, exit=True)
-    else:
-        if not quiet:
-            dump_state(vm, verbose=verbose)
+    vm.exec_many(program, lines=lines_to_exec)
 
-        return vm
+    if not quiet:
+        dump_state(vm, verbose=verbose)
+
+    return vm
 
 
 def preprocess_program(path):
