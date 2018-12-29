@@ -16,8 +16,18 @@ from .utils import (
 
 def typecheck(program, symtab):
     """Type-check the program and emit errors as appropriate."""
+    current_file = None
     end_of_data = False
     for op in program:
+        # Reset the end_of_data flag whenever an op from a new file is encountered.
+        if op.location is not None:
+            if current_file is None:
+                current_file = op.location.path
+            else:
+                if current_file != op.location.path:
+                    end_of_data = False
+                    current_file = op.location.path
+
         if not end_of_data:
             if op.name not in DATA_STATEMENTS:
                 end_of_data = True

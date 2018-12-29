@@ -1,6 +1,7 @@
 import pytest
 
 from hera.main import main
+from hera.symtab import HERA_DATA_START
 from hera.vm import VirtualMachine
 
 
@@ -56,3 +57,21 @@ def test_include_stdin_program(capsys):
 
     captured = capsys.readouterr()
     assert 'file "test/assets/include/-" does not exist' in captured.err
+
+
+def test_include_before_data_program():
+    vm = VirtualMachine()
+    main(["test/assets/include/including_before_data.hera"], vm)
+
+    assert vm.registers[1] == HERA_DATA_START
+    assert vm.registers[2] == 42
+    assert vm.registers[3] == 100
+
+    for r in vm.registers[4:11]:
+        assert r == 0
+
+    assert not vm.flag_sign
+    assert not vm.flag_zero
+    assert not vm.flag_overflow
+    assert not vm.flag_carry
+    assert not vm.flag_carry_block

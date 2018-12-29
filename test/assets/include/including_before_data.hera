@@ -1,0 +1,7 @@
+#include "included_before_data.hera"
+
+DLABEL(X)
+INTEGER(42)
+
+SET(R1, X)
+LOAD(R2, 0, R1)
