@@ -27,6 +27,9 @@ class Op(namedtuple("Op", ["name", "args", "location"])):
         )
 
 
+Location = namedtuple("Location", ["path", "lines"])
+
+
 class TreeToOplist(Transformer):
     """Transform Lark's parse tree into a list of HERA ops."""
 
@@ -169,10 +172,16 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False):
             program = f.read()
 
     canonical_path = get_canonical_path(fpath)
-    config.LINES[canonical_path] = program.splitlines()
+    linevector = program.splitlines()
+    loc = Location(fpath, linevector)
 
-    ops = parse(program)
-    ops = [op._replace(location=fpath) for op in ops]
+    try:
+        ops = parse(program)
+    except HERAError as e:
+        e.location = loc
+        raise e
+
+    ops = [op._replace(location=loc) for op in ops]
 
     if expand_includes:
         expanded_ops = []

@@ -25,7 +25,7 @@ def typecheck(program, symtab):
             if op.name in DATA_STATEMENTS:
                 emit_error(
                     "data statement after instruction",
-                    fpath=op.location,
+                    loc=op.location,
                     line=op.name.line,
                 )
 
@@ -36,7 +36,7 @@ def typecheck(program, symtab):
                 msg = "relative branches cannot use labels"
                 msg += " (why not use {} instead?)".format(op.name[:-1])
                 emit_error(
-                    msg, fpath=op.location, line=op.name.line, column=op.args[0].column
+                    msg, loc=op.location, line=op.name.line, column=op.args[0].column
                 )
 
 
@@ -44,11 +44,11 @@ def typecheck_one(op, symtab):
     """Type-check a single HERA op and emit errors as appropriate."""
     params = _types_map.get(op.name)
     if params is not None:
-        check_types(op.name, params, op.args, symtab, fpath=op.location)
+        check_types(op.name, params, op.args, symtab, loc=op.location)
     else:
         emit_error(
             "unknown instruction `{}`".format(op.name),
-            fpath=op.location,
+            loc=op.location,
             line=op.name.line,
         )
 
@@ -158,7 +158,7 @@ _types_map = {
 }
 
 
-def check_types(name, expected, got, symtab, fpath=None):
+def check_types(name, expected, got, symtab, loc=None):
     """Verify that the given args match the expected ones and emit errors as
     appropriate. `name` is the name of the HERA op, as a Token object. `expected` is a
     tuple or list of constants (REGISTER, U16, etc., defined above) representing the
@@ -168,14 +168,14 @@ def check_types(name, expected, got, symtab, fpath=None):
     if len(got) < len(expected):
         emit_error(
             "too few args to {} (expected {})".format(name, len(expected)),
-            fpath=fpath,
+            loc=loc,
             line=name.line,
         )
 
     if len(expected) < len(got):
         emit_error(
             "too many args to {} (expected {})".format(name, len(expected)),
-            fpath=fpath,
+            loc=loc,
             line=name.line,
         )
 
@@ -185,7 +185,7 @@ def check_types(name, expected, got, symtab, fpath=None):
             # TODO: This error-handling logic is a little messy.
             emit_error(
                 "program counter cannot be accessed or changed directly",
-                fpath=fpath,
+                loc=loc,
                 line=arg.line,
                 column=arg.column,
             )
@@ -193,9 +193,7 @@ def check_types(name, expected, got, symtab, fpath=None):
             prefix = "{} arg to {} ".format(ordinal, name)
             error = check_one_type(pattern, arg, symtab)
             if error:
-                emit_error(
-                    prefix + error, fpath=fpath, line=arg.line, column=arg.column
-                )
+                emit_error(prefix + error, loc=loc, line=arg.line, column=arg.column)
 
 
 def check_one_type(pattern, arg, symtab):

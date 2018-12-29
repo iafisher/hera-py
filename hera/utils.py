@@ -121,39 +121,33 @@ RELATIVE_BRANCHES = set(b + "R" for b in REGISTER_BRANCHES)
 DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
 
 
-def emit_error(msg, *, fpath=None, line=None, column=None, exit=False):
+def emit_error(msg, *, loc=None, line=None, column=None, exit=False):
     """Print an error message to stderr."""
     msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
     config.ERROR_COUNT += 1
-    _emit_msg(msg, fpath=fpath, line=line, column=column, exit=exit)
+    _emit_msg(msg, loc=loc, line=line, column=column, exit=exit)
 
 
-def emit_warning(msg, *, fpath=None, line=None, column=None):
+def emit_warning(msg, *, loc=None, line=None, column=None):
     """Print a error warning to stderr."""
     msg = config.ANSI_MAGENTA_BOLD + "Warning" + config.ANSI_RESET + ": " + msg
     config.WARNING_COUNT += 1
-    _emit_msg(msg, fpath=fpath, line=line, column=column, exit=False)
+    _emit_msg(msg, loc=loc, line=line, column=column, exit=False)
 
 
-def _emit_msg(msg, *, fpath=None, line=None, column=None, exit=False):
-    # TODO: Messy.
-    if fpath is not None:
-        cpath = get_canonical_path(fpath)
-    else:
-        cpath = None
+def _emit_msg(msg, *, loc=None, line=None, column=None, exit=False):
+    if loc is not None and loc.path == "-":
+        loc = loc._replace(path="<stdin>")
 
-    if fpath == "-":
-        fpath = "<stdin>"
-
-    if line is not None and cpath in config.LINES:
+    if line is not None and loc is not None:
         if column is not None:
-            caret = _align_caret(config.LINES[cpath][line - 1], column) + "^"
+            caret = _align_caret(loc.lines[line - 1], column) + "^"
             msg += ", line {} col {} of {}\n\n  {}\n  {}\n".format(
-                line, column, fpath, config.LINES[cpath][line - 1], caret
+                line, column, loc.path, loc.lines[line - 1], caret
             )
         else:
             msg += ", line {} of {}\n\n  {}\n".format(
-                line, fpath, config.LINES[cpath][line - 1]
+                line, loc.path, loc.lines[line - 1]
             )
     sys.stderr.write(msg + "\n")
     if exit:
