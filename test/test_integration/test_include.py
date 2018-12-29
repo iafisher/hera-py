@@ -40,3 +40,19 @@ def test_mutually_recursive_programs(capsys):
     assert "recursive include" in captured.err
     assert '#include "mutually_recursive1.hera"' in captured.err
     assert "line 1 of test/assets/include/mutually_recursive2.hera" in captured.err
+
+
+def test_nonexistent_path_program(capsys):
+    with pytest.raises(SystemExit):
+        main(["test/assets/include/nonexistent_path.hera"])
+
+    captured = capsys.readouterr()
+    assert 'file "test/assets/include/whatever.hera" does not exist' in captured.err
+
+
+def test_include_stdin_program(capsys):
+    with pytest.raises(SystemExit):
+        main(["test/assets/include/include_stdin.hera"])
+
+    captured = capsys.readouterr()
+    assert 'file "test/assets/include/-" does not exist' in captured.err

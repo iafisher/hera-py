@@ -74,12 +74,6 @@ def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=
         program = parse_file(path, expand_includes=True, allow_stdin=True)
     except HERAError as e:
         emit_error(str(e), loc=e.location, line=e.line, column=e.column, exit=True)
-    except FileNotFoundError:
-        emit_error('file "{}" does not exist.'.format(path), exit=True)
-    except PermissionError:
-        emit_error('permission denied to open file "{}".'.format(path), exit=True)
-    except OSError:
-        emit_error('could not open file "{}".'.format(path), exit=True)
     except (IOError, KeyboardInterrupt):
         print()
         return

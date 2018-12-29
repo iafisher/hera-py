@@ -170,11 +170,17 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
     visited.add(get_canonical_path(fpath))
 
     if allow_stdin and fpath == "-":
-        # TODO: If I put #include "-" in a HERA file, this will go badly.
         program = sys.stdin.read()
     else:
-        with open(fpath) as f:
-            program = f.read()
+        try:
+            with open(fpath) as f:
+                program = f.read()
+        except FileNotFoundError:
+            raise HERAError('file "{}" does not exist.'.format(fpath))
+        except PermissionError:
+            raise HERAError('permission denied to open file "{}".'.format(fpath))
+        except OSError:
+            raise HERAError('could not open file "{}".'.format(fpath))
 
     canonical_path = get_canonical_path(fpath)
     linevector = program.splitlines()
@@ -201,9 +207,7 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
                 include_path = os.path.join(os.path.dirname(fpath), include_path)
 
                 if get_canonical_path(include_path) in visited:
-                    e = HERAError("recursive include", op.args[0].line)
-                    e.location = loc
-                    raise e
+                    raise HERAError("recursive include", op.args[0].line, location=loc)
 
                 expanded_ops.extend(parse_file(include_path, visited=visited))
             else:
