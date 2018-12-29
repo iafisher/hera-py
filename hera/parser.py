@@ -162,8 +162,13 @@ def parse(text, *, expand_includes=False):
         return tree
 
 
-def parse_file(fpath, *, expand_includes=True, allow_stdin=False):
+def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
     """Parse a file containing a HERA program into a list of Op objects."""
+    if visited is None:
+        visited = set()
+
+    visited.add(get_canonical_path(fpath))
+
     if allow_stdin and fpath == "-":
         # TODO: If I put #include "-" in a HERA file, this will go badly.
         program = sys.stdin.read()
@@ -194,7 +199,13 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False):
                 # Strip off the leading and trailing quote.
                 include_path = op.args[0][1:-1]
                 include_path = os.path.join(os.path.dirname(fpath), include_path)
-                expanded_ops.extend(parse_file(include_path))
+
+                if get_canonical_path(include_path) in visited:
+                    e = HERAError("recursive include", op.args[0].line)
+                    e.location = loc
+                    raise e
+
+                expanded_ops.extend(parse_file(include_path, visited=visited))
             else:
                 expanded_ops.append(op)
         return expanded_ops
