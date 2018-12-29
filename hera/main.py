@@ -2,7 +2,8 @@
 
 Usage:
     hera [--lines=<n>] [-q | --verbose] [--no-color] <path>
-    hera [-q | --verbose] [--no-color] preprocess <path>
+    hera [--no-color] preprocess <path>
+    hera [--no-color] debug <path>
     hera (-h | --help)
     hera (-v | --version)
 
@@ -47,6 +48,8 @@ def main(argv=None, vm=None):
 
     if arguments["preprocess"]:
         preprocess_program(path)
+    elif arguments["debug"]:
+        debug_program(path)
     else:
         lines_to_exec = int(arguments["--lines"]) if arguments["--lines"] else None
         execute_program(
@@ -56,6 +59,44 @@ def main(argv=None, vm=None):
             quiet=arguments["--quiet"],
             vm=vm,
         )
+
+
+def debug_program(path):
+    """Debug the program."""
+    # TODO: Factor this out from the beginning of execute_program.
+    try:
+        program = parse_file(path, expand_includes=True, allow_stdin=True)
+    except HERAError as e:
+        emit_error(str(e), loc=e.location, line=e.line, column=e.column, exit=True)
+    except (IOError, KeyboardInterrupt):
+        print()
+        return
+
+    # Print a newline if the program came from standard input, so that the
+    # program and its output are visually separate.
+    if path == "-":
+        print()
+
+    # Filter out #include statements for now.
+    program = [op for op in program if op.name != "#include"]
+
+    symtab = get_symtab(program)
+
+    typecheck(program, symtab)
+    if config.ERROR_COUNT > 0:
+        sys.exit(3)
+
+    program = preprocess(program, symtab)
+    if config.ERROR_COUNT > 0:
+        sys.exit(3)
+
+    vm = VirtualMachine()
+
+    while vm.pc < len(program):
+        print(op_to_string(program[vm.pc]))
+        print(">>> ", end='', flush=True)
+        input()
+        vm.exec_one(program[vm.pc])
 
 
 def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=None):
