@@ -21,11 +21,12 @@ import functools
 from docopt import docopt
 
 from . import config
+from .debugger import run_debug_loop
 from .parser import parse, parse_file
 from .preprocessor import preprocess
 from .symtab import get_symtab
 from .typechecker import typecheck
-from .utils import emit_error, print_register_debug, HERAError
+from .utils import emit_error, op_to_string, print_register_debug, HERAError
 from .vm import VirtualMachine
 
 
@@ -90,13 +91,7 @@ def debug_program(path):
     if config.ERROR_COUNT > 0:
         sys.exit(3)
 
-    vm = VirtualMachine()
-
-    while vm.pc < len(program):
-        print(op_to_string(program[vm.pc]))
-        print(">>> ", end='', flush=True)
-        input()
-        vm.exec_one(program[vm.pc])
+    run_debug_loop(program)
 
 
 def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=None):
@@ -162,11 +157,6 @@ def preprocess_program(path):
 def program_to_string(ops):
     """Convert the list of operations to a string."""
     return "\n".join(op_to_string(op) for op in ops)
-
-
-def op_to_string(op):
-    """Convert a single operation to a string."""
-    return "{}({})".format(op.name, ", ".join(str(a) for a in op.args))
 
 
 def dump_state(vm, *, verbose=False):

@@ -167,3 +167,8 @@ def get_canonical_path(fpath):
         return fpath
     else:
         return os.path.realpath(fpath)
+
+
+def op_to_string(op):
+    """Convert a single operation to a string."""
+    return "{}({})".format(op.name, ", ".join(str(a) for a in op.args))
