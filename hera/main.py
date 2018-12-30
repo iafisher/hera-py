@@ -21,7 +21,7 @@ import functools
 from docopt import docopt
 
 from . import config
-from .debugger import run_debug_loop
+from .debugger import debug
 from .parser import parse, parse_file
 from .preprocessor import preprocess
 from .symtab import get_symtab
@@ -39,7 +39,8 @@ def main(argv=None, vm=None):
     This function consists mostly of argument parsing. The heavy-lifting begins
     with execute_program later in this module.
 
-    A virtual machine instance may be passed in for testing purposes.
+    A virtual machine may be passed in for testing purposes. Otherwise, a new virtual
+    machine is created.
     """
     arguments = docopt(__doc__, argv=argv, version="hera-py 0.3.0 for HERA version 2.4")
     path = arguments["<path>"]
@@ -91,7 +92,7 @@ def debug_program(path):
     if config.ERROR_COUNT > 0:
         sys.exit(3)
 
-    run_debug_loop(program)
+    debug(program)
 
 
 def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=None):
