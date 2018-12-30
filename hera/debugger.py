@@ -9,6 +9,9 @@ from hera.vm import VirtualMachine
 _MEM_PATTERN = re.compile(r"[Mm]\[([0-9]+)\]")
 _HELP_MSG = """\
 Available commands:
+    break <n>    Set a breakpoint on the n'th line of the program. When no
+                 arguments are given, all current breakpoints are printed.
+
     help         Print this help message.
 
     next         Execute the current line.
@@ -25,6 +28,7 @@ Command names may be abbreviated with a unique prefix, e.g. "n" for "next".
 
 
 def run_debug_loop(program):
+    breakpoints = {}
     vm = VirtualMachine()
     print_current_op(program, vm)
 
@@ -40,7 +44,24 @@ def run_debug_loop(program):
 
         cmd, *args = response.split()
         cmd = cmd.lower()
-        if "next".startswith(cmd):
+        if "break".startswith(cmd):
+            if len(args) > 1:
+                print("break takes zero or one arguments.")
+                continue
+
+            if len(args) == 0:
+                if breakpoints:
+                    for b in breakpoints.values():
+                        print(b)
+                else:
+                    print("No breakpoints set.")
+            else:
+                b = resolve_breakpoint(program, args[0])
+                if b != -1:
+                    breakpoints[b] = get_breakpoint_name(program, b)
+                else:
+                    print("Could not parse argument to break.")
+        elif "next".startswith(cmd):
             if len(args) != 0:
                 print("next takes no arguments.")
                 continue
@@ -51,6 +72,15 @@ def run_debug_loop(program):
 
             original_op = program[vm.pc].original
             while vm.pc < len(program) and program[vm.pc].original == original_op:
+                vm.exec_one(program[vm.pc])
+
+            print_current_op(program, vm)
+        elif "continue".startswith(cmd):
+            if len(args) != 0:
+                print("continue takes no arguments.")
+                continue
+
+            while vm.pc < len(program) and vm.pc not in breakpoints:
                 vm.exec_one(program[vm.pc])
 
             print_current_op(program, vm)
@@ -94,3 +124,24 @@ def print_current_op(program, vm):
         if op.location is not None:
             print("[{}, line {}]\n".format(op.location.path, op.name.line))
         print("{:0>4x}  {}".format(vm.pc, opstr))
+
+
+def resolve_breakpoint(program, b):
+    try:
+        b = int(b)
+    except ValueError:
+        return -1
+
+    for i, op in enumerate(program):
+        if op.name.line == b:
+            return i
+
+    return -1
+
+
+def get_breakpoint_name(program, b):
+    op = program[b].original or program[b]
+    if op.location is not None:
+        return op.location.path + ":" + str(op.name.line)
+    else:
+        return str(op.name.line)
