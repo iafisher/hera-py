@@ -111,7 +111,11 @@ class Debugger:
             self.vm.pc < len(self.program)
             and self.program[self.vm.pc].original == original_op
         ):
+            opc = self.vm.pc
             self.vm.exec_one(self.program[self.vm.pc])
+            if opc == self.vm.pc:
+                print("Program has finished executing.")
+                return
 
         self.print_current_op()
 
@@ -121,7 +125,11 @@ class Debugger:
             return
 
         while self.vm.pc < len(self.program) and self.vm.pc not in self.breakpoints:
+            opc = self.vm.pc
             self.vm.exec_one(self.program[self.vm.pc])
+            if self.vm.pc == opc:
+                print("Program has finished executing.")
+                return
 
         self.print_current_op()
 
