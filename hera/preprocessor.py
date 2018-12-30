@@ -18,7 +18,7 @@ def preprocess(program, symtab):
         - Resolves labels into their line numbers.
     """
     program = [substitute_label(op, symtab) for op in program]
-    program = [op for old_op in program for op in convert(old_op)]
+    program = [op._replace(original=old_op) for old_op in program for op in convert(old_op)]
     program = [op for op in program if op.name not in ("LABEL", "DLABEL", "CONSTANT")]
     return program
 

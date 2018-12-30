@@ -15,9 +15,9 @@ from . import config
 from .utils import emit_warning, get_canonical_path, HERAError, IntToken, is_register
 
 
-class Op(namedtuple("Op", ["name", "args", "location"])):
-    def __new__(cls, name, args, location=None):
-        return tuple.__new__(cls, (name, args, location))
+class Op(namedtuple("Op", ["name", "args", "location", "original"])):
+    def __new__(cls, name, args, location=None, original=None):
+        return tuple.__new__(cls, (name, args, location, original))
 
     def __eq__(self, other):
         return (

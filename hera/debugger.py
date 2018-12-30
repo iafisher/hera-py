@@ -16,6 +16,8 @@ Available commands:
     print <e>    Evaluate the expression and print its result. The expression
                  may be a register or a memory location, e.g. "M[123]".
 
+    restart      Restart the execution of the program from the beginning.
+
     quit         Exit the debugger.
 
 Command names may be abbreviated with a unique prefix, e.g. "n" for "next".
@@ -24,9 +26,9 @@ Command names may be abbreviated with a unique prefix, e.g. "n" for "next".
 
 def run_debug_loop(program):
     vm = VirtualMachine()
-    print(op_to_string(program[0]))
+    print(op_to_string(program[0].original))
 
-    while vm.pc < len(program):
+    while True:
         try:
             response = input(">>> ").strip()
         except (EOFError, KeyboardInterrupt):
@@ -43,8 +45,16 @@ def run_debug_loop(program):
                 print("next takes no arguments.")
                 continue
 
-            vm.exec_one(program[vm.pc])
-            print(op_to_string(program[vm.pc]))
+            if vm.pc >= len(program):
+                print("Program has finished executing. Press 'r' to restart.")
+                continue
+
+            original_op = program[vm.pc].original
+            while vm.pc < len(program) and program[vm.pc].original == original_op:
+                vm.exec_one(program[vm.pc])
+
+            if vm.pc < len(program):
+                print(op_to_string(program[vm.pc].original))
         elif "print".startswith(cmd):
             if len(args) != 1:
                 print("print takes one argument.")
@@ -54,6 +64,8 @@ def run_debug_loop(program):
             if match:
                 index = int(match.group(1))
                 print("M[{}] = {}".format(index, vm.access_memory(index)))
+            elif args[0].lower() == "pc":
+                print("PC = {}".format(vm.pc))
             else:
                 try:
                     v = vm.get_register(args[0])
@@ -61,6 +73,13 @@ def run_debug_loop(program):
                     print("{} is not a valid register.".format(args[0]))
                 else:
                     print_register_debug(args[0], v, to_stderr=False)
+        elif "restart".startswith(cmd):
+            if len(args) != 0:
+                print("restart takes no arguments.")
+                continue
+
+            vm.reset()
+            print(op_to_string(program[vm.pc].original))
         elif "quit".startswith(cmd):
             break
         elif "help".startswith(cmd):
