@@ -26,7 +26,7 @@ Command names may be abbreviated with a unique prefix, e.g. "n" for "next".
 
 def run_debug_loop(program):
     vm = VirtualMachine()
-    print(op_to_string(program[0].original))
+    print_current_op(program, vm)
 
     while True:
         try:
@@ -53,8 +53,7 @@ def run_debug_loop(program):
             while vm.pc < len(program) and program[vm.pc].original == original_op:
                 vm.exec_one(program[vm.pc])
 
-            if vm.pc < len(program):
-                print(op_to_string(program[vm.pc].original))
+            print_current_op(program, vm)
         elif "print".startswith(cmd):
             if len(args) != 1:
                 print("print takes one argument.")
@@ -79,10 +78,19 @@ def run_debug_loop(program):
                 continue
 
             vm.reset()
-            print(op_to_string(program[vm.pc].original))
+            print_current_op(program, vm)
         elif "quit".startswith(cmd):
             break
         elif "help".startswith(cmd):
             print(_HELP_MSG)
         else:
             print('Unknown command "{}"'.format(cmd))
+
+
+def print_current_op(program, vm):
+    if vm.pc < len(program):
+        op = program[vm.pc].original or program[vm.pc]
+        opstr = op_to_string(op)
+        if op.location is not None:
+            print("[{}, line {}]\n".format(op.location.path, op.name.line))
+        print("{:0>4x}  {}".format(vm.pc, opstr))
