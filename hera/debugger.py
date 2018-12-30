@@ -65,6 +65,8 @@ class Debugger:
                 self.exec_break(args)
             elif "continue".startswith(cmd):
                 self.exec_continue(args)
+            elif "jump".startswith(cmd):
+                self.exec_jump(args)
             elif "next".startswith(cmd):
                 self.exec_next(args)
             elif "print".startswith(cmd):
@@ -91,7 +93,7 @@ class Debugger:
                 print("No breakpoints set.")
         else:
             try:
-                b = self.resolve_breakpoint(args[0])
+                b = self.resolve_location(args[0])
             except ValueError as e:
                 print("Error:", e)
             else:
@@ -119,6 +121,19 @@ class Debugger:
 
         self.print_current_op()
 
+    def exec_jump(self, args):
+        if len(args) != 1:
+            print("jump takes on argument.")
+            return
+
+        try:
+            b = self.resolve_location(args[0])
+        except ValueError as e:
+            print("Error:", e)
+        else:
+            self.vm.pc = b
+            self.print_current_op()
+
     def exec_continue(self, args):
         if len(args) != 0:
             print("continue takes no arguments.")
@@ -141,7 +156,7 @@ class Debugger:
             print("print takes one argument.")
             return
 
-        match = _MEM_PATTERN.match(args[0])
+        match = self._MEM_PATTERN.match(args[0])
         if match:
             index = int(match.group(1))
             print("M[{}] = {}".format(index, self.vm.access_memory(index)))
@@ -172,7 +187,7 @@ class Debugger:
                 print("[{}, line {}]\n".format(path, op.name.line))
             print("{:0>4x}  {}".format(self.vm.pc, opstr))
 
-    def resolve_breakpoint(self, b):
+    def resolve_location(self, b):
         try:
             b = int(b)
         except ValueError:
