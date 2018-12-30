@@ -5,8 +5,8 @@ from unittest.mock import patch
 from hera.main import (
     dump_state,
     main,
+    main_preprocess,
     op_to_string,
-    preprocess_program,
     program_to_string,
 )
 from hera.parser import Op
@@ -52,9 +52,9 @@ def test_main_non_existent_file(capsys):
     assert 'file "unicorn.hera" does not exist' in captured.err
 
 
-def test_preprocess_program(capsys):
+def test_main_preprocess(capsys):
     # SET(R1, 10)
-    preprocess_program("test/assets/unit/set.hera")
+    main_preprocess("test/assets/unit/set.hera")
 
     captured = capsys.readouterr()
     assert captured.out == "SETLO(R1, 10)\nSETHI(R1, 0)\n"

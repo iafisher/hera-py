@@ -37,7 +37,7 @@ def main(argv=None, vm=None):
     """The main entry point into hera-py.
 
     This function consists mostly of argument parsing. The heavy-lifting begins
-    with execute_program later in this module.
+    with main_execute later in this module.
 
     A virtual machine may be passed in for testing purposes. Otherwise, a new virtual
     machine is created.
@@ -49,12 +49,12 @@ def main(argv=None, vm=None):
         config.ANSI_MAGENTA_BOLD = config.ANSI_RED_BOLD = config.ANSI_RESET = ""
 
     if arguments["preprocess"]:
-        preprocess_program(path)
+        main_preprocess(path)
     elif arguments["debug"]:
-        debug_program(path)
+        main_debug(path)
     else:
         lines_to_exec = int(arguments["--lines"]) if arguments["--lines"] else None
-        execute_program(
+        main_execute(
             path,
             lines_to_exec=lines_to_exec,
             verbose=arguments["--verbose"],
@@ -63,9 +63,9 @@ def main(argv=None, vm=None):
         )
 
 
-def debug_program(path):
+def main_debug(path):
     """Debug the program."""
-    # TODO: Factor this out from the beginning of execute_program.
+    # TODO: Factor this out from the beginning of main_execute.
     try:
         program = parse_file(path, expand_includes=True, allow_stdin=True)
     except HERAError as e:
@@ -95,7 +95,7 @@ def debug_program(path):
     debug(program)
 
 
-def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=None):
+def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=None):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
 
@@ -141,7 +141,7 @@ def execute_program(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=
     return vm
 
 
-def preprocess_program(path):
+def main_preprocess(path):
     """Preprocess the program and print it to standard output."""
     program = parse_file(path, expand_includes=True, allow_stdin=True)
 
