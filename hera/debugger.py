@@ -1,8 +1,19 @@
+"""Debug HERA programs.
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: December 2018
+"""
 import re
 import readline
 
 from hera.utils import op_to_string, print_register_debug
 from hera.vm import VirtualMachine
+
+
+def debug(program):
+    """Start the debug loop with the given program."""
+    debugger = Debugger(program)
+    debugger.loop()
 
 
 _HELP_MSG = """\
@@ -25,12 +36,11 @@ Command names may be abbreviated with a unique prefix, e.g. "n" for "next".
 """
 
 
-def debug(program):
-    debugger = Debugger(program)
-    debugger.loop()
-
-
 class Debugger:
+    """A class for debugging. External users should generally use the module-level
+    `debug` function instead of this class.
+    """
+
     def __init__(self, program):
         self.program = program
         self.breakpoints = {}
@@ -80,11 +90,12 @@ class Debugger:
             else:
                 print("No breakpoints set.")
         else:
-            b = self.resolve_breakpoint(args[0])
-            if b != -1:
-                self.breakpoints[b] = self.get_breakpoint_name(b)
+            try:
+                b = self.resolve_breakpoint(args[0])
+            except ValueError as e:
+                print("Error:", e)
             else:
-                print("Could not parse argument to break.")
+                self.breakpoints[b] = self.get_breakpoint_name(b)
 
     def exec_next(self, args):
         if len(args) != 0:
@@ -149,24 +160,26 @@ class Debugger:
             op = self.program[self.vm.pc].original or self.program[self.vm.pc]
             opstr = op_to_string(op)
             if op.location is not None:
-                print("[{}, line {}]\n".format(op.location.path, op.name.line))
+                path = "<stdin>" if op.location.path == "-" else op.location.path
+                print("[{}, line {}]\n".format(path, op.name.line))
             print("{:0>4x}  {}".format(self.vm.pc, opstr))
 
     def resolve_breakpoint(self, b):
         try:
             b = int(b)
         except ValueError:
-            return -1
+            raise ValueError("could not parse argument.") from None
 
         for i, op in enumerate(self.program):
             if op.name.line == b:
                 return i
 
-        return -1
+        raise ValueError("could not find corresponding line.")
 
     def get_breakpoint_name(self, b):
         op = self.program[b].original or self.program[b]
         if op.location is not None:
-            return op.location.path + ":" + str(op.name.line)
+            path = "<stdin>" if op.location.path == "-" else op.location.path
+            return path + ":" + str(op.name.line)
         else:
             return str(op.name.line)
