@@ -62,26 +62,35 @@ class Debugger:
             if not response:
                 continue
 
-            cmd, *args = response.split()
-            cmd = cmd.lower()
-            if "break".startswith(cmd):
-                self.exec_break(args)
-            elif "continue".startswith(cmd):
-                self.exec_continue(args)
-            elif "next".startswith(cmd):
-                self.exec_next(args)
-            elif "print".startswith(cmd):
-                self.exec_print(args)
-            elif "restart".startswith(cmd):
-                self.exec_restart(args)
-            elif "skip".startswith(cmd):
-                self.exec_skip(args)
-            elif "quit".startswith(cmd):
+            if not self.handle_command(response):
                 break
-            elif "help".startswith(cmd):
-                print(_HELP_MSG)
-            else:
-                print('Unknown command "{}"'.format(cmd))
+
+    def handle_command(self, response):
+        """Parse the command and execute it. Return False if the loop should exit, and
+        True otherwise.
+        """
+        cmd, *args = response.split()
+        cmd = cmd.lower()
+        if "break".startswith(cmd):
+            self.exec_break(args)
+        elif "continue".startswith(cmd):
+            self.exec_continue(args)
+        elif "next".startswith(cmd):
+            self.exec_next(args)
+        elif "print".startswith(cmd):
+            self.exec_print(args)
+        elif "restart".startswith(cmd):
+            self.exec_restart(args)
+        elif "skip".startswith(cmd):
+            self.exec_skip(args)
+        elif "help".startswith(cmd):
+            print(_HELP_MSG)
+        elif "quit".startswith(cmd):
+            return False
+        else:
+            print("{} is not a known command.".format(cmd))
+
+        return True
 
     def exec_break(self, args):
         if len(args) > 1:
