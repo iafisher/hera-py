@@ -93,16 +93,15 @@ def test_parse_single_line_comment():
 
 
 def test_parse_hera_boilerplate():
-    assert parse("#include <HERA.h>\nvoid HERA_main() {SETLO(R1, 42)}") == [
-        Op("#include", ["<HERA.h>"]),
-        Op("SETLO", ["R1", 42]),
-    ]
+    assert parse(
+        "#include <HERA.h>\nvoid HERA_main() {SETLO(R1, 42)}", expand_includes=False
+    ) == [Op("#include", ["<HERA.h>"]), Op("SETLO", ["R1", 42])]
 
 
 def test_parse_hera_boilerplate_weird_whitespace_and_spelling():
-    assert parse("#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}") == [
-        Op("#include", ["<HERA.h>"])
-    ]
+    assert parse(
+        "#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}", expand_includes=False
+    ) == [Op("#include", ["<HERA.h>"])]
 
 
 def test_parse_hera_boilerplate_no_includes():

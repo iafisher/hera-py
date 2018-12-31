@@ -26,6 +26,13 @@ class Op(namedtuple("Op", ["name", "args", "location", "original"])):
             and self.args == other.args
         )
 
+    def __repr__(self):
+        lrepr = "None" if self.location is None else "Location(...)"
+        orepr = "None" if self.original is None else "Op(...)"
+        return "Op(name={!r}, args={!r}, location={}, original={})".format(
+            self.name, self.args, lrepr, orepr
+        )
+
 
 Location = namedtuple("Location", ["path", "lines"])
 
@@ -185,11 +192,11 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
     if expand_includes:
         expanded_ops = []
         for op in ops:
-            if (
-                op.name == "#include"
-                and len(op.args) == 1
-                and not op.args[0].startswith("<")
-            ):
+            if op.name == "#include" and len(op.args) == 1:
+                if op.args[0].startswith("<"):
+                    # TODO: Probably need to handle these somehow.
+                    continue
+
                 # Strip off the leading and trailing quote.
                 include_path = op.args[0][1:-1]
                 include_path = os.path.join(os.path.dirname(fpath), include_path)

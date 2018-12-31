@@ -35,9 +35,6 @@ def load_program(path, *, preprocess=True):
     if path == "-":
         print()
 
-    # Filter out #include statements for now.
-    program = [op for op in program if op.name != "#include"]
-
     symtab = get_symtab(program)
 
     typecheck(program, symtab)
