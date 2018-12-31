@@ -46,7 +46,5 @@ def load_program(path, *, preprocess=True):
 
     if preprocess:
         program = preprocessor.preprocess(program, symtab)
-        if config.ERROR_COUNT > 0:
-            sys.exit(3)
 
     return program
