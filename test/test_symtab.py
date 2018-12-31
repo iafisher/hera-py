@@ -1,5 +1,9 @@
-from hera.parser import Op
+from hera.parser import Op, Token
 from hera.symtab import get_symtab, HERA_DATA_START
+
+
+def SYM(s):
+    return Token("SYMBOL", s)
 
 
 def test_get_symtab_with_example():
@@ -84,3 +88,28 @@ def test_get_symtab_with_invalid_instructions():
     labels = get_symtab([Op("CONSTANT", ["N"]), Op("CONSTANT", ["X", 42])])
     assert len(labels) == 1
     assert labels["X"] == 42
+
+
+def test_get_symtab_with_too_large_dskip(capsys):
+    get_symtab([Op(SYM("DSKIP"), [1000000000])])
+
+    assert "past the end of available memory" in capsys.readouterr().err
+
+
+def test_get_symtab_with_redefinitions_of_symbols(capsys):
+    get_symtab(
+        [
+            Op(SYM("CONSTANT"), ["A", 100]),
+            Op(SYM("CONSTANT"), ["B", 200]),
+            Op(SYM("CONSTANT"), ["C", 200]),
+            Op(SYM("CONSTANT"), ["A", -1]),
+            Op(SYM("LABEL"), ["B"]),
+            Op(SYM("DLABEL"), ["C"]),
+        ]
+    )
+
+    captured = capsys.readouterr().err
+
+    assert "symbol `A` has already been defined" in captured
+    assert "symbol `B` has already been defined" in captured
+    assert "symbol `C` has already been defined" in captured

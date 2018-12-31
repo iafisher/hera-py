@@ -15,13 +15,13 @@ def get_symtab(program):
         odc = dc
         if op.name == "LABEL":
             if len(op.args) == 1:
-                labels[op.args[0]] = pc
+                update_labels(labels, op.args[0], pc, op)
         elif op.name == "DLABEL":
             if len(op.args) == 1:
-                labels[op.args[0]] = dc
+                update_labels(labels, op.args[0], dc, op)
         elif op.name == "CONSTANT":
             if len(op.args) == 2:
-                labels[op.args[0]] = op.args[1]
+                update_labels(labels, op.args[0], op.args[1], op)
         elif op.name == "INTEGER":
             dc += 1
         elif op.name == "DSKIP":
@@ -41,3 +41,14 @@ def get_symtab(program):
                 "past the end of available memory", loc=op.location, line=op.name.line
             )
     return labels
+
+
+def update_labels(labels, k, v, op):
+    if k in labels:
+        emit_error(
+            "symbol `{}` has already been defined".format(k),
+            loc=op.location,
+            line=op.name.line,
+        )
+    else:
+        labels[k] = v
