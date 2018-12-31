@@ -1,0 +1,5 @@
+// A comment
+SET(R1, 10)
+SET(R2, 32)
+ADD(R3, R1, R2)
+HALT()

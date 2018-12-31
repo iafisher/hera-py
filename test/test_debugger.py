@@ -2,9 +2,7 @@ import pytest
 from unittest.mock import patch
 
 from hera.debugger import Debugger
-from hera.parser import parse
-from hera.preprocessor import preprocess
-from hera.symtab import get_symtab
+from hera.loader import load_program
 
 
 @pytest.fixture
@@ -12,17 +10,7 @@ def debugger():
     return Debugger(SAMPLE_PROGRAM)
 
 
-_tree = parse(
-    """\
-// A comment
-SET(R1, 10)
-SET(R2, 32)
-ADD(R3, R1, R2)
-HALT()
-"""
-)
-_symtab = get_symtab(_tree)
-SAMPLE_PROGRAM = preprocess(_tree, _symtab)
+SAMPLE_PROGRAM = load_program("test/assets/unit/debugger.hera")
 
 
 def test_print_breakpoints(debugger, capsys):
@@ -49,7 +37,7 @@ def test_set_breakpoint(debugger):
     assert should_continue
     assert len(debugger.breakpoints) == 1
     assert 0 in debugger.breakpoints
-    assert debugger.breakpoints[0] == "<string>:2"
+    assert debugger.breakpoints[0] == "test/assets/unit/debugger.hera:2"
 
 
 def test_set_breakpoint_not_on_line_of_code(debugger, capsys):
@@ -268,11 +256,14 @@ def test_resolve_location_invalid_format(debugger):
 
 def test_get_breakpoint_name(debugger):
     # Zero'th instruction corresponds to second line.
-    assert debugger.get_breakpoint_name(0) == "<string>:2"
+    assert debugger.get_breakpoint_name(0) == "test/assets/unit/debugger.hera:2"
 
 
 def test_print_current_op(debugger, capsys):
     debugger.print_current_op()
 
     captured = capsys.readouterr()
-    assert captured.out == "[<string>, line 2]\n\n0000  SET(R1, 10)\n"
+    assert (
+        captured.out
+        == "[test/assets/unit/debugger.hera, line 2]\n\n0000  SET(R1, 10)\n"
+    )
