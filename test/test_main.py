@@ -42,16 +42,21 @@ def test_main_non_existent_file(capsys):
     with pytest.raises(SystemExit):
         main("unicorn.hera")
 
-    captured = capsys.readouterr()
-    assert 'file "unicorn.hera" does not exist' in captured.err
+    assert 'file "unicorn.hera" does not exist' in capsys.readouterr().err
 
 
 def test_main_preprocess(capsys):
     # SET(R1, 10)
     main_preprocess("test/assets/unit/set.hera")
 
-    captured = capsys.readouterr()
-    assert captured.out == "SETLO(R1, 10)\nSETHI(R1, 0)\n"
+    assert capsys.readouterr().out == "SETLO(R1, 10)\nSETHI(R1, 0)\n"
+
+
+def test_main_preprocess_non_existent_file(capsys):
+    with pytest.raises(SystemExit):
+        main_preprocess("unicorn.hera")
+
+    assert 'file "unicorn.hera" does not exist' in capsys.readouterr().err
 
 
 def test_execute_from_stdin():

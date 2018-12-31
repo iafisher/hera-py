@@ -22,6 +22,7 @@ from docopt import docopt
 
 from . import config
 from .debugger import debug
+from .loader import load_program
 from .parser import parse, parse_file
 from .preprocessor import preprocess
 from .symtab import get_symtab
@@ -65,33 +66,7 @@ def main(argv=None, vm=None):
 
 def main_debug(path):
     """Debug the program."""
-    # TODO: Factor this out from the beginning of main_execute.
-    try:
-        program = parse_file(path, expand_includes=True, allow_stdin=True)
-    except HERAError as e:
-        emit_error(str(e), loc=e.location, line=e.line, column=e.column, exit=True)
-    except (IOError, KeyboardInterrupt):
-        print()
-        return
-
-    # Print a newline if the program came from standard input, so that the
-    # program and its output are visually separate.
-    if path == "-":
-        print()
-
-    # Filter out #include statements for now.
-    program = [op for op in program if op.name != "#include"]
-
-    symtab = get_symtab(program)
-
-    typecheck(program, symtab)
-    if config.ERROR_COUNT > 0:
-        sys.exit(3)
-
-    program = preprocess(program, symtab)
-    if config.ERROR_COUNT > 0:
-        sys.exit(3)
-
+    program = load_program(path)
     debug(program)
 
 
@@ -102,36 +77,10 @@ def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=Non
     A virtual machine instance may be passed in for testing purposes. If it is not, a
     new one is instantiated. The virtual machine is returned.
     """
-    config.ERROR_COUNT = config.WARNING_COUNT = 0
-
     if vm is None:
         vm = VirtualMachine()
 
-    try:
-        program = parse_file(path, expand_includes=True, allow_stdin=True)
-    except HERAError as e:
-        emit_error(str(e), loc=e.location, line=e.line, column=e.column, exit=True)
-    except (IOError, KeyboardInterrupt):
-        print()
-        return
-
-    # Print a newline if the program came from standard input, so that the
-    # program and its output are visually separate.
-    if path == "-":
-        print()
-
-    # Filter out #include statements for now.
-    program = [op for op in program if op.name != "#include"]
-
-    symtab = get_symtab(program)
-
-    typecheck(program, symtab)
-    if config.ERROR_COUNT > 0:
-        sys.exit(3)
-
-    program = preprocess(program, symtab)
-    if config.ERROR_COUNT > 0:
-        sys.exit(3)
+    program = load_program(path)
 
     vm.exec_many(program, lines=lines_to_exec)
 
@@ -143,15 +92,7 @@ def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=Non
 
 def main_preprocess(path):
     """Preprocess the program and print it to standard output."""
-    program = parse_file(path, expand_includes=True, allow_stdin=True)
-
-    # Print a newline if the program came from standard input, so that the
-    # program and its output are visually separate.
-    if path == "-":
-        print()
-
-    symtab = get_symtab(program)
-    program = preprocess(program, symtab)
+    program = load_program(path)
     print(program_to_string(program))
 
 
