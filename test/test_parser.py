@@ -137,7 +137,10 @@ SETLO(R1, 1)
 
 def test_parse_include_amidst_instructions():
     program = 'SETLO(R1, 42)\n#include "whatever"\n'
-    assert parse(program) == [Op("SETLO", ["R1", 42]), Op("#include", ['"whatever"'])]
+    assert parse(program, expand_includes=False) == [
+        Op("SETLO", ["R1", 42]),
+        Op("#include", ['"whatever"']),
+    ]
 
 
 def test_parse_missing_comma():

@@ -16,7 +16,7 @@ from hera.typechecker import (
     U4,
     U16,
 )
-from hera.utils import HERAError, IntToken
+from hera.utils import IntToken
 
 
 def R(s):

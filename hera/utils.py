@@ -163,7 +163,7 @@ def _align_caret(line, col):
 
 
 def get_canonical_path(fpath):
-    if fpath == "-":
+    if fpath == "-" or fpath == "<string>":
         return fpath
     else:
         return os.path.realpath(fpath)

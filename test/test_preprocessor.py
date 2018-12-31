@@ -5,7 +5,7 @@ from lark import Token
 
 from hera.parser import Op
 from hera.preprocessor import convert, convert_set, preprocess, substitute_label
-from hera.utils import HERAError, IntToken
+from hera.utils import IntToken
 
 
 def R(s):

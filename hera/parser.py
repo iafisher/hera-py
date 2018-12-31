@@ -140,57 +140,45 @@ _parser = Lark(
 )
 
 
-def parse(text, *, expand_includes=False):
-    """Parse a HERA program into a list of Op objects."""
+def parse(text, *, fpath=None, expand_includes=True, visited=None):
+    """Parse a HERA program from a string into a list of Op objects.
+
+    `fpath` is the path of the file being parsed, as it will appear in error and
+    debugging messages. It defaults to "<string>".
+
+    `expand_includes` determines whether an #include statement should be executed during
+    parsing or not.
+
+    `visited` is a set of file paths that have already been visited. If any #include
+    statement matches a path in this set, an error is raised.
+    """
+    if visited is None:
+        visited = set()
+
+    if fpath is not None:
+        visited.add(get_canonical_path(fpath))
+
+    linevector = text.splitlines()
+    loc = Location(fpath or "<string>", linevector)
+
     try:
         tree = _parser.parse(text)
     except UnexpectedCharacters as e:
-        raise HERAError("unexpected character", e.line, e.column) from None
+        raise HERAError("unexpected character", e.line, e.column, loc) from None
     except UnexpectedToken as e:
         if e.token.type == "$END":
             raise HERAError("unexpected end of file") from None
         else:
-            raise HERAError("unexpected character", e.line, e.column) from None
+            raise HERAError("unexpected character", e.line, e.column, loc) from None
     except LarkError as e:
-        raise HERAError("invalid syntax", e.line, e.column) from None
+        raise HERAError("invalid syntax", e.line, e.column, loc) from None
 
     if isinstance(tree, Tree):
-        return tree.children
+        ops = tree.children
     elif isinstance(tree, Op):
-        return [tree]
+        ops = [tree]
     else:
-        return tree
-
-
-def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
-    """Parse a file containing a HERA program into a list of Op objects."""
-    if visited is None:
-        visited = set()
-
-    visited.add(get_canonical_path(fpath))
-
-    if allow_stdin and fpath == "-":
-        program = sys.stdin.read()
-    else:
-        try:
-            with open(fpath) as f:
-                program = f.read()
-        except FileNotFoundError:
-            raise HERAError('file "{}" does not exist.'.format(fpath))
-        except PermissionError:
-            raise HERAError('permission denied to open file "{}".'.format(fpath))
-        except OSError:
-            raise HERAError('could not open file "{}".'.format(fpath))
-
-    canonical_path = get_canonical_path(fpath)
-    linevector = program.splitlines()
-    loc = Location(fpath, linevector)
-
-    try:
-        ops = parse(program)
-    except HERAError as e:
-        e.location = loc
-        raise e
+        ops = tree
 
     ops = [op._replace(location=loc) for op in ops]
 
@@ -215,6 +203,30 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
         return expanded_ops
     else:
         return ops
+
+
+def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
+    """Convenience function for parsing a HERA file. Reads the contents of the file and
+    delegates parsing to the `parse` function.
+
+    `allow_stdin` should be set to True if you wish the file path "-" to be interpreted
+    as standard input instead of a file with that actual name. See `parse` for the
+    meaning of `expand_includes` and `visited`.
+    """
+    if allow_stdin and fpath == "-":
+        program = sys.stdin.read()
+    else:
+        try:
+            with open(fpath) as f:
+                program = f.read()
+        except FileNotFoundError:
+            raise HERAError('file "{}" does not exist.'.format(fpath))
+        except PermissionError:
+            raise HERAError('permission denied to open file "{}".'.format(fpath))
+        except OSError:
+            raise HERAError('could not open file "{}".'.format(fpath))
+
+    return parse(program, fpath=fpath, expand_includes=expand_includes, visited=visited)
 
 
 def replace_escapes(s):

@@ -49,7 +49,7 @@ def test_set_breakpoint(debugger):
     assert should_continue
     assert len(debugger.breakpoints) == 1
     assert 0 in debugger.breakpoints
-    assert debugger.breakpoints[0] == "2"
+    assert debugger.breakpoints[0] == "<string>:2"
 
 
 def test_set_breakpoint_not_on_line_of_code(debugger, capsys):
@@ -118,7 +118,10 @@ def test_execute_next_after_end_of_program(debugger, capsys):
 
     assert should_continue
     assert debugger.vm.pc == 9000
-    assert capsys.readouterr().out == "Program has finished executing. Press 'r' to restart.\n"
+    assert (
+        capsys.readouterr().out
+        == "Program has finished executing. Press 'r' to restart.\n"
+    )
 
 
 def test_execute_next_with_too_many_args(debugger, capsys):
@@ -265,11 +268,11 @@ def test_resolve_location_invalid_format(debugger):
 
 def test_get_breakpoint_name(debugger):
     # Zero'th instruction corresponds to second line.
-    assert debugger.get_breakpoint_name(0) == "2"
+    assert debugger.get_breakpoint_name(0) == "<string>:2"
 
 
 def test_print_current_op(debugger, capsys):
     debugger.print_current_op()
 
     captured = capsys.readouterr()
-    assert captured.out == "0000  SET(R1, 10)\n"
+    assert captured.out == "[<string>, line 2]\n\n0000  SET(R1, 10)\n"
