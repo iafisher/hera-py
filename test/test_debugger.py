@@ -23,19 +23,19 @@ _symtab = get_symtab(_tree)
 SAMPLE_PROGRAM = preprocess(_tree, _symtab)
 
 
-def test_resolve_breakpoint(debugger):
-    assert debugger.resolve_breakpoint(2) == 0
+def test_resolve_location(debugger):
+    assert debugger.resolve_location(2) == 0
 
 
-def test_resolve_breakpoint_out_of_range(debugger):
+def test_resolve_location_out_of_range(debugger):
     with pytest.raises(ValueError) as e:
-        debugger.resolve_breakpoint(10)
+        debugger.resolve_location(10)
     assert "could not find corresponding line" in str(e)
 
 
-def test_resolve_breakpoint_invalid_format(debugger):
+def test_resolve_location_invalid_format(debugger):
     with pytest.raises(ValueError) as e:
-        debugger.resolve_breakpoint("a")
+        debugger.resolve_location("a")
     assert "could not parse argument" in str(e)
 
 
