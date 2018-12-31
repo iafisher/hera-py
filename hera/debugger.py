@@ -30,6 +30,9 @@ Available commands:
 
     restart      Restart the execution of the program from the beginning.
 
+    skip <n>     Skip to the n'th line of the program without executing any
+                 of the lines in between.
+
     quit         Exit the debugger.
 
 Command names may be abbreviated with a unique prefix, e.g. "n" for "next".
@@ -65,14 +68,14 @@ class Debugger:
                 self.exec_break(args)
             elif "continue".startswith(cmd):
                 self.exec_continue(args)
-            elif "jump".startswith(cmd):
-                self.exec_jump(args)
             elif "next".startswith(cmd):
                 self.exec_next(args)
             elif "print".startswith(cmd):
                 self.exec_print(args)
             elif "restart".startswith(cmd):
                 self.exec_restart(args)
+            elif "skip".startswith(cmd):
+                self.exec_skip(args)
             elif "quit".startswith(cmd):
                 break
             elif "help".startswith(cmd):
@@ -121,9 +124,9 @@ class Debugger:
 
         self.print_current_op()
 
-    def exec_jump(self, args):
+    def exec_skip(self, args):
         if len(args) != 1:
-            print("jump takes on argument.")
+            print("skip takes on argument.")
             return
 
         try:
