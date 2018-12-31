@@ -80,3 +80,13 @@ def test_dskip_overflow_program(capsys):
     captured = capsys.readouterr()
     assert "DSKIP(0xFFFF)" in captured.err
     assert "line 1" in captured.err
+
+
+def test_data_after_code_program(capsys):
+    with pytest.raises(SystemExit):
+        main(["test/assets/error/data_after_code.hera"])
+
+    captured = capsys.readouterr()
+    assert "data statement after code" in captured.err
+    assert "DLABEL(X)" in captured.err
+    assert "line 3" in captured.err

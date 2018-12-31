@@ -12,29 +12,17 @@ from lark import Lark, Token, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from . import config
-from .utils import emit_warning, get_canonical_path, HERAError, IntToken, is_register
-
-
-class Op(namedtuple("Op", ["name", "args", "location", "original"])):
-    def __new__(cls, name, args, location=None, original=None):
-        return tuple.__new__(cls, (name, args, location, original))
-
-    def __eq__(self, other):
-        return (
-            isinstance(other, Op)
-            and self.name == other.name
-            and self.args == other.args
-        )
-
-    def __repr__(self):
-        lrepr = "None" if self.location is None else "Location(...)"
-        orepr = "None" if self.original is None else "Op(...)"
-        return "Op(name={!r}, args={!r}, location={}, original={})".format(
-            self.name, self.args, lrepr, orepr
-        )
-
-
-Location = namedtuple("Location", ["path", "lines"])
+from .data import Location, Op, Program
+from .symtab import get_symtab
+from .utils import (
+    DATA_STATEMENTS,
+    emit_error,
+    emit_warning,
+    get_canonical_path,
+    HERAError,
+    IntToken,
+    is_register,
+)
 
 
 class TreeToOplist(Transformer):
@@ -147,7 +135,7 @@ _parser = Lark(
 )
 
 
-def parse(text, *, fpath=None, expand_includes=True, visited=None):
+def parse(text, *, fpath=None, expand_includes=True, visited=None, rec=False):
     """Parse a HERA program from a string into a list of Op objects.
 
     `fpath` is the path of the file being parsed, as it will appear in error and
@@ -158,6 +146,8 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
 
     `visited` is a set of file paths that have already been visited. If any #include
     statement matches a path in this set, an error is raised.
+
+    TODO: `rec` is disgusting.
     """
     if visited is None:
         visited = set()
@@ -189,6 +179,16 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
 
     ops = [op._replace(location=loc) for op in ops]
 
+    seen_code = False
+    for op in ops:
+        if op.name in DATA_STATEMENTS:
+            if seen_code:
+                emit_error(
+                    "data statement after code", loc=op.location, line=op.name.line
+                )
+        elif op.name != "#include":
+            seen_code = True
+
     if expand_includes:
         expanded_ops = []
         for op in ops:
@@ -204,15 +204,30 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
                 if get_canonical_path(include_path) in visited:
                     raise HERAError("recursive include", op.args[0].line, location=loc)
 
-                expanded_ops.extend(parse_file(include_path, visited=visited))
+                expanded_ops.extend(parse_file(include_path, visited=visited, rec=True))
             else:
                 expanded_ops.append(op)
-        return expanded_ops
+        ops = expanded_ops
+
+    if not rec:
+        symtab = get_symtab(ops)
+        data_statements = []
+
+        i = 0
+        while i < len(ops):
+            if ops[i].name in DATA_STATEMENTS:
+                data_statements.append(ops.pop(i))
+            else:
+                i += 1
+
+        return Program(ops, data_statements, symtab)
     else:
         return ops
 
 
-def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
+def parse_file(
+    fpath, *, expand_includes=True, allow_stdin=False, visited=None, rec=False
+):
     """Convenience function for parsing a HERA file. Reads the contents of the file and
     delegates parsing to the `parse` function.
 
@@ -233,7 +248,9 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
         except OSError:
             raise HERAError('could not open file "{}".'.format(fpath))
 
-    return parse(program, fpath=fpath, expand_includes=expand_includes, visited=visited)
+    return parse(
+        program, fpath=fpath, expand_includes=expand_includes, visited=visited, rec=rec
+    )
 
 
 def replace_escapes(s):

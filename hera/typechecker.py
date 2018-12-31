@@ -14,32 +14,10 @@ from .utils import (
 )
 
 
-def typecheck(program, symtab):
+def typecheck(program):
     """Type-check the program and emit errors as appropriate."""
-    current_file = None
-    end_of_data = False
-    for op in program:
-        # Reset the end_of_data flag whenever an op from a new file is encountered.
-        if op.location is not None:
-            if current_file is None:
-                current_file = op.location.path
-            else:
-                if current_file != op.location.path:
-                    end_of_data = False
-                    current_file = op.location.path
-
-        if not end_of_data:
-            if op.name not in DATA_STATEMENTS:
-                end_of_data = True
-        else:
-            if op.name in DATA_STATEMENTS:
-                emit_error(
-                    "data statement after instruction",
-                    loc=op.location,
-                    line=op.name.line,
-                )
-
-        typecheck_one(op, symtab)
+    for op in program.ops + program.data_statements:
+        typecheck_one(op, program.labels)
 
         if op.name in RELATIVE_BRANCHES:
             if len(op.args) == 1 and is_symbol(op.args[0]):

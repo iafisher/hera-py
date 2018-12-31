@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import patch
 
-from hera.parser import Op, parse, parse_file, replace_escapes
+from hera.data import Op, Program
+from hera.parser import parse, parse_file, replace_escapes
 from hera.utils import HERAError
 
 
@@ -18,94 +19,100 @@ def test_replace_escapes_with_invalid_escape():
 
 
 def test_parse_op():
-    assert parse("SETLO(R1, 4)") == [Op("SETLO", ["R1", 4])]
+    assert parse("SETLO(R1, 4)") == Program([Op("SETLO", ["R1", 4])], [], {})
 
 
 def test_parse_op_with_label():
     parsed = parse("SETLO(R1, top)")
-    assert parsed == [Op("SETLO", ["R1", "top"])]
-    assert parsed[0].args[0].type == "REGISTER"
-    assert parsed[0].args[1].type == "SYMBOL"
+    assert parsed == Program([Op("SETLO", ["R1", "top"])], [], {})
+    assert parsed.ops[0].args[0].type == "REGISTER"
+    assert parsed.ops[0].args[1].type == "SYMBOL"
 
 
 def test_parse_string():
     parsed = parse('LP_STRING("hello")')
-    assert parsed == [Op("LP_STRING", ["hello"])]
-    assert parsed[0].args[0].type == "STRING"
+    assert parsed == Program([], [Op("LP_STRING", ["hello"])], {})
+    assert parsed.data_statements[0].args[0].type == "STRING"
 
 
 def test_parse_empty_string():
-    assert parse('LP_STRING("")') == [Op("LP_STRING", [""])]
+    assert parse('LP_STRING("")') == Program([], [Op("LP_STRING", [""])], {})
 
 
 def test_parse_string_with_escapes():
-    assert parse('LP_STRING("multiline\\nstring with quotes: \\"\\"")') == [
-        Op("LP_STRING", ['multiline\nstring with quotes: ""'])
-    ]
+    assert parse('LP_STRING("multiline\\nstring with quotes: \\"\\"")') == Program(
+        [], [Op("LP_STRING", ['multiline\nstring with quotes: ""'])], {}
+    )
 
 
 def test_parse_character_literal():
-    assert parse("SETLO(R1, 'X')") == [Op("SETLO", ["R1", 88])]
+    assert parse("SETLO(R1, 'X')") == Program([Op("SETLO", ["R1", 88])], [], {})
 
 
 def test_parse_character_literal_with_escape():
-    assert parse("SETLO(R1, '\\t')") == [Op("SETLO", ["R1", 9])]
+    assert parse("SETLO(R1, '\\t')") == Program([Op("SETLO", ["R1", 9])], [], {})
 
 
 def test_parse_signed_number():
-    assert parse("SETLO(R1, -12)") == [Op("SETLO", ["R1", -12])]
+    assert parse("SETLO(R1, -12)") == Program([Op("SETLO", ["R1", -12])], [], {})
 
 
 def test_parse_hex_number():
-    assert parse("SETLO(R4, 0x5f)") == [Op("SETLO", ["R4", 0x5F])]
+    assert parse("SETLO(R4, 0x5f)") == Program([Op("SETLO", ["R4", 0x5F])], [], {})
 
 
 def test_parse_negative_hex_number():
-    assert parse("SETLO(R7, -0x2B)") == [Op("SETLO", ["R7", -0x2B])]
+    assert parse("SETLO(R7, -0x2B)") == Program([Op("SETLO", ["R7", -0x2B])], [], {})
 
 
 def test_parse_binary_number():
-    assert parse("SETLO(R5, 0b10110)") == [Op("SETLO", ["R5", 22])]
+    assert parse("SETLO(R5, 0b10110)") == Program([Op("SETLO", ["R5", 22])], [], {})
 
 
 def test_parse_negative_binary_number():
-    assert parse("SETLO(R5, -0b10110)") == [Op("SETLO", ["R5", -22])]
+    assert parse("SETLO(R5, -0b10110)") == Program([Op("SETLO", ["R5", -22])], [], {})
 
 
 def test_parse_octal_number():
-    assert parse("SETLO(R3, 0o173)") == [Op("SETLO", ["R3", 123])]
+    assert parse("SETLO(R3, 0o173)") == Program([Op("SETLO", ["R3", 123])], [], {})
 
 
 def test_parse_negative_octal_number():
-    assert parse("SETLO(R3, -0o173)") == [Op("SETLO", ["R3", -123])]
+    assert parse("SETLO(R3, -0o173)") == Program([Op("SETLO", ["R3", -123])], [], {})
 
 
 def test_parse_octal_number_without_o():
-    assert parse("SETLO(R3, 0173)") == [Op("SETLO", ["R3", 123])]
+    assert parse("SETLO(R3, 0173)") == Program([Op("SETLO", ["R3", 123])], [], {})
 
 
 def test_parse_label_starting_with_register_name():
-    assert parse("LABEL(R1_INIT)") == [Op("LABEL", ["R1_INIT"])]
+    assert parse("LABEL(R1_INIT)") == Program(
+        [Op("LABEL", ["R1_INIT"])], [], {"R1_INIT": 0}
+    )
 
 
 def test_parse_single_line_comment():
-    assert parse("SETLO(R1, 0)  // R1 <- 0") == [Op("SETLO", ["R1", 0])]
+    assert parse("SETLO(R1, 0)  // R1 <- 0") == Program(
+        [Op("SETLO", ["R1", 0])], [], {}
+    )
 
 
 def test_parse_hera_boilerplate():
     assert parse(
         "#include <HERA.h>\nvoid HERA_main() {SETLO(R1, 42)}", expand_includes=False
-    ) == [Op("#include", ["<HERA.h>"]), Op("SETLO", ["R1", 42])]
+    ) == Program([Op("#include", ["<HERA.h>"]), Op("SETLO", ["R1", 42])], [], {})
 
 
 def test_parse_hera_boilerplate_weird_whitespace_and_spelling():
     assert parse(
         "#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}", expand_includes=False
-    ) == [Op("#include", ["<HERA.h>"])]
+    ) == Program([Op("#include", ["<HERA.h>"])], [], {})
 
 
 def test_parse_hera_boilerplate_no_includes():
-    assert parse("void HERA_main() {SETLO(R1, 42)}") == [Op("SETLO", ["R1", 42])]
+    assert parse("void HERA_main() {SETLO(R1, 42)}") == Program(
+        [Op("SETLO", ["R1", 42])], [], {}
+    )
 
 
 def test_parse_hera_boilerplate_gives_warning():
@@ -122,7 +129,7 @@ def test_parse_another_single_line_comments():
 // Single-line comment
 SETLO(R9, 42)
     """
-    assert parse(program) == [Op("SETLO", ["R9", 42])]
+    assert parse(program) == Program([Op("SETLO", ["R9", 42])], [], {})
 
 
 def test_parse_multiline_comment():
@@ -131,15 +138,14 @@ def test_parse_multiline_comment():
    ends on this one */
 SETLO(R1, 1)
     """
-    assert parse(program) == [Op("SETLO", ["R1", 1])]
+    assert parse(program) == Program([Op("SETLO", ["R1", 1])], [], {})
 
 
 def test_parse_include_amidst_instructions():
     program = 'SETLO(R1, 42)\n#include "whatever"\n'
-    assert parse(program, expand_includes=False) == [
-        Op("SETLO", ["R1", 42]),
-        Op("#include", ['"whatever"']),
-    ]
+    assert parse(program, expand_includes=False) == Program(
+        [Op("SETLO", ["R1", 42]), Op("#include", ['"whatever"'])], [], {}
+    )
 
 
 def test_parse_missing_comma():
@@ -168,7 +174,9 @@ def test_parse_exception_has_line_number():
 
 
 def test_parse_expands_include():
-    assert parse_file("test/assets/include/simple.hera", expand_includes=True) == [
+    program = parse_file("test/assets/include/simple.hera", expand_includes=True)
+    print(program.ops)
+    assert program.ops == [
         Op("BR", ["end_of_add"]),
         Op("LABEL", ["add"]),
         Op("ADD", ["R3", "R1", "R2"]),
@@ -178,3 +186,5 @@ def test_parse_expands_include():
         Op("SET", ["R2", 22]),
         Op("CALL", ["R12", "add"]),
     ]
+    assert program.data_statements == []
+    assert program.labels == {"add": 3, "end_of_add": 5}

@@ -25,7 +25,6 @@ from .debugger import debug
 from .loader import load_program
 from .parser import parse, parse_file
 from .preprocessor import preprocess
-from .symtab import get_symtab
 from .typechecker import typecheck
 from .utils import emit_error, op_to_string, print_register_debug, HERAError
 from .vm import VirtualMachine
@@ -93,7 +92,9 @@ def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=Non
 def main_preprocess(path):
     """Preprocess the program and print it to standard output."""
     program = load_program(path)
-    print(program_to_string(program))
+    if program.data_statements:
+        print(program_to_string(program.data_statements))
+    print(program_to_string(program.ops))
 
 
 def program_to_string(ops):

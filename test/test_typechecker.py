@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from lark import Token
 
-from hera.parser import Op
+from hera.data import Op, Program
 from hera.typechecker import (
     check_one_type,
     check_types,
@@ -681,23 +681,23 @@ def test_typecheck_unknown_branch_instruction():
 
 def test_typecheck_single_error():
     # Second argument to SETHI is out of range.
-    program = [
+    ops = [
         Op(SYM("SETLO"), [R("R1"), IntToken(10)]),
         Op(SYM("SETHI"), [R("R1"), IntToken(1000)]),
     ]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        errors = typecheck(program, {})
+        errors = typecheck(Program(ops, [], {}))
         assert mock_emit_error.call_count == 1
         assert "SETHI" in mock_emit_error.call_args[0][0]
         assert "out of range" in mock_emit_error.call_args[0][0]
 
 
 def test_typecheck_multiple_errors():
-    program = [Op(SYM("ADD"), [R("R1"), IntToken(10)]), Op(SYM("INC"), [R("R3")])]
+    ops = [Op(SYM("ADD"), [R("R1"), IntToken(10)]), Op(SYM("INC"), [R("R3")])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        typecheck(program, {})
+        typecheck(Program(ops, [], {}))
         assert mock_emit_error.call_count == 3
 
         call_args = mock_emit_error.call_args_list[0][0]
@@ -713,20 +713,11 @@ def test_typecheck_multiple_errors():
         assert "too few" in call_args[0]
 
 
-def test_typecheck_data_statement_after_instruction():
-    program = [Op("SET", [R("R1"), 42]), Op(SYM("DLABEL"), [SYM("N")])]
-
-    with patch("hera.utils._emit_msg") as mock_emit_error:
-        typecheck(program, {})
-        assert mock_emit_error.call_count == 1
-        assert "data statement after instruction" in mock_emit_error.call_args[0][0]
-
-
 def test_typecheck_relative_branch_with_label():
-    program = [Op(SYM("BRR"), [SYM("l")])]
+    ops = [Op(SYM("BRR"), [SYM("l")])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        typecheck(program, {"l": 7})
+        typecheck(Program(ops, [], {"l": 7}))
         assert mock_emit_error.call_count == 1
         assert "relative branches cannot use labels" in mock_emit_error.call_args[0][0]
         assert "why not use BR instead" in mock_emit_error.call_args[0][0]
