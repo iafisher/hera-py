@@ -63,6 +63,93 @@ def typecheck_one(op, symtab):
         )
 
 
+def check_types(name, expected, got, symtab, loc=None):
+    """Verify that the given args match the expected ones and emit errors as
+    appropriate. `name` is the name of the HERA op, as a Token object. `expected` is a
+    tuple or list of constants (REGISTER, U16, etc., defined above) representing the
+    expected argument types to the operation. `args` is a tuple or list of the actual
+    arguments given.
+    """
+    if len(got) < len(expected):
+        emit_error(
+            "too few args to {} (expected {})".format(name, len(expected)),
+            loc=loc,
+            line=name.line,
+        )
+
+    if len(expected) < len(got):
+        emit_error(
+            "too many args to {} (expected {})".format(name, len(expected)),
+            loc=loc,
+            line=name.line,
+        )
+
+    ordinals = ["first", "second", "third"]
+    for ordinal, pattern, arg in zip(ordinals, expected, got):
+        if isinstance(arg, Token) and arg.type == "REGISTER" and arg.lower() == "pc":
+            # TODO: This error-handling logic is a little messy.
+            emit_error(
+                "program counter cannot be accessed or changed directly",
+                loc=loc,
+                line=arg.line,
+                column=arg.column,
+            )
+        else:
+            prefix = "{} arg to {} ".format(ordinal, name)
+            error = check_one_type(pattern, arg, symtab)
+            if error:
+                emit_error(prefix + error, loc=loc, line=arg.line, column=arg.column)
+
+
+def check_one_type(pattern, arg, symtab):
+    """Verify that the argument matches the pattern. Return a string stating the error
+    if it doesn't, return None otherwise.
+    """
+    if pattern == REGISTER:
+        if not isinstance(arg, Token) or arg.type != "REGISTER":
+            return "not a register"
+
+        try:
+            register_to_index(arg)
+        except ValueError:
+            return "not a valid register"
+    elif pattern == REGISTER_OR_LABEL:
+        if not isinstance(arg, Token):
+            return "not a register or label"
+
+        if arg.type == "REGISTER":
+            try:
+                register_to_index(arg)
+            except ValueError:
+                return "not a valid register"
+        elif arg.type != "SYMBOL":
+            return "not a register or label"
+    elif pattern == LABEL:
+        if not isinstance(arg, Token) or arg.type != "SYMBOL":
+            return "not a symbol"
+    elif pattern == STRING:
+        if not isinstance(arg, Token) or arg.type != "STRING":
+            return "not a string"
+    elif isinstance(pattern, range):
+        if is_symbol(arg):
+            try:
+                arg = symtab[arg]
+            except KeyError:
+                return "undefined constant"
+
+        if not isinstance(arg, int):
+            return "not an integer"
+        if arg not in pattern:
+            if pattern.start == 0 and arg < 0:
+                return "must not be negative"
+            else:
+                return "out of range"
+    else:
+        raise RuntimeError(
+            "unknown pattern in hera.typechecker.check_one_type", pattern
+        )
+
+
 # Constants to pass to check_types
 REGISTER = "r"
 REGISTER_OR_LABEL = "rl"
@@ -166,90 +253,3 @@ _types_map = {
     "print": (STRING,),
     "println": (STRING,),
 }
-
-
-def check_types(name, expected, got, symtab, loc=None):
-    """Verify that the given args match the expected ones and emit errors as
-    appropriate. `name` is the name of the HERA op, as a Token object. `expected` is a
-    tuple or list of constants (REGISTER, U16, etc., defined above) representing the
-    expected argument types to the operation. `args` is a tuple or list of the actual
-    arguments given.
-    """
-    if len(got) < len(expected):
-        emit_error(
-            "too few args to {} (expected {})".format(name, len(expected)),
-            loc=loc,
-            line=name.line,
-        )
-
-    if len(expected) < len(got):
-        emit_error(
-            "too many args to {} (expected {})".format(name, len(expected)),
-            loc=loc,
-            line=name.line,
-        )
-
-    ordinals = ["first", "second", "third"]
-    for ordinal, pattern, arg in zip(ordinals, expected, got):
-        if isinstance(arg, Token) and arg.type == "REGISTER" and arg.lower() == "pc":
-            # TODO: This error-handling logic is a little messy.
-            emit_error(
-                "program counter cannot be accessed or changed directly",
-                loc=loc,
-                line=arg.line,
-                column=arg.column,
-            )
-        else:
-            prefix = "{} arg to {} ".format(ordinal, name)
-            error = check_one_type(pattern, arg, symtab)
-            if error:
-                emit_error(prefix + error, loc=loc, line=arg.line, column=arg.column)
-
-
-def check_one_type(pattern, arg, symtab):
-    """Verify that the argument matches the pattern. Return a string stating the error
-    if it doesn't, return None otherwise.
-    """
-    if pattern == REGISTER:
-        if not isinstance(arg, Token) or arg.type != "REGISTER":
-            return "not a register"
-
-        try:
-            register_to_index(arg)
-        except ValueError:
-            return "not a valid register"
-    elif pattern == REGISTER_OR_LABEL:
-        if not isinstance(arg, Token):
-            return "not a register or label"
-
-        if arg.type == "REGISTER":
-            try:
-                register_to_index(arg)
-            except ValueError:
-                return "not a valid register"
-        elif arg.type != "SYMBOL":
-            return "not a register or label"
-    elif pattern == LABEL:
-        if not isinstance(arg, Token) or arg.type != "SYMBOL":
-            return "not a symbol"
-    elif pattern == STRING:
-        if not isinstance(arg, Token) or arg.type != "STRING":
-            return "not a string"
-    elif isinstance(pattern, range):
-        if is_symbol(arg):
-            try:
-                arg = symtab[arg]
-            except KeyError:
-                return "undefined constant"
-
-        if not isinstance(arg, int):
-            return "not an integer"
-        if arg not in pattern:
-            if pattern.start == 0 and arg < 0:
-                return "must not be negative"
-            else:
-                return "out of range"
-    else:
-        raise RuntimeError(
-            "unknown pattern in hera.typechecker.check_one_type", pattern
-        )
