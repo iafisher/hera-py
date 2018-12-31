@@ -135,7 +135,7 @@ _parser = Lark(
 )
 
 
-def parse(text, *, fpath=None, expand_includes=True, visited=None, rec=False):
+def parse(text, *, fpath=None, expand_includes=True, visited=None):
     """Parse a HERA program from a string into a list of Op objects.
 
     `fpath` is the path of the file being parsed, as it will appear in error and
@@ -146,8 +146,27 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None, rec=False):
 
     `visited` is a set of file paths that have already been visited. If any #include
     statement matches a path in this set, an error is raised.
+    """
+    ops = parse_helper(
+        text, fpath=fpath, expand_includes=expand_includes, visited=visited
+    )
 
-    TODO: `rec` is disgusting.
+    symtab = get_symtab(ops)
+
+    data_statements = []
+    i = 0
+    while i < len(ops):
+        if ops[i].name in DATA_STATEMENTS:
+            data_statements.append(ops.pop(i))
+        else:
+            i += 1
+
+    return Program(ops, data_statements, symtab)
+
+
+def parse_helper(text, *, fpath, expand_includes=True, visited):
+    """Helper function used by the main `parse` method. Unlike `parse`, `parse_helper`
+    returns a list of Op objects.
     """
     if visited is None:
         visited = set()
@@ -177,8 +196,10 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None, rec=False):
     else:
         ops = tree
 
+    # Tag each op with its location.
     ops = [op._replace(location=loc) for op in ops]
 
+    # Emit errors for data statements after code.
     seen_code = False
     for op in ops:
         if op.name in DATA_STATEMENTS:
@@ -204,30 +225,19 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None, rec=False):
                 if get_canonical_path(include_path) in visited:
                     raise HERAError("recursive include", op.args[0].line, location=loc)
 
-                expanded_ops.extend(parse_file(include_path, visited=visited, rec=True))
+                included_program = read_file(include_path)
+                included_ops = parse_helper(
+                    included_program, fpath=include_path, visited=visited
+                )
+                expanded_ops.extend(included_ops)
             else:
                 expanded_ops.append(op)
-        ops = expanded_ops
-
-    if not rec:
-        symtab = get_symtab(ops)
-        data_statements = []
-
-        i = 0
-        while i < len(ops):
-            if ops[i].name in DATA_STATEMENTS:
-                data_statements.append(ops.pop(i))
-            else:
-                i += 1
-
-        return Program(ops, data_statements, symtab)
+        return expanded_ops
     else:
         return ops
 
 
-def parse_file(
-    fpath, *, expand_includes=True, allow_stdin=False, visited=None, rec=False
-):
+def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
     """Convenience function for parsing a HERA file. Reads the contents of the file and
     delegates parsing to the `parse` function.
 
@@ -238,19 +248,24 @@ def parse_file(
     if allow_stdin and fpath == "-":
         program = sys.stdin.read()
     else:
-        try:
-            with open(fpath) as f:
-                program = f.read()
-        except FileNotFoundError:
-            raise HERAError('file "{}" does not exist.'.format(fpath))
-        except PermissionError:
-            raise HERAError('permission denied to open file "{}".'.format(fpath))
-        except OSError:
-            raise HERAError('could not open file "{}".'.format(fpath))
+        program = read_file(fpath)
 
-    return parse(
-        program, fpath=fpath, expand_includes=expand_includes, visited=visited, rec=rec
-    )
+    return parse(program, fpath=fpath, expand_includes=expand_includes, visited=visited)
+
+
+def read_file(fpath):
+    """Read the contents of a file, converting standard Python exceptions into HERAError
+    exceptions.
+    """
+    try:
+        with open(fpath) as f:
+            return f.read()
+    except FileNotFoundError:
+        raise HERAError('file "{}" does not exist.'.format(fpath))
+    except PermissionError:
+        raise HERAError('permission denied to open file "{}".'.format(fpath))
+    except OSError:
+        raise HERAError('could not open file "{}".'.format(fpath))
 
 
 def replace_escapes(s):
