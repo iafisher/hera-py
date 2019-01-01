@@ -92,10 +92,10 @@ class VirtualMachine:
 
     def reset(self):
         """Reset the machine to its initial state."""
-        # Sixteen 16-bit registers. The virtual machine stores integers in
-        # their unsigned representation, so the values of self.registers will
-        # always be non-negative, although values above 2**15 implicitly
-        # represent negative integers under a signed interpretation.
+        # Sixteen 16-bit registers. The virtual machine stores integers in their
+        # unsigned representation, so the values of self.registers will always be
+        # non-negative, although values above 2**15 implicitly represent negative
+        # integers under a signed interpretation.
         self.registers = [0] * 16
         # 16-bit program counter
         self.pc = 0
@@ -107,23 +107,23 @@ class VirtualMachine:
         self.flag_overflow = False
         self.flag_carry = False
         self.flag_carry_block = False
-        # A memory array of 16-bit words. The HERA specification requires 2**16
-        # words to be addressable, but we start off with a considerably smaller
-        # array and expand it as necessary, to keep the start-up time fast.
+        # A memory array of 16-bit words. The HERA specification requires 2**16 words
+        # to be addressable, but we start off with a considerably smaller array and
+        # expand it as necessary, to keep the start-up time fast.
         self.memory = [0] * (2 ** 4)
 
-    def exec_one(self, inst):
-        """Execute a single instruction."""
+    def exec_one(self, op):
+        """Execute a single operation."""
         try:
-            handler = getattr(self, "exec_" + inst.name.lower())
+            handler = getattr(self, "exec_" + op.name.lower())
         except AttributeError:
-            raise ValueError('unknown instruction "{}"'.format(inst.name)) from None
+            raise RuntimeError('unknown instruction "{}"'.format(op.name)) from None
         else:
-            handler(*inst.args)
+            handler(*op.args)
 
     def exec_many(self, program, *, lines=None):
-        """Execute a program (i.e., a list of instructions), resetting the
-        machine's state beforehand.
+        """Execute a program (i.e., a list of operations), resetting the machine's
+        state beforehand.
         """
         self.reset()
 
