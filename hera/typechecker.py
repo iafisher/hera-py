@@ -1,5 +1,7 @@
 """Type-check HERA programs.
 
+`typecheck` is the public interface of this module.
+
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
@@ -44,7 +46,7 @@ def typecheck(program, symtab):
 
 
 def typecheck_one(op, symtab):
-    """Type-check a single HERA op and emit errors as appropriate."""
+    """Type-check a single HERA operation and emit errors as appropriate."""
     params = _types_map.get(op.name)
     if params is not None:
         check_types(op.name, params, op.args, symtab)
@@ -73,26 +75,23 @@ def check_types(name, expected, got, symtab):
 
     ordinals = ["first", "second", "third"]
     for ordinal, pattern, arg in zip(ordinals, expected, got):
-        if isinstance(arg, Token) and arg.type == "REGISTER" and arg.lower() == "pc":
-            # TODO: This error-handling logic is a little messy.
-            emit_error(
-                "program counter cannot be accessed or changed directly",
-                loc=arg.location,
-            )
-        else:
-            prefix = "{} arg to {} ".format(ordinal, name)
-            error = check_one_type(pattern, arg, symtab)
-            if error:
-                emit_error(prefix + error, loc=arg.location)
+        prefix = "{} arg to {} ".format(ordinal, name)
+        error = check_one_type(pattern, arg, symtab)
+        if error:
+            emit_error(prefix + error, loc=arg.location)
 
 
 def check_one_type(pattern, arg, symtab):
     """Verify that the argument matches the pattern. Return a string stating the error
     if it doesn't, return None otherwise.
     """
+    # TODO: Overengineered?
     if pattern == REGISTER:
         if not isinstance(arg, Token) or arg.type != "REGISTER":
             return "not a register"
+
+        if arg.lower() == "pc":
+            return "program counter cannot be accessed or changed directly"
 
         try:
             register_to_index(arg)
@@ -103,6 +102,9 @@ def check_one_type(pattern, arg, symtab):
             return "not a register or label"
 
         if arg.type == "REGISTER":
+            if arg.lower() == "pc":
+                return "program counter cannot be accessed or changed directly"
+
             try:
                 register_to_index(arg)
             except ValueError:

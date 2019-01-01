@@ -1,5 +1,7 @@
 """Debug HERA programs.
 
+`debug` is the sole public function.
+
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
@@ -11,7 +13,7 @@ from hera.vm import VirtualMachine
 
 
 def debug(program):
-    """Start the debug loop with the given program."""
+    """Start the debug loop."""
     debugger = Debugger(program)
     debugger.loop()
 
@@ -46,6 +48,8 @@ class Debugger:
 
     def __init__(self, program):
         self.program = program
+        # A map from instruction numbers (i.e., possible values of the program counter)
+        # to human-readable line numbers.
         self.breakpoints = {}
         self.vm = VirtualMachine()
 
@@ -98,6 +102,8 @@ class Debugger:
             return
 
         if len(args) == 0:
+            # TODO: In pdb, break with no arguments set a breakpoint at the current
+            # line. Should I do that too?
             if self.breakpoints:
                 for b in self.breakpoints.values():
                     print(b)
@@ -120,6 +126,12 @@ class Debugger:
             print("Program has finished executing. Press 'r' to restart.")
             return
 
+        # The user expects that the next operation as it is written in the HERA file
+        # will be executed. However, the next operation in the file may correspond to
+        # multiple operations in the actual program, e.g. SET in the file becomes
+        # SETLO and SETHI in the program. So we keep executing operations that
+        # correspond to the same original operation (the `original` field on Op objects)
+        # until we hit an operation with a different origin.
         original_op = self.program[self.vm.pc].original
         while (
             self.vm.pc < len(self.program)
@@ -191,6 +203,9 @@ class Debugger:
         self.print_current_op()
 
     def print_current_op(self):
+        """Print the next operation to be executed. If the program has finished
+        executed, nothing is printed.
+        """
         if self.vm.pc < len(self.program):
             op = self.program[self.vm.pc].original or self.program[self.vm.pc]
             opstr = op_to_string(op)
@@ -202,6 +217,7 @@ class Debugger:
             print("{:0>4x}  {}".format(self.vm.pc, opstr))
 
     def resolve_location(self, b):
+        """Resolve a user-supplied location string into an instruction number"""
         try:
             b = int(b)
         except ValueError:
@@ -214,6 +230,9 @@ class Debugger:
         raise ValueError("could not find corresponding line.")
 
     def get_breakpoint_name(self, b):
+        """Turn an instruction number into a human-readable location string with the
+        file path and line number. More or less the inverse of `resolve_location`.
+        """
         op = self.program[b].original or self.program[b]
         if op.name.location is not None:
             path = "<stdin>" if op.name.location.path == "-" else op.name.location.path
