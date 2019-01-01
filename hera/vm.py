@@ -111,9 +111,16 @@ class VirtualMachine:
         # to be addressable, but we start off with a considerably smaller array and
         # expand it as necessary, to keep the start-up time fast.
         self.memory = [0] * (2 ** 4)
+        # Location object for the current operation
+        self.location = None
+        # Have warnings been issued for use of SWI and RTI instructions?
+        self.warned_for_SWI = False
+        self.warned_for_RTI = False
 
     def exec_one(self, op):
         """Execute a single operation."""
+        self.location = op.name.location
+
         try:
             handler = getattr(self, "exec_" + op.name.lower())
         except AttributeError:
@@ -556,13 +563,16 @@ class VirtualMachine:
 
     def exec_swi(self, i):
         """Execute the SWI (software interrupt) instruction."""
-        # TODO: Line number for this warning.
-        emit_warning("SWI is a no-op in this simulator")
+        if not self.warned_for_SWI:
+            emit_warning("SWI is a no-op in this simulator", loc=self.location)
+            self.warned_for_SWI = True
         self.pc += 1
 
     def exec_rti(self):
         """Execute the RTI (return from interrupt) instruction."""
-        emit_warning("RTI is a no-op in this simulator")
+        if not self.warned_for_RTI:
+            emit_warning("RTI is a no-op in this simulator", loc=self.location)
+            self.warned_for_RTI = True
         self.pc += 1
 
     def exec_integer(self, i):

@@ -80,3 +80,19 @@ def test_dskip_overflow_program(capsys):
     captured = capsys.readouterr()
     assert "DSKIP(0xFFFF)" in captured.err
     assert "line 1" in captured.err
+
+
+def test_warning_for_interrupt_instructions(capsys):
+    main(["test/assets/error/interrupts.hera"])
+
+    captured = capsys.readouterr()
+    assert "SWI is a no-op in this simulator" in captured.err
+    assert "line 2 col 1 of test/assets/error/interrupts.hera" in captured.err
+    assert "SWI(10)" in captured.err
+    assert "RTI is a no-op in this simulator" in captured.err
+    assert "line 3 col 1 of test/assets/error/interrupts.hera" in captured.err
+    assert "RTI()" in captured.err
+
+    # Make sure that only one warning is given for each instruction.
+    assert "line 6" not in captured.err
+    assert "line 7" not in captured.err
