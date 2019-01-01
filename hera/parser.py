@@ -8,12 +8,10 @@ Version: December 2018
 import os
 import re
 import sys
-from collections import namedtuple
 
 from lark import Lark, Token as LarkToken, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
-from . import config
 from .data import IntToken, Location, Op, Token
 from .utils import emit_error, emit_warning, get_canonical_path, is_register
 

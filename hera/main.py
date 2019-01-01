@@ -23,10 +23,6 @@ from docopt import docopt
 from . import config
 from .debugger import debug
 from .loader import load_program
-from .parser import parse, parse_file
-from .preprocessor import preprocess
-from .symtab import get_symtab
-from .typechecker import typecheck
 from .utils import op_to_string, print_register_debug
 from .vm import VirtualMachine
 
