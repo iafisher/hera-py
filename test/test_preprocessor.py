@@ -1,11 +1,8 @@
 import pytest
 from unittest.mock import patch
 
-from lark import Token
-
-from hera.parser import Op
+from hera.parser import Op, Token
 from hera.preprocessor import convert, convert_set, preprocess, substitute_label
-from hera.utils import IntToken
 
 
 def R(s):

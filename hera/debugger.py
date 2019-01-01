@@ -194,9 +194,11 @@ class Debugger:
         if self.vm.pc < len(self.program):
             op = self.program[self.vm.pc].original or self.program[self.vm.pc]
             opstr = op_to_string(op)
-            if op.location is not None:
-                path = "<stdin>" if op.location.path == "-" else op.location.path
-                print("[{}, line {}]\n".format(path, op.name.line))
+            if op.name.location is not None:
+                path = (
+                    "<stdin>" if op.name.location.path == "-" else op.name.location.path
+                )
+                print("[{}, line {}]\n".format(path, op.name.location.line))
             print("{:0>4x}  {}".format(self.vm.pc, opstr))
 
     def resolve_location(self, b):
@@ -206,15 +208,15 @@ class Debugger:
             raise ValueError("could not parse argument.") from None
 
         for i, op in enumerate(self.program):
-            if op.name.line == b:
+            if op.name.location.line == b:
                 return i
 
         raise ValueError("could not find corresponding line.")
 
     def get_breakpoint_name(self, b):
         op = self.program[b].original or self.program[b]
-        if op.location is not None:
-            path = "<stdin>" if op.location.path == "-" else op.location.path
-            return path + ":" + str(op.name.line)
+        if op.name.location is not None:
+            path = "<stdin>" if op.name.location.path == "-" else op.name.location.path
+            return path + ":" + str(op.name.location.line)
         else:
-            return str(op.name.line)
+            return str(op.name.location.line)

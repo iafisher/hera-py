@@ -1,9 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-from lark import Token
-
-from hera.parser import Op
+from hera.parser import IntToken, Op, Token
 from hera.typechecker import (
     check_one_type,
     check_types,
@@ -16,7 +14,6 @@ from hera.typechecker import (
     U4,
     U16,
 )
-from hera.utils import IntToken
 
 
 def R(s):

@@ -8,33 +8,12 @@ import re
 import sys
 from collections import namedtuple
 
-from lark import Lark, Token, Transformer, Tree
+from lark import Lark, Token as LarkToken, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from . import config
-from .utils import emit_error, emit_warning, get_canonical_path, IntToken, is_register
-
-
-class Op(namedtuple("Op", ["name", "args", "location", "original"])):
-    def __new__(cls, name, args, location=None, original=None):
-        return tuple.__new__(cls, (name, args, location, original))
-
-    def __eq__(self, other):
-        return (
-            isinstance(other, Op)
-            and self.name == other.name
-            and self.args == other.args
-        )
-
-    def __repr__(self):
-        lrepr = "None" if self.location is None else "Location(...)"
-        orepr = "None" if self.original is None else "Op(...)"
-        return "Op(name={!r}, args={!r}, location={}, original={})".format(
-            self.name, self.args, lrepr, orepr
-        )
-
-
-Location = namedtuple("Location", ["path", "lines"])
+from .data import IntToken, Location, Op, Token
+from .utils import emit_error, emit_warning, get_canonical_path, is_register
 
 
 class TreeToOplist(Transformer):
@@ -63,28 +42,16 @@ class TreeToOplist(Transformer):
         return Op(matches[0], matches[1:])
 
     def include(self, matches):
-        return Op("#include", [matches[0]])
+        return Op(LarkToken("SYMBOL", "#include"), [matches[0]])
 
     def value(self, matches):
         line = matches[0].line
         column = matches[0].column
 
-        if matches[0].type == "DECIMAL":
-            return IntToken(matches[0], line=line, column=column)
-        elif matches[0].type == "HEX":
-            return IntToken(matches[0], base=16, line=line, column=column)
-        elif matches[0].type == "OCTAL":
-            if not matches[0].startswith("0o"):
-                msg = "zero-prefixed numbers are interpreted as octal"
-                msg += " (consider using 0o prefix instead)"
-                emit_warning(msg, line=matches[0].line, column=matches[0].column)
-            return IntToken(matches[0], base=8, line=line, column=column)
-        elif matches[0].type == "BINARY":
-            return IntToken(matches[0], base=2, line=line, column=column)
-        elif matches[0].type == "STRING":
+        if matches[0].type == "STRING":
             otkn = matches[0]
             s = replace_escapes(otkn[1:-1])
-            ntkn = Token("STRING", s)
+            ntkn = LarkToken("STRING", s)
             # Preserve data from the original token.
             ntkn.pos_in_stream = otkn.pos_in_stream
             ntkn.line = otkn.line
@@ -99,7 +66,7 @@ class TreeToOplist(Transformer):
                 c = char_to_escape(s[1])
             else:
                 c = s
-            return IntToken(ord(c), line=line, column=column)
+            return LarkToken("CHAR", ord(c), line=line, column=column)
         elif matches[0].type == "SYMBOL":
             if is_register(matches[0]):
                 matches[0].type = "REGISTER"
@@ -166,23 +133,22 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
         visited.add(get_canonical_path(fpath))
 
     linevector = text.splitlines()
-    loc = Location(fpath or "<string>", linevector)
+    base_location = Location(None, None, fpath or "<string>", linevector)
 
     try:
         tree = _parser.parse(text)
     except UnexpectedCharacters as e:
-        emit_error(
-            "unexpected character", loc=loc, line=e.line, column=e.column, exit=True
-        )
+        loc = base_location._replace(line=e.line, column=e.column)
+        emit_error("unexpected character", loc=loc, exit=True)
     except UnexpectedToken as e:
         if e.token.type == "$END":
             emit_error("unexpected end of file", exit=True)
         else:
-            emit_error(
-                "unexpected character", loc=loc, line=e.line, column=e.column, exit=True
-            )
+            loc = base_location._replace(line=e.line, column=e.column)
+            emit_error("unexpected character", loc=loc, exit=True)
     except LarkError as e:
-        emit_error("invalid syntax", loc=loc, line=e.line, column=e.column, exit=True)
+        loc = base_location._replace(line=e.line, column=e.column)
+        emit_error("invalid syntax", loc=base_location, exit=True)
 
     if isinstance(tree, Tree):
         ops = tree.children
@@ -191,7 +157,7 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
     else:
         ops = tree
 
-    ops = [op._replace(location=loc) for op in ops]
+    convert_tokens(ops, base_location)
 
     if expand_includes:
         expanded_ops = []
@@ -208,15 +174,12 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
                 if get_canonical_path(include_path) in visited:
                     # TODO: Do I _need_ to exit immediately here, or can I catch more
                     # errors?
-                    emit_error(
-                        "recursive include", loc=loc, line=op.args[0].line, exit=True
-                    )
+                    emit_error("recursive include", loc=op.args[0].location, exit=True)
 
                 expanded_ops.extend(parse_file(include_path, visited=visited))
             else:
                 expanded_ops.append(op)
         ops = expanded_ops
-
     return ops
 
 
@@ -248,12 +211,40 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
     return parse(program, fpath=fpath, expand_includes=expand_includes, visited=visited)
 
 
+def convert_tokens(ops, base_location):
+    for i, op in enumerate(ops):
+        name = Token(op.name.type, op.name, augment_location(base_location, op.name))
+        for j, arg in enumerate(op.args):
+            if arg.type == "DECIMAL" or arg.type == "CHAR":
+                op.args[j] = IntToken(arg, augment_location(base_location, arg))
+            elif arg.type == "HEX":
+                op.args[j] = IntToken(
+                    arg, augment_location(base_location, arg), base=16
+                )
+            elif arg.type == "OCTAL":
+                if not arg.startswith("0o"):
+                    msg = "zero-prefixed numbers are interpreted as octal"
+                    msg += " (consider using 0o prefix instead)"
+                    loc = augment_location(base_location, arg)
+                    emit_warning(msg, loc=loc),
+                op.args[j] = IntToken(arg, augment_location(base_location, arg), base=8)
+            elif arg.type == "BINARY":
+                op.args[j] = IntToken(arg, augment_location(base_location, arg), base=2)
+            else:
+                op.args[j] = Token(arg.type, arg, augment_location(base_location, arg))
+        ops[i] = op._replace(name=name)
+
+
+def augment_location(base_location, token):
+    return base_location._replace(line=token.line, column=token.column)
+
+
 def replace_escapes(s):
     return re.sub(r"\\.", lambda m: char_to_escape(m.group(0)[1]), s)
 
 
 def char_to_escape(c):
-    """Return special character that `c` encodes.
+    """Return the special character that `c` encodes.
 
         >>> char_to_escape("n")
         "\n"

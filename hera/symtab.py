@@ -39,18 +39,15 @@ def get_symtab(program):
             pc += len(convert(op))
 
         if dc >= 0xFFFF and odc < 0xFFFF:
-            emit_error(
-                "past the end of available memory", loc=op.location, line=op.name.line
-            )
+            emit_error("past the end of available memory", loc=op.name.location)
+
     return symtab
 
 
 def update_labels(labels, k, v, op):
     if k in labels:
         emit_error(
-            "symbol `{}` has already been defined".format(k),
-            loc=op.location,
-            line=op.name.line,
+            "symbol `{}` has already been defined".format(k), loc=op.name.location
         )
     else:
         labels[k] = v

@@ -3,8 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
-from lark import Token
-
+from .data import Token
 from .utils import (
     DATA_STATEMENTS,
     emit_error,
@@ -20,24 +19,20 @@ def typecheck(program, symtab):
     end_of_data = False
     for op in program:
         # Reset the end_of_data flag whenever an op from a new file is encountered.
-        if op.location is not None:
+        if isinstance(op.name, Token) and op.name.location is not None:
             if current_file is None:
-                current_file = op.location.path
+                current_file = op.name.location.path
             else:
-                if current_file != op.location.path:
+                if current_file != op.name.location.path:
                     end_of_data = False
-                    current_file = op.location.path
+                    current_file = op.name.location.path
 
         if not end_of_data:
             if op.name not in DATA_STATEMENTS:
                 end_of_data = True
         else:
             if op.name in DATA_STATEMENTS:
-                emit_error(
-                    "data statement after instruction",
-                    loc=op.location,
-                    line=op.name.line,
-                )
+                emit_error("data statement after instruction", loc=op.name.location)
 
         typecheck_one(op, symtab)
 
@@ -45,25 +40,19 @@ def typecheck(program, symtab):
             if len(op.args) == 1 and is_symbol(op.args[0]):
                 msg = "relative branches cannot use labels"
                 msg += " (why not use {} instead?)".format(op.name[:-1])
-                emit_error(
-                    msg, loc=op.location, line=op.name.line, column=op.args[0].column
-                )
+                emit_error(msg, loc=op.args[0].location)
 
 
 def typecheck_one(op, symtab):
     """Type-check a single HERA op and emit errors as appropriate."""
     params = _types_map.get(op.name)
     if params is not None:
-        check_types(op.name, params, op.args, symtab, loc=op.location)
+        check_types(op.name, params, op.args, symtab)
     else:
-        emit_error(
-            "unknown instruction `{}`".format(op.name),
-            loc=op.location,
-            line=op.name.line,
-        )
+        emit_error("unknown instruction `{}`".format(op.name), loc=op.name.location)
 
 
-def check_types(name, expected, got, symtab, loc=None):
+def check_types(name, expected, got, symtab):
     """Verify that the given args match the expected ones and emit errors as
     appropriate. `name` is the name of the HERA op, as a Token object. `expected` is a
     tuple or list of constants (REGISTER, U16, etc., defined above) representing the
@@ -73,15 +62,13 @@ def check_types(name, expected, got, symtab, loc=None):
     if len(got) < len(expected):
         emit_error(
             "too few args to {} (expected {})".format(name, len(expected)),
-            loc=loc,
-            line=name.line,
+            loc=name.location,
         )
 
     if len(expected) < len(got):
         emit_error(
             "too many args to {} (expected {})".format(name, len(expected)),
-            loc=loc,
-            line=name.line,
+            loc=name.location,
         )
 
     ordinals = ["first", "second", "third"]
@@ -90,15 +77,13 @@ def check_types(name, expected, got, symtab, loc=None):
             # TODO: This error-handling logic is a little messy.
             emit_error(
                 "program counter cannot be accessed or changed directly",
-                loc=loc,
-                line=arg.line,
-                column=arg.column,
+                loc=arg.location,
             )
         else:
             prefix = "{} arg to {} ".format(ordinal, name)
             error = check_one_type(pattern, arg, symtab)
             if error:
-                emit_error(prefix + error, loc=loc, line=arg.line, column=arg.column)
+                emit_error(prefix + error, loc=arg.location)
 
 
 def check_one_type(pattern, arg, symtab):

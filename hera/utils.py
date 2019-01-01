@@ -6,9 +6,8 @@ Version: December 2018
 import os.path
 import sys
 
-from lark import Token
-
 from . import config
+from .data import Token
 
 
 def to_u16(n):
@@ -71,14 +70,6 @@ def is_register(s):
     return (s[0] in "rR" and s[1:].isdigit()) or s.lower() in NAMED_REGISTERS
 
 
-class IntToken(int):
-    def __new__(cls, value, line=None, column=None, **kwargs):
-        self = super(IntToken, cls).__new__(cls, value, **kwargs)
-        self.line = line
-        self.column = column
-        return self
-
-
 def print_register_debug(target, v, *, to_stderr=True):
     file_ = sys.stderr if to_stderr else sys.stdout
 
@@ -88,16 +79,6 @@ def print_register_debug(target, v, *, to_stderr=True):
     if v < 128 and chr(v).isprintable():
         print(" = {!r}".format(chr(v)), end="", file=file_)
     print(file=file_)
-
-
-def copy_token(val, otkn):
-    """Convert the string `val` into a Token with the same line and column numbers as
-    `otkn`.
-    """
-    if isinstance(otkn, Token):
-        return Token(otkn.type, val, line=otkn.line, column=otkn.column)
-    else:
-        return val
 
 
 def is_symbol(s):
@@ -114,36 +95,38 @@ RELATIVE_BRANCHES = set(b + "R" for b in REGISTER_BRANCHES)
 DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
 
 
-def emit_error(msg, *, loc=None, line=None, column=None, exit=False):
-    # TODO: Accept single location argument instead of three different ones.
+def emit_error(msg, *, loc=None, exit=False):
     """Print an error message to stderr."""
     msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
     config.ERROR_COUNT += 1
-    _emit_msg(msg, loc=loc, line=line, column=column, exit=exit)
+    _emit_msg(msg, loc=loc, exit=exit)
 
 
-def emit_warning(msg, *, loc=None, line=None, column=None):
+def emit_warning(msg, *, loc=None):
     """Print a error warning to stderr."""
     msg = config.ANSI_MAGENTA_BOLD + "Warning" + config.ANSI_RESET + ": " + msg
     config.WARNING_COUNT += 1
-    _emit_msg(msg, loc=loc, line=line, column=column, exit=False)
+    _emit_msg(msg, loc=loc, exit=False)
 
 
-def _emit_msg(msg, *, loc=None, line=None, column=None, exit=False):
-    if loc is not None and loc.path == "-":
-        loc = loc._replace(path="<stdin>")
+def _emit_msg(msg, *, loc=None, exit=False):
+    if loc is not None:
+        if loc.path == "-":
+            loc = loc._replace(path="<stdin>")
 
-    if line is not None and loc is not None:
-        if column is not None:
-            caret = _align_caret(loc.lines[line - 1], column) + "^"
-            msg += ", line {} col {} of {}\n\n  {}\n  {}\n".format(
-                line, column, loc.path, loc.lines[line - 1], caret
-            )
-        else:
-            msg += ", line {} of {}\n\n  {}\n".format(
-                line, loc.path, loc.lines[line - 1]
-            )
+        if loc.line is not None:
+            if loc.column is not None:
+                caret = _align_caret(loc.file_lines[loc.line - 1], loc.column) + "^"
+                msg += ", line {} col {} of {}\n\n  {}\n  {}\n".format(
+                    loc.line, loc.column, loc.path, loc.file_lines[loc.line - 1], caret
+                )
+            else:
+                msg += ", line {} of {}\n\n  {}\n".format(
+                    loc.line, loc.path, loc.file_lines[loc.line - 1]
+                )
+
     sys.stderr.write(msg + "\n")
+
     if exit:
         sys.exit(3)
 

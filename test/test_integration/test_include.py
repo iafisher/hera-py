@@ -30,7 +30,7 @@ def test_recursive_program(capsys):
     captured = capsys.readouterr()
     assert "recursive include" in captured.err
     assert '#include "recursive.hera"' in captured.err
-    assert "line 1 of test/assets/include/recursive.hera" in captured.err
+    assert "line 1 col 10 of test/assets/include/recursive.hera" in captured.err
 
 
 def test_mutually_recursive_programs(capsys):
@@ -40,7 +40,9 @@ def test_mutually_recursive_programs(capsys):
     captured = capsys.readouterr()
     assert "recursive include" in captured.err
     assert '#include "mutually_recursive1.hera"' in captured.err
-    assert "line 1 of test/assets/include/mutually_recursive2.hera" in captured.err
+    assert (
+        "line 1 col 10 of test/assets/include/mutually_recursive2.hera" in captured.err
+    )
 
 
 def test_nonexistent_path_program(capsys):

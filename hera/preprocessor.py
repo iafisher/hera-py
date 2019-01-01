@@ -3,10 +3,8 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
-from lark import Token
-
-from .parser import Op
-from .utils import copy_token, is_symbol, REGISTER_BRANCHES, to_u16
+from .data import Op, Token
+from .utils import is_symbol, REGISTER_BRANCHES, to_u16
 
 
 def preprocess(program, symtab):
@@ -118,3 +116,13 @@ def convert_call(a, l):
         ]
     else:
         return [Op("CALL", [a, l])]
+
+
+def copy_token(val, otkn):
+    """Convert the string `val` into a Token with the same line and column numbers as
+    `otkn`.
+    """
+    if isinstance(otkn, Token):
+        return Token(otkn.type, val, loc=otkn.location)
+    else:
+        return val
