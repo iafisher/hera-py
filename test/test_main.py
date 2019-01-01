@@ -2,8 +2,8 @@ import pytest
 from io import StringIO
 from unittest.mock import patch
 
+from hera.data import Op
 from hera.main import dump_state, main, main_preprocess, op_to_string, program_to_string
-from hera.parser import Op
 from hera.vm import VirtualMachine
 
 

@@ -1,7 +1,4 @@
-import pytest
-from unittest.mock import patch
-
-from hera.parser import Op, Token
+from hera.data import Op, Token
 from hera.preprocessor import convert, convert_set, preprocess, substitute_label
 
 

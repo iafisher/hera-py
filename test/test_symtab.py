@@ -1,4 +1,4 @@
-from hera.parser import Op, Token
+from hera.data import Op, Token
 from hera.symtab import get_symtab, HERA_DATA_START
 
 

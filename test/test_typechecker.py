@@ -1,7 +1,6 @@
-import pytest
 from unittest.mock import patch
 
-from hera.parser import IntToken, Op, Token
+from hera.data import IntToken, Op, Token
 from hera.typechecker import (
     check_one_type,
     check_types,
@@ -684,7 +683,7 @@ def test_typecheck_single_error():
     ]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        errors = typecheck(program, {})
+        typecheck(program, {})
         assert mock_emit_error.call_count == 1
         assert "SETHI" in mock_emit_error.call_args[0][0]
         assert "out of range" in mock_emit_error.call_args[0][0]
