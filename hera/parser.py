@@ -96,7 +96,7 @@ class TreeToOplist(Transformer):
             # Strip the leading and trailing quote.
             s = matches[0][1:-1]
             if s.startswith("\\"):
-                c = replace_one_escape(s[1])
+                c = char_to_escape(s[1])
             else:
                 c = s
             return IntToken(ord(c), line=line, column=column)
@@ -249,15 +249,15 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
 
 
 def replace_escapes(s):
-    return re.sub(r"\\.", repl, s)
+    return re.sub(r"\\.", lambda m: char_to_escape(m.group(0)[1]), s)
 
 
-def repl(matchobj):
-    c = matchobj.group(0)[1]
-    return replace_one_escape(c)
+def char_to_escape(c):
+    """Return special character that `c` encodes.
 
-
-def replace_one_escape(c):
+        >>> char_to_escape("n")
+        "\n"
+    """
     if c == "n":
         return "\n"
     elif c == "t":
