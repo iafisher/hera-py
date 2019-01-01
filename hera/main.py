@@ -27,7 +27,7 @@ from .parser import parse, parse_file
 from .preprocessor import preprocess
 from .symtab import get_symtab
 from .typechecker import typecheck
-from .utils import emit_error, op_to_string, print_register_debug, HERAError
+from .utils import emit_error, op_to_string, print_register_debug
 from .vm import VirtualMachine
 
 

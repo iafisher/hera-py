@@ -12,7 +12,7 @@ from lark import Lark, Token, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from . import config
-from .utils import emit_warning, get_canonical_path, HERAError, IntToken, is_register
+from .utils import emit_error, emit_warning, get_canonical_path, IntToken, is_register
 
 
 class Op(namedtuple("Op", ["name", "args", "location", "original"])):
@@ -171,14 +171,18 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
     try:
         tree = _parser.parse(text)
     except UnexpectedCharacters as e:
-        raise HERAError("unexpected character", e.line, e.column, loc) from None
+        emit_error(
+            "unexpected character", loc=loc, line=e.line, column=e.column, exit=True
+        )
     except UnexpectedToken as e:
         if e.token.type == "$END":
-            raise HERAError("unexpected end of file") from None
+            emit_error("unexpected end of file", exit=True)
         else:
-            raise HERAError("unexpected character", e.line, e.column, loc) from None
+            emit_error(
+                "unexpected character", loc=loc, line=e.line, column=e.column, exit=True
+            )
     except LarkError as e:
-        raise HERAError("invalid syntax", e.line, e.column, loc) from None
+        emit_error("invalid syntax", loc=loc, line=e.line, column=e.column, exit=True)
 
     if isinstance(tree, Tree):
         ops = tree.children
@@ -202,14 +206,18 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
                 include_path = os.path.join(os.path.dirname(fpath), include_path)
 
                 if get_canonical_path(include_path) in visited:
-                    raise HERAError("recursive include", op.args[0].line, location=loc)
+                    # TODO: Do I _need_ to exit immediately here, or can I catch more
+                    # errors?
+                    emit_error(
+                        "recursive include", loc=loc, line=op.args[0].line, exit=True
+                    )
 
                 expanded_ops.extend(parse_file(include_path, visited=visited))
             else:
                 expanded_ops.append(op)
-        return expanded_ops
-    else:
-        return ops
+        ops = expanded_ops
+
+    return ops
 
 
 def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
@@ -221,17 +229,21 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
     meaning of `expand_includes` and `visited`.
     """
     if allow_stdin and fpath == "-":
-        program = sys.stdin.read()
+        try:
+            program = sys.stdin.read()
+        except (IOError, KeyboardInterrupt):
+            print()
+            sys.exit(3)
     else:
         try:
             with open(fpath) as f:
                 program = f.read()
         except FileNotFoundError:
-            raise HERAError('file "{}" does not exist.'.format(fpath))
+            emit_error('file "{}" does not exist.'.format(fpath), exit=True)
         except PermissionError:
-            raise HERAError('permission denied to open file "{}".'.format(fpath))
+            emit_error('permission denied to open file "{}".'.format(fpath), exit=True)
         except OSError:
-            raise HERAError('could not open file "{}".'.format(fpath))
+            emit_error('could not open file "{}".'.format(fpath), exit=True)
 
     return parse(program, fpath=fpath, expand_includes=expand_includes, visited=visited)
 

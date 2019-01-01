@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import patch
 
 from hera.parser import Op, parse, parse_file, replace_escapes
-from hera.utils import HERAError
 
 
 def test_replace_escapes_with_one_escape():
@@ -143,28 +142,28 @@ def test_parse_include_amidst_instructions():
 
 
 def test_parse_missing_comma():
-    with pytest.raises(HERAError):
+    with pytest.raises(SystemExit):
         parse("ADD(R1, R2 R3)")
 
 
 def test_parse_missing_parenthesis():
-    with pytest.raises(HERAError):
+    with pytest.raises(SystemExit):
         parse("LSL8(R1, R1")
 
 
 def test_parse_missing_end_quote():
-    with pytest.raises(HERAError):
+    with pytest.raises(SystemExit):
         parse('LP_STRING("forgot to close my string)')
 
 
-def test_parse_exception_has_line_number():
+def test_parse_exception_has_line_number(capsys):
     program = "SETLO(R1, 10)\nSETHI(R1, 255)\nLSL(R1 R1)"
-    try:
+    with pytest.raises(SystemExit):
         parse(program)
-    except HERAError as e:
-        assert e.line == 3
-    else:
-        assert False, "expected excepton"
+
+    captured = capsys.readouterr().err
+    assert "unexpected character" in captured
+    assert "line 3 col 8 of <string>" in captured
 
 
 def test_parse_expands_include():

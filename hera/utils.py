@@ -11,14 +11,6 @@ from lark import Token
 from . import config
 
 
-class HERAError(Exception):
-    def __init__(self, msg, line=None, column=None, location=None):
-        super().__init__(msg)
-        self.line = line
-        self.column = column
-        self.location = location
-
-
 def to_u16(n):
     """Reinterpret the signed integer `n` as a 16-bit unsigned integer.
 
