@@ -5,11 +5,11 @@ Version: December 2018
 """
 from lark import Token
 
-from .data import Op, Program
+from .parser import Op
 from .utils import copy_token, is_symbol, REGISTER_BRANCHES, to_u16
 
 
-def preprocess(program):
+def preprocess(program, symtab):
     """Preprocess the program (a list of Op objects) into valid input for the
     exec_many method on the VirtualMachine class.
 
@@ -17,21 +17,19 @@ def preprocess(program):
         - Replaces pseudo-instructions with real ones.
         - Resolves labels into their line numbers.
     """
-    ops = [substitute_label(op, program.labels) for op in program.ops]
-    statements = [
-        substitute_label(statement, program.labels)
-        for statement in program.data_statements
+    program = [substitute_label(op, symtab) for op in program]
+    program = [
+        op._replace(original=old_op) for old_op in program for op in convert(old_op)
     ]
-    ops = [op._replace(original=old_op) for old_op in ops for op in convert(old_op)]
-    ops = [op for op in ops if op.name not in ("LABEL", "DLABEL", "CONSTANT")]
-    return Program(ops, statements, program.labels)
+    program = [op for op in program if op.name not in ("LABEL", "DLABEL", "CONSTANT")]
+    return program
 
 
-def substitute_label(op, labels):
+def substitute_label(op, symtab):
     """Substitute any label in the instruction with its concrete value."""
     for i, arg in enumerate(op.args):
         if isinstance(arg, Token) and arg.type == "SYMBOL":
-            op.args[i] = labels[arg]
+            op.args[i] = symtab[arg]
     return op
 
 

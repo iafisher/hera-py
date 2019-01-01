@@ -8,6 +8,7 @@ import sys
 
 from . import config, preprocessor
 from .parser import parse_file
+from .symtab import get_symtab
 from .typechecker import typecheck
 from .utils import emit_error, HERAError
 
@@ -34,11 +35,13 @@ def load_program(path, *, preprocess=True):
     if path == "-":
         print()
 
-    typecheck(program)
+    symtab = get_symtab(program)
+
+    typecheck(program, symtab)
     if config.ERROR_COUNT > 0:
         sys.exit(3)
 
     if preprocess:
-        program = preprocessor.preprocess(program)
+        program = preprocessor.preprocess(program, symtab)
 
     return program

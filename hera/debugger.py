@@ -45,7 +45,7 @@ class Debugger:
     """
 
     def __init__(self, program):
-        self.program = program.ops
+        self.program = program
         self.breakpoints = {}
         self.vm = VirtualMachine()
 

@@ -127,17 +127,15 @@ class VirtualMachine:
         """
         self.reset()
 
-        for statement in program.data_statements:
-            if statement.name not in ("CONSTANT", "DLABEL"):
-                self.exec_one(statement)
+        while program and program[0].name in DATA_STATEMENTS:
+            data_statement = program.pop(0)
+            self.exec_one(data_statement)
 
         self.pc = 0
-        terminate_at = (
-            min(lines, len(program.ops)) if lines is not None else len(program.ops)
-        )
+        terminate_at = min(lines, len(program)) if lines is not None else len(program)
         while self.pc < terminate_at:
             opc = self.pc
-            self.exec_one(program.ops[self.pc])
+            self.exec_one(program[self.pc])
             if opc == self.pc:
                 break
 

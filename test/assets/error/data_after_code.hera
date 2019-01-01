@@ -1,4 +1,0 @@
-SET(R1, 42)
-
-DLABEL(X)
-INTEGER(42)
