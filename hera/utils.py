@@ -98,7 +98,6 @@ DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
 def emit_error(msg, *, loc=None, exit=False):
     """Print an error message to stderr."""
     msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
-    config.ERROR_COUNT += 1
     _emit_msg(msg, loc=loc, exit=exit)
 
 

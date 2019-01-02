@@ -14,13 +14,14 @@ from .symtab import get_symtab
 from .typechecker import typecheck
 
 
-def load_program(path: str, *, preprocess=True) -> List[Op]:
-    """Read the HERA program from the file at `path` and return the program.
+def load_program(path: str) -> List[Op]:
+    """Read the HERA program from the file at `path`, parse it, type-check it, and
+    preprocess it.
 
-    This function combines parsing, type-checking and preprocessing (if `preprocess` is
-    set to True).
+    The return value of this function is valid input to the VirtualMachine.exec_many
+    method.
     """
-    config.ERROR_COUNT = config.WARNING_COUNT = 0
+    config.WARNING_COUNT = 0
 
     program = parse_file(path, includes=True, allow_stdin=True)
 
@@ -30,12 +31,8 @@ def load_program(path: str, *, preprocess=True) -> List[Op]:
         print()
 
     symtab = get_symtab(program)
-
-    typecheck(program, symtab)
-    if config.ERROR_COUNT > 0:
+    if not typecheck(program, symtab):
         sys.exit(3)
-
-    if preprocess:
-        program = preprocessor.preprocess(program, symtab)
+    program = preprocessor.preprocess(program, symtab)
 
     return program

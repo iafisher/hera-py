@@ -1,8 +1,7 @@
 """Global configuration set by the main function."""
 
 
-# Number of errors and warnings emitted.
-ERROR_COUNT = 0
+# Number of warnings emitted.
 WARNING_COUNT = 0
 
 

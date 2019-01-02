@@ -44,6 +44,12 @@ def get_symtab(program: List[Op]) -> Dict[str, int]:
             if len(op.args) == 1 and isinstance(op.args[0], str):
                 dc += len(op.args[0]) + 1
         else:
+            # IDEA: Instead of using the convert function (which introduces undesirable
+            # coupling between this module and the preprocessor), write a function to
+            # calculate this value directly.
+            #
+            # This has the disadvantage of duplicating some of the logic of conversion
+            # though.
             pc += len(convert(op))
 
         if dc >= 0xFFFF and odc < 0xFFFF:

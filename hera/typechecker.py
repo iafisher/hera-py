@@ -17,8 +17,11 @@ from .utils import (
 )
 
 
-def typecheck(program: List[Op], symtab: Dict[str, int]) -> None:
-    """Type-check the program and emit errors as appropriate."""
+def typecheck(program: List[Op], symtab: Dict[str, int]) -> True:
+    """Type-check the program and emit errors as appropriate. Return True if the
+    program is well-typed.
+    """
+    error_free = True
     current_file = None
     end_of_data = False
     for op in program:
@@ -37,50 +40,67 @@ def typecheck(program: List[Op], symtab: Dict[str, int]) -> None:
         else:
             if op.name in DATA_STATEMENTS:
                 emit_error("data statement after instruction", loc=op.name.location)
+                error_free = False
 
-        typecheck_one(op, symtab)
+        if not typecheck_one(op, symtab):
+            error_free = False
 
         if op.name in RELATIVE_BRANCHES:
             if len(op.args) == 1 and is_symbol(op.args[0]):
                 msg = "relative branches cannot use labels"
                 msg += " (why not use {} instead?)".format(op.name[:-1])
                 emit_error(msg, loc=op.args[0].location)
+                error_free = False
+
+    return error_free
 
 
-def typecheck_one(op: Op, symtab: Dict[str, int]) -> None:
-    """Type-check a single HERA operation and emit errors as appropriate."""
+def typecheck_one(op: Op, symtab: Dict[str, int]) -> bool:
+    """Type-check a single HERA operation and emit error messages as appropriate. Return
+    True if no errors were detected.
+    """
     params = _types_map.get(op.name)
     if params is not None:
-        check_types(op.name, params, op.args, symtab)
+        return check_types(op.name, params, op.args, symtab)
     else:
         emit_error("unknown instruction `{}`".format(op.name), loc=op.name.location)
+        return False
 
 
 def check_types(name, expected, got, symtab):
-    """Verify that the given args match the expected ones and emit errors as
-    appropriate. `name` is the name of the HERA op, as a Token object. `expected` is a
+    """Verify that the given args match the expected ones and emit error messages as
+    appropriate. Return True if no errors were detected.
+
+    `name` is the name of the HERA op, as a Token object. `expected` is a
     tuple or list of constants (REGISTER, U16, etc., defined above) representing the
     expected argument types to the operation. `args` is a tuple or list of the actual
     arguments given.
     """
+    errors = False
+
     if len(got) < len(expected):
         emit_error(
             "too few args to {} (expected {})".format(name, len(expected)),
             loc=name.location,
         )
+        errors = True
 
     if len(expected) < len(got):
         emit_error(
             "too many args to {} (expected {})".format(name, len(expected)),
             loc=name.location,
         )
+        errors = True
 
     ordinals = ["first", "second", "third"]
     for ordinal, pattern, arg in zip(ordinals, expected, got):
         prefix = "{} arg to {} ".format(ordinal, name)
-        error = check_one_type(pattern, arg, symtab)
-        if error:
-            emit_error(prefix + error, loc=arg.location)
+        error_msg = check_one_type(pattern, arg, symtab)
+        if error_msg:
+            emit_error(prefix + error_msg, loc=arg.location)
+            errors = True
+
+    return not errors
 
 
 def check_one_type(pattern, arg, symtab):
