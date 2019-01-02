@@ -39,7 +39,7 @@ def typecheck(program: List[Op], symbol_table: Dict[str, int]) -> True:
                 end_of_data = True
         else:
             if op.name in DATA_STATEMENTS:
-                emit_error("data statement after instruction", loc=op.name.location)
+                emit_error("data statement after instruction", loc=op.name)
                 error_free = False
 
         if not typecheck_one(op, symbol_table):
@@ -49,7 +49,7 @@ def typecheck(program: List[Op], symbol_table: Dict[str, int]) -> True:
             if len(op.args) == 1 and is_symbol(op.args[0]):
                 msg = "relative branches cannot use labels"
                 msg += " (why not use {} instead?)".format(op.name[:-1])
-                emit_error(msg, loc=op.args[0].location)
+                emit_error(msg, loc=op.args[0])
                 error_free = False
 
     return error_free
@@ -63,7 +63,7 @@ def typecheck_one(op: Op, symbol_table: Dict[str, int]) -> bool:
     if params is not None:
         return check_types(op.name, params, op.args, symbol_table)
     else:
-        emit_error("unknown instruction `{}`".format(op.name), loc=op.name.location)
+        emit_error("unknown instruction `{}`".format(op.name), loc=op.name)
         return False
 
 
@@ -81,14 +81,14 @@ def check_types(name, expected, got, symbol_table):
     if len(got) < len(expected):
         emit_error(
             "too few args to {} (expected {})".format(name, len(expected)),
-            loc=name.location,
+            loc=name,
         )
         errors = True
 
     if len(expected) < len(got):
         emit_error(
             "too many args to {} (expected {})".format(name, len(expected)),
-            loc=name.location,
+            loc=name,
         )
         errors = True
 
@@ -97,7 +97,7 @@ def check_types(name, expected, got, symbol_table):
         prefix = "{} arg to {} ".format(ordinal, name)
         error_msg = check_one_type(pattern, arg, symbol_table)
         if error_msg:
-            emit_error(prefix + error_msg, loc=arg.location)
+            emit_error(prefix + error_msg, loc=arg)
             errors = True
 
     return not errors

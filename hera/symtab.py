@@ -52,16 +52,14 @@ def get_symbol_table(program: List[Op]) -> Dict[str, int]:
             pc += len(convert(op))
 
         if dc >= 0xFFFF and odc < 0xFFFF:
-            emit_error("past the end of available memory", loc=op.name.location)
+            emit_error("past the end of available memory", loc=op.name)
 
     return symbol_table
 
 
 def update_symbol_table(symbol_table: Dict[str, int], k: str, v: int, op: Op) -> None:
     if k in symbol_table:
-        emit_error(
-            "symbol `{}` has already been defined".format(k), loc=op.name.location
-        )
+        emit_error("symbol `{}` has already been defined".format(k), loc=op.name)
     else:
         symbol_table[k] = v
 

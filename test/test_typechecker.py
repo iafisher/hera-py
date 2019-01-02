@@ -31,7 +31,7 @@ def STR(s):
 
 def test_check_types_with_too_few():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = check_types(SYM(), [REGISTER, REGISTER], [R("R1")], {})
+        error_free = check_types("", [REGISTER, REGISTER], [R("R1")], {})
 
         assert not error_free
         assert mock_emit_error.call_count == 1
@@ -40,7 +40,7 @@ def test_check_types_with_too_few():
 
 def test_check_types_with_too_many():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = check_types(SYM(), [REGISTER], [R("R1"), IntToken(10)], {})
+        error_free = check_types("", [REGISTER], [R("R1"), IntToken(10)], {})
 
         assert not error_free
         assert mock_emit_error.call_count == 1
@@ -49,14 +49,14 @@ def test_check_types_with_too_many():
 
 def test_check_types_with_wrong_type():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = check_types(SYM(), [REGISTER], [IntToken(10)], {})
+        error_free = check_types("", [REGISTER], [IntToken(10)], {})
 
         assert not error_free
         assert mock_emit_error.call_count == 1
         assert "not a register" in mock_emit_error.call_args[0][0]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = check_types(SYM(), [U16], [R("R1")], {})
+        error_free = check_types("", [U16], [R("R1")], {})
 
         assert not error_free
         assert mock_emit_error.call_count == 1
@@ -65,7 +65,7 @@ def test_check_types_with_wrong_type():
 
 def test_check_types_with_program_counter():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = check_types(SYM(), [REGISTER], [R("PC")], {})
+        error_free = check_types("", [REGISTER], [R("PC")], {})
 
         assert not error_free
         assert mock_emit_error.call_count == 1
@@ -76,21 +76,21 @@ def test_check_types_with_program_counter():
 
 
 def test_check_one_type_with_u16_out_of_range():
-    assert check_one_type(U16, IntToken(65536), {}) == "out of range"
+    assert check_one_type(U16, 65536, {}) == "out of range"
 
 
 def test_check_one_type_with_negative_u16():
-    assert check_one_type(U16, IntToken(-1), {}) == "must not be negative"
+    assert check_one_type(U16, -1, {}) == "must not be negative"
 
 
 def test_check_one_type_with_u4_out_of_range():
-    assert check_one_type(U4, IntToken(16), {}) == "out of range"
-    assert check_one_type(U4, IntToken(-1), {}) == "must not be negative"
+    assert check_one_type(U4, 16, {}) == "out of range"
+    assert check_one_type(U4, -1, {}) == "must not be negative"
 
 
 def test_check_one_type_with_range_object():
-    assert check_one_type(range(-10, 10), IntToken(-11), {}) == "out of range"
-    assert check_one_type(range(-10, 10), IntToken(10), {}) == "out of range"
+    assert check_one_type(range(-10, 10), -11, {}) == "out of range"
+    assert check_one_type(range(-10, 10), 10, {}) == "out of range"
     assert check_one_type(range(-10, 10), R("R1"), {}) == "not an integer"
 
     assert check_one_type(range(-10, 10), 5, {}) is None
@@ -676,7 +676,7 @@ def test_typecheck_println():
 
 def test_typecheck_undefined_symbol():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = typecheck_one(Op(SYM("SET"), [R("R1"), SYM("N")]), {})
+        error_free = typecheck_one(Op("SET", [R("R1"), SYM("N")]), {})
 
         assert not error_free
         assert mock_emit_error.call_count == 1
@@ -685,7 +685,7 @@ def test_typecheck_undefined_symbol():
 
 def test_typecheck_unknown_instruction():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = typecheck_one(Op(SYM("IF"), [R("R1")]), {})
+        error_free = typecheck_one(Op("IF", [R("R1")]), {})
 
         assert not error_free
         assert mock_emit_error.call_count == 1
@@ -695,7 +695,7 @@ def test_typecheck_unknown_instruction():
 
 def test_typecheck_unknown_branch_instruction():
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = typecheck_one(Op(SYM("BNWR"), [R("R1")]), {})
+        error_free = typecheck_one(Op("BNWR", [R("R1")]), {})
 
         assert not error_free
         assert mock_emit_error.call_count == 1
@@ -705,10 +705,7 @@ def test_typecheck_unknown_branch_instruction():
 
 def test_typecheck_single_error():
     # Second argument to SETHI is out of range.
-    program = [
-        Op(SYM("SETLO"), [R("R1"), IntToken(10)]),
-        Op(SYM("SETHI"), [R("R1"), IntToken(1000)]),
-    ]
+    program = [Op("SETLO", [R("R1"), 10]), Op("SETHI", [R("R1"), 1000])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
         error_free = typecheck(program, {})
@@ -720,7 +717,7 @@ def test_typecheck_single_error():
 
 
 def test_typecheck_multiple_errors():
-    program = [Op(SYM("ADD"), [R("R1"), IntToken(10)]), Op(SYM("INC"), [R("R3")])]
+    program = [Op("ADD", [R("R1"), 10]), Op("INC", [R("R3")])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
         error_free = typecheck(program, {})
@@ -742,7 +739,7 @@ def test_typecheck_multiple_errors():
 
 
 def test_typecheck_data_statement_after_instruction():
-    program = [Op("SET", [R("R1"), 42]), Op(SYM("DLABEL"), [SYM("N")])]
+    program = [Op("SET", [R("R1"), 42]), Op("DLABEL", [SYM("N")])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
         error_free = typecheck(program, {})
@@ -753,7 +750,7 @@ def test_typecheck_data_statement_after_instruction():
 
 
 def test_typecheck_relative_branch_with_label():
-    program = [Op(SYM("BRR"), [SYM("l")])]
+    program = [Op("BRR", [SYM("l")])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
         error_free = typecheck(program, {"l": 7})

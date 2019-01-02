@@ -7,7 +7,7 @@ import os.path
 import sys
 
 from . import config
-from .data import Token
+from .data import IntToken, Location, Token
 
 
 def to_u16(n):
@@ -96,20 +96,35 @@ DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
 
 
 def emit_error(msg, *, loc=None, exit=False):
-    """Print an error message to stderr."""
+    """Print an error message to stderr.
+
+    `loc` is either a Location or a Token object. If provided, the location and line of
+    code is indicated in the error message.
+
+    If `exit` is True, then the interpreter exits after printing the error message.
+    """
     msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
-    _emit_msg(msg, loc=loc, exit=exit)
+    _emit_msg(msg, loc=loc)
+    if exit:
+        sys.exit(3)
 
 
 def emit_warning(msg, *, loc=None):
-    """Print a error warning to stderr."""
+    """Print a warning message to stderr.
+
+    `loc` is either a Location or a Token object. If provided, the location and line of
+    code is indicated in the warning message.
+    """
     msg = config.ANSI_MAGENTA_BOLD + "Warning" + config.ANSI_RESET + ": " + msg
     config.WARNING_COUNT += 1
-    _emit_msg(msg, loc=loc, exit=False)
+    _emit_msg(msg, loc=loc)
 
 
-def _emit_msg(msg, *, loc=None, exit=False):
-    if loc is not None:
+def _emit_msg(msg, *, loc=None):
+    if isinstance(loc, (Token, IntToken)):
+        loc = loc.location
+
+    if isinstance(loc, Location):
         if loc.path == "-":
             loc = loc._replace(path="<stdin>")
 
@@ -126,8 +141,6 @@ def _emit_msg(msg, *, loc=None, exit=False):
 
     sys.stderr.write(msg + "\n")
 
-    if exit:
-        sys.exit(3)
 
 
 def _align_caret(line, col):

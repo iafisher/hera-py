@@ -154,7 +154,7 @@ def expand_includes(ops: List[Op], path: str, *, visited=None) -> List[Op]:
             if get_canonical_path(include_path) in visited:
                 # TODO: Do I _need_ to exit immediately here, or can I catch more
                 # errors?
-                emit_error("recursive include", loc=op.args[0].location, exit=True)
+                emit_error("recursive include", loc=op.args[0], exit=True)
 
             included_ops = parse_file(include_path, visited=visited)
             expanded_ops.extend(included_ops)
