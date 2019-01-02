@@ -94,13 +94,13 @@ def test_parse_single_line_comment():
 
 def test_parse_hera_boilerplate():
     assert parse(
-        "#include <HERA.h>\nvoid HERA_main() {SETLO(R1, 42)}", expand_includes=False
+        "#include <HERA.h>\nvoid HERA_main() {SETLO(R1, 42)}", includes=False
     ) == [Op("#include", ["<HERA.h>"]), Op("SETLO", ["R1", 42])]
 
 
 def test_parse_hera_boilerplate_weird_whitespace_and_spelling():
     assert parse(
-        "#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}", expand_includes=False
+        "#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}", includes=False
     ) == [Op("#include", ["<HERA.h>"])]
 
 
@@ -136,7 +136,7 @@ SETLO(R1, 1)
 
 def test_parse_include_amidst_instructions():
     program = 'SETLO(R1, 42)\n#include "whatever"\n'
-    assert parse(program, expand_includes=False) == [
+    assert parse(program, includes=False) == [
         Op("SETLO", ["R1", 42]),
         Op("#include", ['"whatever"']),
     ]
@@ -168,7 +168,7 @@ def test_parse_exception_has_line_number(capsys):
 
 
 def test_parse_expands_include():
-    assert parse_file("test/assets/include/simple.hera", expand_includes=True) == [
+    assert parse_file("test/assets/include/simple.hera", includes=True) == [
         Op("BR", ["end_of_add"]),
         Op("LABEL", ["add"]),
         Op("ADD", ["R3", "R1", "R2"]),

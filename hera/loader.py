@@ -21,7 +21,7 @@ def load_program(path, *, preprocess=True):
     """
     config.ERROR_COUNT = config.WARNING_COUNT = 0
 
-    program = parse_file(path, expand_includes=True, allow_stdin=True)
+    program = parse_file(path, includes=True, allow_stdin=True)
 
     # Print a newline if the program came from standard input, so that the
     # program and its output are visually separate.

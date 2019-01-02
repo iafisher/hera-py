@@ -16,17 +16,17 @@ from .data import IntToken, Location, Op, Token
 from .utils import emit_error, emit_warning, get_canonical_path, is_register
 
 
-def parse(text, *, fpath=None, expand_includes=True, visited=None):
+def parse(text, *, path=None, includes=True, visited=None):
     """Parse a HERA program from a string into a list of Op objects. If errors are
     encountered while parsing, an error message is emitted and the whole program exits.
 
-    `fpath` is the path of the file being parsed, as it will appear in error and
+    `path` is the path of the file being parsed, as it will appear in error and
     debugging messages. It defaults to "<string>".
 
-    `expand_includes` determines what happens when an #include statement is encountered.
-    If `expand_includes` is True, then the #include statement is interpreted as it is by
-    the C preprocessor, i.e. the file identified by #include's argument is read, parsed,
-    and pasted in with the rest of the operations. If it is False, then the #include
+    `includes` determines what happens when an #include statement is encountered. If
+    `includes` is True, then the #include statement is interpreted as it is by the C
+    preprocessor, i.e. the file identified by #include's argument is read, parsed, and
+    pasted in with the rest of the operations. If it is False, then the #include
     statement is retained as an Op object.
 
     `visited` is a set of file paths that have already been visited, to prevent infinite
@@ -35,11 +35,11 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
     if visited is None:
         visited = set()
 
-    if fpath is not None:
-        visited.add(get_canonical_path(fpath))
+    if path is not None:
+        visited.add(get_canonical_path(path))
 
     file_lines = text.splitlines()
-    base_location = Location(None, None, fpath or "<string>", file_lines)
+    base_location = Location(None, None, path or "<string>", file_lines)
 
     try:
         tree = _parser.parse(text)
@@ -65,40 +65,21 @@ def parse(text, *, fpath=None, expand_includes=True, visited=None):
 
     convert_tokens(ops, base_location)
 
-    if expand_includes:
-        expanded_ops = []
-        for op in ops:
-            if op.name == "#include" and len(op.args) == 1:
-                if op.args[0].startswith("<"):
-                    # TODO: Probably need to handle these somehow.
-                    continue
-
-                # Strip off the leading and trailing quote.
-                include_path = op.args[0][1:-1]
-                include_path = os.path.join(os.path.dirname(fpath), include_path)
-
-                if get_canonical_path(include_path) in visited:
-                    # TODO: Do I _need_ to exit immediately here, or can I catch more
-                    # errors?
-                    emit_error("recursive include", loc=op.args[0].location, exit=True)
-
-                expanded_ops.extend(parse_file(include_path, visited=visited))
-            else:
-                expanded_ops.append(op)
-        ops = expanded_ops
+    if includes:
+        ops = expand_includes(ops, path, visited=visited)
 
     return ops
 
 
-def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
+def parse_file(path, *, includes=True, allow_stdin=False, visited=None):
     """Convenience function for parsing a HERA file. Reads the contents of the file and
     delegates parsing to the `parse` function.
 
     `allow_stdin` should be set to True if you wish the file path "-" to be interpreted
     as standard input instead of a file with that actual name. See `parse` for the
-    meaning of `expand_includes` and `visited`.
+    meaning of `includes` and `visited`.
     """
-    if allow_stdin and fpath == "-":
+    if allow_stdin and path == "-":
         try:
             program = sys.stdin.read()
         except (IOError, KeyboardInterrupt):
@@ -106,16 +87,16 @@ def parse_file(fpath, *, expand_includes=True, allow_stdin=False, visited=None):
             sys.exit(3)
     else:
         try:
-            with open(fpath) as f:
+            with open(path) as f:
                 program = f.read()
         except FileNotFoundError:
-            emit_error('file "{}" does not exist.'.format(fpath), exit=True)
+            emit_error('file "{}" does not exist.'.format(path), exit=True)
         except PermissionError:
-            emit_error('permission denied to open file "{}".'.format(fpath), exit=True)
+            emit_error('permission denied to open file "{}".'.format(path), exit=True)
         except OSError:
-            emit_error('could not open file "{}".'.format(fpath), exit=True)
+            emit_error('could not open file "{}".'.format(path), exit=True)
 
-    return parse(program, fpath=fpath, expand_includes=expand_includes, visited=visited)
+    return parse(program, path=path, includes=includes, visited=visited)
 
 
 def convert_tokens(ops, base_location):
@@ -143,6 +124,39 @@ def convert_tokens(ops, base_location):
             else:
                 op.args[j] = Token(arg.type, arg, augment_location(base_location, arg))
         ops[i] = op._replace(name=name)
+
+
+def expand_includes(ops, path, *, visited=None):
+    """Scan the list of ops and replace any #include "foo.hera" statement with the
+    parsed contents of foo.hera.
+
+    `path` is the path of the including file, which is necessary for determining the
+    correct base path, e.g. #include "lib.hera" in foo/main.hera resolves to
+    foo/lib.hera, but #include "lib.hera" in bar/main.hera resolves to bar/lib.hera.
+
+    `visited` is the set of file paths that have already been visited.
+    """
+    expanded_ops = []
+    for op in ops:
+        if op.name == "#include" and len(op.args) == 1:
+            if op.args[0].startswith("<"):
+                # TODO: Probably need to handle these somehow.
+                continue
+
+            # Strip off the leading and trailing quote.
+            include_path = op.args[0][1:-1]
+            include_path = os.path.join(os.path.dirname(path), include_path)
+
+            if get_canonical_path(include_path) in visited:
+                # TODO: Do I _need_ to exit immediately here, or can I catch more
+                # errors?
+                emit_error("recursive include", loc=op.args[0].location, exit=True)
+
+            included_ops = parse_file(include_path, visited=visited)
+            expanded_ops.extend(included_ops)
+        else:
+            expanded_ops.append(op)
+    return expanded_ops
 
 
 class TreeToOplist(Transformer):
