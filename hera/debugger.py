@@ -166,12 +166,14 @@ class Debugger:
             print("continue takes no arguments.")
             return
 
-        while self.vm.pc < len(self.program) and self.vm.pc not in self.breakpoints:
+        while True:
             opc = self.vm.pc
             self.vm.exec_one(self.program[self.vm.pc])
             if self.vm.pc == opc:
                 print("Program has finished executing.")
                 return
+            elif self.vm.pc >= len(self.program) or self.vm.pc in self.breakpoints:
+                break
 
         self.print_current_op()
 

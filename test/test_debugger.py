@@ -137,6 +137,10 @@ def test_execute_continue_with_breakpoint(debugger):
     assert debugger.vm.registers[3] == 0
     assert debugger.vm.pc == 4
 
+    # Make sure continuing again doesn't loop on the same instruction.
+    debugger.handle_command("continue")
+    assert debugger.vm.pc == 5
+
 
 def test_execute_continue_without_breakpoint(debugger, capsys):
     should_continue = debugger.handle_command("continue")
