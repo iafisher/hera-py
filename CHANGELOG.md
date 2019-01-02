@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - Use of undefined labels gives proper error message instead of Python exception.
 - `continue` in debugger doesn't get stuck on breakpoints.
+- `break` debugging command now accepts labels as arguments.
 
 
 ## [0.4.0] - 2019-01-02
