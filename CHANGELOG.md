@@ -6,12 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 **NOTE**: As permitted by semantic versioning, backward compatibility is NOT maintained for initial development, i.e. releases before 1.0.0.
 
 ## [Unreleased]
+Nothing yet.
+
+
+## [0.4.0] - 2019-01-02
 ### Added
+- Interactive debugging!
 - Support for `PC_ret` and `FP_alt` named registers.
 - Support for `#include` directive.
+- Runtime errors for use of SWI and RTI instructions now show line of code, and are only emitted once per program run.
 
 ### Fixed
 - DSKIP with a named constant argument works correctly.
+- Symbols (labels, constants and data labels) cannot be redefined.
+
 
 ## [0.3.0] - 2018-12-14
 ### Added
@@ -32,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Removed
 - `--no-dump-state` flag (use `--quiet` instead).
 
+
 ## [0.2.0] - 2018-11-14
 ### Added
 - Data statements: `CONSTANT`, `DLABEL`, `INTEGER`, `LP_STRING`, and `DSKIP`.
@@ -40,9 +49,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - The `assembly` subcommand has been renamed to `preprocess`.
 
+
 ## [0.1.1] - 2018-11-09
 ### Added
 - Support for Python 3.4 and 3.5.
+
 
 ## [0.1.0] - 2018-11-09
 Initial release with support for all HERA instructions and pseudo-instructions, excluding data statements.
