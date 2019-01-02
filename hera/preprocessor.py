@@ -1,15 +1,17 @@
 """Preprocess HERA programs to convert pseudo-instructions and resolve labels.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: December 2018
+Version: January 2019
 """
+from typing import Dict, List
+
 from .data import Op, Token
 from .utils import is_symbol, REGISTER_BRANCHES, to_u16
 
 
-def preprocess(program, symtab):
-    """Preprocess the program (a list of Op objects) into valid input for the
-    exec_many method on the VirtualMachine class.
+def preprocess(program: List[Op], symtab: Dict[str, int]) -> List[Op]:
+    """Preprocess the program  into valid input for the exec_many method on the
+    VirtualMachine class.
 
     This function does the following
         - Replaces pseudo-instructions with real ones.
@@ -23,7 +25,7 @@ def preprocess(program, symtab):
     return program
 
 
-def substitute_label(op, symtab):
+def substitute_label(op: Op, symtab: Dict[str, int]) -> Op:
     """Substitute any label in the instruction with its concrete value."""
     for i, arg in enumerate(op.args):
         if isinstance(arg, Token) and arg.type == "SYMBOL":
@@ -31,7 +33,7 @@ def substitute_label(op, symtab):
     return op
 
 
-def convert(op):
+def convert(op: Op) -> List[Op]:
     """Convert a pseudo-instruction into a list of real instructions."""
     if op.name in REGISTER_BRANCHES and isinstance(op.args[0], int):
         lbl = op.args[0]

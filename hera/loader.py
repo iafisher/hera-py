@@ -2,19 +2,20 @@
 file.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: December 2018
+Version: January 2019
 """
 import sys
+from typing import List
 
 from . import config, preprocessor
+from .data import Op
 from .parser import parse_file
 from .symtab import get_symtab
 from .typechecker import typecheck
 
 
-def load_program(path, *, preprocess=True):
-    """Read the HERA program from the file at `path` and return the program represented
-    as a list of Op objects.
+def load_program(path: str, *, preprocess=True) -> List[Op]:
+    """Read the HERA program from the file at `path` and return the program.
 
     This function combines parsing, type-checking and preprocessing (if `preprocess` is
     set to True).

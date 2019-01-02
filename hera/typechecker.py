@@ -3,9 +3,11 @@
 `typecheck` is the public interface of this module.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: December 2018
+Version: January 2019
 """
-from .data import Token
+from typing import Dict, List
+
+from .data import Op, Token
 from .utils import (
     DATA_STATEMENTS,
     emit_error,
@@ -15,7 +17,7 @@ from .utils import (
 )
 
 
-def typecheck(program, symtab):
+def typecheck(program: List[Op], symtab: Dict[str, int]) -> None:
     """Type-check the program and emit errors as appropriate."""
     current_file = None
     end_of_data = False
@@ -45,7 +47,7 @@ def typecheck(program, symtab):
                 emit_error(msg, loc=op.args[0].location)
 
 
-def typecheck_one(op, symtab):
+def typecheck_one(op: Op, symtab: Dict[str, int]) -> None:
     """Type-check a single HERA operation and emit errors as appropriate."""
     params = _types_map.get(op.name)
     if params is not None:

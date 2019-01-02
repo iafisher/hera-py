@@ -1,3 +1,11 @@
+"""Create symbol tables from HERA programs.
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: January 2019
+"""
+from typing import Dict, List
+
+from .data import Op
 from .preprocessor import convert
 from .utils import emit_error
 
@@ -6,11 +14,11 @@ from .utils import emit_error
 HERA_DATA_START = 0xC001
 
 
-def get_symtab(program):
+def get_symtab(program: List[Op]) -> Dict[str, int]:
     """Return the program's symbol table, a dictionary mapping from strings to Label,
     DataLabel and Constant objects (all subclasses of int).
     """
-    symtab = {}
+    symtab = {}  # type: Dict[str, int]
     pc = 0
     dc = HERA_DATA_START
     for op in program:
@@ -44,7 +52,7 @@ def get_symtab(program):
     return symtab
 
 
-def update_labels(labels, k, v, op):
+def update_labels(labels: Dict[str, int], k: str, v: int, op: Op) -> None:
     if k in labels:
         emit_error(
             "symbol `{}` has already been defined".format(k), loc=op.name.location

@@ -3,11 +3,12 @@
 `parse` and its wrapper `parse_file` are the two functions intended for public use.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: December 2018
+Version: January 2019
 """
 import os
 import re
 import sys
+from typing import List
 
 from lark import Lark, Token as LarkToken, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
@@ -16,9 +17,9 @@ from .data import IntToken, Location, Op, Token
 from .utils import emit_error, emit_warning, get_canonical_path, is_register
 
 
-def parse(text, *, path=None, includes=True, visited=None):
-    """Parse a HERA program from a string into a list of Op objects. If errors are
-    encountered while parsing, an error message is emitted and the whole program exits.
+def parse(text: str, *, path=None, includes=True, visited=None) -> List[Op]:
+    """Parse a HERA program. If errors are encountered while parsing, an error message
+    is emitted and the whole program exits.
 
     `path` is the path of the file being parsed, as it will appear in error and
     debugging messages. It defaults to "<string>".
@@ -71,13 +72,16 @@ def parse(text, *, path=None, includes=True, visited=None):
     return ops
 
 
-def parse_file(path, *, includes=True, allow_stdin=False, visited=None):
+def parse_file(
+    path: str, *, includes=True, allow_stdin=False, visited=None
+) -> List[Op]:
     """Convenience function for parsing a HERA file. Reads the contents of the file and
     delegates parsing to the `parse` function.
 
     `allow_stdin` should be set to True if you wish the file path "-" to be interpreted
-    as standard input instead of a file with that actual name. See `parse` for the
-    meaning of `includes` and `visited`.
+    as standard input instead of a file with the actual name "-".
+    
+    See `parse` for the meaning of `includes` and `visited`.
     """
     if allow_stdin and path == "-":
         try:
@@ -99,7 +103,7 @@ def parse_file(path, *, includes=True, allow_stdin=False, visited=None):
     return parse(program, path=path, includes=includes, visited=visited)
 
 
-def convert_tokens(ops, base_location):
+def convert_tokens(ops: List[Op], base_location: Location) -> None:
     """Convert all tokens in the list of ops from Lark Token objects to HERA Token and
     IntToken objects, tagged with `base_location`.
     """
@@ -126,7 +130,7 @@ def convert_tokens(ops, base_location):
         ops[i] = op._replace(name=name)
 
 
-def expand_includes(ops, path, *, visited=None):
+def expand_includes(ops: List[Op], path: str, *, visited=None) -> List[Op]:
     """Scan the list of ops and replace any #include "foo.hera" statement with the
     parsed contents of foo.hera.
 

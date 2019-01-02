@@ -27,9 +27,6 @@ from .utils import op_to_string, print_register_debug
 from .vm import VirtualMachine
 
 
-LINES = None
-
-
 def main(argv=None, vm=None):
     """The main entry point into hera-py.
 

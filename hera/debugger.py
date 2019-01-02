@@ -3,16 +3,18 @@
 `debug` is the sole public function.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: December 2018
+Version: January 2019
 """
 import re
 import readline
+from typing import List
 
-from hera.utils import op_to_string, print_register_debug
-from hera.vm import VirtualMachine
+from .data import Op
+from .utils import op_to_string, print_register_debug
+from .vm import VirtualMachine
 
 
-def debug(program):
+def debug(program: List[Op]) -> None:
     """Start the debug loop."""
     debugger = Debugger(program)
     debugger.loop()
