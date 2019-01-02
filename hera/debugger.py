@@ -10,6 +10,7 @@ import readline
 from typing import Dict, List
 
 from .data import Op
+from .symtab import Label
 from .utils import op_to_string, print_register_debug
 from .vm import VirtualMachine
 
@@ -224,15 +225,17 @@ class Debugger:
     def resolve_location(self, b):
         """Resolve a user-supplied location string into an instruction number"""
         try:
-            b = int(b)
+            lineno = int(b)
         except ValueError:
             try:
-                return self.symbol_table[b]
-            except KeyError:
+                opno = self.symbol_table[b]
+                assert isinstance(opno, Label)
+                return opno
+            except (KeyError, AssertionError):
                 raise ValueError("could not locate label `{}`.".format(b)) from None
         else:
             for i, op in enumerate(self.program):
-                if op.name.location.line == b:
+                if op.name.location.line == lineno:
                     return i
 
             raise ValueError("could not find corresponding line.")
@@ -244,6 +247,13 @@ class Debugger:
         op = self.program[b].original or self.program[b]
         if op.name.location is not None:
             path = "<stdin>" if op.name.location.path == "-" else op.name.location.path
-            return path + ":" + str(op.name.location.line)
+            loc = path + ":" + str(op.name.location.line)
         else:
-            return str(op.name.location.line)
+            loc = str(op.name.location.line)
+
+        # Look for a label corresponding to the breakpoint.
+        for symbol, value in self.symbol_table.items():
+            if value == b and isinstance(value, Label):
+                return "{} ({})".format(loc, symbol)
+
+        return loc

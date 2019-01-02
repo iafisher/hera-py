@@ -32,12 +32,12 @@ def test_print_breakpoints_with_no_breakpoints_set(debugger, capsys):
 def test_set_breakpoint(debugger):
     assert len(debugger.breakpoints) == 0
 
-    should_continue = debugger.handle_command("break 2")
+    should_continue = debugger.handle_command("break 4")
 
     assert should_continue
     assert len(debugger.breakpoints) == 1
     assert 0 in debugger.breakpoints
-    assert debugger.breakpoints[0] == "test/assets/unit/debugger.hera:2"
+    assert debugger.breakpoints[0] == "test/assets/unit/debugger.hera:4"
 
 
 def test_set_breakpoint_not_on_line_of_code(debugger, capsys):
@@ -66,7 +66,7 @@ def test_execute_break_with_too_many_args(debugger, capsys):
 
 def test_execute_abbreviated_break(debugger):
     with patch("hera.debugger.Debugger.exec_break") as mock_exec_break:
-        debugger.handle_command("break 7")
+        debugger.handle_command("b 7")
         assert mock_exec_break.call_count == 1
 
         args = mock_exec_break.call_args[0]
@@ -84,7 +84,7 @@ def test_execute_next(debugger):
     should_continue = debugger.handle_command("next")
 
     assert should_continue
-    assert debugger.vm.registers[1] == 10
+    assert debugger.vm.registers[1] == 3
     assert debugger.vm.pc == 2
 
 
@@ -132,8 +132,8 @@ def test_execute_continue_with_breakpoint(debugger):
     should_continue = debugger.handle_command("continue")
 
     assert should_continue
-    assert debugger.vm.registers[1] == 10
-    assert debugger.vm.registers[2] == 32
+    assert debugger.vm.registers[1] == 3
+    assert debugger.vm.registers[2] == 39
     assert debugger.vm.registers[3] == 0
     assert debugger.vm.pc == 4
 
@@ -146,8 +146,8 @@ def test_execute_continue_without_breakpoint(debugger, capsys):
     should_continue = debugger.handle_command("continue")
 
     assert should_continue
-    assert debugger.vm.registers[1] == 10
-    assert debugger.vm.registers[2] == 32
+    assert debugger.vm.registers[1] == 3
+    assert debugger.vm.registers[2] == 39
     assert debugger.vm.registers[3] == 42
     assert debugger.vm.pc == 5
     assert capsys.readouterr().out == "Program has finished executing.\n"
@@ -243,16 +243,22 @@ def test_execute_unknown_command(debugger, capsys):
 
 
 def test_resolve_location_with_line_number(debugger):
-    assert debugger.resolve_location(2) == 0
+    assert debugger.resolve_location(4) == 0
 
 
 def test_resolve_location_with_label(debugger):
     assert debugger.resolve_location("add") == 4
 
 
+def test_resolve_location_fails_with_constant(debugger):
+    with pytest.raises(ValueError) as e:
+        debugger.resolve_location("N")
+    assert "could not locate label `N`" in str(e)
+
+
 def test_resolve_location_out_of_range(debugger):
     with pytest.raises(ValueError) as e:
-        debugger.resolve_location(10)
+        debugger.resolve_location(100)
     assert "could not find corresponding line" in str(e)
 
 
@@ -264,7 +270,15 @@ def test_resolve_location_invalid_format(debugger):
 
 def test_get_breakpoint_name(debugger):
     # Zero'th instruction corresponds to second line.
-    assert debugger.get_breakpoint_name(0) == "test/assets/unit/debugger.hera:2"
+    assert debugger.get_breakpoint_name(0) == "test/assets/unit/debugger.hera:4"
+
+
+def test_get_breakpoint_name_with_label(debugger):
+    assert debugger.get_breakpoint_name(4) == "test/assets/unit/debugger.hera:7 (add)"
+
+
+def test_get_breakpoint_name_does_not_include_constant(debugger):
+    assert debugger.get_breakpoint_name(3) == "test/assets/unit/debugger.hera:5"
 
 
 def test_print_current_op(debugger, capsys):
@@ -272,6 +286,5 @@ def test_print_current_op(debugger, capsys):
 
     captured = capsys.readouterr()
     assert (
-        captured.out
-        == "[test/assets/unit/debugger.hera, line 2]\n\n0000  SET(R1, 10)\n"
+        captured.out == "[test/assets/unit/debugger.hera, line 4]\n\n0000  SET(R1, 3)\n"
     )
