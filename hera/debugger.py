@@ -7,16 +7,16 @@ Version: January 2019
 """
 import re
 import readline
-from typing import List
+from typing import Dict, List
 
 from .data import Op
 from .utils import op_to_string, print_register_debug
 from .vm import VirtualMachine
 
 
-def debug(program: List[Op]) -> None:
+def debug(program: List[Op], symbol_table: Dict[str, int]) -> None:
     """Start the debug loop."""
-    debugger = Debugger(program)
+    debugger = Debugger(program, symbol_table)
     debugger.loop()
 
 
@@ -48,8 +48,9 @@ class Debugger:
     `debug` function instead of this class.
     """
 
-    def __init__(self, program):
+    def __init__(self, program, symbol_table):
         self.program = program
+        self.symbol_table = symbol_table
         # A map from instruction numbers (i.e., possible values of the program counter)
         # to human-readable line numbers.
         self.breakpoints = {}

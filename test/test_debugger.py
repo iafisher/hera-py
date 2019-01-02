@@ -7,10 +7,10 @@ from hera.loader import load_program
 
 @pytest.fixture
 def debugger():
-    return Debugger(SAMPLE_PROGRAM)
+    return Debugger(SAMPLE_PROGRAM, SYMBOL_TABLE)
 
 
-SAMPLE_PROGRAM = load_program("test/assets/unit/debugger.hera")
+SAMPLE_PROGRAM, SYMBOL_TABLE = load_program("test/assets/unit/debugger.hera")
 
 
 def test_print_breakpoints(debugger, capsys):

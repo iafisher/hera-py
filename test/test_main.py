@@ -59,6 +59,11 @@ def test_main_preprocess_non_existent_file(capsys):
     assert 'file "unicorn.hera" does not exist' in capsys.readouterr().err
 
 
+def test_main_debug(capsys):
+    with patch("sys.stdin", StringIO("quit")):
+        main(["debug", "test/assets/unit/debugger.hera"])
+
+
 def test_execute_from_stdin():
     vm = VirtualMachine()
 

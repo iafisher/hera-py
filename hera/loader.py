@@ -5,7 +5,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
 import sys
-from typing import List
+from typing import Dict, List, Tuple
 
 from .data import Op
 from .parser import parse_file
@@ -14,9 +14,9 @@ from .symtab import get_symbol_table
 from .typechecker import typecheck
 
 
-def load_program(path: str) -> List[Op]:
+def load_program(path: str) -> Tuple[List[Op], Dict[str, int]]:
     """Read the HERA program from the file at `path`, parse it, type-check it, and
-    preprocess it.
+    preprocess it. A tuple of (program, symbol_table) is returned.
 
     The return value of this function is valid input to the VirtualMachine.exec_many
     method.
@@ -33,4 +33,4 @@ def load_program(path: str) -> List[Op]:
         sys.exit(3)
     program = preprocess(program, symbol_table)
 
-    return program
+    return program, symbol_table

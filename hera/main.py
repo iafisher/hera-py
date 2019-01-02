@@ -59,8 +59,8 @@ def main(argv=None, vm=None):
 
 def main_debug(path):
     """Debug the program."""
-    program = load_program(path)
-    debug(program)
+    program, symbol_table = load_program(path)
+    debug(program, symbol_table)
 
 
 def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=None):
@@ -75,7 +75,7 @@ def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=Non
     if vm is None:
         vm = VirtualMachine()
 
-    program = load_program(path)
+    program, _ = load_program(path)
 
     vm.exec_many(program, lines=lines_to_exec)
 
@@ -87,7 +87,7 @@ def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=Non
 
 def main_preprocess(path):
     """Preprocess the program and print it to standard output."""
-    program = load_program(path)
+    program, _ = load_program(path)
     print(program_to_string(program))
 
 
