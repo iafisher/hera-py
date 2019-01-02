@@ -119,7 +119,7 @@ class VirtualMachine:
 
     def exec_one(self, op):
         """Execute a single operation."""
-        self.location = op.name.location
+        self.location = getattr(op.name, "location", None)
 
         try:
             handler = getattr(self, "exec_" + op.name.lower())
