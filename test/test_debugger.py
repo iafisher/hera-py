@@ -53,7 +53,7 @@ def test_set_unparseable_breakpoint(debugger, capsys):
 
     assert should_continue
     assert len(debugger.breakpoints) == 0
-    assert capsys.readouterr().out == "Error: could not parse argument.\n"
+    assert capsys.readouterr().out == "Error: could not locate label `$$$`.\n"
 
 
 def test_execute_break_with_too_many_args(debugger, capsys):
@@ -238,8 +238,12 @@ def test_execute_unknown_command(debugger, capsys):
     assert capsys.readouterr().out == "whatever is not a known command.\n"
 
 
-def test_resolve_location(debugger):
+def test_resolve_location_with_line_number(debugger):
     assert debugger.resolve_location(2) == 0
+
+
+def test_resolve_location_with_label(debugger):
+    assert debugger.resolve_location("add") == 4
 
 
 def test_resolve_location_out_of_range(debugger):
@@ -251,7 +255,7 @@ def test_resolve_location_out_of_range(debugger):
 def test_resolve_location_invalid_format(debugger):
     with pytest.raises(ValueError) as e:
         debugger.resolve_location("a")
-    assert "could not parse argument" in str(e)
+    assert "could not locate label `a`" in str(e)
 
 
 def test_get_breakpoint_name(debugger):

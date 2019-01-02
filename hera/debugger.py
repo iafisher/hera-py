@@ -224,13 +224,16 @@ class Debugger:
         try:
             b = int(b)
         except ValueError:
-            raise ValueError("could not parse argument.") from None
+            try:
+                return self.symbol_table[b]
+            except KeyError:
+                raise ValueError("could not locate label `{}`.".format(b)) from None
+        else:
+            for i, op in enumerate(self.program):
+                if op.name.location.line == b:
+                    return i
 
-        for i, op in enumerate(self.program):
-            if op.name.location.line == b:
-                return i
-
-        raise ValueError("could not find corresponding line.")
+            raise ValueError("could not find corresponding line.")
 
     def get_breakpoint_name(self, b):
         """Turn an instruction number into a human-readable location string with the
