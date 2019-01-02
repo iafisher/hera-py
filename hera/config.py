@@ -5,6 +5,10 @@
 WARNING_COUNT = 0
 
 
+# Memory address of the start of the data segment for HERA programs.
+HERA_DATA_START = 0xC001
+
+
 def _make_ansi(*params):
     return "\033[" + ";".join(map(str, params)) + "m"
 

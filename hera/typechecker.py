@@ -17,7 +17,7 @@ from .utils import (
 )
 
 
-def typecheck(program: List[Op], symtab: Dict[str, int]) -> True:
+def typecheck(program: List[Op], symbol_table: Dict[str, int]) -> True:
     """Type-check the program and emit errors as appropriate. Return True if the
     program is well-typed.
     """
@@ -42,7 +42,7 @@ def typecheck(program: List[Op], symtab: Dict[str, int]) -> True:
                 emit_error("data statement after instruction", loc=op.name.location)
                 error_free = False
 
-        if not typecheck_one(op, symtab):
+        if not typecheck_one(op, symbol_table):
             error_free = False
 
         if op.name in RELATIVE_BRANCHES:
@@ -55,19 +55,19 @@ def typecheck(program: List[Op], symtab: Dict[str, int]) -> True:
     return error_free
 
 
-def typecheck_one(op: Op, symtab: Dict[str, int]) -> bool:
+def typecheck_one(op: Op, symbol_table: Dict[str, int]) -> bool:
     """Type-check a single HERA operation and emit error messages as appropriate. Return
     True if no errors were detected.
     """
     params = _types_map.get(op.name)
     if params is not None:
-        return check_types(op.name, params, op.args, symtab)
+        return check_types(op.name, params, op.args, symbol_table)
     else:
         emit_error("unknown instruction `{}`".format(op.name), loc=op.name.location)
         return False
 
 
-def check_types(name, expected, got, symtab):
+def check_types(name, expected, got, symbol_table):
     """Verify that the given args match the expected ones and emit error messages as
     appropriate. Return True if no errors were detected.
 
@@ -95,7 +95,7 @@ def check_types(name, expected, got, symtab):
     ordinals = ["first", "second", "third"]
     for ordinal, pattern, arg in zip(ordinals, expected, got):
         prefix = "{} arg to {} ".format(ordinal, name)
-        error_msg = check_one_type(pattern, arg, symtab)
+        error_msg = check_one_type(pattern, arg, symbol_table)
         if error_msg:
             emit_error(prefix + error_msg, loc=arg.location)
             errors = True
@@ -103,7 +103,7 @@ def check_types(name, expected, got, symtab):
     return not errors
 
 
-def check_one_type(pattern, arg, symtab):
+def check_one_type(pattern, arg, symbol_table):
     """Verify that the argument matches the pattern. Return a string stating the error
     if it doesn't, return None otherwise.
     """
@@ -142,7 +142,7 @@ def check_one_type(pattern, arg, symtab):
     elif isinstance(pattern, range):
         if is_symbol(arg):
             try:
-                arg = symtab[arg]
+                arg = symbol_table[arg]
             except KeyError:
                 return "undefined constant"
 

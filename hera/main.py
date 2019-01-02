@@ -70,6 +70,8 @@ def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=Non
     A virtual machine instance may be passed in for testing purposes. If it is not, a
     new one is instantiated. The virtual machine is returned.
     """
+    config.WARNING_COUNT = 0
+
     if vm is None:
         vm = VirtualMachine()
 

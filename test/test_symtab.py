@@ -1,13 +1,13 @@
 from hera.data import Op, Token
-from hera.symtab import get_symtab, HERA_DATA_START
+from hera.symtab import get_symbol_table, HERA_DATA_START
 
 
 def SYM(s):
     return Token("SYMBOL", s)
 
 
-def test_get_symtab_with_example():
-    labels = get_symtab(
+def test_get_symbol_table_with_example():
+    symbol_table = get_symbol_table(
         [
             Op("DLABEL", ["data"]),
             Op("INTEGER", [42]),
@@ -19,15 +19,15 @@ def test_get_symtab_with_example():
             Op("LABEL", ["bottom"]),
         ]
     )
-    assert len(labels) == 4
-    assert labels["data"] == HERA_DATA_START
-    assert labels["data2"] == HERA_DATA_START + 2
-    assert labels["top"] == 0
-    assert labels["bottom"] == 1
+    assert len(symbol_table) == 4
+    assert symbol_table["data"] == HERA_DATA_START
+    assert symbol_table["data2"] == HERA_DATA_START + 2
+    assert symbol_table["top"] == 0
+    assert symbol_table["bottom"] == 1
 
 
-def test_get_symtab_with_dskip():
-    labels = get_symtab(
+def test_get_symbol_table_with_dskip():
+    symbol_table = get_symbol_table(
         [
             Op("DLABEL", ["data"]),
             Op("INTEGER", [42]),
@@ -36,13 +36,13 @@ def test_get_symtab_with_dskip():
             Op("INTEGER", [84]),
         ]
     )
-    assert len(labels) == 2
-    assert labels["data"] == HERA_DATA_START
-    assert labels["data2"] == HERA_DATA_START + 11
+    assert len(symbol_table) == 2
+    assert symbol_table["data"] == HERA_DATA_START
+    assert symbol_table["data2"] == HERA_DATA_START + 11
 
 
-def test_get_symtab_with_dskip_and_constant():
-    labels = get_symtab(
+def test_get_symbol_table_with_dskip_and_constant():
+    symbol_table = get_symbol_table(
         [
             Op("CONSTANT", ["N", 50]),
             Op("DLABEL", ["x"]),
@@ -50,14 +50,14 @@ def test_get_symtab_with_dskip_and_constant():
             Op("DLABEL", ["y"]),
         ]
     )
-    assert len(labels) == 3
-    assert labels["N"] == 50
-    assert labels["x"] == HERA_DATA_START
-    assert labels["y"] == HERA_DATA_START + 50
+    assert len(symbol_table) == 3
+    assert symbol_table["N"] == 50
+    assert symbol_table["x"] == HERA_DATA_START
+    assert symbol_table["y"] == HERA_DATA_START + 50
 
 
-def test_get_symtab_with_lp_string():
-    labels = get_symtab(
+def test_get_symbol_table_with_lp_string():
+    symbol_table = get_symbol_table(
         [
             Op("DLABEL", ["S"]),
             Op("LP_STRING", ["hello"]),
@@ -65,13 +65,13 @@ def test_get_symtab_with_lp_string():
             Op("INTEGER", [42]),
         ]
     )
-    assert len(labels) == 2
-    assert labels["S"] == HERA_DATA_START
-    assert labels["X"] == HERA_DATA_START + 6
+    assert len(symbol_table) == 2
+    assert symbol_table["S"] == HERA_DATA_START
+    assert symbol_table["X"] == HERA_DATA_START + 6
 
 
-def test_get_symtab_with_empty_lp_string():
-    labels = get_symtab(
+def test_get_symbol_table_with_empty_lp_string():
+    symbol_table = get_symbol_table(
         [
             Op("DLABEL", ["S"]),
             Op("LP_STRING", [""]),
@@ -79,25 +79,25 @@ def test_get_symtab_with_empty_lp_string():
             Op("INTEGER", [42]),
         ]
     )
-    assert len(labels) == 2
-    assert labels["S"] == HERA_DATA_START
-    assert labels["X"] == HERA_DATA_START + 1
+    assert len(symbol_table) == 2
+    assert symbol_table["S"] == HERA_DATA_START
+    assert symbol_table["X"] == HERA_DATA_START + 1
 
 
-def test_get_symtab_with_invalid_instructions():
-    labels = get_symtab([Op("CONSTANT", ["N"]), Op("CONSTANT", ["X", 42])])
-    assert len(labels) == 1
-    assert labels["X"] == 42
+def test_get_symbol_table_with_invalid_instructions():
+    symbol_table = get_symbol_table([Op("CONSTANT", ["N"]), Op("CONSTANT", ["X", 42])])
+    assert len(symbol_table) == 1
+    assert symbol_table["X"] == 42
 
 
-def test_get_symtab_with_too_large_dskip(capsys):
-    get_symtab([Op(SYM("DSKIP"), [1000000000])])
+def test_get_symbol_table_with_too_large_dskip(capsys):
+    get_symbol_table([Op(SYM("DSKIP"), [1000000000])])
 
     assert "past the end of available memory" in capsys.readouterr().err
 
 
-def test_get_symtab_with_redefinitions_of_symbols(capsys):
-    get_symtab(
+def test_get_symbol_table_with_redefinitions_of_symbols(capsys):
+    get_symbol_table(
         [
             Op(SYM("CONSTANT"), ["A", 100]),
             Op(SYM("CONSTANT"), ["B", 200]),

@@ -9,7 +9,7 @@ from .data import Op, Token
 from .utils import is_symbol, REGISTER_BRANCHES, to_u16
 
 
-def preprocess(program: List[Op], symtab: Dict[str, int]) -> List[Op]:
+def preprocess(program: List[Op], symbol_table: Dict[str, int]) -> List[Op]:
     """Preprocess the program  into valid input for the exec_many method on the
     VirtualMachine class.
 
@@ -17,7 +17,7 @@ def preprocess(program: List[Op], symtab: Dict[str, int]) -> List[Op]:
         - Replaces pseudo-instructions with real ones.
         - Resolves labels into their line numbers.
     """
-    program = [substitute_label(op, symtab) for op in program]
+    program = [substitute_label(op, symbol_table) for op in program]
     program = [
         op._replace(original=old_op) for old_op in program for op in convert(old_op)
     ]
@@ -25,11 +25,11 @@ def preprocess(program: List[Op], symtab: Dict[str, int]) -> List[Op]:
     return program
 
 
-def substitute_label(op: Op, symtab: Dict[str, int]) -> Op:
+def substitute_label(op: Op, symbol_table: Dict[str, int]) -> Op:
     """Substitute any label in the instruction with its concrete value."""
     for i, arg in enumerate(op.args):
         if isinstance(arg, Token) and arg.type == "SYMBOL":
-            op.args[i] = symtab[arg]
+            op.args[i] = symbol_table[arg]
     return op
 
 

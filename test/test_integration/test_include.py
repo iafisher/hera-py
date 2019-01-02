@@ -1,7 +1,7 @@
 import pytest
 
+from hera.config import HERA_DATA_START
 from hera.main import main
-from hera.symtab import HERA_DATA_START
 from hera.vm import VirtualMachine
 
 
