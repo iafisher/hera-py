@@ -119,6 +119,9 @@ def check_one_type(pattern, arg, symbol_table):
             register_to_index(arg)
         except ValueError:
             return "not a valid register"
+    elif pattern == SYMBOL:
+        if not is_symbol(arg):
+            return "not a symbol"
     elif pattern == REGISTER_OR_LABEL:
         if not isinstance(arg, Token):
             return "not a register or label"
@@ -133,9 +136,15 @@ def check_one_type(pattern, arg, symbol_table):
                 return "not a valid register"
         elif arg.type != "SYMBOL":
             return "not a register or label"
+        else:
+            if arg not in symbol_table:
+                return "is undefined label"
     elif pattern == LABEL:
-        if not isinstance(arg, Token) or arg.type != "SYMBOL":
+        if not is_symbol(arg):
             return "not a symbol"
+
+        if arg not in symbol_table:
+            return "is undefined label"
     elif pattern == STRING:
         if not isinstance(arg, Token) or arg.type != "STRING":
             return "not a string"
@@ -144,7 +153,7 @@ def check_one_type(pattern, arg, symbol_table):
             try:
                 arg = symbol_table[arg]
             except KeyError:
-                return "undefined constant"
+                return "is undefined constant"
 
         if not isinstance(arg, int):
             return "not an integer"
@@ -164,6 +173,7 @@ REGISTER = "r"
 REGISTER_OR_LABEL = "rl"
 LABEL = "l"
 STRING = "s"
+SYMBOL = "sym"
 U4 = range(0, 2 ** 4)
 U5 = range(0, 2 ** 5)
 U16 = range(0, 2 ** 16)
@@ -250,10 +260,10 @@ _types_map = {
     "FLAGS": (REGISTER,),
     "NOP": (),
     "HALT": (),
-    "LABEL": (LABEL,),
+    "LABEL": (SYMBOL,),
     # Data statements
-    "CONSTANT": (LABEL, I16),
-    "DLABEL": (LABEL,),
+    "CONSTANT": (SYMBOL, I16),
+    "DLABEL": (SYMBOL,),
     "INTEGER": (I16,),
     "LP_STRING": (STRING,),
     "DSKIP": (U16,),

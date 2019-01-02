@@ -9,6 +9,7 @@ from hera.typechecker import (
     REGISTER,
     REGISTER_OR_LABEL,
     STRING,
+    SYMBOL,
     typecheck,
     typecheck_one,
     U4,
@@ -98,12 +99,12 @@ def test_check_one_type_with_range_object():
 
 
 def test_check_one_type_with_constant_symbol():
-    assert check_one_type(range(0, 100), Token("SYMBOL", "n"), {"n": 42}) is None
+    assert check_one_type(range(0, 100), SYM("n"), {"n": 42}) is None
 
 
 def test_check_one_type_with_register_or_label():
     assert check_one_type(REGISTER_OR_LABEL, 5, {}) == "not a register or label"
-    assert check_one_type(REGISTER_OR_LABEL, Token("SYMBOL", "n"), {"n": 42}) is None
+    assert check_one_type(REGISTER_OR_LABEL, SYM("n"), {"n": 42}) is None
     assert check_one_type(REGISTER_OR_LABEL, R("R1"), {}) is None
 
 
@@ -113,12 +114,22 @@ def test_check_one_type_with_invalid_register():
 
 def test_check_one_type_with_label():
     assert check_one_type(LABEL, 10, {}) == "not a symbol"
-    assert check_one_type(LABEL, Token("SYMBOL", "n"), {"n": 42}) is None
+    assert check_one_type(LABEL, SYM("n"), {"n": 42}) is None
+
+
+def test_check_one_type_with_undefined_label():
+    assert check_one_type(LABEL, SYM("n"), {}) == "is undefined label"
+    assert check_one_type(REGISTER_OR_LABEL, SYM("n"), {}) == "is undefined label"
 
 
 def test_check_one_type_with_string():
     assert check_one_type(STRING, 10, {}) == "not a string"
     assert check_one_type(STRING, Token("STRING", "hello"), {}) is None
+
+
+def test_check_one_type_with_symbol():
+    assert check_one_type(SYMBOL, 10, {}) == "not a symbol"
+    assert check_one_type(SYMBOL, SYM("x"), {}) is None
 
 
 def test_typecheck_SET():
@@ -298,21 +309,21 @@ def test_typecheck_STORE():
 def test_typecheck_CALL():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("CALL", [R("R12"), R("R11")]), {})
-        assert typecheck_one(Op("CALL", [R("R12"), SYM("f")]), {})
+        assert typecheck_one(Op("CALL", [R("R12"), SYM("f")]), {"f": 0})
         assert mock_emit_error.call_count == 0
 
 
 def test_typecheck_RETURN():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("RETURN", [R("R12"), R("R11")]), {})
-        assert typecheck_one(Op("RETURN", [R("R12"), SYM("f")]), {})
+        assert typecheck_one(Op("RETURN", [R("R12"), SYM("f")]), {"f": 0})
         assert mock_emit_error.call_count == 0
 
 
 def test_typecheck_BR():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BR", [R("R11")]), {})
-        assert typecheck_one(Op("BR", [SYM("l")]), {})
+        assert typecheck_one(Op("BR", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -326,7 +337,7 @@ def test_typecheck_BRR():
 def test_typecheck_BL():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BL", [R("R11")]), {})
-        assert typecheck_one(Op("BL", [SYM("l")]), {})
+        assert typecheck_one(Op("BL", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -340,7 +351,7 @@ def test_typecheck_BLR():
 def test_typecheck_BGE():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BGE", [R("R11")]), {})
-        assert typecheck_one(Op("BGE", [SYM("l")]), {})
+        assert typecheck_one(Op("BGE", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -354,7 +365,7 @@ def test_typecheck_BGER():
 def test_typecheck_BLE():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BLE", [R("R11")]), {})
-        assert typecheck_one(Op("BLE", [SYM("l")]), {})
+        assert typecheck_one(Op("BLE", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -368,7 +379,7 @@ def test_typecheck_BLER():
 def test_typecheck_BG():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BG", [R("R11")]), {})
-        assert typecheck_one(Op("BG", [SYM("l")]), {})
+        assert typecheck_one(Op("BG", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -382,7 +393,7 @@ def test_typecheck_BGR():
 def test_typecheck_BULE():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BULE", [R("R11")]), {})
-        assert typecheck_one(Op("BULE", [SYM("l")]), {})
+        assert typecheck_one(Op("BULE", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -396,7 +407,7 @@ def test_typecheck_BULER():
 def test_typecheck_BUG():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BUG", [R("R11")]), {})
-        assert typecheck_one(Op("BUG", [SYM("l")]), {})
+        assert typecheck_one(Op("BUG", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -410,7 +421,7 @@ def test_typecheck_BUGR():
 def test_typecheck_BZ():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BZ", [R("R11")]), {})
-        assert typecheck_one(Op("BZ", [SYM("l")]), {})
+        assert typecheck_one(Op("BZ", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -424,7 +435,7 @@ def test_typecheck_BZR():
 def test_typecheck_BNZ():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BNZ", [R("R11")]), {})
-        assert typecheck_one(Op("BNZ", [SYM("l")]), {})
+        assert typecheck_one(Op("BNZ", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -438,7 +449,7 @@ def test_typecheck_BNZR():
 def test_typecheck_BC():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BC", [R("R11")]), {})
-        assert typecheck_one(Op("BC", [SYM("l")]), {})
+        assert typecheck_one(Op("BC", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -452,7 +463,7 @@ def test_typecheck_BCR():
 def test_typecheck_BNC():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BNC", [R("R11")]), {})
-        assert typecheck_one(Op("BNC", [SYM("l")]), {})
+        assert typecheck_one(Op("BNC", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -466,7 +477,7 @@ def test_typecheck_BNCR():
 def test_typecheck_BS():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BS", [R("R11")]), {})
-        assert typecheck_one(Op("BS", [SYM("l")]), {})
+        assert typecheck_one(Op("BS", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -480,7 +491,7 @@ def test_typecheck_BSR():
 def test_typecheck_BNS():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BNS", [R("R11")]), {})
-        assert typecheck_one(Op("BNS", [SYM("l")]), {})
+        assert typecheck_one(Op("BNS", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -494,7 +505,7 @@ def test_typecheck_BNSR():
 def test_typecheck_BV():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BV", [R("R11")]), {})
-        assert typecheck_one(Op("BV", [SYM("l")]), {})
+        assert typecheck_one(Op("BV", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
@@ -508,7 +519,7 @@ def test_typecheck_BVR():
 def test_typecheck_BNV():
     with patch("hera.utils._emit_msg") as mock_emit_error:
         assert typecheck_one(Op("BNV", [R("R11")]), {})
-        assert typecheck_one(Op("BNV", [SYM("l")]), {})
+        assert typecheck_one(Op("BNV", [SYM("l")]), {"l": 0})
         assert mock_emit_error.call_count == 0
 
 
