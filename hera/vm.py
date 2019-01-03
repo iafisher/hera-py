@@ -15,27 +15,10 @@ from .utils import (
     REGISTER_BRANCHES,
     register_to_index,
     RELATIVE_BRANCHES,
+    TERNARY_OPS,
     to_u16,
     to_u32,
 )
-
-
-def ternary_op(f):
-    """A decorator for ternary HERA ops. It handles fetching the values of the
-    left and right registers, storing the result in the target register,
-    setting the zero and sign flags, and incrementing the program counter.
-    """
-
-    @functools.wraps(f)
-    def inner(self, target, left, right):
-        left = self.get_register(left)
-        right = self.get_register(right)
-        result = f(self, left, right)
-        self.store_register(target, result)
-        self.set_zero_and_sign(result)
-        self.pc += 1
-
-    return inner
 
 
 def binary_op(f):
@@ -94,30 +77,33 @@ class VirtualMachine:
 
         if op.name in BRANCHES:
             self.exec_branch(op)
+        elif op.name in TERNARY_OPS:
+            self.exec_ternary_op(op)
         else:
-            try:
-                handler = getattr(self, "exec_" + op.name.lower())
-            except AttributeError:
-                raise RuntimeError('unknown instruction "{}"'.format(op.name)) from None
-            else:
-                handler(*op.args)
+            handler = getattr(self, "exec_" + op.name.lower())
+            handler(*op.args)
 
     def exec_branch(self, op):
         name = op.name if op.name in REGISTER_BRANCHES else op.name[:-1]
-        try:
-            should_branch = getattr(self, "should_" + name)()
-        except AttributeError:
-            raise RuntimeError(
-                'could not find branch handler for "{}"'.format(op.name)
-            ) from None
-        else:
-            if should_branch:
-                if op.name in REGISTER_BRANCHES:
-                    self.pc = self.get_register(op.args[0])
-                else:
-                    self.pc += op.args[0]
+        should_branch = getattr(self, "should_" + name)()
+        if should_branch:
+            if op.name in REGISTER_BRANCHES:
+                self.pc = self.get_register(op.args[0])
             else:
-                self.pc += 1
+                self.pc += op.args[0]
+        else:
+            self.pc += 1
+
+    def exec_ternary_op(self, op):
+        left = self.get_register(op.args[1])
+        right = self.get_register(op.args[2])
+
+        calculator = getattr(self, "calculate_" + op.name)
+
+        result = calculator(left, right)
+        self.store_register(op.args[0], result)
+        self.set_zero_and_sign(result)
+        self.pc += 1
 
     def exec_many(self, program, *, lines=None):
         """Execute a program (i.e., a list of operations), resetting the machine's
@@ -180,9 +166,7 @@ class VirtualMachine:
         self.store_register(target, (value << 8) + (self.get_register(target) & 0x00FF))
         self.pc += 1
 
-    @ternary_op
-    def exec_add(self, left, right):
-        """Execute the ADD instruction."""
+    def calculate_ADD(self, left, right):
         carry = 1 if not self.flag_carry_block and self.flag_carry else 0
 
         result = (left + right + carry) & 0xFFFF
@@ -192,9 +176,7 @@ class VirtualMachine:
 
         return result
 
-    @ternary_op
-    def exec_sub(self, left, right):
-        """Execute the SUB instruction."""
+    def calculate_SUB(self, left, right):
         borrow = 1 if not self.flag_carry_block and not self.flag_carry else 0
 
         # to_u16 is necessary because although left and right are necessarily
@@ -208,8 +190,7 @@ class VirtualMachine:
 
         return result
 
-    @ternary_op
-    def exec_mul(self, left, right):
+    def calculate_MUL(self, left, right):
         """Execute the MUL instruction."""
         if self.flag_sign and not self.flag_carry_block:
             # Take the high 16 bits.
@@ -225,19 +206,13 @@ class VirtualMachine:
 
         return result
 
-    @ternary_op
-    def exec_and(self, left, right):
-        """Execute the AND instruction."""
+    def calculate_AND(self, left, right):
         return left & right
 
-    @ternary_op
-    def exec_or(self, left, right):
-        """Execute the OR instruction."""
+    def calculate_OR(self, left, right):
         return left | right
 
-    @ternary_op
-    def exec_xor(self, left, right):
-        """Execute the XOR instruction."""
+    def calculate_XOR(self, left, right):
         return left ^ right
 
     def exec_inc(self, target, value):
