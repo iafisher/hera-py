@@ -142,7 +142,6 @@ def _emit_msg(msg, *, loc=None):
     sys.stderr.write(msg + "\n")
 
 
-
 def _align_caret(line, col):
     """Return the whitespace necessary to align a caret to underline the desired
     column in the line of text. Mainly this means handling tabs.

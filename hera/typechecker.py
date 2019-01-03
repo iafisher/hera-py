@@ -80,15 +80,13 @@ def check_types(name, expected, got, symbol_table):
 
     if len(got) < len(expected):
         emit_error(
-            "too few args to {} (expected {})".format(name, len(expected)),
-            loc=name,
+            "too few args to {} (expected {})".format(name, len(expected)), loc=name
         )
         errors = True
 
     if len(expected) < len(got):
         emit_error(
-            "too many args to {} (expected {})".format(name, len(expected)),
-            loc=name,
+            "too many args to {} (expected {})".format(name, len(expected)), loc=name
         )
         errors = True
 
