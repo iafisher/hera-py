@@ -1,17 +1,20 @@
 """The virtual HERA machine.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: December 2018
+Version: January 2019
 """
 import functools
 
 from .symtab import HERA_DATA_START
 from .utils import (
+    BRANCHES,
     DATA_STATEMENTS,
     emit_warning,
     from_u16,
     print_register_debug,
+    REGISTER_BRANCHES,
     register_to_index,
+    RELATIVE_BRANCHES,
     to_u16,
     to_u32,
 )
@@ -48,38 +51,6 @@ def binary_op(f):
         self.store_register(target, result)
         self.set_zero_and_sign(result)
         self.pc += 1
-
-    return inner
-
-
-def branch(f):
-    """A decorator for HERA register branching instructions. Implementing
-    functions only need to return a boolean indicating whether to branch (True)
-    or not (False).
-    """
-
-    @functools.wraps(f)
-    def inner(self, dest):
-        if f(self):
-            self.pc = self.get_register(dest)
-        else:
-            self.pc += 1
-
-    return inner
-
-
-def relative_branch(f):
-    """A decorator for HERA relative branching instructions. Implementing
-    functions only need to return a boolean indicating whether to branch (True)
-    or not (False).
-    """
-
-    @functools.wraps(f)
-    def inner(self, offset):
-        if f(self):
-            self.pc += offset
-        else:
-            self.pc += 1
 
     return inner
 
@@ -121,12 +92,32 @@ class VirtualMachine:
         """Execute a single operation."""
         self.location = getattr(op.name, "location", None)
 
-        try:
-            handler = getattr(self, "exec_" + op.name.lower())
-        except AttributeError:
-            raise RuntimeError('unknown instruction "{}"'.format(op.name)) from None
+        if op.name in BRANCHES:
+            self.exec_branch(op)
         else:
-            handler(*op.args)
+            try:
+                handler = getattr(self, "exec_" + op.name.lower())
+            except AttributeError:
+                raise RuntimeError('unknown instruction "{}"'.format(op.name)) from None
+            else:
+                handler(*op.args)
+
+    def exec_branch(self, op):
+        name = op.name if op.name in REGISTER_BRANCHES else op.name[:-1]
+        try:
+            should_branch = getattr(self, "should_" + name)()
+        except AttributeError:
+            raise RuntimeError(
+                'could not find branch handler for "{}"'.format(op.name)
+            ) from None
+        else:
+            if should_branch:
+                if op.name in REGISTER_BRANCHES:
+                    self.pc = self.get_register(op.args[0])
+                else:
+                    self.pc += op.args[0]
+            else:
+                self.pc += 1
 
     def exec_many(self, program, *, lines=None):
         """Execute a program (i.e., a list of operations), resetting the machine's
@@ -401,152 +392,49 @@ class VirtualMachine:
         )
         self.pc += 1
 
-    def exec_br(self, dest):
-        """Execute the BR (unconditional branch) instruction."""
-        self.pc = self.get_register(dest)
+    def should_BR(self):
+        return True
 
-    def exec_brr(self, offset):
-        """Execute the BRR (unconditional branch) instruction."""
-        self.pc += offset
-
-    @branch
-    def exec_bl(self):
-        """Execute the BL (branch if less than) instruction."""
+    def should_BL(self):
         return self.flag_sign ^ self.flag_overflow
 
-    @relative_branch
-    def exec_blr(self):
-        """Execute the BLR (branch if less than) instruction."""
-        return self.flag_sign ^ self.flag_overflow
-
-    @branch
-    def exec_bge(self):
-        """Execute the BGE (branch if greater than or equal) instruction."""
+    def should_BGE(self):
         return not (self.flag_sign ^ self.flag_overflow)
 
-    @relative_branch
-    def exec_bger(self):
-        """Execute the BGER (branch if greater than or equal) instruction."""
-        return not (self.flag_sign ^ self.flag_overflow)
-
-    @branch
-    def exec_ble(self):
-        """Execute the BLE (branch if less than or equal) instruction."""
+    def should_BLE(self):
         return (self.flag_sign ^ self.flag_overflow) or self.flag_zero
 
-    @relative_branch
-    def exec_bler(self):
-        """Execute the BLER (branch if less than or equal) instruction."""
-        return (self.flag_sign ^ self.flag_overflow) or self.flag_zero
-
-    @branch
-    def exec_bg(self):
-        """Execute the BG (branch if greater than) instruction."""
+    def should_BG(self):
         return not (self.flag_sign ^ self.flag_overflow) and not self.flag_zero
 
-    @relative_branch
-    def exec_bgr(self):
-        """Execute the BGR (branch if greater than) instruction."""
-        return not (self.flag_sign ^ self.flag_overflow) and not self.flag_zero
-
-    @branch
-    def exec_bule(self):
-        """Execute the BULE (branch if unsigned less than or equal) instruction."""
+    def should_BULE(self):
         return not self.flag_carry or self.flag_zero
 
-    @relative_branch
-    def exec_buler(self):
-        """Execute the BULER (branch if unsigned less than or equal) instruction."""
-        return not self.flag_carry or self.flag_zero
-
-    @branch
-    def exec_bug(self):
-        """Execute the BUG (branch if unsigned greater than) instruction."""
+    def should_BUG(self):
         return self.flag_carry and not self.flag_zero
 
-    @relative_branch
-    def exec_bugr(self):
-        """Execute the BUGR (branch if unsigned greater than) instruction."""
-        return self.flag_carry and not self.flag_zero
-
-    @branch
-    def exec_bz(self):
-        """Execute the BZ (branch on zero flag) instruction."""
+    def should_BZ(self):
         return self.flag_zero
 
-    @relative_branch
-    def exec_bzr(self):
-        """Execute the BZR (branch on zero flag) instruction."""
-        return self.flag_zero
-
-    @branch
-    def exec_bnz(self):
-        """Execute the BNZ (branch on not zero flag) instruction."""
+    def should_BNZ(self):
         return not self.flag_zero
 
-    @relative_branch
-    def exec_bnzr(self):
-        """Execute the BNZR (branch on not zero flag) instruction."""
-        return not self.flag_zero
-
-    @branch
-    def exec_bc(self):
-        """Execute the BC (branch on carry flag) instruction."""
+    def should_BC(self):
         return self.flag_carry
 
-    @relative_branch
-    def exec_bcr(self):
-        """Execute the BCR (branch on carry flag) instruction."""
-        return self.flag_carry
-
-    @branch
-    def exec_bnc(self):
-        """Execute the BNC (branch on not carry flag) instruction."""
+    def should_BNC(self):
         return not self.flag_carry
 
-    @relative_branch
-    def exec_bncr(self):
-        """Execute the BNCR (branch on not carry flag) instruction."""
-        return not self.flag_carry
-
-    @branch
-    def exec_bs(self):
-        """Execute the BS (branch on sign flag) instruction."""
+    def should_BS(self):
         return self.flag_sign
 
-    @relative_branch
-    def exec_bsr(self):
-        """Execute the BSR (branch on sign flag) instruction."""
-        return self.flag_sign
-
-    @branch
-    def exec_bns(self):
-        """Execute the BNS (branch on not sign flag) instruction."""
+    def should_BNS(self):
         return not self.flag_sign
 
-    @relative_branch
-    def exec_bnsr(self):
-        """Execute the BNSR (branch on not sign flag) instruction."""
-        return not self.flag_sign
-
-    @branch
-    def exec_bv(self):
-        """Execute the BV (branch on overflow flag) instruction."""
+    def should_BV(self):
         return self.flag_overflow
 
-    @relative_branch
-    def exec_bvr(self):
-        """Execute the BVR (branch on overflow flag) instruction."""
-        return self.flag_overflow
-
-    @branch
-    def exec_bnv(self):
-        """Execute the BNV (branch on not overflow flag) instruction."""
-        return not self.flag_overflow
-
-    @relative_branch
-    def exec_bnvr(self):
-        """Execute the BNVR (branch on not overflow flag) instruction."""
+    def should_BNV(self):
         return not self.flag_overflow
 
     def exec_call(self, ra, rb):
