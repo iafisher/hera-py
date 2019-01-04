@@ -80,7 +80,7 @@ class VirtualMachine:
         elif op.name in TERNARY_OPS:
             self.exec_ternary_op(op)
         else:
-            handler = getattr(self, "exec_" + op.name.lower())
+            handler = getattr(self, "exec_" + op.name)
             handler(*op.args)
 
     def exec_branch(self, op):
@@ -153,16 +153,14 @@ class VirtualMachine:
         else:
             return self.memory[address]
 
-    def exec_setlo(self, target, value):
-        """Execute the SETLO instruction."""
+    def exec_SETLO(self, target, value):
         if value > 127:
             value -= 256
 
         self.store_register(target, to_u16(value))
         self.pc += 1
 
-    def exec_sethi(self, target, value):
-        """Execute the SETHI instruction."""
+    def exec_SETHI(self, target, value):
         self.store_register(target, (value << 8) + (self.get_register(target) & 0x00FF))
         self.pc += 1
 
@@ -191,7 +189,6 @@ class VirtualMachine:
         return result
 
     def calculate_MUL(self, left, right):
-        """Execute the MUL instruction."""
         if self.flag_sign and not self.flag_carry_block:
             # Take the high 16 bits.
             left = to_u32(from_u16(left))
@@ -215,8 +212,7 @@ class VirtualMachine:
     def calculate_XOR(self, left, right):
         return left ^ right
 
-    def exec_inc(self, target, value):
-        """Execute the INC (increment) instruction."""
+    def exec_INC(self, target, value):
         original = self.get_register(target)
         result = (value + original) & 0xFFFF
         self.store_register(target, result)
@@ -226,8 +222,7 @@ class VirtualMachine:
         self.flag_carry = value + original >= 2 ** 16
         self.pc += 1
 
-    def exec_dec(self, target, value):
-        """Execute the DEC (decrement) instruction."""
+    def exec_DEC(self, target, value):
         original = self.get_register(target)
         result = to_u16((original - value) & 0xFFFF)
         self.store_register(target, result)
@@ -238,8 +233,7 @@ class VirtualMachine:
         self.pc += 1
 
     @binary_op
-    def exec_lsl(self, original):
-        """Execute the LSL (logical shift left) instruction."""
+    def exec_LSL(self, original):
         carry = 1 if self.flag_carry and not self.flag_carry_block else 0
         result = ((original << 1) + carry) & 0xFFFF
 
@@ -248,8 +242,7 @@ class VirtualMachine:
         return result
 
     @binary_op
-    def exec_lsr(self, original):
-        """Execute the LSR (logical shift right) instruction."""
+    def exec_LSR(self, original):
         carry = 2 ** 15 if self.flag_carry and not self.flag_carry_block else 0
         result = (original >> 1) + carry
 
@@ -258,18 +251,15 @@ class VirtualMachine:
         return result
 
     @binary_op
-    def exec_lsl8(self, original):
-        """Execute the LSL8 (logical shift left by 8) instruction."""
+    def exec_LSL8(self, original):
         return (original << 8) & 0xFFFF
 
     @binary_op
-    def exec_lsr8(self, original):
-        """Execute the LSR8 (logical shift right by 8) instruction."""
+    def exec_LSR8(self, original):
         return original >> 8
 
     @binary_op
-    def exec_asl(self, original):
-        """Execute the ASL (arithmetic shift left) instruction."""
+    def exec_ASL(self, original):
         carry = 1 if self.flag_carry and not self.flag_carry_block else 0
         result = ((original << 1) + carry) & 0xFFFF
 
@@ -279,8 +269,7 @@ class VirtualMachine:
         return result
 
     @binary_op
-    def exec_asr(self, original):
-        """Execute the ASR (arithmetic shift right) instruction."""
+    def exec_ASR(self, original):
         # This is a little messy because right shift in Python rounds towards
         # negative infinity (7 >> 1 == -4) but in HERA it rounds towards zero
         # (7 >> 1 == -3).
@@ -296,8 +285,7 @@ class VirtualMachine:
 
         return result
 
-    def exec_savef(self, target):
-        """Execute the SAVEF (save flags) instruction."""
+    def exec_SAVEF(self, target):
         value = (
             int(self.flag_sign)
             + 2 * int(self.flag_zero)
@@ -308,8 +296,7 @@ class VirtualMachine:
         self.store_register(target, value)
         self.pc += 1
 
-    def exec_rstrf(self, target):
-        """Execute the RSTRF (restore flags) instruction."""
+    def exec_RSTRF(self, target):
         value = self.get_register(target)
         self.flag_sign = bool(value & 1)
         self.flag_zero = bool(value & 0b10)
@@ -318,8 +305,7 @@ class VirtualMachine:
         self.flag_carry_block = bool(value & 0b10000)
         self.pc += 1
 
-    def exec_fon(self, value):
-        """Execute the FON instruction."""
+    def exec_FON(self, value):
         self.flag_sign = self.flag_sign or bool(value & 1)
         self.flag_zero = self.flag_zero or bool(value & 0b10)
         self.flag_overflow = self.flag_overflow or bool(value & 0b100)
@@ -327,8 +313,7 @@ class VirtualMachine:
         self.flag_carry_block = self.flag_carry_block or bool(value & 0b10000)
         self.pc += 1
 
-    def exec_foff(self, value):
-        """Execute the FOFF instruction."""
+    def exec_FOFF(self, value):
         self.flag_sign = self.flag_sign and not bool(value & 1)
         self.flag_zero = self.flag_zero and not bool(value & 0b10)
         self.flag_overflow = self.flag_overflow and not bool(value & 0b100)
@@ -336,8 +321,7 @@ class VirtualMachine:
         self.flag_carry_block = self.flag_carry_block and not bool(value & 0b10000)
         self.pc += 1
 
-    def exec_fset5(self, value):
-        """Execute the FSET5 instruction."""
+    def exec_FSET5(self, value):
         self.flag_sign = bool(value & 1)
         self.flag_zero = bool(value & 0b10)
         self.flag_overflow = bool(value & 0b100)
@@ -345,23 +329,20 @@ class VirtualMachine:
         self.flag_carry_block = bool(value & 0b10000)
         self.pc += 1
 
-    def exec_fset4(self, value):
-        """Execute the FSET4 instruction."""
+    def exec_FSET4(self, value):
         self.flag_sign = bool(value & 1)
         self.flag_zero = bool(value & 0b10)
         self.flag_overflow = bool(value & 0b100)
         self.flag_carry = bool(value & 0b1000)
         self.pc += 1
 
-    def exec_load(self, target, offset, address):
-        """Execute the LOAD instruction."""
+    def exec_LOAD(self, target, offset, address):
         result = self.access_memory(self.get_register(address) + offset)
         self.set_zero_and_sign(result)
         self.store_register(target, result)
         self.pc += 1
 
-    def exec_store(self, source, offset, address):
-        """Execute the STORE instruction."""
+    def exec_STORE(self, source, offset, address):
         self.assign_memory(
             self.get_register(address) + offset, self.get_register(source)
         )
@@ -412,8 +393,7 @@ class VirtualMachine:
     def should_BNV(self):
         return not self.flag_overflow
 
-    def exec_call(self, ra, rb):
-        """Execute the CALL instruction."""
+    def exec_CALL(self, ra, rb):
         old_pc = self.pc
         self.pc = self.get_register(rb)
         self.store_register(rb, old_pc + 1)
@@ -422,35 +402,30 @@ class VirtualMachine:
         self.store_register(ra, old_fp)
 
     # CALL and RETURN do the exact same thing.
-    exec_return = exec_call
+    exec_RETURN = exec_CALL
 
-    def exec_swi(self, i):
-        """Execute the SWI (software interrupt) instruction."""
+    def exec_SWI(self, i):
         if not self.warned_for_SWI:
             emit_warning("SWI is a no-op in this simulator", loc=self.location)
             self.warned_for_SWI = True
         self.pc += 1
 
-    def exec_rti(self):
-        """Execute the RTI (return from interrupt) instruction."""
+    def exec_RTI(self):
         if not self.warned_for_RTI:
             emit_warning("RTI is a no-op in this simulator", loc=self.location)
             self.warned_for_RTI = True
         self.pc += 1
 
-    def exec_integer(self, i):
-        """Execute the INTEGER data instruction."""
+    def exec_INTEGER(self, i):
         self.assign_memory(self.dc, to_u16(i))
         self.dc += 1
         self.pc += 1
 
-    def exec_dskip(self, n):
-        """Execute the DSKIP data instruction."""
+    def exec_DSKIP(self, n):
         self.dc += n
         self.pc += 1
 
-    def exec_lp_string(self, s):
-        """Execute the LP_STRING data instruction."""
+    def exec_LP_STRING(self, s):
         self.assign_memory(self.dc, len(s))
         self.dc += 1
         for c in s:
@@ -459,17 +434,14 @@ class VirtualMachine:
         self.pc += 1
 
     def exec_print_reg(self, target):
-        """Execute the print_reg debugging instruction."""
         v = self.get_register(target)
         print_register_debug(target, v, to_stderr=False)
         self.pc += 1
 
     def exec_print(self, target):
-        """Execute the print debugging instruction."""
         print(target, end="")
         self.pc += 1
 
     def exec_println(self, target):
-        """Execute the println debugging instruction."""
         print(target)
         self.pc += 1
