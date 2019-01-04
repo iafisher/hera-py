@@ -8,7 +8,7 @@ Version: January 2019
 from typing import Dict, List
 
 from .data import Op, Token
-from .symtab import Constant
+from .symtab import Constant, DataLabel
 from .utils import (
     BINARY_OPS,
     DATA_STATEMENTS,
@@ -200,11 +200,20 @@ def assert_is_register_or_label(arg, symbol_table):
     if arg.type == "REGISTER":
         return assert_is_register(arg)
     else:
-        if arg not in symbol_table:
+        try:
+            val = symbol_table[arg]
+        except KeyError:
             emit_error("undefined symbol", loc=arg)
             return False
         else:
-            return True
+            if isinstance(val, Constant):
+                emit_error("constant cannot be used as label", loc=arg)
+                return False
+            elif isinstance(val, DataLabel):
+                emit_error("data label cannot be used as branch label", loc=arg)
+                return False
+            else:
+                return True
 
 
 def assert_is_label(arg):

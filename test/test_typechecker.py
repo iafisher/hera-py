@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from hera.data import IntToken, Op, Token
-from hera.symtab import Constant, Label
+from hera.symtab import Constant, DataLabel, Label
 from hera.typechecker import (
     assert_is_integer,
     assert_is_label,
@@ -139,6 +139,25 @@ def test_assert_is_register_or_label_with_undefined_label():
 
         assert mock_emit_error.call_count == 1
         assert "undefined symbol" in mock_emit_error.call_args[0][0]
+
+
+def test_assert_is_register_or_label_with_data_label():
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        assert not assert_is_register_or_label(SYM("n"), {"n": DataLabel(16000)})
+
+        assert mock_emit_error.call_count == 1
+        assert (
+            "data label cannot be used as branch label"
+            in mock_emit_error.call_args[0][0]
+        )
+
+
+def test_assert_is_register_or_label_with_constant():
+    with patch("hera.utils._emit_msg") as mock_emit_error:
+        assert not assert_is_register_or_label(SYM("n"), {"n": Constant(16000)})
+
+        assert mock_emit_error.call_count == 1
+        assert "constant cannot be used as label" in mock_emit_error.call_args[0][0]
 
 
 def test_assert_is_label_with_valid_label():
