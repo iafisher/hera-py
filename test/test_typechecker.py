@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 
 from hera.data import IntToken, Op, Token

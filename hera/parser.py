@@ -80,7 +80,7 @@ def parse_file(
 
     `allow_stdin` should be set to True if you wish the file path "-" to be interpreted
     as standard input instead of a file with the actual name "-".
-    
+
     See `parse` for the meaning of `includes` and `visited`.
     """
     if allow_stdin and path == "-":

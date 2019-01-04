@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import patch
 
 from hera.data import Op
 from hera.utils import to_u16

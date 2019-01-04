@@ -3,8 +3,6 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-import functools
-
 from .symtab import HERA_DATA_START
 from .utils import (
     ALSU_OPS,
@@ -15,7 +13,6 @@ from .utils import (
     print_register_debug,
     REGISTER_BRANCHES,
     register_to_index,
-    RELATIVE_BRANCHES,
     to_u16,
     to_u32,
 )
