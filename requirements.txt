@@ -12,7 +12,6 @@ pluggy==0.8.0
 py==1.7.0
 pytest==3.9.3
 pytest-cov==2.6.0
-PyYAML==3.13
 requests==2.20.1
 six==1.11.0
 typing==3.6.6
