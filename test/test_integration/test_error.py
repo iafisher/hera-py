@@ -56,7 +56,7 @@ def test_multiple_error_messages(capsys):
     captured = capsys.readouterr()
     assert "ADD" in captured.err
     assert "too few" in captured.err
-    assert "not a register" in captured.err
+    assert "expected register" in captured.err
     assert "line 1" in captured.err
     assert "INC" in captured.err
     assert "line 2" in captured.err

@@ -8,12 +8,16 @@ Version: January 2019
 from typing import Dict, List
 
 from .data import Op, Token
+from .symtab import Constant
 from .utils import (
+    BINARY_OPS,
     DATA_STATEMENTS,
     emit_error,
     is_symbol,
     register_to_index,
+    REGISTER_BRANCHES,
     RELATIVE_BRANCHES,
+    UNARY_OPS,
 )
 
 
@@ -34,6 +38,7 @@ def typecheck(program: List[Op], symbol_table: Dict[str, int]) -> True:
                     end_of_data = False
                     current_file = op.name.location.path
 
+        # TODO: Can I move this to the parser?
         if not end_of_data:
             if op.name not in DATA_STATEMENTS:
                 end_of_data = True
@@ -42,231 +47,210 @@ def typecheck(program: List[Op], symbol_table: Dict[str, int]) -> True:
                 emit_error("data statement after instruction", loc=op.name)
                 error_free = False
 
-        if not typecheck_one(op, symbol_table):
+        if not typecheck_op(op, symbol_table):
             error_free = False
-
-        if op.name in RELATIVE_BRANCHES:
-            if len(op.args) == 1 and is_symbol(op.args[0]):
-                msg = "relative branches cannot use labels"
-                msg += " (why not use {} instead?)".format(op.name[:-1])
-                emit_error(msg, loc=op.args[0])
-                error_free = False
 
     return error_free
 
 
-def typecheck_one(op: Op, symbol_table: Dict[str, int]) -> bool:
+def typecheck_op(op: Op, symbol_table: Dict[str, int]) -> bool:
     """Type-check a single HERA operation and emit error messages as appropriate. Return
     True if no errors were detected.
     """
-    params = _types_map.get(op.name)
-    if params is not None:
-        return check_types(op.name, params, op.args, symbol_table)
+    n = len(op.args)
+    if op.name in ("SETLO", "SETHI"):
+        e = assert_number_of_arguments(op, 2)
+        e1 = n > 0 and assert_is_register(op.args[0])
+        e2 = n > 1 and assert_is_integer(op.args[1], symbol_table, bits=8, signed=True)
+        return e and e1 and e2
+    elif op.name in ("INC", "DEC"):
+        e = assert_number_of_arguments(op, 2)
+        e1 = n > 0 and assert_is_register(op.args[0])
+        e2 = n > 1 and assert_in_range(op.args[1], symbol_table, lo=1, hi=65)
+        return e and e1 and e2
+    elif op.name in BINARY_OPS:
+        e = assert_number_of_arguments(op, 3)
+        e1 = n > 0 and assert_is_register(op.args[0])
+        e2 = n > 1 and assert_is_register(op.args[1])
+        e3 = n > 2 and assert_is_register(op.args[2])
+        return e and e1 and e2 and e3
+    elif op.name in UNARY_OPS or op.name in ("MOVE", "CMP", "NEG", "NOT"):
+        e = assert_number_of_arguments(op, 2)
+        e1 = n > 0 and assert_is_register(op.args[0])
+        e2 = n > 1 and assert_is_register(op.args[1])
+        return e and e1 and e2
+    elif op.name in ("SAVEF", "RSTRF", "FLAGS", "print_reg"):
+        e = assert_number_of_arguments(op, 1)
+        e1 = n > 0 and assert_is_register(op.args[0])
+        return e and e1
+    elif op.name in ("FON", "FOFF", "FSET5"):
+        e = assert_number_of_arguments(op, 1)
+        e1 = n > 0 and assert_is_integer(op.args[0], symbol_table, bits=5, signed=False)
+        return e and e1
+    elif op.name in ("FSET4", "SWI"):
+        e = assert_number_of_arguments(op, 1)
+        e1 = n > 0 and assert_is_integer(op.args[0], symbol_table, bits=4, signed=False)
+        return e and e1
+    elif op.name in ("LOAD", "STORE"):
+        e = assert_number_of_arguments(op, 3)
+        e1 = n > 0 and assert_is_register(op.args[0])
+        e2 = n > 1 and assert_is_integer(op.args[1], symbol_table, bits=5, signed=False)
+        e3 = n > 2 and assert_is_register(op.args[2])
+        return e and e1 and e2 and e3
+    elif op.name in ("CALL", "RETURN"):
+        e = assert_number_of_arguments(op, 2)
+        e1 = n > 0 and assert_is_register(op.args[0])
+        e2 = n > 1 and assert_is_register_or_label(op.args[1], symbol_table)
+        return e and e1 and e2
+    elif op.name in REGISTER_BRANCHES:
+        e = assert_number_of_arguments(op, 1)
+        e1 = n > 0 and assert_is_register_or_label(op.args[0], symbol_table)
+        return e and e1
+    elif op.name in RELATIVE_BRANCHES:
+        e = assert_number_of_arguments(op, 1)
+        if n > 0:
+            if is_symbol(op.args[0]):
+                msg = "relative branches cannot use labels"
+                msg += " (why not use {} instead?)".format(op.name[:-1])
+                emit_error(msg, loc=op.args[0])
+                e1 = False
+            else:
+                e1 = assert_is_integer(op.args[0], symbol_table, bits=8, signed=True)
+        return e and e1
+    elif op.name in ("RTI", "CBON", "CON", "COFF", "CCBOFF", "NOP", "HALT"):
+        return assert_number_of_arguments(op, 0)
+    elif op.name == "SET":
+        e = assert_number_of_arguments(op, 2)
+        e1 = n > 0 and assert_is_register(op.args[0])
+        e2 = n > 1 and assert_is_integer(
+            op.args[1], symbol_table, bits=16, signed=True, labels=True
+        )
+        return e and e1 and e2
+    elif op.name == "SETRF":
+        e = assert_number_of_arguments(op, 2)
+        e1 = n > 0 and assert_is_register(op.args[0])
+        e2 = n > 1 and assert_is_integer(op.args[1], symbol_table, bits=16, signed=True)
+        return e and e1 and e2
+    elif op.name in ("LABEL", "DLABEL"):
+        e = assert_number_of_arguments(op, 1)
+        e1 = n > 0 and assert_is_label(op.args[0])
+        return e and e1
+    elif op.name == "CONSTANT":
+        e = assert_number_of_arguments(op, 2)
+        e1 = n > 0 and assert_is_label(op.args[0])
+        e2 = n > 1 and assert_is_integer(op.args[1], symbol_table, bits=16, signed=True)
+        return e and e1 and e2
+    elif op.name == "INTEGER":
+        e = assert_number_of_arguments(op, 1)
+        e1 = n > 0 and assert_is_integer(op.args[0], symbol_table, bits=16, signed=True)
+        return e and e1
+    elif op.name in ("LP_STRING", "print", "println"):
+        e = assert_number_of_arguments(op, 1)
+        e1 = n > 0 and assert_is_string(op.args[0])
+        return e and e1
+    elif op.name == "DSKIP":
+        e = assert_number_of_arguments(op, 1)
+        e1 = n > 0 and assert_is_integer(
+            op.args[0], symbol_table, bits=16, signed=False
+        )
+        return e and e1
     else:
         emit_error("unknown instruction `{}`".format(op.name), loc=op.name)
         return False
 
 
-def check_types(name, expected, got, symbol_table):
-    """Verify that the given args match the expected ones and emit error messages as
-    appropriate. Return True if no errors were detected.
-
-    `name` is the name of the HERA op, as a Token object. `expected` is a
-    tuple or list of constants (REGISTER, U16, etc., defined above) representing the
-    expected argument types to the operation. `args` is a tuple or list of the actual
-    arguments given.
-    """
-    errors = False
-
-    if len(got) < len(expected):
+def assert_number_of_arguments(op, nargs):
+    if len(op.args) < nargs:
         emit_error(
-            "too few args to {} (expected {})".format(name, len(expected)), loc=name
+            "too few args to {} (expected {})".format(op.name, nargs), loc=op.name
         )
-        errors = True
-
-    if len(expected) < len(got):
+        return False
+    elif nargs < len(op.args):
         emit_error(
-            "too many args to {} (expected {})".format(name, len(expected)), loc=name
+            "too many args to {} (expected {})".format(op.name, nargs), loc=op.name
         )
-        errors = True
-
-    ordinals = ["first", "second", "third"]
-    for ordinal, pattern, arg in zip(ordinals, expected, got):
-        prefix = "{} arg to {} ".format(ordinal, name)
-        error_msg = check_one_type(pattern, arg, symbol_table)
-        if error_msg:
-            emit_error(prefix + error_msg, loc=arg)
-            errors = True
-
-    return not errors
-
-
-def check_one_type(pattern, arg, symbol_table):
-    """Verify that the argument matches the pattern. Return a string stating the error
-    if it doesn't, return None otherwise.
-    """
-    # TODO: Overengineered?
-    if pattern == REGISTER:
-        if not isinstance(arg, Token) or arg.type != "REGISTER":
-            return "not a register"
-
-        if arg.lower() == "pc":
-            return "program counter cannot be accessed or changed directly"
-
-        try:
-            register_to_index(arg)
-        except ValueError:
-            return "not a valid register"
-    elif pattern == SYMBOL:
-        if not is_symbol(arg):
-            return "not a symbol"
-    elif pattern == REGISTER_OR_LABEL:
-        if not isinstance(arg, Token):
-            return "not a register or label"
-
-        if arg.type == "REGISTER":
-            if arg.lower() == "pc":
-                return "program counter cannot be accessed or changed directly"
-
-            try:
-                register_to_index(arg)
-            except ValueError:
-                return "not a valid register"
-        elif arg.type != "SYMBOL":
-            return "not a register or label"
-        else:
-            if arg not in symbol_table:
-                return "is undefined label"
-    elif pattern == LABEL:
-        if not is_symbol(arg):
-            return "not a symbol"
-
-        if arg not in symbol_table:
-            return "is undefined label"
-    elif pattern == STRING:
-        if not isinstance(arg, Token) or arg.type != "STRING":
-            return "not a string"
-    elif isinstance(pattern, range):
-        if is_symbol(arg):
-            try:
-                arg = symbol_table[arg]
-            except KeyError:
-                return "is undefined constant"
-
-        if not isinstance(arg, int):
-            return "not an integer"
-        if arg not in pattern:
-            if pattern.start == 0 and arg < 0:
-                return "must not be negative"
-            else:
-                return "out of range"
+        return False
     else:
-        raise RuntimeError(
-            "unknown pattern in hera.typechecker.check_one_type", pattern
-        )
+        return True
 
 
-# Constants to pass to check_types
-REGISTER = "r"
-REGISTER_OR_LABEL = "rl"
-LABEL = "l"
-STRING = "s"
-SYMBOL = "sym"
-U4 = range(0, 2 ** 4)
-U5 = range(0, 2 ** 5)
-U16 = range(0, 2 ** 16)
-I8 = range(-2 ** 7, 2 ** 8)
-I16 = range(-2 ** 15, 2 ** 16)
+def assert_is_register(arg):
+    if not isinstance(arg, Token) or arg.type != "REGISTER":
+        emit_error("expected register", loc=arg)
+        return False
+
+    if arg.lower() == "pc":
+        emit_error("program counter cannot be accessed or changed directly", loc=arg)
+        return False
+
+    try:
+        register_to_index(arg)
+    except ValueError:
+        emit_error("{} is not a valid register".format(arg), loc=arg)
+        return False
+    else:
+        return True
 
 
-_types_map = {
-    # Set and increment instructions
-    "SETLO": (REGISTER, I8),
-    "SETHI": (REGISTER, I8),
-    "INC": (REGISTER, range(1, 65)),
-    "DEC": (REGISTER, range(1, 65)),
-    # Arithmetic, logical and shift instructions
-    "AND": (REGISTER, REGISTER, REGISTER),
-    "OR": (REGISTER, REGISTER, REGISTER),
-    "ADD": (REGISTER, REGISTER, REGISTER),
-    "SUB": (REGISTER, REGISTER, REGISTER),
-    "MUL": (REGISTER, REGISTER, REGISTER),
-    "XOR": (REGISTER, REGISTER, REGISTER),
-    "LSL": (REGISTER, REGISTER),
-    "LSR": (REGISTER, REGISTER),
-    "LSL8": (REGISTER, REGISTER),
-    "LSR8": (REGISTER, REGISTER),
-    "ASL": (REGISTER, REGISTER),
-    "ASR": (REGISTER, REGISTER),
-    # Flag manipulation
-    "SAVEF": (REGISTER,),
-    "RSTRF": (REGISTER,),
-    "FON": (U5,),
-    "FOFF": (U5,),
-    "FSET5": (U5,),
-    "FSET4": (U4,),
-    # Memory instructions
-    "LOAD": (REGISTER, U5, REGISTER),
-    "STORE": (REGISTER, U5, REGISTER),
-    # Branch instructions
-    "CALL": (REGISTER, REGISTER_OR_LABEL),
-    "RETURN": (REGISTER, REGISTER_OR_LABEL),
-    "BR": (REGISTER_OR_LABEL,),
-    "BRR": (I8,),
-    "BL": (REGISTER_OR_LABEL,),
-    "BLR": (I8,),
-    "BGE": (REGISTER_OR_LABEL,),
-    "BGER": (I8,),
-    "BLE": (REGISTER_OR_LABEL,),
-    "BLER": (I8,),
-    "BG": (REGISTER_OR_LABEL,),
-    "BGR": (I8,),
-    "BULE": (REGISTER_OR_LABEL,),
-    "BULER": (I8,),
-    "BUG": (REGISTER_OR_LABEL,),
-    "BUGR": (I8,),
-    "BZ": (REGISTER_OR_LABEL,),
-    "BZR": (I8,),
-    "BNZ": (REGISTER_OR_LABEL,),
-    "BNZR": (I8,),
-    "BC": (REGISTER_OR_LABEL,),
-    "BCR": (I8,),
-    "BNC": (REGISTER_OR_LABEL,),
-    "BNCR": (I8,),
-    "BS": (REGISTER_OR_LABEL,),
-    "BSR": (I8,),
-    "BNS": (REGISTER_OR_LABEL,),
-    "BNSR": (I8,),
-    "BV": (REGISTER_OR_LABEL,),
-    "BVR": (I8,),
-    "BNV": (REGISTER_OR_LABEL,),
-    "BNVR": (I8,),
-    # Interrupt processing
-    "SWI": (U4,),
-    "RTI": (),
-    # Pseudo-instructions
-    "SET": (REGISTER, I16),
-    "SETRF": (REGISTER, I16),
-    "MOVE": (REGISTER, REGISTER),
-    "CMP": (REGISTER, REGISTER),
-    "NEG": (REGISTER, REGISTER),
-    "NOT": (REGISTER, REGISTER),
-    "CBON": (),
-    "CON": (),
-    "COFF": (),
-    "CCBOFF": (),
-    "FLAGS": (REGISTER,),
-    "NOP": (),
-    "HALT": (),
-    "LABEL": (SYMBOL,),
-    # Data statements
-    "CONSTANT": (SYMBOL, I16),
-    "DLABEL": (SYMBOL,),
-    "INTEGER": (I16,),
-    "LP_STRING": (STRING,),
-    "DSKIP": (U16,),
-    # Debugging instructions
-    "print_reg": (REGISTER,),
-    "print": (STRING,),
-    "println": (STRING,),
-}
+def assert_is_register_or_label(arg, symbol_table):
+    if not isinstance(arg, Token) or arg.type not in ("REGISTER", "SYMBOL"):
+        emit_error("expected register or label", loc=arg)
+        return False
+
+    if arg.type == "REGISTER":
+        return assert_is_register(arg)
+    else:
+        if arg not in symbol_table:
+            emit_error("undefined symbol", loc=arg)
+            return False
+        else:
+            return True
+
+
+def assert_is_label(arg):
+    if not is_symbol(arg):
+        emit_error("expected label", loc=arg)
+        return False
+    else:
+        return True
+
+
+def assert_is_string(arg):
+    if not isinstance(arg, Token) or arg.type != "STRING":
+        emit_error("expected string literal", loc=arg)
+        return False
+    else:
+        return True
+
+
+def assert_is_integer(arg, symbol_table, *, bits, signed, labels=False):
+    if signed:
+        lo = (-2) ** (bits - 1)
+    else:
+        lo = 0
+    hi = 2 ** bits
+
+    return assert_in_range(arg, symbol_table, lo=lo, hi=hi, labels=labels)
+
+
+def assert_in_range(arg, symbol_table, *, lo, hi, labels=False):
+    if is_symbol(arg):
+        try:
+            arg = symbol_table[arg]
+        except KeyError:
+            emit_error("undefined constant", loc=arg)
+            return False
+        else:
+            if not labels and not isinstance(arg, Constant):
+                emit_error("cannot use label as constant", loc=arg)
+                return False
+
+    if not isinstance(arg, int):
+        emit_error("expected integer", loc=arg)
+        return False
+
+    if arg < lo or arg >= hi:
+        emit_error("integer must be in range [{}, {})".format(lo, hi), loc=arg)
+        return False
+    else:
+        return True

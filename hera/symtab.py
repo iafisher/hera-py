@@ -11,6 +11,9 @@ from .preprocessor import convert
 from .utils import emit_error
 
 
+# IDEA: convert_constants method.
+
+
 def get_symbol_table(program: List[Op]) -> Dict[str, int]:
     """Return the program's symbol table, a dictionary mapping from strings to Label,
     DataLabel and Constant objects (all subclasses of int).
@@ -49,6 +52,9 @@ def get_symbol_table(program: List[Op]) -> Dict[str, int]:
             #
             # This has the disadvantage of duplicating some of the logic of conversion
             # though.
+
+            # Another IDEA: Don't even need a concrete value for pc here, can calculate
+            # it later.
             pc += len(convert(op))
 
         if dc >= 0xFFFF and odc < 0xFFFF:
