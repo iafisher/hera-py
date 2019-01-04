@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 
 from hera.debugger import Debugger
-from hera.loader import load_program
+from hera.loader import load_program_from_file
 
 
 @pytest.fixture
@@ -10,7 +10,7 @@ def debugger():
     return Debugger(SAMPLE_PROGRAM, SYMBOL_TABLE)
 
 
-SAMPLE_PROGRAM, SYMBOL_TABLE = load_program("test/assets/unit/debugger.hera")
+SAMPLE_PROGRAM, SYMBOL_TABLE = load_program_from_file("test/assets/unit/debugger.hera")
 
 
 def test_print_breakpoints(debugger, capsys):

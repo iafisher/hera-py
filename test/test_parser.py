@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import Op
-from hera.parser import parse, parse_file, replace_escapes
+from hera.parser import parse, read_file, replace_escapes
 
 
 def test_replace_escapes_with_one_escape():
@@ -168,7 +168,9 @@ def test_parse_exception_has_line_number(capsys):
 
 
 def test_parse_expands_include():
-    assert parse_file("test/assets/include/simple.hera", includes=True) == [
+    path = "test/assets/include/simple.hera"
+    program = parse(read_file(path), path=path, includes=True)
+    assert program == [
         Op("BR", ["end_of_add"]),
         Op("LABEL", ["add"]),
         Op("ADD", ["R3", "R1", "R2"]),

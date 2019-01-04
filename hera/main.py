@@ -22,7 +22,7 @@ from docopt import docopt
 
 from . import config
 from .debugger import debug
-from .loader import load_program
+from .loader import load_program_from_file
 from .utils import op_to_string, print_register_debug
 from .vm import VirtualMachine
 
@@ -59,7 +59,7 @@ def main(argv=None, vm=None):
 
 def main_debug(path):
     """Debug the program."""
-    program, symbol_table = load_program(path)
+    program, symbol_table = load_program_from_file(path)
     debug(program, symbol_table)
 
 
@@ -75,7 +75,7 @@ def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=Non
     if vm is None:
         vm = VirtualMachine()
 
-    program, _ = load_program(path)
+    program, _ = load_program_from_file(path)
 
     vm.exec_many(program, lines=lines_to_exec)
 
@@ -87,7 +87,7 @@ def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=Non
 
 def main_preprocess(path):
     """Preprocess the program and print it to standard output."""
-    program, _ = load_program(path)
+    program, _ = load_program_from_file(path)
     print(program_to_string(program))
 
 

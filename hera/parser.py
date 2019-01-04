@@ -1,6 +1,6 @@
 """Parse HERA programs.
 
-`parse` and its wrapper `parse_file` are the two functions intended for public use.
+`parse` is the only function intended for public use.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
@@ -72,35 +72,24 @@ def parse(text: str, *, path=None, includes=True, visited=None) -> List[Op]:
     return ops
 
 
-def parse_file(
-    path: str, *, includes=True, allow_stdin=False, visited=None
-) -> List[Op]:
-    """Convenience function for parsing a HERA file. Reads the contents of the file and
-    delegates parsing to the `parse` function.
-
-    `allow_stdin` should be set to True if you wish the file path "-" to be interpreted
-    as standard input instead of a file with the actual name "-".
-
-    See `parse` for the meaning of `includes` and `visited`.
-    """
+def read_file(path, *, allow_stdin=False):
+    """Read a file and return its contents."""
     if allow_stdin and path == "-":
         try:
-            program = sys.stdin.read()
+            return sys.stdin.read()
         except (IOError, KeyboardInterrupt):
             print()
             sys.exit(3)
     else:
         try:
             with open(path) as f:
-                program = f.read()
+                return f.read()
         except FileNotFoundError:
             emit_error('file "{}" does not exist.'.format(path), exit=True)
         except PermissionError:
             emit_error('permission denied to open file "{}".'.format(path), exit=True)
         except OSError:
             emit_error('could not open file "{}".'.format(path), exit=True)
-
-    return parse(program, path=path, includes=includes, visited=visited)
 
 
 def convert_tokens(ops: List[Op], base_location: Location) -> None:
@@ -149,14 +138,16 @@ def expand_includes(ops: List[Op], path: str, *, visited=None) -> List[Op]:
 
             # Strip off the leading and trailing quote.
             include_path = op.args[0][1:-1]
-            include_path = os.path.join(os.path.dirname(path), include_path)
+            if path is not None:
+                include_path = os.path.join(os.path.dirname(path), include_path)
 
             if get_canonical_path(include_path) in visited:
                 # TODO: Do I _need_ to exit immediately here, or can I catch more
                 # errors?
                 emit_error("recursive include", loc=op.args[0], exit=True)
 
-            included_ops = parse_file(include_path, visited=visited)
+            included_program = read_file(include_path)
+            included_ops = parse(included_program, path=include_path, visited=visited)
             expanded_ops.extend(included_ops)
         else:
             expanded_ops.append(op)
