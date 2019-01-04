@@ -11,24 +11,26 @@ def vm():
     return VirtualMachine()
 
 
-def test_exec_ternary_op_with_ADD(vm):
+def test_exec_aslu_op_with_ADD(vm):
     vm.registers[2] = to_u16(-1)
     vm.registers[3] = 1
 
-    vm.exec_ternary_op(Op("ADD", ["R1", "R2", "R3"]))
+    vm.exec_aslu_op(Op("ADD", ["R1", "R2", "R3"]))
 
+    assert vm.pc == 1
     assert vm.registers[1] == 0
     assert not vm.flag_sign
     assert vm.flag_zero
 
 
-def test_exec_ternary_op_with_SUB(vm):
+def test_exec_aslu_op_with_SUB(vm):
     vm.flag_carry_block = True
     vm.registers[2] = 40
     vm.registers[3] = 100
 
-    vm.exec_ternary_op(Op("SUB", ["R1", "R2", "R3"]))
+    vm.exec_aslu_op(Op("SUB", ["R1", "R2", "R3"]))
 
+    assert vm.pc == 1
     assert vm.registers[1] == to_u16(-60)
     assert vm.flag_sign
     assert not vm.flag_zero

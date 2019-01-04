@@ -94,7 +94,10 @@ REGISTER_BRANCHES = set(
 RELATIVE_BRANCHES = set(b + "R" for b in REGISTER_BRANCHES)
 BRANCHES = REGISTER_BRANCHES | RELATIVE_BRANCHES
 DATA_STATEMENTS = set(["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "DSKIP"])
-TERNARY_OPS = set(["ADD", "SUB", "MUL", "AND", "OR", "XOR"])
+ALSU_OPS = set(
+    ["ADD", "SUB", "MUL", "AND", "OR", "XOR", "LSL", "LSR", "LSL8", "LSR8", "ASL"]
+    + ["ASR"]
+)
 
 
 def emit_error(msg, *, loc=None, exit=False):

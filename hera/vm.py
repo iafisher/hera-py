@@ -7,6 +7,7 @@ import functools
 
 from .symtab import HERA_DATA_START
 from .utils import (
+    ALSU_OPS,
     BRANCHES,
     DATA_STATEMENTS,
     emit_warning,
@@ -15,27 +16,9 @@ from .utils import (
     REGISTER_BRANCHES,
     register_to_index,
     RELATIVE_BRANCHES,
-    TERNARY_OPS,
     to_u16,
     to_u32,
 )
-
-
-def binary_op(f):
-    """A decorator for binary HERA ops. It handles fetching the value of the
-    operand register, storing the result in the target register, setting the
-    zero and sign flags, and incrementing the program counter.
-    """
-
-    @functools.wraps(f)
-    def inner(self, target, original):
-        original = self.get_register(original)
-        result = f(self, original)
-        self.store_register(target, result)
-        self.set_zero_and_sign(result)
-        self.pc += 1
-
-    return inner
 
 
 class VirtualMachine:
@@ -77,8 +60,8 @@ class VirtualMachine:
 
         if op.name in BRANCHES:
             self.exec_branch(op)
-        elif op.name in TERNARY_OPS:
-            self.exec_ternary_op(op)
+        elif op.name in ALSU_OPS:
+            self.exec_aslu_op(op)
         else:
             handler = getattr(self, "exec_" + op.name)
             handler(*op.args)
@@ -94,13 +77,12 @@ class VirtualMachine:
         else:
             self.pc += 1
 
-    def exec_ternary_op(self, op):
-        left = self.get_register(op.args[1])
-        right = self.get_register(op.args[2])
+    def exec_aslu_op(self, op):
+        args = [self.get_register(a) for a in op.args[1:]]
 
         calculator = getattr(self, "calculate_" + op.name)
 
-        result = calculator(left, right)
+        result = calculator(*args)
         self.store_register(op.args[0], result)
         self.set_zero_and_sign(result)
         self.pc += 1
@@ -232,8 +214,7 @@ class VirtualMachine:
         self.flag_carry = original < value
         self.pc += 1
 
-    @binary_op
-    def exec_LSL(self, original):
+    def calculate_LSL(self, original):
         carry = 1 if self.flag_carry and not self.flag_carry_block else 0
         result = ((original << 1) + carry) & 0xFFFF
 
@@ -241,8 +222,7 @@ class VirtualMachine:
 
         return result
 
-    @binary_op
-    def exec_LSR(self, original):
+    def calculate_LSR(self, original):
         carry = 2 ** 15 if self.flag_carry and not self.flag_carry_block else 0
         result = (original >> 1) + carry
 
@@ -250,16 +230,13 @@ class VirtualMachine:
 
         return result
 
-    @binary_op
-    def exec_LSL8(self, original):
+    def calculate_LSL8(self, original):
         return (original << 8) & 0xFFFF
 
-    @binary_op
-    def exec_LSR8(self, original):
+    def calculate_LSR8(self, original):
         return original >> 8
 
-    @binary_op
-    def exec_ASL(self, original):
+    def calculate_ASL(self, original):
         carry = 1 if self.flag_carry and not self.flag_carry_block else 0
         result = ((original << 1) + carry) & 0xFFFF
 
@@ -268,8 +245,7 @@ class VirtualMachine:
 
         return result
 
-    @binary_op
-    def exec_ASR(self, original):
+    def calculate_ASR(self, original):
         # This is a little messy because right shift in Python rounds towards
         # negative infinity (7 >> 1 == -4) but in HERA it rounds towards zero
         # (7 >> 1 == -3).
