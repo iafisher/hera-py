@@ -1,5 +1,6 @@
 import pytest
 
+from hera.data import Op
 from hera.utils import to_u16
 from hera.vm import VirtualMachine
 
@@ -7,6 +8,17 @@ from hera.vm import VirtualMachine
 @pytest.fixture
 def vm():
     return VirtualMachine()
+
+
+def test_exec_aslu_op_with_LSL(vm):
+    vm.registers[2] = 40
+
+    vm.exec_one(Op("LSL", ["R1", "R2"]))
+
+    assert vm.pc == 1
+    assert vm.registers[1] == 80
+    assert not vm.flag_sign
+    assert not vm.flag_zero
 
 
 def test_calculate_LSL_with_small_positive(vm):

@@ -8,14 +8,32 @@ def vm():
     return VirtualMachine()
 
 
+def test_exec_print_reg(vm, capsys):
+    vm.registers[1] = 70
+
+    vm.exec_print_reg("R1")
+
+    assert capsys.readouterr().out == "R1 = 0x0046 = 70 = 'F'\n"
+
+
 def test_print_reg_increments_pc(vm):
     vm.exec_print_reg("R1")
     assert vm.pc == 1
 
 
+def test_exec_print(vm, capsys):
+    vm.exec_print("Hello, world!")
+    assert capsys.readouterr().out == "Hello, world!"
+
+
 def test_print_increments_pc(vm):
     vm.exec_print("Hello, world!")
     assert vm.pc == 1
+
+
+def test_exec_println(vm, capsys):
+    vm.exec_println("Hello, world!")
+    assert capsys.readouterr().out == "Hello, world!\n"
 
 
 def test_println_increments_pc(vm):
