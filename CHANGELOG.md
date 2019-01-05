@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `break` debugging command now accepts labels as arguments.
 - Constants and data labels cannot be used as branch targets.
 
+### Removed
+- The --lines command-line argument.
+
 
 ## [0.4.0] - 2019-01-02
 ### Added

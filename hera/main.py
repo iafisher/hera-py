@@ -1,14 +1,13 @@
 """hera: an interpreter for the Haverford Educational RISC Architecture.
 
 Usage:
-    hera [--lines=<n>] [-q | --verbose] [--no-color] <path>
+    hera [-q | --verbose] [--no-color] <path>
     hera [--no-color] preprocess <path>
     hera [--no-color] debug <path>
     hera (-h | --help)
     hera (-v | --version)
 
 Options:
-    --lines=<n>      Only execute the first n lines of the program.
     --verbose        Set output level to verbose.
     -q --quiet       Set output level to quiet.
     --no-color       Do not print colored output.
@@ -47,13 +46,8 @@ def main(argv=None, vm=None):
     elif arguments["debug"]:
         main_debug(path)
     else:
-        lines_to_exec = int(arguments["--lines"]) if arguments["--lines"] else None
         main_execute(
-            path,
-            lines_to_exec=lines_to_exec,
-            verbose=arguments["--verbose"],
-            quiet=arguments["--quiet"],
-            vm=vm,
+            path, verbose=arguments["--verbose"], quiet=arguments["--quiet"], vm=vm
         )
 
 
@@ -63,7 +57,7 @@ def main_debug(path):
     debug(program, symbol_table)
 
 
-def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=None):
+def main_execute(path, *, verbose=False, quiet=False, vm=None):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
 
@@ -77,7 +71,7 @@ def main_execute(path, *, lines_to_exec=None, verbose=False, quiet=False, vm=Non
 
     program, _ = load_program_from_file(path)
 
-    vm.exec_many(program, lines=lines_to_exec)
+    vm.exec_many(program)
 
     if not quiet:
         dump_state(vm, verbose=verbose)

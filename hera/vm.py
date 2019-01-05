@@ -84,7 +84,7 @@ class VirtualMachine:
         self.set_zero_and_sign(result)
         self.pc += 1
 
-    def exec_many(self, program, *, lines=None):
+    def exec_many(self, program):
         """Execute a program (i.e., a list of operations), resetting the machine's
         state beforehand.
         """
@@ -95,8 +95,7 @@ class VirtualMachine:
             self.exec_one(data_statement)
 
         self.pc = 0
-        terminate_at = min(lines, len(program)) if lines is not None else len(program)
-        while self.pc < terminate_at:
+        while self.pc < len(program):
             opc = self.pc
             self.exec_one(program[self.pc])
             if opc == self.pc:
