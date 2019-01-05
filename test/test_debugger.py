@@ -69,11 +69,9 @@ def test_execute_abbreviated_break(debugger):
         debugger.handle_command("b 7")
         assert mock_exec_break.call_count == 1
 
-        args = mock_exec_break.call_args[0]
+        args, kwargs = mock_exec_break.call_args
         assert len(args) == 1
         assert args[0] == ["7"]
-
-        kwargs = mock_exec_break.call_args[1]
         assert len(kwargs) == 0
 
 
@@ -213,11 +211,9 @@ def test_execute_abbreviated_print(debugger):
         debugger.handle_command("p r7")
         assert mock_exec_print.call_count == 1
 
-        args = mock_exec_print.call_args[0]
+        args, kwargs = mock_exec_print.call_args
         assert len(args) == 1
         assert args[0] == ["r7"]
-
-        kwargs = mock_exec_print.call_args[1]
         assert len(kwargs) == 0
 
 
@@ -233,6 +229,17 @@ def test_execute_skip_with_no_arg(debugger):
 
     assert should_continue
     assert debugger.vm.pc == 2
+
+
+def test_execute_abbreviated_skip(debugger):
+    with patch("hera.debugger.Debugger.exec_skip") as mock_exec_skip:
+        debugger.handle_command("s 10")
+        assert mock_exec_skip.call_count == 1
+
+        args, kwargs = mock_exec_skip.call_args
+        assert len(args) == 1
+        assert args[0] == ["10"]
+        assert len(kwargs) == 0
 
 
 def test_execute_quit(debugger):
