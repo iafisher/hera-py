@@ -2,8 +2,9 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import Op
-from hera.debugger import Debugger, get_original_program
+from hera.debugger import Debugger, get_original_program, reverse_lookup_label
 from hera.loader import load_program, load_program_from_file
+from hera.symtab import Constant, Label
 
 
 @pytest.fixture
@@ -343,14 +344,14 @@ def test_get_original_program():
     add_op = Op("ADD", ["R2", "R1", "R0"])
     add_op = add_op._replace(original=add_op)
     program = [setlo_op, sethi_op, add_op]
-    assert get_original_program(program) == [
+    assert get_original_program(program, {}) == [
         (set_op, [setlo_op, sethi_op], 0),
         (add_op, [add_op], 2),
     ]
 
 
 def test_get_original_program_with_large_example():
-    program, _ = load_program(
+    program, symbol_table = load_program(
         """\
 CBON()
 // n in R1, answer in R2
@@ -372,14 +373,14 @@ LABEL(end)
 """
     )
 
-    original_program = get_original_program(program)
-    assert get_original_program(program) == [
+    original_program = get_original_program(program, symbol_table)
+    assert original_program == [
         (Op("CBON", []), [Op("FON", [0x10])], 0),
         (Op("SET", ["R1", 7]), [Op("SETLO", ["R1", 7]), Op("SETHI", ["R1", 0])], 1),
         (Op("SET", ["R2", 1]), [Op("SETLO", ["R2", 1]), Op("SETHI", ["R2", 0])], 3),
         (Op("CMP", ["R0", "R1"]), [Op("FON", [0x8]), Op("SUB", ["R0", "R0", "R1"])], 5),
         (
-            Op("BZ", [21]),
+            Op("BZ", ["end"]),
             [Op("SETLO", ["R11", 21]), Op("SETHI", ["R11", 0]), Op("BZ", ["R11"])],
             7,
         ),
@@ -390,15 +391,21 @@ LABEL(end)
             11,
         ),
         (
-            Op("BZ", [21]),
+            Op("BZ", ["end"]),
             [Op("SETLO", ["R11", 21]), Op("SETHI", ["R11", 0]), Op("BZ", ["R11"])],
             13,
         ),
         (Op("MUL", ["R2", "R2", "R3"]), [Op("MUL", ["R2", "R2", "R3"])], 16),
         (Op("DEC", ["R3", 1]), [Op("DEC", ["R3", 1])], 17),
         (
-            Op("BR", [11]),
+            Op("BR", ["loop"]),
             [Op("SETLO", ["R11", 11]), Op("SETHI", ["R11", 0]), Op("BR", ["R11"])],
             18,
         ),
     ]
+
+
+def test_reverse_lookup_label():
+    symbol_table = {"n": Constant(11), "end": Label(11)}
+    assert reverse_lookup_label(symbol_table, 11) == "end"
+    assert reverse_lookup_label(symbol_table, 12) == None

@@ -11,7 +11,7 @@ from typing import Dict, List
 
 from .data import Op
 from .symtab import Label
-from .utils import op_to_string, print_register_debug
+from .utils import op_to_string, print_register_debug, REGISTER_BRANCHES
 from .vm import VirtualMachine
 
 
@@ -282,11 +282,11 @@ class Debugger:
         return loc
 
 
-def get_original_program(program):
-    """Given a preprocessed program, return the original ops of the program in a list of
-    (original, real, pc) triples, where `real` is a list of the ops that `original` was
-    preprocssed to and `pc` is the program counter corresponding to `real[0]`, e.g. a
-    SETLO/SETHI sequence would yield (SET, [SETLO, SETHI], 0).
+def get_original_program(program, symbol_table):
+    """Given a preprocessed program and its symbol table, return the original ops of the
+    program in a list of (original, real, pc) triples, where `real` is a list of the ops
+    that `original` was preprocssed to and `pc` is the program counter corresponding to
+    `real[0]`, e.g. a SETLO/SETHI sequence would yield (SET, [SETLO, SETHI], 0).
     """
     if not program:
         return []
@@ -296,15 +296,31 @@ def get_original_program(program):
     original_op = program[0].original
     real_ops = []
     real_pc = 0
-    for pc, op in enumerate(program):
+    for pc, op in enumerate(program + [Op("DUMMY", [])]):
         if op.original == original_op:
             real_ops.append(op)
         else:
+            # Substitute label values for their names.
+            if original_op.name in REGISTER_BRANCHES and isinstance(
+                original_op.args[0], int
+            ):
+                original_label = reverse_lookup_label(symbol_table, original_op.args[0])
+                if original_label is not None:
+                    original_op.args[0] = original_label
+
             original_program.append((original_op, real_ops, real_pc))
             original_op = op.original
             real_ops = [op]
             real_pc = pc
 
-    original_program.append((original_op, real_ops, real_pc))
-
     return original_program
+
+
+def reverse_lookup_label(symbol_table, value):
+    """Return the name of the label that maps to `value`, or None if no such label is
+    found. Constants and data labels are ignored.
+    """
+    for k, v in symbol_table.items():
+        if value == v and isinstance(v, Label):
+            return k
+    return None
