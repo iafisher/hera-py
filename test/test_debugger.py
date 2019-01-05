@@ -2,7 +2,12 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import Op
-from hera.debugger import Debugger, get_original_program, reverse_lookup_label
+from hera.debugger import (
+    Debugger,
+    get_original_program,
+    get_pc_map,
+    reverse_lookup_label,
+)
 from hera.loader import load_program, load_program_from_file
 from hera.symtab import Constant, Label
 
@@ -350,9 +355,7 @@ def test_get_original_program():
     ]
 
 
-def test_get_original_program_with_large_example():
-    program, symbol_table = load_program(
-        """\
+ORIGINAL_PROGRAM_EXAMPLE = """\
 CBON()
 // n in R1, answer in R2
 SET(R1, 7)
@@ -371,8 +374,10 @@ BR(loop)
 
 LABEL(end)
 """
-    )
 
+
+def test_get_original_program_with_large_example():
+    program, symbol_table = load_program(ORIGINAL_PROGRAM_EXAMPLE)
     original_program = get_original_program(program, symbol_table)
     assert original_program == [
         (Op("CBON", []), [Op("FON", [0x10])], 0),
@@ -403,6 +408,33 @@ LABEL(end)
             18,
         ),
     ]
+
+
+def test_get_pc_map_with_large_example():
+    pc_map = get_pc_map(get_original_program(*load_program(ORIGINAL_PROGRAM_EXAMPLE)))
+    assert pc_map == {
+        0: 0,
+        1: 1,
+        2: 1,
+        3: 2,
+        4: 2,
+        5: 3,
+        6: 3,
+        7: 4,
+        8: 4,
+        9: 4,
+        10: 5,
+        11: 6,
+        12: 6,
+        13: 7,
+        14: 7,
+        15: 7,
+        16: 8,
+        17: 9,
+        18: 10,
+        19: 10,
+        20: 10,
+    }
 
 
 def test_reverse_lookup_label():

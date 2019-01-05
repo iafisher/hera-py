@@ -281,6 +281,9 @@ class Debugger:
 
         return loc
 
+    def is_finished(self):
+        return self.vm.halted or self.vm.pc >= len(self.program)
+
 
 def get_original_program(program, symbol_table):
     """Given a preprocessed program and its symbol table, return the original ops of the
@@ -314,6 +317,21 @@ def get_original_program(program, symbol_table):
             real_pc = pc
 
     return original_program
+
+
+def get_pc_map(original_program):
+    """Given an original program as returned by `get_original_program`, return a
+    dictionary that maps from the virtual machine's program counter to indices in the
+    original program.
+    """
+    if not original_program:
+        return {}
+
+    pc_map = {}
+    for i, (_, real_ops, pc) in enumerate(original_program):
+        for offset in range(len(real_ops)):
+            pc_map[pc + offset] = i
+    return pc_map
 
 
 def reverse_lookup_label(symbol_table, value):

@@ -45,16 +45,32 @@ class VirtualMachine:
         # to be addressable, but we start off with a considerably smaller array and
         # expand it as necessary, to keep the start-up time fast.
         self.memory = [0] * (2 ** 4)
+        self.halted = False
         # Location object for the current operation
         self.location = None
         # Have warnings been issued for use of SWI and RTI instructions?
         self.warned_for_SWI = False
         self.warned_for_RTI = False
 
+    def exec_many(self, program):
+        """Execute a program (i.e., a list of operations), resetting the machine's
+        state beforehand.
+        """
+        self.reset()
+
+        while program and program[0].name in DATA_STATEMENTS:
+            data_statement = program.pop(0)
+            self.exec_one(data_statement)
+
+        self.pc = 0
+        while not self.halted and self.pc < len(program):
+            self.exec_one(program[self.pc])
+
     def exec_one(self, op):
         """Execute a single operation."""
         self.location = getattr(op.name, "location", None)
 
+        opc = self.pc
         if op.name in BRANCHES:
             self.exec_branch(op)
         elif op.name in ALSU_OPS:
@@ -62,6 +78,8 @@ class VirtualMachine:
         else:
             handler = getattr(self, "exec_" + op.name)
             handler(*op.args)
+        if self.pc == opc:
+            self.halted = True
 
     def exec_branch(self, op):
         name = op.name if op.name in REGISTER_BRANCHES else op.name[:-1]
@@ -83,23 +101,6 @@ class VirtualMachine:
         self.store_register(op.args[0], result)
         self.set_zero_and_sign(result)
         self.pc += 1
-
-    def exec_many(self, program):
-        """Execute a program (i.e., a list of operations), resetting the machine's
-        state beforehand.
-        """
-        self.reset()
-
-        while program and program[0].name in DATA_STATEMENTS:
-            data_statement = program.pop(0)
-            self.exec_one(data_statement)
-
-        self.pc = 0
-        while self.pc < len(program):
-            opc = self.pc
-            self.exec_one(program[self.pc])
-            if opc == self.pc:
-                break
 
     def get_register(self, name):
         """Get the contents of the register with the given name."""
