@@ -95,12 +95,12 @@ def test_execute_next(debugger):
 
 def test_execute_next_with_halt(debugger, capsys):
     # Last instruction of SAMPLE_PROGRAM is a HALT operation.
-    debugger.vm.pc = len(debugger.program) - 1
+    debugger.vm.pc = 5
 
     should_continue = debugger.handle_command("next")
 
     assert should_continue
-    assert debugger.vm.pc == len(debugger.program) - 1
+    assert debugger.vm.pc == 5
     assert capsys.readouterr().out == "Program has finished executing.\n"
 
 

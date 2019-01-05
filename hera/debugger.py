@@ -2,6 +2,8 @@
 
 `debug` is the sole public function.
 
+TODO: Explain why this is all so tricky.
+
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
@@ -55,7 +57,10 @@ class Debugger:
     """
 
     def __init__(self, program, symbol_table):
-        self.program = program
+        self.max_pc = len(program)
+        self.program = get_original_program(program, symbol_table)
+        self.pc_map = get_pc_map(self.program)
+
         self.symbol_table = symbol_table
         # A map from instruction numbers (i.e., possible values of the program counter)
         # to human-readable line numbers.
@@ -133,26 +138,16 @@ class Debugger:
             print("next takes no arguments.")
             return
 
-        if self.vm.pc >= len(self.program):
+        if self.is_finished():
             print("Program has finished executing. Press 'r' to restart.")
             return
 
-        # The user expects that the next operation as it is written in the HERA file
-        # will be executed. However, the next operation in the file may correspond to
-        # multiple operations in the actual program, e.g. SET in the file becomes
-        # SETLO and SETHI in the program. So we keep executing operations that
-        # correspond to the same original operation (the `original` field on Op objects)
-        # until we hit an operation with a different origin.
-        original_op = self.program[self.vm.pc].original
-        while (
-            self.vm.pc < len(self.program)
-            and self.program[self.vm.pc].original == original_op
-        ):
-            opc = self.vm.pc
-            self.vm.exec_one(self.program[self.vm.pc])
-            if opc == self.vm.pc:
-                print("Program has finished executing.")
-                return
+        real_ops = self.program[self.pc_map[self.vm.pc]][1]
+        for real_op in real_ops:
+            self.vm.exec_one(real_op)
+        if self.is_finished():
+            print("Program has finished executing.")
+            return
 
         self.print_current_op()
 
@@ -169,14 +164,13 @@ class Debugger:
         else:
             offset = 1
 
-        while offset > 0 and self.vm.pc < len(self.program):
-            original_op = self.program[self.vm.pc].original
-            while (
-                self.vm.pc < len(self.program)
-                and self.program[self.vm.pc].original == original_op
-            ):
-                self.vm.pc += 1
-            offset -= 1
+        for _ in range(offset):
+            real_ops = self.program[self.pc_map[self.vm.pc]][1]
+            for real_op in real_ops:
+                self.vm.exec_one(real_op)
+            if self.is_finished():
+                print("Program has finished executing.")
+                return
 
         self.print_current_op()
 
@@ -191,12 +185,12 @@ class Debugger:
             return
 
         while True:
-            opc = self.vm.pc
-            self.vm.exec_one(self.program[self.vm.pc])
-            if self.vm.pc == opc:
+            for real_op in self.program[self.pc_map[self.vm.pc]][1]:
+                self.vm.exec_one(real_op)
+            if self.is_finished():
                 print("Program has finished executing.")
                 return
-            elif self.vm.pc >= len(self.program) or self.vm.pc in self.breakpoints:
+            elif self.vm.pc in self.breakpoints:
                 break
 
         self.print_current_op()
@@ -235,8 +229,9 @@ class Debugger:
         """Print the next operation to be executed. If the program has finished
         executed, nothing is printed.
         """
-        if self.vm.pc < len(self.program):
-            op = self.program[self.vm.pc].original or self.program[self.vm.pc]
+        if not self.is_finished():
+            index = self.pc_map[self.vm.pc]
+            op = self.program[index][0].original or self.program[index][0]
             opstr = op_to_string(op)
             if op.name.location is not None:
                 path = (
@@ -257,9 +252,9 @@ class Debugger:
             except (KeyError, AssertionError):
                 raise ValueError("could not locate label `{}`.".format(b)) from None
         else:
-            for i, op in enumerate(self.program):
+            for op, _, pc in self.program:
                 if op.name.location.line == lineno:
-                    return i
+                    return pc
 
             raise ValueError("could not find corresponding line.")
 
@@ -267,7 +262,8 @@ class Debugger:
         """Turn an instruction number into a human-readable location string with the
         file path and line number. More or less the inverse of `resolve_location`.
         """
-        op = self.program[b].original or self.program[b]
+        index = self.pc_map[b]
+        op = self.program[index][0].original or self.program[index][0]
         if op.name.location is not None:
             path = "<stdin>" if op.name.location.path == "-" else op.name.location.path
             loc = path + ":" + str(op.name.location.line)
@@ -282,7 +278,7 @@ class Debugger:
         return loc
 
     def is_finished(self):
-        return self.vm.halted or self.vm.pc >= len(self.program)
+        return self.vm.halted or self.vm.pc >= self.max_pc
 
 
 def get_original_program(program, symbol_table):
