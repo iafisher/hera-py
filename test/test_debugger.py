@@ -221,6 +221,20 @@ def test_execute_abbreviated_print(debugger):
         assert len(kwargs) == 0
 
 
+def test_execute_skip(debugger):
+    should_continue = debugger.handle_command("skip 2")
+
+    assert should_continue
+    assert debugger.vm.pc == 4
+
+
+def test_execute_skip_with_no_arg(debugger):
+    should_continue = debugger.handle_command("skip")
+
+    assert should_continue
+    assert debugger.vm.pc == 2
+
+
 def test_execute_quit(debugger):
     assert debugger.handle_command("quit") is False
     assert debugger.handle_command("q") is False

@@ -26,6 +26,9 @@ Available commands:
     break <n>    Set a breakpoint on the n'th line of the program. When no
                  arguments are given, all current breakpoints are printed.
 
+    continue     Execute the program until a breakpoint is encountered or the program
+                 terminates.
+
     help         Print this help message.
 
     next         Execute the current line.
@@ -35,8 +38,8 @@ Available commands:
 
     restart      Restart the execution of the program from the beginning.
 
-    skip <n>     Skip to the n'th line of the program without executing any
-                 of the lines in between.
+    skip <n>     Skip ahead by n instructions without executing them. If not provided,
+                 n defaults to 1.
 
     quit         Exit the debugger.
 
@@ -150,17 +153,28 @@ class Debugger:
         self.print_current_op()
 
     def exec_skip(self, args):
-        if len(args) != 1:
-            print("skip takes on argument.")
+        if len(args) > 1:
+            print("skip takes zero or one arguments.")
             return
 
-        try:
-            b = self.resolve_location(args[0])
-        except ValueError as e:
-            print("Error:", e)
+        if len(args) == 1:
+            try:
+                offset = int(args[0])
+            except ValueError as e:
+                print("skip takes an integer argument.")
         else:
-            self.vm.pc = b
-            self.print_current_op()
+            offset = 1
+
+        while offset > 0 and self.vm.pc < len(self.program):
+            original_op = self.program[self.vm.pc].original
+            while (
+                self.vm.pc < len(self.program)
+                and self.program[self.vm.pc].original == original_op
+            ):
+                self.vm.pc += 1
+            offset -= 1
+
+        self.print_current_op()
 
     def exec_continue(self, args):
         if len(args) != 0:
