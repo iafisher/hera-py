@@ -1,8 +1,9 @@
 import pytest
 from unittest.mock import patch
 
-from hera.debugger import Debugger
-from hera.loader import load_program_from_file
+from hera.data import Op
+from hera.debugger import Debugger, get_original_program
+from hera.loader import load_program, load_program_from_file
 
 
 @pytest.fixture
@@ -242,6 +243,30 @@ def test_execute_abbreviated_skip(debugger):
         assert len(kwargs) == 0
 
 
+def test_execute_list(debugger, capsys):
+    should_continue = debugger.handle_command("list")
+
+    assert should_continue
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+[test/assets/unit/debugger, lines 4-8]
+
+-> 0000  SET(R1, 3)
+   0002  SET(R2, 39)
+   0004  ADD(R3, R1, R2)
+   0005  HALT()\n
+"""
+    )
+
+
+def test_execute_abbreviated_list(debugger):
+    with patch("hera.debugger.Debugger.exec_list") as mock_exec_list:
+        debugger.handle_command("l")
+        assert mock_exec_list.call_count == 1
+
+
 def test_execute_quit(debugger):
     assert debugger.handle_command("quit") is False
     assert debugger.handle_command("q") is False
@@ -309,3 +334,71 @@ def test_print_current_op(debugger, capsys):
     assert (
         captured.out == "[test/assets/unit/debugger.hera, line 4]\n\n0000  SET(R1, 3)\n"
     )
+
+
+def test_get_original_program():
+    set_op = Op("SET", ["R1", 10])
+    setlo_op = Op("SETLO", ["R1", 10], original=set_op)
+    sethi_op = Op("SETHI", ["R1", 0], original=set_op)
+    add_op = Op("ADD", ["R2", "R1", "R0"])
+    add_op = add_op._replace(original=add_op)
+    program = [setlo_op, sethi_op, add_op]
+    assert get_original_program(program) == [
+        (set_op, [setlo_op, sethi_op], 0),
+        (add_op, [add_op], 2),
+    ]
+
+
+def test_get_original_program_with_large_example():
+    program, _ = load_program(
+        """\
+CBON()
+// n in R1, answer in R2
+SET(R1, 7)
+SET(R2, 1)
+CMP(R0, R1)
+BZ(end)
+
+// i in R3
+MOVE(R3, R1)
+LABEL(loop)
+CMP(R3, R0)
+BZ(end)
+MUL(R2, R2, R3)
+DEC(R3, 1)
+BR(loop)
+
+LABEL(end)
+"""
+    )
+
+    original_program = get_original_program(program)
+    assert get_original_program(program) == [
+        (Op("CBON", []), [Op("FON", [0x10])], 0),
+        (Op("SET", ["R1", 7]), [Op("SETLO", ["R1", 7]), Op("SETHI", ["R1", 0])], 1),
+        (Op("SET", ["R2", 1]), [Op("SETLO", ["R2", 1]), Op("SETHI", ["R2", 0])], 3),
+        (Op("CMP", ["R0", "R1"]), [Op("FON", [0x8]), Op("SUB", ["R0", "R0", "R1"])], 5),
+        (
+            Op("BZ", [21]),
+            [Op("SETLO", ["R11", 21]), Op("SETHI", ["R11", 0]), Op("BZ", ["R11"])],
+            7,
+        ),
+        (Op("MOVE", ["R3", "R1"]), [Op("OR", ["R3", "R1", "R0"])], 10),
+        (
+            Op("CMP", ["R3", "R0"]),
+            [Op("FON", [0x8]), Op("SUB", ["R0", "R3", "R0"])],
+            11,
+        ),
+        (
+            Op("BZ", [21]),
+            [Op("SETLO", ["R11", 21]), Op("SETHI", ["R11", 0]), Op("BZ", ["R11"])],
+            13,
+        ),
+        (Op("MUL", ["R2", "R2", "R3"]), [Op("MUL", ["R2", "R2", "R3"])], 16),
+        (Op("DEC", ["R3", 1]), [Op("DEC", ["R3", 1])], 17),
+        (
+            Op("BR", [11]),
+            [Op("SETLO", ["R11", 11]), Op("SETHI", ["R11", 0]), Op("BR", ["R11"])],
+            18,
+        ),
+    ]

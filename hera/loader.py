@@ -22,7 +22,7 @@ def load_program(text: str) -> Tuple[List[Op], Dict[str, int]]:
     method.
     """
     program = parse(text, includes=True)
-    return _load_program_common(program, path)
+    return _load_program_common(program, "<string>")
 
 
 def load_program_from_file(path: str) -> Tuple[List[Op], Dict[str, int]]:

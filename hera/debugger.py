@@ -31,9 +31,11 @@ Available commands:
 
     help         Print this help message.
 
+    list         Print the current and surrounding lines of source code.
+
     next         Execute the current line.
 
-    print <e>    Evaluate the expression and print its result. The expression
+    print <e>    Evaluate the expression and print the result. The expression
                  may be a register or a memory location, e.g. "M[123]".
 
     restart      Restart the execution of the program from the beginning.
@@ -86,6 +88,8 @@ class Debugger:
             self.exec_break(args)
         elif "continue".startswith(cmd):
             self.exec_continue(args)
+        elif "list".startswith(cmd):
+            self.exec_list(args)
         elif "next".startswith(cmd):
             self.exec_next(args)
         elif "print".startswith(cmd):
@@ -175,6 +179,11 @@ class Debugger:
             offset -= 1
 
         self.print_current_op()
+
+    def exec_list(self, args):
+        if len(args) != 0:
+            print("list takes no arguments.")
+            return
 
     def exec_continue(self, args):
         if len(args) != 0:
@@ -271,3 +280,31 @@ class Debugger:
                 return "{} ({})".format(loc, symbol)
 
         return loc
+
+
+def get_original_program(program):
+    """Given a preprocessed program, return the original ops of the program in a list of
+    (original, real, pc) triples, where `real` is a list of the ops that `original` was
+    preprocssed to and `pc` is the program counter corresponding to `real[0]`, e.g. a
+    SETLO/SETHI sequence would yield (SET, [SETLO, SETHI], 0).
+    """
+    if not program:
+        return []
+
+    original_program = []
+
+    original_op = program[0].original
+    real_ops = []
+    real_pc = 0
+    for pc, op in enumerate(program):
+        if op.original == original_op:
+            real_ops.append(op)
+        else:
+            original_program.append((original_op, real_ops, real_pc))
+            original_op = op.original
+            real_ops = [op]
+            real_pc = pc
+
+    original_program.append((original_op, real_ops, real_pc))
+
+    return original_program
