@@ -179,6 +179,32 @@ class Debugger:
             print("list takes no arguments.")
             return
 
+        index = self.pc_map[self.vm.pc]
+        previous_three = self.program[max(index - 3, 0) : index]
+        next_three = self.program[index + 1 : index + 4]
+
+        first_op = (previous_three[0] if previous_three else self.program[index])[0]
+        last_op = (next_three[-1] if next_three else self.program[index])[0]
+
+        if first_op.name.location is not None:
+            path = (
+                "<stdin>"
+                if first_op.name.location.path == "-"
+                else first_op.name.location.path
+            )
+            first_line = first_op.name.location.line
+            last_line = last_op.name.location.line
+            print("[{}, lines {}-{}]\n".format(path, first_line, last_line))
+
+        for op, _, pc in previous_three:
+            print("   {:0>4x}  {}".format(pc, op_to_string(op)))
+
+        op, _, pc = self.program[index]
+        print("-> {:0>4x}  {}".format(pc, op_to_string(op)))
+
+        for op, _, pc in next_three:
+            print("   {:0>4x}  {}".format(pc, op_to_string(op)))
+
     def exec_continue(self, args):
         if len(args) != 0:
             print("continue takes no arguments.")

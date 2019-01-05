@@ -257,12 +257,12 @@ def test_execute_list(debugger, capsys):
     assert (
         captured
         == """\
-[test/assets/unit/debugger, lines 4-8]
+[test/assets/unit/debugger.hera, lines 4-8]
 
 -> 0000  SET(R1, 3)
    0002  SET(R2, 39)
    0004  ADD(R3, R1, R2)
-   0005  HALT()\n
+   0005  HALT()
 """
     )
 
