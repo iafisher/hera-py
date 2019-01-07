@@ -1,12 +1,12 @@
 import pytest
 
 from hera.main import main
+from .utils import execute_program_helper
 
 
 def test_error_message_for_missing_comma(capsys):
     with pytest.raises(SystemExit):
-        # SETLO(R1 40)
-        main(["test/assets/error/missing_comma.hera"])
+        execute_program_helper("SETLO(R1 40)")
 
     captured = capsys.readouterr()
     assert "SETLO(R1 40)" in captured.err
@@ -16,50 +16,68 @@ def test_error_message_for_missing_comma(capsys):
 
 def test_error_message_for_invalid_register(capsys):
     with pytest.raises(SystemExit):
-        # SET(R17, 65)
-        main(["test/assets/error/invalid_register.hera"])
+        execute_program_helper("SET(R17, 65)")
 
-    captured = capsys.readouterr()
-    assert "SET(R17, 65)" in captured.err
-    assert "line 1" in captured.err
-    assert "col 5" in captured.err
-    # Make sure the caret is aligned properly.
-    assert "      ^" in captured.err
-    assert "R17" in captured.err
-    assert "not a valid register" in captured.err
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: R17 is not a valid register, line 1 col 5 of <stdin>
+
+  SET(R17, 65)
+      ^
+
+"""
+    )
 
 
 def test_error_message_for_invalid_register_with_weird_syntax(capsys):
+    program = """\
+SET(
+\tR17,
+\t65)
+"""
     with pytest.raises(SystemExit):
-        # SET(
-        # 	R17,
-        # 	65)
-        main(["test/assets/error/invalid_register_weird.hera"])
+        execute_program_helper(program)
 
-    captured = capsys.readouterr()
-    assert "\tR17" in captured.err
-    assert "SET(" not in captured.err
-    assert "65" not in captured.err
-    assert "line 2" in captured.err
-    assert "col 2" in captured.err
-    # Make sure the caret is aligned properly.
-    assert "  \t^" in captured.err
-    assert "not a valid register" in captured.err
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: R17 is not a valid register, line 2 col 2 of <stdin>
+
+  \tR17,
+  \t^
+
+"""
+    )
 
 
 def test_multiple_error_messages(capsys):
     with pytest.raises(SystemExit):
-        # ADD(R1, 10)
-        # INC(R4)
-        main(["test/assets/error/multiple_errors.hera"])
+        execute_program_helper("ADD(R1, 10)\nINC(R4)")
 
-    captured = capsys.readouterr()
-    assert "ADD" in captured.err
-    assert "too few" in captured.err
-    assert "expected register" in captured.err
-    assert "line 1" in captured.err
-    assert "INC" in captured.err
-    assert "line 2" in captured.err
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: too few args to ADD (expected 3), line 1 col 1 of <stdin>
+
+  ADD(R1, 10)
+  ^
+
+Error: expected register, line 1 col 9 of <stdin>
+
+  ADD(R1, 10)
+          ^
+
+Error: too few args to INC (expected 2), line 2 col 1 of <stdin>
+
+  INC(R4)
+  ^
+
+"""
+    )
 
 
 def test_error_message_from_include(capsys):
@@ -74,25 +92,62 @@ def test_error_message_from_include(capsys):
 
 
 def test_dskip_overflow_program(capsys):
-    with pytest.raises(SystemExit):
-        main(["test/assets/error/dskip_overflow.hera"])
+    program = """\
+DSKIP(0xFFFF)
+DLABEL(N)
+INTEGER(42)
 
-    captured = capsys.readouterr()
-    assert "DSKIP(0xFFFF)" in captured.err
-    assert "line 1" in captured.err
+SET(R1, N)
+    """
+    with pytest.raises(SystemExit):
+        execute_program_helper(program)
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: past the end of available memory, line 1 col 1 of <stdin>
+
+  DSKIP(0xFFFF)
+  ^
+
+Error: integer must be in range [-32768, 65536)
+"""
+    )
+    # TODO: I don't think the second error should actually be given.
 
 
 def test_warning_for_interrupt_instructions(capsys):
-    main(["test/assets/error/interrupts.hera"])
+    program = """\
+// These should give warnings.
+SWI(10)
+RTI()
 
-    captured = capsys.readouterr()
-    assert "SWI is a no-op in this simulator" in captured.err
-    assert "line 2 col 1 of test/assets/error/interrupts.hera" in captured.err
-    assert "SWI(10)" in captured.err
-    assert "RTI is a no-op in this simulator" in captured.err
-    assert "line 3 col 1 of test/assets/error/interrupts.hera" in captured.err
-    assert "RTI()" in captured.err
+// These should not give warnings (already given).
+SWI(10)
+RTI()
+    """
+    execute_program_helper(program)
 
-    # Make sure that only one warning is given for each instruction.
-    assert "line 6" not in captured.err
-    assert "line 7" not in captured.err
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Warning: SWI is a no-op in this simulator, line 2 col 1 of <stdin>
+
+  SWI(10)
+  ^
+
+Warning: RTI is a no-op in this simulator, line 3 col 1 of <stdin>
+
+  RTI()
+  ^
+
+
+Virtual machine state after execution:
+
+	All flags are OFF
+
+2 warnings emitted.
+"""
+    )

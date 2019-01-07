@@ -1,8 +1,0 @@
-SET(R1, 1)
-SET(R2, 10)
-LABEL(top)
-INC(R1, 1)
-CMP(R1, R2)
-BZ(bottom)
-BR(top)
-LABEL(bottom)

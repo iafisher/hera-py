@@ -1,7 +1,0 @@
-// These should give warnings.
-SWI(10)
-RTI()
-
-// These should not give warnings (already given).
-SWI(10)
-RTI()

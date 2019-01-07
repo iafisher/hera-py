@@ -1,8 +1,0 @@
-// A comment
-CONSTANT(N, 3)
-
-SET(R1, N)
-SET(R2, 39)
-LABEL(add)
-ADD(R3, R1, R2)
-HALT()

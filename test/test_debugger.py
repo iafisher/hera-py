@@ -17,7 +17,18 @@ def debugger():
     return Debugger(SAMPLE_PROGRAM, SYMBOL_TABLE)
 
 
-SAMPLE_PROGRAM, SYMBOL_TABLE = load_program_from_file("test/assets/unit/debugger.hera")
+SAMPLE_PROGRAM, SYMBOL_TABLE = load_program(
+    """\
+// A comment
+CONSTANT(N, 3)
+
+SET(R1, N)
+SET(R2, 39)
+LABEL(add)
+ADD(R3, R1, R2)
+HALT()
+"""
+)
 
 
 def test_print_breakpoints(debugger, capsys):
@@ -44,7 +55,7 @@ def test_set_breakpoint(debugger):
     assert should_continue
     assert len(debugger.breakpoints) == 1
     assert 0 in debugger.breakpoints
-    assert debugger.breakpoints[0] == "test/assets/unit/debugger.hera:4"
+    assert debugger.breakpoints[0] == "<string>:4"
 
 
 def test_set_breakpoint_not_on_line_of_code(debugger, capsys):
@@ -257,7 +268,7 @@ def test_execute_list(debugger, capsys):
     assert (
         captured
         == """\
-[test/assets/unit/debugger.hera, lines 4-8]
+[<string>, lines 4-8]
 
 -> 0000  SET(R1, 3)
    0002  SET(R2, 39)
@@ -322,24 +333,22 @@ def test_resolve_location_invalid_format(debugger):
 
 def test_get_breakpoint_name(debugger):
     # Zero'th instruction corresponds to second line.
-    assert debugger.get_breakpoint_name(0) == "test/assets/unit/debugger.hera:4"
+    assert debugger.get_breakpoint_name(0) == "<string>:4"
 
 
 def test_get_breakpoint_name_with_label(debugger):
-    assert debugger.get_breakpoint_name(4) == "test/assets/unit/debugger.hera:7 (add)"
+    assert debugger.get_breakpoint_name(4) == "<string>:7 (add)"
 
 
 def test_get_breakpoint_name_does_not_include_constant(debugger):
-    assert debugger.get_breakpoint_name(3) == "test/assets/unit/debugger.hera:5"
+    assert debugger.get_breakpoint_name(3) == "<string>:5"
 
 
 def test_print_current_op(debugger, capsys):
     debugger.print_current_op()
 
     captured = capsys.readouterr()
-    assert (
-        captured.out == "[test/assets/unit/debugger.hera, line 4]\n\n0000  SET(R1, 3)\n"
-    )
+    assert captured.out == "[<string>, line 4]\n\n0000  SET(R1, 3)\n"
 
 
 def test_get_original_program():

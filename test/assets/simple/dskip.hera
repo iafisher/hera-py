@@ -1,8 +1,0 @@
-DLABEL(first_array)
-INTEGER(42)
-DSKIP(10)
-INTEGER(84)
-
-SET(R1, first_array)
-LOAD(R2, 0, R1)
-LOAD(R3, 11, R1)

@@ -46,10 +46,10 @@ def test_main_non_existent_file(capsys):
 
 
 def test_main_preprocess(capsys):
-    # SET(R1, 10)
-    main_preprocess("test/assets/unit/set.hera")
+    with patch("sys.stdin", StringIO("SET(R1, 10)")):
+        main(["preprocess", "-"])
 
-    assert capsys.readouterr().out == "SETLO(R1, 10)\nSETHI(R1, 0)\n"
+    assert capsys.readouterr().out == "\nSETLO(R1, 10)\nSETHI(R1, 0)\n"
 
 
 def test_main_preprocess_non_existent_file(capsys):
@@ -61,7 +61,7 @@ def test_main_preprocess_non_existent_file(capsys):
 
 def test_main_debug(capsys):
     with patch("sys.stdin", StringIO("quit")):
-        main(["debug", "test/assets/unit/debugger.hera"])
+        main(["debug", "test/assets/cs240/factorial.hera"])
 
 
 def test_execute_from_stdin():

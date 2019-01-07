@@ -1,8 +1,0 @@
-SET(R1, 8)
-CALL(R12, times_two)
-HALT()
-
-// Multiply R1 by two, in-place
-LABEL(times_two)
-  LSL(R1, R1)
-  RETURN(R12, Rt)
