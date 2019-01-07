@@ -142,9 +142,10 @@ class Debugger:
             print("Program has finished executing. Press 'r' to restart.")
             return
 
-        real_ops = self.program[self.pc_map[self.vm.pc]][1]
+        real_ops = self.get_real_ops()
         for real_op in real_ops:
             self.vm.exec_one(real_op)
+
         if self.is_finished():
             print("Program has finished executing.")
             return
@@ -165,9 +166,10 @@ class Debugger:
             offset = 1
 
         for _ in range(offset):
-            real_ops = self.program[self.pc_map[self.vm.pc]][1]
+            real_ops = self.get_real_ops()
             for real_op in real_ops:
                 self.vm.exec_one(real_op)
+
             if self.is_finished():
                 print("Program has finished executing.")
                 return
@@ -211,8 +213,10 @@ class Debugger:
             return
 
         while True:
-            for real_op in self.program[self.pc_map[self.vm.pc]][1]:
+            real_ops = self.get_real_ops()
+            for real_op in real_ops:
                 self.vm.exec_one(real_op)
+
             if self.is_finished():
                 print("Program has finished executing.")
                 return
@@ -265,6 +269,12 @@ class Debugger:
                 )
                 print("[{}, line {}]\n".format(path, op.name.location.line))
             print("{:0>4x}  {}".format(self.vm.pc, opstr))
+
+    def get_real_ops(self, pc=None):
+        if pc is None:
+            pc = self.vm.pc
+
+        return self.program[self.pc_map[self.vm.pc]][1]
 
     def resolve_location(self, b):
         """Resolve a user-supplied location string into an instruction number"""
