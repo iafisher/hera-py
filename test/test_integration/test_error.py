@@ -111,10 +111,25 @@ Error: past the end of available memory, line 1 col 1 of <stdin>
   DSKIP(0xFFFF)
   ^
 
-Error: integer must be in range [-32768, 65536)
 """
     )
-    # TODO: I don't think the second error should actually be given.
+
+
+def test_constant_redefinition_error(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper("CONSTANT(N, 1)\nCONSTANT(N, 2)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: symbol `N` has already been defined, line 2 col 1 of <stdin>
+
+  CONSTANT(N, 2)
+  ^
+
+"""
+    )
 
 
 def test_warning_for_interrupt_instructions(capsys):

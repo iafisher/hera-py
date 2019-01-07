@@ -18,6 +18,7 @@ def get_symbol_table(program: List[Op]) -> Dict[str, int]:
     """Return the program's symbol table, a dictionary mapping from strings to Label,
     DataLabel and Constant objects (all subclasses of int).
     """
+    errors = False
     symbol_table = {}  # type: Dict[str, int]
     pc = 0
     dc = HERA_DATA_START
@@ -28,10 +29,23 @@ def get_symbol_table(program: List[Op]) -> Dict[str, int]:
                 update_symbol_table(symbol_table, op.args[0], Label(pc), op)
         elif op.name == "DLABEL":
             if len(op.args) == 1:
-                update_symbol_table(symbol_table, op.args[0], DataLabel(dc), op)
+                if dc >= 0xFFFF:
+                    # If the data counter is greater than 0xFFFF, then it's invalid
+                    # and type-checking will fail, so we don't want to put its actual
+                    # value in the symbol table in case, e.g SET(R1, DATA) is used later
+                    # and an out-of-range error would occur because 0xFFFF and higher
+                    # values don't fit into 16 bits.
+                    if update_symbol_table(symbol_table, op.args[0], DataLabel(0), op):
+                        errors = True
+                else:
+                    if update_symbol_table(symbol_table, op.args[0], DataLabel(dc), op):
+                        errors = True
         elif op.name == "CONSTANT":
             if len(op.args) == 2:
-                update_symbol_table(symbol_table, op.args[0], Constant(op.args[1]), op)
+                if update_symbol_table(
+                    symbol_table, op.args[0], Constant(op.args[1]), op
+                ):
+                    errors = True
         elif op.name == "INTEGER":
             dc += 1
         elif op.name == "DSKIP":
@@ -59,15 +73,18 @@ def get_symbol_table(program: List[Op]) -> Dict[str, int]:
 
         if dc >= 0xFFFF and odc < 0xFFFF:
             emit_error("past the end of available memory", loc=op.name)
+            errors = True
 
-    return symbol_table
+    return symbol_table if not errors else None
 
 
-def update_symbol_table(symbol_table: Dict[str, int], k: str, v: int, op: Op) -> None:
+def update_symbol_table(symbol_table: Dict[str, int], k: str, v: int, op: Op) -> bool:
     if k in symbol_table:
         emit_error("symbol `{}` has already been defined".format(k), loc=op.name)
+        return True
     else:
         symbol_table[k] = v
+        return False
 
 
 class Label(int):

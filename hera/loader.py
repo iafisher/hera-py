@@ -41,6 +41,9 @@ def _load_program_common(program, path):
         print()
 
     symbol_table = get_symbol_table(program)
+    if symbol_table is None:
+        sys.exit(3)
+
     if not typecheck(program, symbol_table):
         sys.exit(3)
     program = preprocess(program, symbol_table)
