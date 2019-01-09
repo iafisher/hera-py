@@ -1,7 +1,9 @@
+import os
 from setuptools import find_packages, setup
 
 
-with open('README.md', 'r') as f:
+dpath = ospath.dirname(os.path.realpath(__file__))
+with open(os.path.join(dpath, 'README.md'), 'r') as f:
     long_description = f.read()
 
 
