@@ -115,6 +115,63 @@ Error: past the end of available memory, line 1 col 1 of <stdin>
     )
 
 
+def test_error_for_use_of_constant_before_declaration(capsys):
+    program = "DSKIP(N)\nCONSTANT(N, 100)"
+
+    with pytest.raises(SystemExit):
+        execute_program_helper(program)
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: undefined constant, line 1 col 7 of <stdin>
+
+  DSKIP(N)
+        ^
+
+"""
+    )
+
+
+def test_error_for_dskip_with_register(capsys):
+    program = "DSKIP(R1)"
+
+    with pytest.raises(SystemExit):
+        execute_program_helper(program)
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: expected integer, line 1 col 7 of <stdin>
+
+  DSKIP(R1)
+        ^
+
+"""
+    )
+
+
+def test_error_for_recursive_constant_declaration(capsys):
+    program = "CONSTANT(N, N)"
+
+    with pytest.raises(SystemExit):
+        execute_program_helper(program)
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: undefined constant, line 1 col 13 of <stdin>
+
+  CONSTANT(N, N)
+              ^
+
+"""
+    )
+
+
 def test_constant_redefinition_error(capsys):
     with pytest.raises(SystemExit):
         execute_program_helper("CONSTANT(N, 1)\nCONSTANT(N, 2)")
