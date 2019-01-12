@@ -2,7 +2,14 @@
 
 `debug` is the sole public function.
 
-TODO: Explain why this is all so tricky.
+The code in this module makes an important distinction between "real ops" and "original
+ops." Original ops are the HERA operations as they appear in the program that the user
+wrote. Real ops are the original ops transformed by the preprocessor into something that
+the virtual machine can actually run. For example, a single original SET op corresponds
+to two real ops, SETLO and SETHI.
+
+Internally, the debugger operates on real ops, but whenever it displays output to the
+user, it must be in terms of original ops.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
@@ -57,10 +64,7 @@ class Debugger:
     """
 
     def __init__(self, program, symbol_table):
-        self.max_pc = len(program)
-        self.program = get_original_program(program, symbol_table)
-        self.pc_map = get_pc_map(self.program)
-
+        self.program = program
         self.symbol_table = symbol_table
         # A map from instruction numbers (i.e., possible values of the program counter)
         # to human-readable line numbers.
@@ -181,12 +185,11 @@ class Debugger:
             print("list takes no arguments.")
             return
 
-        index = self.pc_map[self.vm.pc]
-        previous_three = self.program[max(index - 3, 0) : index]
-        next_three = self.program[index + 1 : index + 4]
+        previous_three = self.get_previous_three_ops()
+        next_three = self.get_next_three_ops()
 
-        first_op = (previous_three[0] if previous_three else self.program[index])[0]
-        last_op = (next_three[-1] if next_three else self.program[index])[0]
+        first_op = previous_three[0][1] if previous_three else self.program[self.vm.pc]
+        last_op = next_three[-1][1] if next_three else self.program[self.vm.pc]
 
         if first_op.name.location is not None:
             path = (
@@ -198,13 +201,13 @@ class Debugger:
             last_line = last_op.name.location.line
             print("[{}, lines {}-{}]\n".format(path, first_line, last_line))
 
-        for op, _, pc in previous_three:
+        for pc, op in previous_three:
             print("   {:0>4x}  {}".format(pc, op_to_string(op)))
 
-        op, _, pc = self.program[index]
-        print("-> {:0>4x}  {}".format(pc, op_to_string(op)))
+        op = self.program[self.vm.pc].original
+        print("-> {:0>4x}  {}".format(self.vm.pc, op_to_string(op)))
 
-        for op, _, pc in next_three:
+        for pc, op in next_three:
             print("   {:0>4x}  {}".format(pc, op_to_string(op)))
 
     def exec_continue(self, args):
@@ -260,8 +263,7 @@ class Debugger:
         executed, nothing is printed.
         """
         if not self.is_finished():
-            index = self.pc_map[self.vm.pc]
-            op = self.program[index][0].original or self.program[index][0]
+            op = self.program[self.vm.pc].original or self.program[self.vm.pc]
             opstr = op_to_string(op)
             if op.name.location is not None:
                 path = (
@@ -270,11 +272,16 @@ class Debugger:
                 print("[{}, line {}]\n".format(path, op.name.location.line))
             print("{:0>4x}  {}".format(self.vm.pc, opstr))
 
-    def get_real_ops(self, pc=None):
-        if pc is None:
-            pc = self.vm.pc
+    def get_real_ops(self):
+        """Return all the real ops that correspond to the current original op. See
+        module docstring for explanation of terminology.
+        """
+        original = self.program[self.vm.pc].original
+        end = self.vm.pc
+        while end < len(self.program) and self.program[end].original == original:
+            end += 1
 
-        return self.program[self.pc_map[self.vm.pc]][1]
+        return self.program[self.vm.pc : end]
 
     def resolve_location(self, b):
         """Resolve a user-supplied location string into an instruction number"""
@@ -288,7 +295,7 @@ class Debugger:
             except (KeyError, AssertionError):
                 raise ValueError("could not locate label `{}`.".format(b)) from None
         else:
-            for op, _, pc in self.program:
+            for pc, op in enumerate(self.program):
                 if op.name.location.line == lineno:
                     return pc
 
@@ -298,8 +305,7 @@ class Debugger:
         """Turn an instruction number into a human-readable location string with the
         file path and line number. More or less the inverse of `resolve_location`.
         """
-        index = self.pc_map[b]
-        op = self.program[index][0].original or self.program[index][0]
+        op = self.program[b].original or self.program[b]
         if op.name.location is not None:
             path = "<stdin>" if op.name.location.path == "-" else op.name.location.path
             loc = path + ":" + str(op.name.location.line)
@@ -313,57 +319,41 @@ class Debugger:
 
         return loc
 
-    def is_finished(self):
-        return self.vm.halted or self.vm.pc >= self.max_pc
+    def get_previous_three_ops(self):
+        """Return the three original ops before the current one."""
+        # TODO: Refactor this.
+        if self.vm.pc == 0:
+            return []
 
+        ops = []
+        index = self.vm.pc - 1
+        for _ in range(3):
+            original = self.program[index].original
+            while index >= 0 and self.program[index].original == original:
+                index -= 1
+            ops.append((index + 1, self.program[index + 1].original))
+            if index < 0:
+                break
+        return list(reversed(ops))
 
-def get_original_program(program, symbol_table):
-    """Given a preprocessed program and its symbol table, return the original ops of the
-    program in a list of (original, real, pc) triples, where `real` is a list of the ops
-    that `original` was preprocssed to and `pc` is the program counter corresponding to
-    `real[0]`, e.g. a SETLO/SETHI sequence would yield (SET, [SETLO, SETHI], 0).
-    """
-    if not program:
-        return []
-
-    original_program = []
-
-    original_op = program[0].original
-    real_ops = []
-    real_pc = 0
-    for pc, op in enumerate(program + [Op("DUMMY", [])]):
-        if op.original == original_op:
-            real_ops.append(op)
-        else:
-            # Substitute label values for their names.
-            if original_op.name in REGISTER_BRANCHES and isinstance(
-                original_op.args[0], int
+    def get_next_three_ops(self):
+        """Return the three original ops after the current one."""
+        ops = []
+        index = self.vm.pc
+        for _ in range(3):
+            original = self.program[index].original
+            while (
+                index < len(self.program) and self.program[index].original == original
             ):
-                original_label = reverse_lookup_label(symbol_table, original_op.args[0])
-                if original_label is not None:
-                    original_op.args[0] = original_label
+                index += 1
+            if index < len(self.program):
+                ops.append((index, self.program[index].original))
+            else:
+                break
+        return ops
 
-            original_program.append((original_op, real_ops, real_pc))
-            original_op = op.original
-            real_ops = [op]
-            real_pc = pc
-
-    return original_program
-
-
-def get_pc_map(original_program):
-    """Given an original program as returned by `get_original_program`, return a
-    dictionary that maps from the virtual machine's program counter to indices in the
-    original program.
-    """
-    if not original_program:
-        return {}
-
-    pc_map = {}
-    for i, (_, real_ops, pc) in enumerate(original_program):
-        for offset in range(len(real_ops)):
-            pc_map[pc + offset] = i
-    return pc_map
+    def is_finished(self):
+        return self.vm.halted or self.vm.pc >= len(self.program)
 
 
 def reverse_lookup_label(symbol_table, value):

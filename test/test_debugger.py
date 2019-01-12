@@ -2,12 +2,7 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import Op
-from hera.debugger import (
-    Debugger,
-    get_original_program,
-    get_pc_map,
-    reverse_lookup_label,
-)
+from hera.debugger import Debugger, reverse_lookup_label
 from hera.loader import load_program, load_program_from_file
 from hera.symtab import Constant, Label
 
@@ -278,6 +273,36 @@ def test_execute_list(debugger, capsys):
     )
 
 
+def test_execute_list_middle_of_program(debugger, capsys):
+    debugger.vm.pc = 4
+    should_continue = debugger.handle_command("list")
+
+    assert should_continue
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+[<string>, lines 4-8]
+
+   0000  SET(R1, 3)
+   0002  SET(R2, 39)
+-> 0004  ADD(R3, R1, R2)
+   0005  HALT()
+"""
+    )
+
+
+def test_get_previous_three_ops(debugger):
+    debugger.vm.pc = 4
+    previous_three = debugger.get_previous_three_ops()
+
+    assert len(previous_three) == 2
+    assert previous_three[0][1].name == "SET"
+    assert previous_three[0][1].args[0] == "R1"
+    assert previous_three[1][1].name == "SET"
+    assert previous_three[1][1].args[0] == "R2"
+
+
 def test_execute_abbreviated_list(debugger):
     with patch("hera.debugger.Debugger.exec_list") as mock_exec_list:
         debugger.handle_command("l")
@@ -349,101 +374,6 @@ def test_print_current_op(debugger, capsys):
 
     captured = capsys.readouterr()
     assert captured.out == "[<string>, line 4]\n\n0000  SET(R1, 3)\n"
-
-
-def test_get_original_program():
-    set_op = Op("SET", ["R1", 10])
-    setlo_op = Op("SETLO", ["R1", 10], original=set_op)
-    sethi_op = Op("SETHI", ["R1", 0], original=set_op)
-    add_op = Op("ADD", ["R2", "R1", "R0"])
-    add_op = add_op._replace(original=add_op)
-    program = [setlo_op, sethi_op, add_op]
-    assert get_original_program(program, {}) == [
-        (set_op, [setlo_op, sethi_op], 0),
-        (add_op, [add_op], 2),
-    ]
-
-
-ORIGINAL_PROGRAM_EXAMPLE = """\
-CBON()
-// n in R1, answer in R2
-SET(R1, 7)
-SET(R2, 1)
-CMP(R0, R1)
-BZ(end)
-
-// i in R3
-MOVE(R3, R1)
-LABEL(loop)
-CMP(R3, R0)
-BZ(end)
-MUL(R2, R2, R3)
-DEC(R3, 1)
-BR(loop)
-
-LABEL(end)
-"""
-
-
-def test_get_original_program_with_large_example():
-    program, symbol_table = load_program(ORIGINAL_PROGRAM_EXAMPLE)
-    original_program = get_original_program(program, symbol_table)
-    assert original_program == [
-        (Op("CBON", []), [Op("FON", [0x10])], 0),
-        (Op("SET", ["R1", 7]), [Op("SETLO", ["R1", 7]), Op("SETHI", ["R1", 0])], 1),
-        (Op("SET", ["R2", 1]), [Op("SETLO", ["R2", 1]), Op("SETHI", ["R2", 0])], 3),
-        (Op("CMP", ["R0", "R1"]), [Op("FON", [0x8]), Op("SUB", ["R0", "R0", "R1"])], 5),
-        (
-            Op("BZ", ["end"]),
-            [Op("SETLO", ["R11", 21]), Op("SETHI", ["R11", 0]), Op("BZ", ["R11"])],
-            7,
-        ),
-        (Op("MOVE", ["R3", "R1"]), [Op("OR", ["R3", "R1", "R0"])], 10),
-        (
-            Op("CMP", ["R3", "R0"]),
-            [Op("FON", [0x8]), Op("SUB", ["R0", "R3", "R0"])],
-            11,
-        ),
-        (
-            Op("BZ", ["end"]),
-            [Op("SETLO", ["R11", 21]), Op("SETHI", ["R11", 0]), Op("BZ", ["R11"])],
-            13,
-        ),
-        (Op("MUL", ["R2", "R2", "R3"]), [Op("MUL", ["R2", "R2", "R3"])], 16),
-        (Op("DEC", ["R3", 1]), [Op("DEC", ["R3", 1])], 17),
-        (
-            Op("BR", ["loop"]),
-            [Op("SETLO", ["R11", 11]), Op("SETHI", ["R11", 0]), Op("BR", ["R11"])],
-            18,
-        ),
-    ]
-
-
-def test_get_pc_map_with_large_example():
-    pc_map = get_pc_map(get_original_program(*load_program(ORIGINAL_PROGRAM_EXAMPLE)))
-    assert pc_map == {
-        0: 0,
-        1: 1,
-        2: 1,
-        3: 2,
-        4: 2,
-        5: 3,
-        6: 3,
-        7: 4,
-        8: 4,
-        9: 4,
-        10: 5,
-        11: 6,
-        12: 6,
-        13: 7,
-        14: 7,
-        15: 7,
-        16: 8,
-        17: 9,
-        18: 10,
-        19: 10,
-        20: 10,
-    }
 
 
 def test_reverse_lookup_label():
