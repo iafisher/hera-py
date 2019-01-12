@@ -211,6 +211,32 @@ def test_print_memory_location(debugger, capsys):
     assert capsys.readouterr().out == "M[97] = 1000\n"
 
 
+def test_print_hex_memory_location(debugger, capsys):
+    debugger.vm.assign_memory(0xAB, 1000)
+
+    should_continue = debugger.handle_command("print m[0xaB]")
+
+    assert should_continue
+    assert capsys.readouterr().out == "M[171] = 1000\n"
+
+
+def test_print_memory_location_from_register(debugger, capsys):
+    debugger.vm.registers[5] = 0xAB
+    debugger.vm.assign_memory(0xAB, 1000)
+
+    should_continue = debugger.handle_command("print m[r5]")
+
+    assert should_continue
+    assert capsys.readouterr().out == "M[171] = 1000\n"
+
+
+def test_print_invalid_memory_location(debugger, capsys):
+    should_continue = debugger.handle_command("print m[???]")
+
+    assert should_continue
+    assert capsys.readouterr().out == "Could not parse memory location.\n"
+
+
 def test_execute_print_with_too_few_args(debugger, capsys):
     # TODO: It would be useful if this printed the last printed expression again.
     should_continue = debugger.handle_command("print")

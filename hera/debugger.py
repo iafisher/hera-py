@@ -221,7 +221,7 @@ class Debugger:
         self.print_current_op()
 
     # Match strings of the form "m[123]"
-    _MEM_PATTERN = re.compile(r"[Mm]\[([0-9]+)\]")
+    _MEM_PATTERN = re.compile(r"[Mm]\[(.*?)\]")
 
     def exec_print(self, args):
         if len(args) != 1:
@@ -230,7 +230,17 @@ class Debugger:
 
         match = self._MEM_PATTERN.match(args[0])
         if match:
-            index = int(match.group(1))
+            index_str = match.group(1)
+            try:
+                index = int(index_str, base=0)
+            except ValueError:
+                # If it's not an integer, try parsing it as a register.
+                try:
+                    index = self.vm.get_register(index_str)
+                except ValueError:
+                    print("Could not parse memory location.")
+                    return
+
             print("M[{}] = {}".format(index, self.vm.access_memory(index)))
         elif args[0].lower() == "pc":
             print("PC = {}".format(self.vm.pc))
