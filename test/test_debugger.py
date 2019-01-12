@@ -190,7 +190,7 @@ def test_print_invalid_register(debugger, capsys):
     should_continue = debugger.handle_command("print r17")
 
     assert should_continue
-    assert capsys.readouterr().out == "r17 is not a valid register.\n"
+    assert capsys.readouterr().out == "Could not parse argument to print.\n"
 
 
 def test_print_program_counter(debugger, capsys):
@@ -235,6 +235,13 @@ def test_print_invalid_memory_location(debugger, capsys):
 
     assert should_continue
     assert capsys.readouterr().out == "Could not parse memory location.\n"
+
+
+def test_print_constant(debugger, capsys):
+    should_continue = debugger.handle_command("print N")
+
+    assert should_continue
+    assert capsys.readouterr().out == "N = 3\n"
 
 
 def test_execute_print_with_too_few_args(debugger, capsys):

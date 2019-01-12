@@ -248,7 +248,13 @@ class Debugger:
             try:
                 v = self.vm.get_register(args[0])
             except ValueError:
-                print("{} is not a valid register.".format(args[0]))
+                # If it's not a register, see if it's in the symbol table.
+                try:
+                    v = self.symbol_table[args[0]]
+                except KeyError:
+                    print("Could not parse argument to print.")
+                else:
+                    print("{} = {}".format(args[0], v))
             else:
                 print_register_debug(args[0], v, to_stderr=False)
 
