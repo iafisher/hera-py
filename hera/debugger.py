@@ -99,6 +99,8 @@ class Debugger:
             self.exec_continue(args)
         elif "list".startswith(cmd):
             self.exec_list(args)
+        elif cmd == "longlist" or cmd == "ll":
+            self.exec_long_list(args)
         elif "next".startswith(cmd):
             self.exec_next(args)
         elif "print".startswith(cmd):
@@ -204,6 +206,22 @@ class Debugger:
 
         for pc, op in next_three:
             print("   {:0>4x}  {}".format(pc, op_to_string(op)))
+
+    def exec_long_list(self, args):
+        if len(args) != 0:
+            print("longlist takes no arguments.")
+            return
+
+        index = 0
+        while index < len(self.program):
+            op = self.program[index].original
+            prefix = "-> " if index == self.vm.pc else "   "
+            print(prefix + "{:0>4x}  {}".format(index, op_to_string(op)))
+            original = self.program[index].original
+            while (
+                index < len(self.program) and self.program[index].original == original
+            ):
+                index += 1
 
     def exec_continue(self, args):
         if len(args) != 0:

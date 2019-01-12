@@ -342,6 +342,35 @@ def test_execute_abbreviated_list(debugger):
         assert mock_exec_list.call_count == 1
 
 
+def test_execute_long_list(debugger, capsys):
+    should_continue = debugger.handle_command("longlist")
+
+    assert should_continue
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+-> 0000  SET(R1, 3)
+   0002  SET(R2, 39)
+   0004  ADD(R3, R1, R2)
+   0005  HALT()
+"""
+    )
+
+
+def test_execute_long_list_with_too_many_args(debugger, capsys):
+    should_continue = debugger.handle_command("longlist 1")
+
+    assert should_continue
+    assert capsys.readouterr().out == "longlist takes no arguments.\n"
+
+
+def test_execute_abbreviated_long_list(debugger, capsys):
+    with patch("hera.debugger.Debugger.exec_long_list") as mock_exec_long_list:
+        debugger.handle_command("ll")
+        assert mock_exec_long_list.call_count == 1
+
+
 def test_execute_quit(debugger):
     assert debugger.handle_command("quit") is False
     assert debugger.handle_command("q") is False
