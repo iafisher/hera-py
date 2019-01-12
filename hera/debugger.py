@@ -76,6 +76,10 @@ class Debugger:
         self.vm = VirtualMachine()
 
     def loop(self):
+        if not self.program:
+            print("Cannot debug an empty program.")
+            return
+
         self.print_current_op()
 
         while True:

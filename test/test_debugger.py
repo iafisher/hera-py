@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import Op
-from hera.debugger import Debugger, reverse_lookup_label
+from hera.debugger import debug, Debugger, reverse_lookup_label
 from hera.loader import load_program, load_program_from_file
 from hera.symtab import Constant, Label
 
@@ -474,3 +474,9 @@ def test_reverse_lookup_label():
     symbol_table = {"n": Constant(11), "end": Label(11)}
     assert reverse_lookup_label(symbol_table, 11) == "end"
     assert reverse_lookup_label(symbol_table, 12) == None
+
+
+def test_debug_empty_program(capsys):
+    debug([], {})
+
+    assert capsys.readouterr().out == "Cannot debug an empty program.\n"
