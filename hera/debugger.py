@@ -91,9 +91,10 @@ class Debugger:
 
             if not response:
                 continue
-
-            if not self.handle_command(response):
+            elif "quit".startswith(response.lower()):
                 break
+            else:
+                self.handle_command(response)
 
     def handle_command(self, response):
         """Parse the command and execute it. Return False if the loop should exit, and
@@ -119,12 +120,8 @@ class Debugger:
             self.exec_skip(args)
         elif "help".startswith(cmd):
             print(_HELP_MSG)
-        elif "quit".startswith(cmd):
-            return False
         else:
             print("{} is not a known command.".format(cmd))
-
-        return True
 
     def exec_break(self, args):
         if len(args) > 1:

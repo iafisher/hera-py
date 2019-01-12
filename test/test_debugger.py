@@ -28,51 +28,44 @@ HALT()
 
 def test_print_breakpoints(debugger, capsys):
     debugger.breakpoints[4] = "main.hera:7"
+    debugger.handle_command("break")
 
-    should_continue = debugger.handle_command("break")
-
-    assert should_continue
     assert capsys.readouterr().out == "main.hera:7\n"
 
 
 def test_print_breakpoints_with_no_breakpoints_set(debugger, capsys):
-    should_continue = debugger.handle_command("break")
+    debugger.handle_command("break")
 
-    assert should_continue
     assert capsys.readouterr().out == "No breakpoints set.\n"
 
 
 def test_set_breakpoint(debugger):
     assert len(debugger.breakpoints) == 0
 
-    should_continue = debugger.handle_command("break 4")
+    debugger.handle_command("break 4")
 
-    assert should_continue
     assert len(debugger.breakpoints) == 1
     assert 0 in debugger.breakpoints
     assert debugger.breakpoints[0] == "<string>:4"
 
 
 def test_set_breakpoint_not_on_line_of_code(debugger, capsys):
-    should_continue = debugger.handle_command("break 1")
+    debugger.handle_command("break 1")
 
-    assert should_continue
     assert len(debugger.breakpoints) == 0
     assert capsys.readouterr().out == "Error: could not find corresponding line.\n"
 
 
 def test_set_unparseable_breakpoint(debugger, capsys):
-    should_continue = debugger.handle_command("break $$$")
+    debugger.handle_command("break $$$")
 
-    assert should_continue
     assert len(debugger.breakpoints) == 0
     assert capsys.readouterr().out == "Error: could not locate label `$$$`.\n"
 
 
 def test_execute_break_with_too_many_args(debugger, capsys):
-    should_continue = debugger.handle_command("break 1 2 3")
+    debugger.handle_command("break 1 2 3")
 
-    assert should_continue
     assert len(debugger.breakpoints) == 0
     assert capsys.readouterr().out == "break takes zero or one arguments.\n"
 
@@ -92,9 +85,8 @@ def test_execute_next(debugger):
     assert debugger.vm.registers[1] == 0
     assert debugger.vm.pc == 0
 
-    should_continue = debugger.handle_command("next")
+    debugger.handle_command("next")
 
-    assert should_continue
     assert debugger.vm.registers[1] == 3
     assert debugger.vm.pc == 2
 
@@ -103,9 +95,8 @@ def test_execute_next_with_halt(debugger, capsys):
     # Last instruction of SAMPLE_PROGRAM is a HALT operation.
     debugger.vm.pc = 5
 
-    should_continue = debugger.handle_command("next")
+    debugger.handle_command("next")
 
-    assert should_continue
     assert debugger.vm.pc == 5
     assert capsys.readouterr().out == "Program has finished executing.\n"
 
@@ -113,9 +104,8 @@ def test_execute_next_with_halt(debugger, capsys):
 def test_execute_next_after_end_of_program(debugger, capsys):
     debugger.vm.pc = 9000
 
-    should_continue = debugger.handle_command("next")
+    debugger.handle_command("next")
 
-    assert should_continue
     assert debugger.vm.pc == 9000
     assert (
         capsys.readouterr().out
@@ -125,9 +115,8 @@ def test_execute_next_after_end_of_program(debugger, capsys):
 
 def test_execute_next_with_too_many_args(debugger, capsys):
     # TODO: It would actually be useful if this worked.
-    should_continue = debugger.handle_command("next 10")
+    debugger.handle_command("next 10")
 
-    assert should_continue
     assert capsys.readouterr().out == "next takes no arguments.\n"
 
 
@@ -140,9 +129,8 @@ def test_execute_abbreviated_next(debugger):
 def test_execute_continue_with_breakpoint(debugger):
     debugger.breakpoints[4] = ""
 
-    should_continue = debugger.handle_command("continue")
+    debugger.handle_command("continue")
 
-    assert should_continue
     assert debugger.vm.registers[1] == 3
     assert debugger.vm.registers[2] == 39
     assert debugger.vm.registers[3] == 0
@@ -154,9 +142,8 @@ def test_execute_continue_with_breakpoint(debugger):
 
 
 def test_execute_continue_without_breakpoint(debugger, capsys):
-    should_continue = debugger.handle_command("continue")
+    debugger.handle_command("continue")
 
-    assert should_continue
     assert debugger.vm.registers[1] == 3
     assert debugger.vm.registers[2] == 39
     assert debugger.vm.registers[3] == 42
@@ -165,9 +152,8 @@ def test_execute_continue_without_breakpoint(debugger, capsys):
 
 
 def test_execute_continue_with_too_many_args(debugger, capsys):
-    should_continue = debugger.handle_command("continue 10")
+    debugger.handle_command("continue 10")
 
-    assert should_continue
     assert capsys.readouterr().out == "continue takes no arguments.\n"
 
 
@@ -180,43 +166,38 @@ def test_execute_abbreviated_continue(debugger):
 def test_print_register(debugger, capsys):
     debugger.vm.registers[7] = 42
 
-    should_continue = debugger.handle_command("print r7")
+    debugger.handle_command("print r7")
 
-    assert should_continue
     assert capsys.readouterr().out == "r7 = 0x002a = 42 = '*'\n"
 
 
 def test_print_invalid_register(debugger, capsys):
-    should_continue = debugger.handle_command("print r17")
+    debugger.handle_command("print r17")
 
-    assert should_continue
     assert capsys.readouterr().out == "Could not parse argument to print.\n"
 
 
 def test_print_program_counter(debugger, capsys):
     debugger.vm.pc = 7
 
-    should_continue = debugger.handle_command("print PC")
+    debugger.handle_command("print PC")
 
-    assert should_continue
     assert capsys.readouterr().out == "PC = 7\n"
 
 
 def test_print_memory_location(debugger, capsys):
     debugger.vm.assign_memory(97, 1000)
 
-    should_continue = debugger.handle_command("print m[97]")
+    debugger.handle_command("print m[97]")
 
-    assert should_continue
     assert capsys.readouterr().out == "M[97] = 1000\n"
 
 
 def test_print_hex_memory_location(debugger, capsys):
     debugger.vm.assign_memory(0xAB, 1000)
 
-    should_continue = debugger.handle_command("print m[0xaB]")
+    debugger.handle_command("print m[0xaB]")
 
-    assert should_continue
     assert capsys.readouterr().out == "M[171] = 1000\n"
 
 
@@ -224,31 +205,27 @@ def test_print_memory_location_from_register(debugger, capsys):
     debugger.vm.registers[5] = 0xAB
     debugger.vm.assign_memory(0xAB, 1000)
 
-    should_continue = debugger.handle_command("print m[r5]")
+    debugger.handle_command("print m[r5]")
 
-    assert should_continue
     assert capsys.readouterr().out == "M[171] = 1000\n"
 
 
 def test_print_invalid_memory_location(debugger, capsys):
-    should_continue = debugger.handle_command("print m[???]")
+    debugger.handle_command("print m[???]")
 
-    assert should_continue
     assert capsys.readouterr().out == "Could not parse memory location.\n"
 
 
 def test_print_constant(debugger, capsys):
-    should_continue = debugger.handle_command("print N")
+    debugger.handle_command("print N")
 
-    assert should_continue
     assert capsys.readouterr().out == "N = 3\n"
 
 
 def test_execute_print_with_too_few_args(debugger, capsys):
     # TODO: It would be useful if this printed the last printed expression again.
-    should_continue = debugger.handle_command("print")
+    debugger.handle_command("print")
 
-    assert should_continue
     assert capsys.readouterr().out == "print takes one argument.\n"
 
 
@@ -264,16 +241,14 @@ def test_execute_abbreviated_print(debugger):
 
 
 def test_execute_skip(debugger):
-    should_continue = debugger.handle_command("skip 2")
+    debugger.handle_command("skip 2")
 
-    assert should_continue
     assert debugger.vm.pc == 4
 
 
 def test_execute_skip_with_no_arg(debugger):
-    should_continue = debugger.handle_command("skip")
+    debugger.handle_command("skip")
 
-    assert should_continue
     assert debugger.vm.pc == 2
 
 
@@ -289,9 +264,8 @@ def test_execute_abbreviated_skip(debugger):
 
 
 def test_execute_list(debugger, capsys):
-    should_continue = debugger.handle_command("list")
+    debugger.handle_command("list")
 
-    assert should_continue
     captured = capsys.readouterr().out
     assert (
         captured
@@ -308,9 +282,8 @@ def test_execute_list(debugger, capsys):
 
 def test_execute_list_middle_of_program(debugger, capsys):
     debugger.vm.pc = 4
-    should_continue = debugger.handle_command("list")
+    debugger.handle_command("list")
 
-    assert should_continue
     captured = capsys.readouterr().out
     assert (
         captured
@@ -327,9 +300,8 @@ def test_execute_list_middle_of_program(debugger, capsys):
 
 def test_execute_list_with_context_arg(debugger, capsys):
     debugger.vm.pc = 2
-    should_continue = debugger.handle_command("list 1")
+    debugger.handle_command("list 1")
 
-    assert should_continue
     captured = capsys.readouterr().out
     assert (
         captured
@@ -344,16 +316,14 @@ def test_execute_list_with_context_arg(debugger, capsys):
 
 
 def test_execute_list_with_invalid_context_arg(debugger, capsys):
-    should_continue = debugger.handle_command("list abc")
+    debugger.handle_command("list abc")
 
-    assert should_continue
     assert capsys.readouterr().out == "Could not parse argument to list.\n"
 
 
 def test_execute_list_with_too_many_args(debugger, capsys):
-    should_continue = debugger.handle_command("list 1 2")
+    debugger.handle_command("list 1 2")
 
-    assert should_continue
     assert capsys.readouterr().out == "list takes zero or one arguments.\n"
 
 
@@ -375,9 +345,8 @@ def test_execute_abbreviated_list(debugger):
 
 
 def test_execute_long_list(debugger, capsys):
-    should_continue = debugger.handle_command("longlist")
+    debugger.handle_command("longlist")
 
-    assert should_continue
     captured = capsys.readouterr().out
     assert (
         captured
@@ -391,9 +360,8 @@ def test_execute_long_list(debugger, capsys):
 
 
 def test_execute_long_list_with_too_many_args(debugger, capsys):
-    should_continue = debugger.handle_command("longlist 1")
+    debugger.handle_command("longlist 1")
 
-    assert should_continue
     assert capsys.readouterr().out == "longlist takes no arguments.\n"
 
 
@@ -403,24 +371,17 @@ def test_execute_abbreviated_long_list(debugger, capsys):
         assert mock_exec_long_list.call_count == 1
 
 
-def test_execute_quit(debugger):
-    assert debugger.handle_command("quit") is False
-    assert debugger.handle_command("q") is False
-
-
 def test_execute_help(debugger, capsys):
-    should_continue = debugger.handle_command("help")
+    debugger.handle_command("help")
 
-    assert should_continue
     out = capsys.readouterr().out
     assert "Available commands" in out
     assert "Error:" not in out
 
 
 def test_execute_unknown_command(debugger, capsys):
-    should_continue = debugger.handle_command("whatever")
+    debugger.handle_command("whatever")
 
-    assert should_continue
     assert capsys.readouterr().out == "whatever is not a known command.\n"
 
 
