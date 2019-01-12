@@ -325,9 +325,41 @@ def test_execute_list_middle_of_program(debugger, capsys):
     )
 
 
-def test_get_previous_three_ops(debugger):
+def test_execute_list_with_context_arg(debugger, capsys):
+    debugger.vm.pc = 2
+    should_continue = debugger.handle_command("list 1")
+
+    assert should_continue
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+[<string>, lines 4-7]
+
+   0000  SET(R1, 3)
+-> 0002  SET(R2, 39)
+   0004  ADD(R3, R1, R2)
+"""
+    )
+
+
+def test_execute_list_with_invalid_context_arg(debugger, capsys):
+    should_continue = debugger.handle_command("list abc")
+
+    assert should_continue
+    assert capsys.readouterr().out == "Could not parse argument to list.\n"
+
+
+def test_execute_list_with_too_many_args(debugger, capsys):
+    should_continue = debugger.handle_command("list 1 2")
+
+    assert should_continue
+    assert capsys.readouterr().out == "list takes zero or one arguments.\n"
+
+
+def test_get_previous_ops(debugger):
     debugger.vm.pc = 4
-    previous_three = debugger.get_previous_three_ops()
+    previous_three = debugger.get_previous_ops(3)
 
     assert len(previous_three) == 2
     assert previous_three[0][1].name == "SET"

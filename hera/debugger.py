@@ -40,7 +40,8 @@ Available commands:
 
     help         Print this help message.
 
-    list         Print the current and surrounding lines of source code.
+    list <n>     Print the current lines of source code and the n previous and
+                 next lines. If not provided, n defaults to 3.
 
     longlist     Print the entire program.
 
@@ -181,15 +182,21 @@ class Debugger:
         self.print_current_op()
 
     def exec_list(self, args):
-        if len(args) != 0:
-            print("list takes no arguments.")
+        if len(args) > 1:
+            print("list takes zero or one arguments.")
             return
 
-        previous_three = self.get_previous_three_ops()
-        next_three = self.get_next_three_ops()
+        try:
+            context = int(args[0], base=0) if args else 3
+        except ValueError:
+            print("Could not parse argument to list.")
+            return
 
-        first_op = previous_three[0][1] if previous_three else self.program[self.vm.pc]
-        last_op = next_three[-1][1] if next_three else self.program[self.vm.pc]
+        previous_ops = self.get_previous_ops(context)
+        next_ops = self.get_next_ops(context)
+
+        first_op = previous_ops[0][1] if previous_ops else self.program[self.vm.pc]
+        last_op = next_ops[-1][1] if next_ops else self.program[self.vm.pc]
 
         if first_op.name.location is not None:
             path = (
@@ -201,13 +208,13 @@ class Debugger:
             last_line = last_op.name.location.line
             print("[{}, lines {}-{}]\n".format(path, first_line, last_line))
 
-        for pc, op in previous_three:
+        for pc, op in previous_ops:
             print("   {:0>4x}  {}".format(pc, op_to_string(op)))
 
         op = self.program[self.vm.pc].original
         print("-> {:0>4x}  {}".format(self.vm.pc, op_to_string(op)))
 
-        for pc, op in next_three:
+        for pc, op in next_ops:
             print("   {:0>4x}  {}".format(pc, op_to_string(op)))
 
     def exec_long_list(self, args):
@@ -350,15 +357,15 @@ class Debugger:
 
         return loc
 
-    def get_previous_three_ops(self):
-        """Return the three original ops before the current one."""
+    def get_previous_ops(self, n):
+        """Return the `n` original ops before the current one."""
         # TODO: Refactor this.
         if self.vm.pc == 0:
             return []
 
         ops = []
         index = self.vm.pc - 1
-        for _ in range(3):
+        for _ in range(n):
             original = self.program[index].original
             while index >= 0 and self.program[index].original == original:
                 index -= 1
@@ -367,11 +374,11 @@ class Debugger:
                 break
         return list(reversed(ops))
 
-    def get_next_three_ops(self):
-        """Return the three original ops after the current one."""
+    def get_next_ops(self, n):
+        """Return the `n` original ops after the current one."""
         ops = []
         index = self.vm.pc
-        for _ in range(3):
+        for _ in range(n):
             original = self.program[index].original
             while (
                 index < len(self.program) and self.program[index].original == original
