@@ -150,10 +150,6 @@ class Debugger:
         for real_op in real_ops:
             self.vm.exec_one(real_op)
 
-        if self.is_finished():
-            print("Program has finished executing.")
-            return
-
         self.print_current_op()
 
     def exec_skip(self, args):
@@ -175,8 +171,7 @@ class Debugger:
                 self.vm.exec_one(real_op)
 
             if self.is_finished():
-                print("Program has finished executing.")
-                return
+                break
 
         self.print_current_op()
 
@@ -220,10 +215,7 @@ class Debugger:
             for real_op in real_ops:
                 self.vm.exec_one(real_op)
 
-            if self.is_finished():
-                print("Program has finished executing.")
-                return
-            elif self.vm.pc in self.breakpoints:
+            if self.is_finished() or self.vm.pc in self.breakpoints:
                 break
 
         self.print_current_op()
@@ -271,6 +263,8 @@ class Debugger:
                 )
                 print("[{}, line {}]\n".format(path, op.name.location.line))
             print("{:0>4x}  {}".format(self.vm.pc, opstr))
+        else:
+            print("Program has finished executing.")
 
     def get_real_ops(self):
         """Return all the real ops that correspond to the current original op. See
