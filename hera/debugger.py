@@ -35,12 +35,14 @@ Available commands:
     break <n>    Set a breakpoint on the n'th line of the program. When no
                  arguments are given, all current breakpoints are printed.
 
-    continue     Execute the program until a breakpoint is encountered or the program
-                 terminates.
+    continue     Execute the program until a breakpoint is encountered or the
+                 program terminates.
 
     help         Print this help message.
 
     list         Print the current and surrounding lines of source code.
+
+    longlist     Print the entire program.
 
     next         Execute the current line.
 
@@ -49,12 +51,13 @@ Available commands:
 
     restart      Restart the execution of the program from the beginning.
 
-    skip <n>     Skip ahead by n instructions without executing them. If not provided,
-                 n defaults to 1.
+    skip <n>     Skip ahead by n instructions without executing them. If not
+                 provided, n defaults to 1.
 
     quit         Exit the debugger.
 
-Command names may be abbreviated with a unique prefix, e.g. "n" for "next".
+Command names can generally be abbreviated with a unique prefix, e.g. "n" for
+"next".
 """
 
 
