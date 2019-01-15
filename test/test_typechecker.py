@@ -840,9 +840,9 @@ def test_typecheck_single_error():
     program = [Op("SETLO", [R("R1"), 10]), Op("SETHI", [R("R1"), 1000])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = typecheck(program, {})
+        symbol_table = typecheck(program)
 
-        assert not error_free
+        assert symbol_table is None
         assert mock_emit_error.call_count == 1
         assert "integer must be in range [-128, 256)" in mock_emit_error.call_args[0][0]
 
@@ -851,9 +851,9 @@ def test_typecheck_multiple_errors():
     program = [Op("ADD", [R("R1"), 10]), Op("INC", [R("R3")])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = typecheck(program, {})
+        symbol_table = typecheck(program)
 
-        assert not error_free
+        assert symbol_table is None
         assert mock_emit_error.call_count == 3
 
         call_args = mock_emit_error.call_args_list[0][0]
@@ -866,15 +866,3 @@ def test_typecheck_multiple_errors():
         call_args = mock_emit_error.call_args_list[2][0]
         assert "INC" in call_args[0]
         assert "too few" in call_args[0]
-
-
-def test_typecheck_relative_branch_with_label():
-    program = [Op("BRR", [SYM("l")])]
-
-    with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = typecheck(program, {"l": 7})
-
-        assert not error_free
-        assert mock_emit_error.call_count == 1
-        assert "relative branches cannot use labels" in mock_emit_error.call_args[0][0]
-        assert "why not use BR instead" in mock_emit_error.call_args[0][0]

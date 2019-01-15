@@ -5,10 +5,10 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from .data import Op, Token
-from .symtab import Constant, DataLabel
+from .symtab import Constant, DataLabel, get_symbol_table
 from .utils import (
     BINARY_OPS,
     emit_error,
@@ -20,15 +20,20 @@ from .utils import (
 )
 
 
-def typecheck(program: List[Op], symbol_table: Dict[str, int]) -> True:
-    """Type-check the program and emit errors as appropriate. Return True if the
-    program is well-typed.
+def typecheck(program: List[Op]) -> Optional[Dict[str, int]]:
+    """Type-check the program and emit errors as appropriate. Return the program's
+    symbol table if the program is well-typed, return None otherwise.
     """
-    error_free = True
+    symbol_table = get_symbol_table(program)
+    if symbol_table is None:
+        return None
+
+    errors = False
     for op in program:
         if not typecheck_op(op, symbol_table):
-            error_free = False
-    return error_free
+            errors = True
+
+    return symbol_table if not errors else None
 
 
 def typecheck_op(op: Op, symbol_table: Dict[str, int]) -> bool:

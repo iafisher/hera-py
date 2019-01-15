@@ -206,6 +206,23 @@ Error: data statement after instruction, line 2 col 1 of <stdin>
     )
 
 
+def test_relative_branch_with_label(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper("BRR(l)\nLABEL(l)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: relative branches cannot use labels (why not use BR instead?), line 1 col 5 of <stdin>
+
+  BRR(l)
+      ^
+
+"""
+    )
+
+
 def test_warning_for_interrupt_instructions(capsys):
     program = """\
 // These should give warnings.

@@ -40,12 +40,10 @@ def _load_program_common(program, path):
     if path == "-":
         print()
 
-    symbol_table = get_symbol_table(program)
+    symbol_table = typecheck(program)
     if symbol_table is None:
         sys.exit(3)
 
-    if not typecheck(program, symbol_table):
-        sys.exit(3)
     program = preprocess(program, symbol_table)
 
     return program, symbol_table
