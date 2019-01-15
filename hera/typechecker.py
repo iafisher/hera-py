@@ -11,7 +11,6 @@ from .data import Op, Token
 from .symtab import Constant, DataLabel
 from .utils import (
     BINARY_OPS,
-    DATA_STATEMENTS,
     emit_error,
     is_symbol,
     register_to_index,
@@ -26,30 +25,9 @@ def typecheck(program: List[Op], symbol_table: Dict[str, int]) -> True:
     program is well-typed.
     """
     error_free = True
-    current_file = None
-    end_of_data = False
     for op in program:
-        # Reset the end_of_data flag whenever an op from a new file is encountered.
-        if isinstance(op.name, Token) and op.name.location is not None:
-            if current_file is None:
-                current_file = op.name.location.path
-            else:
-                if current_file != op.name.location.path:
-                    end_of_data = False
-                    current_file = op.name.location.path
-
-        # TODO: Can I move this to the parser?
-        if not end_of_data:
-            if op.name not in DATA_STATEMENTS:
-                end_of_data = True
-        else:
-            if op.name in DATA_STATEMENTS:
-                emit_error("data statement after instruction", loc=op.name)
-                error_free = False
-
         if not typecheck_op(op, symbol_table):
             error_free = False
-
     return error_free
 
 

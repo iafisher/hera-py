@@ -14,7 +14,13 @@ from lark import Lark, Token as LarkToken, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from .data import IntToken, Location, Op, Token
-from .utils import emit_error, emit_warning, get_canonical_path, is_register
+from .utils import (
+    DATA_STATEMENTS,
+    emit_error,
+    emit_warning,
+    get_canonical_path,
+    is_register,
+)
 
 
 def parse(text: str, *, path=None, includes=True, visited=None) -> List[Op]:
@@ -65,6 +71,7 @@ def parse(text: str, *, path=None, includes=True, visited=None) -> List[Op]:
         ops = tree
 
     convert_tokens(ops, base_location)
+    check_data_after_code(ops)
 
     if includes:
         ops = expand_includes(ops, path, visited=visited)
@@ -152,6 +159,22 @@ def expand_includes(ops: List[Op], path: str, *, visited=None) -> List[Op]:
         else:
             expanded_ops.append(op)
     return expanded_ops
+
+
+def check_data_after_code(ops: List[Op]) -> None:
+    """Check that no data statement comes after a regular instruction. If one does,
+    emit an error and exit the whole program.
+    """
+    end_of_data = False
+    for op in ops:
+        if op.name == "#include":
+            continue
+
+        if op.name in DATA_STATEMENTS:
+            if end_of_data:
+                emit_error("data statement after instruction", loc=op.name, exit=True)
+        else:
+            end_of_data = True
 
 
 class TreeToOplist(Transformer):

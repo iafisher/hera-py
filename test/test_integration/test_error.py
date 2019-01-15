@@ -189,6 +189,23 @@ Error: symbol `N` has already been defined, line 2 col 1 of <stdin>
     )
 
 
+def test_data_after_code(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper("SET(R1, 1)\nINTEGER(42)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: data statement after instruction, line 2 col 1 of <stdin>
+
+  INTEGER(42)
+  ^
+
+"""
+    )
+
+
 def test_warning_for_interrupt_instructions(capsys):
     program = """\
 // These should give warnings.

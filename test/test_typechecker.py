@@ -868,17 +868,6 @@ def test_typecheck_multiple_errors():
         assert "too few" in call_args[0]
 
 
-def test_typecheck_data_statement_after_instruction():
-    program = [Op("SET", [R("R1"), 42]), Op("DLABEL", [SYM("N")])]
-
-    with patch("hera.utils._emit_msg") as mock_emit_error:
-        error_free = typecheck(program, {})
-
-        assert not error_free
-        assert mock_emit_error.call_count == 1
-        assert "data statement after instruction" in mock_emit_error.call_args[0][0]
-
-
 def test_typecheck_relative_branch_with_label():
     program = [Op("BRR", [SYM("l")])]
 
