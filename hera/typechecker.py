@@ -24,15 +24,10 @@ def typecheck(program: List[Op]) -> Optional[Dict[str, int]]:
     """Type-check the program and emit errors as appropriate. Return the program's
     symbol table if the program is well-typed, return None otherwise.
     """
-    symbol_table = get_symbol_table(program)
-    if symbol_table is None:
-        return None
-
-    errors = False
+    symbol_table, errors = get_symbol_table(program)
     for op in program:
         if not typecheck_op(op, symbol_table):
             errors = True
-
     return symbol_table if not errors else None
 
 

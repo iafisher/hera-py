@@ -7,7 +7,7 @@ def SYM(s):
 
 
 def test_get_symbol_table_with_example():
-    symbol_table = get_symbol_table(
+    symbol_table, errors = get_symbol_table(
         [
             Op("DLABEL", ["data"]),
             Op("INTEGER", [42]),
@@ -19,6 +19,8 @@ def test_get_symbol_table_with_example():
             Op("LABEL", ["bottom"]),
         ]
     )
+
+    assert not errors
     assert len(symbol_table) == 4
     assert symbol_table["data"] == HERA_DATA_START
     assert symbol_table["data2"] == HERA_DATA_START + 2
@@ -27,7 +29,7 @@ def test_get_symbol_table_with_example():
 
 
 def test_get_symbol_table_with_dskip():
-    symbol_table = get_symbol_table(
+    symbol_table, errors = get_symbol_table(
         [
             Op("DLABEL", ["data"]),
             Op("INTEGER", [42]),
@@ -36,13 +38,15 @@ def test_get_symbol_table_with_dskip():
             Op("INTEGER", [84]),
         ]
     )
+
+    assert not errors
     assert len(symbol_table) == 2
     assert symbol_table["data"] == HERA_DATA_START
     assert symbol_table["data2"] == HERA_DATA_START + 11
 
 
 def test_get_symbol_table_with_dskip_and_constant():
-    symbol_table = get_symbol_table(
+    symbol_table, errors = get_symbol_table(
         [
             Op("CONSTANT", ["N", 50]),
             Op("DLABEL", ["x"]),
@@ -50,6 +54,8 @@ def test_get_symbol_table_with_dskip_and_constant():
             Op("DLABEL", ["y"]),
         ]
     )
+
+    assert not errors
     assert len(symbol_table) == 3
     assert symbol_table["N"] == 50
     assert symbol_table["x"] == HERA_DATA_START
@@ -57,7 +63,7 @@ def test_get_symbol_table_with_dskip_and_constant():
 
 
 def test_get_symbol_table_with_lp_string():
-    symbol_table = get_symbol_table(
+    symbol_table, errors = get_symbol_table(
         [
             Op("DLABEL", ["S"]),
             Op("LP_STRING", ["hello"]),
@@ -65,13 +71,15 @@ def test_get_symbol_table_with_lp_string():
             Op("INTEGER", [42]),
         ]
     )
+
+    assert not errors
     assert len(symbol_table) == 2
     assert symbol_table["S"] == HERA_DATA_START
     assert symbol_table["X"] == HERA_DATA_START + 6
 
 
 def test_get_symbol_table_with_empty_lp_string():
-    symbol_table = get_symbol_table(
+    symbol_table, errors = get_symbol_table(
         [
             Op("DLABEL", ["S"]),
             Op("LP_STRING", [""]),
@@ -79,13 +87,17 @@ def test_get_symbol_table_with_empty_lp_string():
             Op("INTEGER", [42]),
         ]
     )
+
+    assert not errors
     assert len(symbol_table) == 2
     assert symbol_table["S"] == HERA_DATA_START
     assert symbol_table["X"] == HERA_DATA_START + 1
 
 
 def test_get_symbol_table_with_invalid_instructions():
-    symbol_table = get_symbol_table([Op("CONSTANT", ["N"]), Op("CONSTANT", ["X", 42])])
+    symbol_table, errors = get_symbol_table([Op("CONSTANT", ["N"]), Op("CONSTANT", ["X", 42])])
+
+    assert not errors
     assert len(symbol_table) == 1
     assert symbol_table["X"] == 42
 

@@ -3,7 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from .config import HERA_DATA_START
 from .data import Op
@@ -14,9 +14,11 @@ from .utils import emit_error, is_symbol
 # IDEA: convert_constants method.
 
 
-def get_symbol_table(program: List[Op]) -> Dict[str, int]:
+def get_symbol_table(program: List[Op]) -> Tuple[Dict[str, int], bool]:
     """Return the program's symbol table, a dictionary mapping from strings to Label,
     DataLabel and Constant objects (all subclasses of int).
+
+    Return value is (symbol_table, errors).
     """
     errors = False
     symbol_table = {}  # type: Dict[str, int]
@@ -58,9 +60,6 @@ def get_symbol_table(program: List[Op]) -> Dict[str, int]:
                 elif op.args[0] in symbol_table:
                     if isinstance(symbol_table[op.args[0]], Constant):
                         dc += symbol_table[op.args[0]]
-                elif is_symbol(op.args[0]):
-                    emit_error("undefined constant", loc=op.args[0])
-                    errors = True
         elif op.name == "LP_STRING":
             if len(op.args) == 1 and isinstance(op.args[0], str):
                 dc += len(op.args[0]) + 1
@@ -80,7 +79,7 @@ def get_symbol_table(program: List[Op]) -> Dict[str, int]:
             emit_error("past the end of available memory", loc=op.name)
             errors = True
 
-    return symbol_table if not errors else None
+    return symbol_table, errors
 
 
 def update_symbol_table(symbol_table: Dict[str, int], k: str, v: int, op: Op) -> bool:

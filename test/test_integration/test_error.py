@@ -223,6 +223,30 @@ Error: relative branches cannot use labels (why not use BR instead?), line 1 col
     )
 
 
+def test_error_message_after_symbol_table_error(capsys):
+    # Make sure that an error generating the symbol table doesn't immediately end the
+    # program--other type errors should still be caught.
+    with pytest.raises(SystemExit):
+        execute_program_helper("DSKIP(N)\nADD(R1, R2)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: undefined constant, line 1 col 7 of <stdin>
+
+  DSKIP(N)
+        ^
+
+Error: too few args to ADD (expected 3), line 2 col 1 of <stdin>
+
+  ADD(R1, R2)
+  ^
+
+"""
+    )
+
+
 def test_warning_for_interrupt_instructions(capsys):
     program = """\
 // These should give warnings.
