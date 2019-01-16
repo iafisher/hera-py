@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `break` debugging command now accepts labels as arguments.
 - Constants and data labels cannot be used as branch targets.
 - Re-defined constants prevent execution, instead of just printing an error message.
+- Passing too few parameters to SET no longer crashes the program.
+- Constants can no longer be used before they are declared.
 
 ### Removed
 - The --lines command-line argument.
