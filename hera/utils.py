@@ -86,8 +86,7 @@ def is_symbol(s):
 
 
 REGISTER_BRANCHES = set(
-    # Two lists instead of one so that the code formatter doesn't make this into a
-    # dozen lines.
+    # Two concatenated lists so that the code formatter doesn't make this into 15 lines.
     ["BR", "BL", "BGE", "BLE", "BG", "BULE", "BUG", "BZ", "BNZ", "BC", "BNC", "BS"]
     + ["BNS", "BV", "BNV"]
 )

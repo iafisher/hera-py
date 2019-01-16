@@ -40,8 +40,8 @@ def load_program_from_file(path: str) -> Tuple[List[Op], Dict[str, int]]:
             print()
             sys.exit(3)
         else:
-            # Print a newline so that the program and its output are visually separate.
-            print()
+            # So that the program and its output are visually separate.
+            print()  
     else:
         text = read_file(path)
     handle_errors()
