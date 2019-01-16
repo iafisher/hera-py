@@ -5,6 +5,10 @@
 WARNING_COUNT = 0
 
 
+# Errors encountered, as (message, location) pairs.
+ERRORS = []
+
+
 # Memory address of the start of the data segment for HERA programs.
 HERA_DATA_START = 0xC001
 

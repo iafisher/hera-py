@@ -9,13 +9,9 @@ from .data import Op, Token
 from .utils import emit_error, is_symbol, REGISTER_BRANCHES, RELATIVE_BRANCHES, to_u16
 
 
-def preprocess(
-    program: List[Op], symbol_table: Dict[str, int]
-) -> Tuple[List[Op], bool]:
+def preprocess(program: List[Op], symbol_table: Dict[str, int]) -> List[Op]:
     """Preprocess the program into valid input for the exec_many method on the
     VirtualMachine class.
-
-    The return value is (program, errors).
 
     This function does the following
         - Replaces pseudo-instructions with real ones.
@@ -24,7 +20,6 @@ def preprocess(
     The program must be type-checked before being passed to this function.
     """
     nprogram = []
-    errors = False
     for op in program:
         if op.name in ("LABEL", "DLABEL", "CONSTANT"):
             continue
@@ -35,7 +30,6 @@ def preprocess(
             jump = target - pc
             if jump < -128 or jump >= 128:
                 emit_error("label is too far for a relative branch", loc=op.args[0])
-                errors = True
             else:
                 op.args[0] = jump
         else:
@@ -43,7 +37,7 @@ def preprocess(
 
         for new_op in convert(op):
             nprogram.append(new_op._replace(original=op))
-    return nprogram, errors
+    return nprogram
 
 
 def substitute_label(op: Op, symbol_table: Dict[str, int]) -> Op:

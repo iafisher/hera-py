@@ -23,10 +23,8 @@ from .utils import (
 )
 
 
-def parse(
-    text: str, *, path=None, includes=True, visited=None
-) -> Tuple[List[Op], bool]:
-    """Parse a HERA program and return a tuple of (ops, err).
+def parse(text: str, *, path=None, includes=True, visited=None) -> List[Op]:
+    """Parse a HERA program.
 
     `path` is the path of the file being parsed, as it will appear in error and
     debugging messages. It defaults to "<string>".
@@ -54,18 +52,18 @@ def parse(
     except UnexpectedCharacters as e:
         loc = base_location._replace(line=e.line, column=e.column)
         emit_error("unexpected character", loc=loc)
-        return [], True
+        return []
     except UnexpectedToken as e:
         if e.token.type == "$END":
             emit_error("unexpected end of file")
         else:
             loc = base_location._replace(line=e.line, column=e.column)
             emit_error("unexpected character", loc=loc)
-        return [], True
+        return []
     except LarkError as e:
         loc = base_location._replace(line=e.line, column=e.column)
         emit_error("invalid syntax", loc=base_location)
-        return [], True
+        return []
 
     if isinstance(tree, Tree):
         ops = tree.children
@@ -75,44 +73,26 @@ def parse(
         ops = tree
 
     convert_tokens(ops, base_location)
-    err = check_data_after_code(ops)
+    check_data_after_code(ops)
 
     if includes:
-        ops, include_errors = expand_includes(ops, path, visited=visited)
-        err = err or include_errors
+        ops = expand_includes(ops, path, visited=visited)
 
-    return ops, err
+    return ops
 
 
-def read_file(path, *, allow_stdin=False, loc=None) -> Tuple[str, bool]:
-    """Read a file and return its contents in a (contents, err) pair."""
+def read_file(path, *, loc=None) -> str:
+    """Read a file and return its contents."""
     try:
-        return read_file_unsafe(path, allow_stdin=allow_stdin, loc=loc), False
-    except:
-        return "", True
-
-
-def read_file_unsafe(path, *, allow_stdin=False, loc=None) -> str:
-    """Like read_file, but raises an Exception on error instead of returning a flag."""
-    if allow_stdin and path == "-":
-        try:
-            return sys.stdin.read()
-        except (IOError, KeyboardInterrupt):
-            print()
-            raise Exception
-    else:
-        try:
-            with open(path) as f:
-                return f.read()
-        except FileNotFoundError:
-            emit_error('file "{}" does not exist'.format(path), loc=loc)
-            raise Exception
-        except PermissionError:
-            emit_error('permission denied to open file "{}"'.format(path), loc=loc)
-            raise Exception
-        except OSError:
-            emit_error('could not open file "{}"'.format(path), loc=loc)
-            raise Exception
+        with open(path) as f:
+            return f.read()
+    except FileNotFoundError:
+        emit_error('file "{}" does not exist'.format(path), loc=loc)
+    except PermissionError:
+        emit_error('permission denied to open file "{}"'.format(path), loc=loc)
+    except OSError:
+        emit_error('could not open file "{}"'.format(path), loc=loc)
+    return ""
 
 
 def convert_tokens(ops: List[Op], base_location: Location) -> None:
@@ -142,7 +122,7 @@ def convert_tokens(ops: List[Op], base_location: Location) -> None:
         ops[i] = op._replace(name=name)
 
 
-def expand_includes(ops: List[Op], path: str, *, visited=None) -> Tuple[List[Op], bool]:
+def expand_includes(ops: List[Op], path: str, *, visited=None) -> List[Op]:
     """Scan the list of ops and replace any #include "foo.hera" statement with the
     parsed contents of foo.hera.
 
@@ -153,7 +133,6 @@ def expand_includes(ops: List[Op], path: str, *, visited=None) -> Tuple[List[Op]
     `visited` is the set of file paths that have already been visited.
     """
     expanded_ops = []
-    err = False
     for op in ops:
         if op.name == "#include" and len(op.args) == 1:
             if op.args[0].startswith("<"):
@@ -167,29 +146,20 @@ def expand_includes(ops: List[Op], path: str, *, visited=None) -> Tuple[List[Op]
 
             if get_canonical_path(include_path) in visited:
                 emit_error("recursive include", loc=op.args[0])
-                err = True
                 continue
 
-            included_program, read_errors = read_file(include_path, loc=op.args[0])
-            err = err or read_errors
-
-            if not read_errors:
-                included_ops, parse_errors = parse(
-                    included_program, path=include_path, visited=visited
-                )
-                err = err or parse_errors
-                if not parse_errors:
-                    expanded_ops.extend(included_ops)
+            included_program = read_file(include_path, loc=op.args[0])
+            included_ops = parse(included_program, path=include_path, visited=visited)
+            expanded_ops.extend(included_ops)
         else:
             expanded_ops.append(op)
-    return expanded_ops, err
+    return expanded_ops
 
 
-def check_data_after_code(ops: List[Op]) -> bool:
+def check_data_after_code(ops: List[Op]) -> None:
     """Check that no data statement comes after a regular instruction. If one does,
-    emit an error and return True.
+    emit an error.
     """
-    err = False
     end_of_data = False
     for op in ops:
         if op.name == "#include":
@@ -198,10 +168,8 @@ def check_data_after_code(ops: List[Op]) -> bool:
         if op.name in DATA_STATEMENTS:
             if end_of_data:
                 emit_error("data statement after instruction", loc=op.name)
-                err = True
         else:
             end_of_data = True
-    return err
 
 
 class TreeToOplist(Transformer):

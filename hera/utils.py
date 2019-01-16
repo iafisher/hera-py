@@ -99,18 +99,13 @@ UNARY_OPS = set(["LSL", "LSR", "LSL8", "LSR8", "ASL", "ASR"])
 ALSU_OPS = BINARY_OPS | UNARY_OPS
 
 
-def emit_error(msg, *, loc=None, exit=False):
-    """Print an error message to stderr.
+def emit_error(msg, *, loc=None):
+    """Register an error, to be printed at a later time.
 
     `loc` is either a Location or a Token object. If provided, the location and line of
     code is indicated in the error message.
-
-    If `exit` is True, then the interpreter exits after printing the error message.
     """
-    msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
-    _emit_msg(msg, loc=loc)
-    if exit:
-        sys.exit(3)
+    config.ERRORS.append((msg, loc))
 
 
 def emit_warning(msg, *, loc=None):
@@ -121,10 +116,10 @@ def emit_warning(msg, *, loc=None):
     """
     msg = config.ANSI_MAGENTA_BOLD + "Warning" + config.ANSI_RESET + ": " + msg
     config.WARNING_COUNT += 1
-    _emit_msg(msg, loc=loc)
+    emit_msg(msg, loc=loc)
 
 
-def _emit_msg(msg, *, loc=None):
+def emit_msg(msg, *, loc=None):
     if isinstance(loc, (Token, IntToken)):
         loc = loc.location
 

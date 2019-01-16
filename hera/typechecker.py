@@ -7,6 +7,7 @@ Version: January 2019
 """
 from typing import Dict, List, Tuple
 
+from . import config
 from .config import HERA_DATA_START
 from .data import Op, Token
 from .utils import (
@@ -20,53 +21,47 @@ from .utils import (
 )
 
 
-def typecheck(program: List[Op]) -> Tuple[Dict[str, int], bool]:
+def typecheck(program: List[Op]) -> Dict[str, int]:
     """Type-check the program and emit error messages as appropriate. Return the
-    program's symbol table in a (symbol_table, errors) pair.
+    program's symbol table.
     """
-    errors = check_symbol_redeclaration(program)
+    check_symbol_redeclaration(program)
 
-    symbol_table, symbol_table_errors = get_labels(program)
-    errors = errors or symbol_table_errors
+    symbol_table = get_labels(program)
     for op in program:
-        if not typecheck_op(op, symbol_table):
-            errors = True
+        typecheck_op(op, symbol_table)
 
+        # Add constants to the symbol table as they are encountered, so that a given
+        # constant is not in scope until after its declaration.
         if looks_like_a_CONSTANT(op):
             if out_of_range(op.args[1]):
                 symbol_table[op.args[0]] = Constant(0)
             else:
                 symbol_table[op.args[0]] = Constant(op.args[1])
 
-    return symbol_table, errors
+    return symbol_table
 
 
-def check_symbol_redeclaration(program: List[Op]) -> bool:
+def check_symbol_redeclaration(program: List[Op]):
     """Check if any symbols are redeclared in the program and emit error messages as
-    appropriate. Return True if any redeclaration occurred.
+    appropriate.
     """
-    errors = False
     symbols = set()
     for op in program:
         if op.name in ("CONSTANT", "LABEL", "DLABEL") and len(op.args) >= 1:
             symbol = op.args[0]
             if symbol in symbols:
-                errors = True
                 emit_error(
                     "symbol `{}` has already been defined".format(symbol), loc=op.name
                 )
             else:
                 symbols.add(symbol)
-    return errors
 
 
-def get_labels(program: List[Op]) -> Tuple[Dict[str, int], bool]:
+def get_labels(program: List[Op]) -> Dict[str, int]:
     """Return a dictionary mapping the labels and data labels (but not the constants) of
     the program to their concrete values.
-
-    Return value is (symbol_table, errors).
     """
-    errors = False
     symbol_table = {}
     # We need to maintain a separate dictionary of constants because DSKIP can take a
     # constant as its argument, which has to be resolved to set the data counter
@@ -111,112 +106,90 @@ def get_labels(program: List[Op]) -> Tuple[Dict[str, int], bool]:
 
         if out_of_range(dc) and not out_of_range(odc):
             emit_error("past the end of available memory", loc=op.name)
-            errors = True
 
-    return symbol_table, errors
+    return symbol_table
 
 
 def typecheck_op(op: Op, symbol_table: Dict[str, int]) -> bool:
-    """Type-check a single HERA operation and emit error messages as appropriate. Return
-    True if no errors were detected.
-    """
+    """Type-check a single HERA operation and emit error messages as appropriate."""
     n = len(op.args)
+    nerrors = len(config.ERRORS)
     if op.name in ("SETLO", "SETHI"):
-        e = assert_number_of_arguments(op, 2)
-        e1 = n > 0 and assert_is_register(op.args[0])
-        e2 = n > 1 and assert_is_integer(op.args[1], symbol_table, bits=8, signed=True)
-        return e and e1 and e2
+        assert_number_of_arguments(op, 2)
+        n > 0 and assert_is_register(op.args[0])
+        n > 1 and assert_is_integer(op.args[1], symbol_table, bits=8, signed=True)
     elif op.name in ("INC", "DEC"):
-        e = assert_number_of_arguments(op, 2)
-        e1 = n > 0 and assert_is_register(op.args[0])
-        e2 = n > 1 and assert_in_range(op.args[1], symbol_table, lo=1, hi=65)
-        return e and e1 and e2
+        assert_number_of_arguments(op, 2)
+        n > 0 and assert_is_register(op.args[0])
+        n > 1 and assert_in_range(op.args[1], symbol_table, lo=1, hi=65)
     elif op.name in BINARY_OPS:
-        e = assert_number_of_arguments(op, 3)
-        e1 = n > 0 and assert_is_register(op.args[0])
-        e2 = n > 1 and assert_is_register(op.args[1])
-        e3 = n > 2 and assert_is_register(op.args[2])
-        return e and e1 and e2 and e3
+        assert_number_of_arguments(op, 3)
+        n > 0 and assert_is_register(op.args[0])
+        n > 1 and assert_is_register(op.args[1])
+        n > 2 and assert_is_register(op.args[2])
     elif op.name in UNARY_OPS or op.name in ("MOVE", "CMP", "NEG", "NOT"):
-        e = assert_number_of_arguments(op, 2)
-        e1 = n > 0 and assert_is_register(op.args[0])
-        e2 = n > 1 and assert_is_register(op.args[1])
-        return e and e1 and e2
+        assert_number_of_arguments(op, 2)
+        n > 0 and assert_is_register(op.args[0])
+        n > 1 and assert_is_register(op.args[1])
     elif op.name in ("SAVEF", "RSTRF", "FLAGS", "print_reg"):
-        e = assert_number_of_arguments(op, 1)
-        e1 = n > 0 and assert_is_register(op.args[0])
-        return e and e1
+        assert_number_of_arguments(op, 1)
+        n > 0 and assert_is_register(op.args[0])
     elif op.name in ("FON", "FOFF", "FSET5"):
-        e = assert_number_of_arguments(op, 1)
-        e1 = n > 0 and assert_is_integer(op.args[0], symbol_table, bits=5, signed=False)
-        return e and e1
+        assert_number_of_arguments(op, 1)
+        n > 0 and assert_is_integer(op.args[0], symbol_table, bits=5, signed=False)
     elif op.name in ("FSET4", "SWI"):
-        e = assert_number_of_arguments(op, 1)
-        e1 = n > 0 and assert_is_integer(op.args[0], symbol_table, bits=4, signed=False)
-        return e and e1
+        assert_number_of_arguments(op, 1)
+        n > 0 and assert_is_integer(op.args[0], symbol_table, bits=4, signed=False)
     elif op.name in ("LOAD", "STORE"):
-        e = assert_number_of_arguments(op, 3)
-        e1 = n > 0 and assert_is_register(op.args[0])
-        e2 = n > 1 and assert_is_integer(op.args[1], symbol_table, bits=5, signed=False)
-        e3 = n > 2 and assert_is_register(op.args[2])
-        return e and e1 and e2 and e3
+        assert_number_of_arguments(op, 3)
+        n > 0 and assert_is_register(op.args[0])
+        n > 1 and assert_is_integer(op.args[1], symbol_table, bits=5, signed=False)
+        n > 2 and assert_is_register(op.args[2])
     elif op.name in ("CALL", "RETURN"):
-        e = assert_number_of_arguments(op, 2)
-        e1 = n > 0 and assert_is_register(op.args[0])
-        e2 = n > 1 and assert_is_register_or_label(op.args[1], symbol_table)
-        return e and e1 and e2
+        assert_number_of_arguments(op, 2)
+        n > 0 and assert_is_register(op.args[0])
+        n > 1 and assert_is_register_or_label(op.args[1], symbol_table)
     elif op.name in REGISTER_BRANCHES:
-        e = assert_number_of_arguments(op, 1)
-        e1 = n > 0 and assert_is_register_or_label(op.args[0], symbol_table)
-        return e and e1
+        assert_number_of_arguments(op, 1)
+        n > 0 and assert_is_register_or_label(op.args[0], symbol_table)
     elif op.name in RELATIVE_BRANCHES:
-        e = assert_number_of_arguments(op, 1)
+        assert_number_of_arguments(op, 1)
         if n > 0:
             if is_symbol(op.args[0]):
-                e1 = assert_is_label(op.args[0])
+                assert_is_label(op.args[0])
             else:
-                e1 = assert_is_integer(op.args[0], symbol_table, bits=8, signed=True)
-        return e and e1
+                assert_is_integer(op.args[0], symbol_table, bits=8, signed=True)
     elif op.name in ("RTI", "CBON", "CON", "COFF", "CCBOFF", "NOP", "HALT"):
-        return assert_number_of_arguments(op, 0)
+        assert_number_of_arguments(op, 0)
     elif op.name == "SET":
-        e = assert_number_of_arguments(op, 2)
-        e1 = n > 0 and assert_is_register(op.args[0])
-        e2 = n > 1 and assert_is_integer(
+        assert_number_of_arguments(op, 2)
+        n > 0 and assert_is_register(op.args[0])
+        n > 1 and assert_is_integer(
             op.args[1], symbol_table, bits=16, signed=True, labels=True
         )
-        return e and e1 and e2
     elif op.name == "SETRF":
-        e = assert_number_of_arguments(op, 2)
-        e1 = n > 0 and assert_is_register(op.args[0])
-        e2 = n > 1 and assert_is_integer(op.args[1], symbol_table, bits=16, signed=True)
-        return e and e1 and e2
+        assert_number_of_arguments(op, 2)
+        n > 0 and assert_is_register(op.args[0])
+        n > 1 and assert_is_integer(op.args[1], symbol_table, bits=16, signed=True)
     elif op.name in ("LABEL", "DLABEL"):
-        e = assert_number_of_arguments(op, 1)
-        e1 = n > 0 and assert_is_label(op.args[0])
-        return e and e1
+        assert_number_of_arguments(op, 1)
+        n > 0 and assert_is_label(op.args[0])
     elif op.name == "CONSTANT":
-        e = assert_number_of_arguments(op, 2)
-        e1 = n > 0 and assert_is_label(op.args[0])
-        e2 = n > 1 and assert_is_integer(op.args[1], symbol_table, bits=16, signed=True)
-        return e and e1 and e2
+        assert_number_of_arguments(op, 2)
+        n > 0 and assert_is_label(op.args[0])
+        n > 1 and assert_is_integer(op.args[1], symbol_table, bits=16, signed=True)
     elif op.name == "INTEGER":
-        e = assert_number_of_arguments(op, 1)
-        e1 = n > 0 and assert_is_integer(op.args[0], symbol_table, bits=16, signed=True)
-        return e and e1
+        assert_number_of_arguments(op, 1)
+        n > 0 and assert_is_integer(op.args[0], symbol_table, bits=16, signed=True)
     elif op.name in ("LP_STRING", "print", "println"):
-        e = assert_number_of_arguments(op, 1)
-        e1 = n > 0 and assert_is_string(op.args[0])
-        return e and e1
+        assert_number_of_arguments(op, 1)
+        n > 0 and assert_is_string(op.args[0])
     elif op.name == "DSKIP":
-        e = assert_number_of_arguments(op, 1)
-        e1 = n > 0 and assert_is_integer(
-            op.args[0], symbol_table, bits=16, signed=False
-        )
-        return e and e1
+        assert_number_of_arguments(op, 1)
+        n > 0 and assert_is_integer(op.args[0], symbol_table, bits=16, signed=False)
     else:
         emit_error("unknown instruction `{}`".format(op.name), loc=op.name)
-        return False
+    return len(config.ERRORS) == nerrors
 
 
 def assert_number_of_arguments(op, nargs):
@@ -326,7 +299,6 @@ def assert_in_range(arg, symbol_table, *, lo, hi, labels=False):
 
 
 def operation_length(op):
-    # TODO: Better name.
     if op.name in REGISTER_BRANCHES:
         return 3
     elif op.name == "SET":

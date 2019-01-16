@@ -2,14 +2,7 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import Op
-from hera.parser import parse, read_file_unsafe, replace_escapes
-
-
-real_parse = parse
-
-
-def parse(*args, **kwargs):
-    return real_parse(*args, **kwargs)[0]
+from hera.parser import parse, read_file, replace_escapes
 
 
 def test_replace_escapes_with_one_escape():
@@ -116,10 +109,9 @@ def test_parse_hera_boilerplate_no_includes():
 
 
 def test_parse_hera_boilerplate_gives_warning():
-    with patch("hera.utils._emit_msg") as mock_emit_warning:
+    with patch("hera.parser.emit_warning") as mock_emit_warning:
         parse("void HERA_main() {SETLO(R1, 42)}")
         assert mock_emit_warning.call_count == 1
-        assert "Warning" in mock_emit_warning.call_args[0][0]
         assert "HERA_main" in mock_emit_warning.call_args[0][0]
         assert "not necessary" in mock_emit_warning.call_args[0][0]
 
@@ -150,33 +142,47 @@ def test_parse_include_amidst_instructions():
 
 
 def test_parse_missing_comma():
-    _, err = real_parse("ADD(R1, R2 R3)")
-    assert err
+    with patch("hera.parser.emit_error") as mock_emit_error:
+        program = parse("ADD(R1, R2 R3)")
+
+        assert program == []
+        assert mock_emit_error.call_count == 1
 
 
 def test_parse_missing_parenthesis():
-    _, err = real_parse("LSL8(R1, R1")
-    assert err
+    with patch("hera.parser.emit_error") as mock_emit_error:
+        program = parse("LSL8(R1, R1")
+
+        assert program == []
+        assert mock_emit_error.call_count == 1
 
 
 def test_parse_missing_end_quote():
-    _, err = real_parse('LP_STRING("forgot to close my string)')
-    assert err
+    with patch("hera.parser.emit_error") as mock_emit_error:
+        program = parse('LP_STRING("forgot to close my string)')
+
+        assert program == []
+        assert mock_emit_error.call_count == 1
 
 
-def test_parse_exception_has_line_number(capsys):
+def test_parse_exception_has_line_number():
     program = "SETLO(R1, 10)\nSETHI(R1, 255)\nLSL(R1 R1)"
-    _, err = real_parse(program)
+    with patch("hera.parser.emit_error") as mock_emit_error:
+        program = parse(program)
 
-    captured = capsys.readouterr().err
-    assert err
-    assert "unexpected character" in captured
-    assert "line 3 col 8 of <string>" in captured
+        assert program == []
+        assert "unexpected character" in mock_emit_error.call_args[0][0]
+
+        loc = mock_emit_error.call_args[1]["loc"]
+        assert loc is not None
+        assert loc.line == 3
+        assert loc.column == 8
+        assert loc.path == "<string>"
 
 
 def test_parse_expands_include():
     path = "test/assets/include/simple.hera"
-    program = parse(read_file_unsafe(path), path=path, includes=True)
+    program = parse(read_file(path), path=path, includes=True)
     assert program == [
         Op("BR", ["end_of_add"]),
         Op("LABEL", ["add"]),
