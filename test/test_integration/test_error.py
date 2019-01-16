@@ -329,6 +329,7 @@ Warning: RTI is a no-op in this simulator, line 3 col 1 of <stdin>
 
 
 Virtual machine state after execution:
+	R1 through R10 are all zero.
 
 	All flags are OFF
 

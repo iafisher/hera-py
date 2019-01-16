@@ -109,7 +109,10 @@ def dump_state(vm, *, verbose=False):
         rname = "\tR" + str(i) + (" " if i < 10 else "")
         print_register_debug(rname, value)
 
-    nprint()
+    if last_register > 0:
+        nprint()
+    else:
+        nprint("\tR1 through R10 are all zero.\n")
 
     flags = [
         vm.flag_carry_block,
