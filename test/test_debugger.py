@@ -163,6 +163,35 @@ def test_execute_abbreviated_continue(debugger):
         assert mock_exec_continue.call_count == 1
 
 
+def test_execute_instruction(debugger):
+    debugger.handle_command("execute SET(R7, 42)")
+
+    assert debugger.vm.pc == 0
+    assert debugger.vm.registers[7] == 42
+
+
+def test_execute_branching_instruction(debugger, capsys):
+    debugger.handle_command("execute BRR(10)")
+
+    assert debugger.vm.pc == 0
+    assert capsys.readouterr().out == "execute cannot take branching operations.\n"
+
+
+def test_execute_data_statement(debugger, capsys):
+    debugger.handle_command("execute INTEGER(42)")
+
+    assert debugger.vm.pc == 0
+    assert capsys.readouterr().out == "execute cannot take data statements.\n"
+
+
+@pytest.mark.skip("Going to be hard to implement this")
+def test_execute_label(debugger, capsys):
+    debugger.handle_command("execute LABEL(l)")
+
+    assert debugger.vm.pc == 0
+    assert capsys.readouterr().out == "execute cannot take labels.\n"
+
+
 def test_print_register(debugger, capsys):
     debugger.vm.registers[7] = 42
 

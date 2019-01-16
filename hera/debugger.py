@@ -19,8 +19,9 @@ import readline
 from typing import Dict, List
 
 from .data import Op
+from .loader import load_program
 from .typechecker import Label
-from .utils import op_to_string, print_register_debug, REGISTER_BRANCHES
+from .utils import BRANCHES, DATA_STATEMENTS, op_to_string, print_register_debug, REGISTER_BRANCHES
 from .vm import VirtualMachine
 
 
@@ -32,30 +33,33 @@ def debug(program: List[Op], symbol_table: Dict[str, int]) -> None:
 
 _HELP_MSG = """\
 Available commands:
-    break <n>    Set a breakpoint on the n'th line of the program. When no
-                 arguments are given, all current breakpoints are printed.
+    break <n>     Set a breakpoint on the n'th line of the program. When no
+                  arguments are given, all current breakpoints are printed.
 
-    continue     Execute the program until a breakpoint is encountered or the
-                 program terminates.
+    continue      Execute the program until a breakpoint is encountered or the
+                  program terminates.
 
-    help         Print this help message.
+    execute <op>  Execute a HERA operation. Only non-branching operations may
+                  be executed.
 
-    list <n>     Print the current lines of source code and the n previous and
-                 next lines. If not provided, n defaults to 3.
+    help          Print this help message.
 
-    longlist     Print the entire program.
+    list <n>      Print the current lines of source code and the n previous and
+                  next lines. If not provided, n defaults to 3.
 
-    next         Execute the current line.
+    longlist      Print the entire program.
 
-    print <e>    Evaluate the expression and print the result. The expression
-                 may be a register or a memory location, e.g. "M[123]".
+    next          Execute the current line.
 
-    restart      Restart the execution of the program from the beginning.
+    print <e>     Evaluate the expression and print the result. The expression
+                  may be a register or a memory location, e.g. "M[123]".
 
-    skip <n>     Skip ahead by n instructions without executing them. If not
-                 provided, n defaults to 1.
+    restart       Restart the execution of the program from the beginning.
 
-    quit         Exit the debugger.
+    skip <n>      Skip the next n instructions without executing them. If not
+                  provided, n defaults to 1.
+
+    quit          Exit the debugger.
 
 Command names can generally be abbreviated with a unique prefix, e.g. "n" for
 "next".
@@ -106,6 +110,8 @@ class Debugger:
             self.exec_break(args)
         elif "continue".startswith(cmd):
             self.exec_continue(args)
+        elif "execute".startswith(cmd):
+            self.exec_execute(" ".join(args))
         elif "list".startswith(cmd):
             self.exec_list(args)
         elif cmd == "longlist" or cmd == "ll":
@@ -181,6 +187,25 @@ class Debugger:
                 break
 
         self.print_current_op()
+
+    def exec_execute(self, args):
+        try:
+            ops, _ = load_program(args)
+        except SystemExit:
+            return
+
+        for op in ops:
+            if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
+                print("execute cannot take branching operations.")
+                return
+            elif op.name in DATA_STATEMENTS:
+                print("execute cannot take data statements.")
+                return
+
+        opc = self.vm.pc
+        for op in ops:
+            self.vm.exec_one(op)
+        self.vm.pc = opc
 
     def exec_list(self, args):
         if len(args) > 1:
