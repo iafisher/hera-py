@@ -13,6 +13,7 @@ from typing import List, Tuple
 from lark import Lark, Token as LarkToken, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
+from . import config
 from .data import IntToken, Location, Op, Token
 from .utils import (
     DATA_STATEMENTS,
@@ -109,11 +110,12 @@ def convert_tokens(ops: List[Op], base_location: Location) -> None:
                     arg, augment_location(base_location, arg), base=16
                 )
             elif arg.type == "OCTAL":
-                if not arg.startswith("0o"):
-                    msg = "zero-prefixed numbers are interpreted as octal"
-                    msg += " (consider using 0o prefix instead)"
+                if not arg.startswith("0o") and not config.WARNED_FOR_OCTAL:
                     loc = augment_location(base_location, arg)
-                    print_warning(msg, loc=loc),
+                    print_warning(
+                        'consider using "0o" prefix for octal numbers', loc=loc
+                    )
+                    config.WARNED_FOR_OCTAL = True
                 op.args[j] = IntToken(arg, augment_location(base_location, arg), base=8)
             elif arg.type == "BINARY":
                 op.args[j] = IntToken(arg, augment_location(base_location, arg), base=2)

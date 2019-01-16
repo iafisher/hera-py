@@ -5,6 +5,10 @@
 WARNING_COUNT = 0
 
 
+# Has a warning been emitted for using "0" as the octal prefix?
+WARNED_FOR_OCTAL = False
+
+
 # Errors encountered, as (message, location) pairs.
 ERRORS = []
 
