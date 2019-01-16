@@ -21,14 +21,37 @@ from .utils import (
 
 
 def typecheck(program: List[Op]) -> Optional[Dict[str, int]]:
-    """Type-check the program and emit errors as appropriate. Return the program's
-    symbol table if the program is well-typed, return None otherwise.
+    """Type-check the program and emit error messages as appropriate. Return the
+    program's symbol table if the program is well-typed, return None otherwise.
     """
-    symbol_table, errors = get_symbol_table(program)
+    errors = check_symbol_redeclaration(program)
+
+    symbol_table, symbol_table_errors = get_symbol_table(program)
+    errors = errors or symbol_table_errors
     for op in program:
         if not typecheck_op(op, symbol_table):
             errors = True
+
     return symbol_table if not errors else None
+
+
+def check_symbol_redeclaration(program: List[Op]) -> bool:
+    """Check if any symbols are redeclared in the program and emit error messages as
+    appropriate. Return True if any redeclaration occurred.
+    """
+    errors = False
+    symbols = set()
+    for op in program:
+        if op.name in ("CONSTANT", "LABEL", "DLABEL") and len(op.args) >= 1:
+            symbol = op.args[0]
+            if symbol in symbols:
+                errors = True
+                emit_error(
+                    "symbol `{}` has already been defined".format(symbol), loc=op.name
+                )
+            else:
+                symbols.add(symbol)
+    return errors
 
 
 def typecheck_op(op: Op, symbol_table: Dict[str, int]) -> bool:

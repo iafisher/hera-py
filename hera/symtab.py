@@ -27,7 +27,7 @@ def get_symbol_table(program: List[Op]) -> Tuple[Dict[str, int], bool]:
         odc = dc
         if op.name == "LABEL":
             if len(op.args) == 1:
-                update_symbol_table(symbol_table, op.args[0], Label(pc), op)
+                symbol_table[op.args[0]] = Label(pc)
         elif op.name == "DLABEL":
             if len(op.args) == 1:
                 if dc >= 0xFFFF:
@@ -36,11 +36,9 @@ def get_symbol_table(program: List[Op]) -> Tuple[Dict[str, int], bool]:
                     # value in the symbol table in case, e.g SET(R1, DATA) is used later
                     # and an out-of-range error would occur because 0xFFFF and higher
                     # values don't fit into 16 bits.
-                    if update_symbol_table(symbol_table, op.args[0], DataLabel(0), op):
-                        errors = True
+                    symbol_table[op.args[0]] = DataLabel(0)
                 else:
-                    if update_symbol_table(symbol_table, op.args[0], DataLabel(dc), op):
-                        errors = True
+                    symbol_table[op.args[0]] = DataLabel(dc)
         elif op.name == "CONSTANT":
             if len(op.args) == 2:
                 try:
@@ -51,8 +49,7 @@ def get_symbol_table(program: List[Op]) -> Tuple[Dict[str, int], bool]:
                 if c >= 0xFFFF or c < -32768:
                     c = 0
 
-                if update_symbol_table(symbol_table, op.args[0], c, op):
-                    errors = True
+                symbol_table[op.args[0]] = Constant(c)
         elif op.name == "INTEGER":
             dc += 1
         elif op.name == "DSKIP":
@@ -68,22 +65,13 @@ def get_symbol_table(program: List[Op]) -> Tuple[Dict[str, int], bool]:
         else:
             # IDEA: Don't even need a concrete value for pc here, can calculate
             # it later.
-            pc += length_in_real_ops(op)
+            pc += operation_length(op)
 
         if dc >= 0xFFFF and odc < 0xFFFF:
             emit_error("past the end of available memory", loc=op.name)
             errors = True
 
     return symbol_table, errors
-
-
-def update_symbol_table(symbol_table: Dict[str, int], k: str, v: int, op: Op) -> bool:
-    if k in symbol_table:
-        emit_error("symbol `{}` has already been defined".format(k), loc=op.name)
-        return True
-    else:
-        symbol_table[k] = v
-        return False
 
 
 class Label(int):
@@ -98,7 +86,7 @@ class Constant(int):
     pass
 
 
-def length_in_real_ops(op):
+def operation_length(op):
     # TODO: Better name.
     if op.name in REGISTER_BRANCHES:
         return 3

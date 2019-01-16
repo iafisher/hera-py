@@ -108,22 +108,3 @@ def test_get_symbol_table_with_too_large_dskip(capsys):
     get_symbol_table([Op(SYM("DSKIP"), [1000000000])])
 
     assert "past the end of available memory" in capsys.readouterr().err
-
-
-def test_get_symbol_table_with_redefinitions_of_symbols(capsys):
-    get_symbol_table(
-        [
-            Op(SYM("CONSTANT"), ["A", 100]),
-            Op(SYM("CONSTANT"), ["B", 200]),
-            Op(SYM("CONSTANT"), ["C", 200]),
-            Op(SYM("CONSTANT"), ["A", -1]),
-            Op(SYM("LABEL"), ["B"]),
-            Op(SYM("DLABEL"), ["C"]),
-        ]
-    )
-
-    captured = capsys.readouterr().err
-
-    assert "symbol `A` has already been defined" in captured
-    assert "symbol `B` has already been defined" in captured
-    assert "symbol `C` has already been defined" in captured
