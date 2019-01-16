@@ -20,7 +20,9 @@ def load_program(text: str) -> Tuple[List[Op], Dict[str, int]]:
     The return value of this function is valid input to the VirtualMachine.exec_many
     method.
     """
-    program = parse(text, includes=True)
+    program, err = parse(text, includes=True)
+    if err:
+        sys.exit(3)
     return _load_program_common(program, "<string>")
 
 
@@ -28,8 +30,12 @@ def load_program_from_file(path: str) -> Tuple[List[Op], Dict[str, int]]:
     """Convenience function to a read a file and then invoke `load_program_from_str` on
     its contents.
     """
-    text = read_file(path, allow_stdin=True)
-    program = parse(text, path=path)
+    text, err = read_file(path, allow_stdin=True)
+    if err:
+        sys.exit(3)
+    program, err = parse(text, path=path)
+    if err:
+        sys.exit(3)
     return _load_program_common(program, path)
 
 
@@ -39,12 +45,12 @@ def _load_program_common(program, path):
     if path == "-":
         print()
 
-    symbol_table = typecheck(program)
-    if symbol_table is None:
+    symbol_table, err = typecheck(program)
+    if err:
         sys.exit(3)
 
-    program, errors = preprocess(program, symbol_table)
-    if errors:
+    program, err = preprocess(program, symbol_table)
+    if err:
         sys.exit(3)
 
     return program, symbol_table

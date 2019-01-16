@@ -842,9 +842,9 @@ def test_typecheck_single_error():
     program = [Op("SETLO", [R("R1"), 10]), Op("SETHI", [R("R1"), 1000])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        symbol_table = typecheck(program)
+        symbol_table, errors = typecheck(program)
 
-        assert symbol_table is None
+        assert errors
         assert mock_emit_error.call_count == 1
         assert "integer must be in range [-128, 256)" in mock_emit_error.call_args[0][0]
 
@@ -853,9 +853,9 @@ def test_typecheck_multiple_errors():
     program = [Op("ADD", [R("R1"), 10]), Op("INC", [R("R3")])]
 
     with patch("hera.utils._emit_msg") as mock_emit_error:
-        symbol_table = typecheck(program)
+        symbol_table, errors = typecheck(program)
 
-        assert symbol_table is None
+        assert errors
         assert mock_emit_error.call_count == 3
 
         call_args = mock_emit_error.call_args_list[0][0]

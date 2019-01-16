@@ -301,6 +301,24 @@ Error: label is too far for a relative branch, line 1 col 5 of <stdin>
     )
 
 
+def test_nonexistent_include(capsys):
+    program = '#include "unicorn"'
+    with pytest.raises(SystemExit):
+        execute_program_helper(program)
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: file "unicorn" does not exist, line 1 col 10 of <stdin>
+
+  #include "unicorn"
+           ^
+
+"""
+    )
+
+
 def test_warning_for_interrupt_instructions(capsys):
     program = """\
 // These should give warnings.

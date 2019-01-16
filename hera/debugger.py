@@ -21,7 +21,13 @@ from typing import Dict, List
 from .data import Op
 from .loader import load_program
 from .typechecker import Label
-from .utils import BRANCHES, DATA_STATEMENTS, op_to_string, print_register_debug, REGISTER_BRANCHES
+from .utils import (
+    BRANCHES,
+    DATA_STATEMENTS,
+    op_to_string,
+    print_register_debug,
+    REGISTER_BRANCHES,
+)
 from .vm import VirtualMachine
 
 

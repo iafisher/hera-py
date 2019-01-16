@@ -5,7 +5,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from .config import HERA_DATA_START
 from .data import Op, Token
@@ -20,9 +20,9 @@ from .utils import (
 )
 
 
-def typecheck(program: List[Op]) -> Optional[Dict[str, int]]:
+def typecheck(program: List[Op]) -> Tuple[Dict[str, int], bool]:
     """Type-check the program and emit error messages as appropriate. Return the
-    program's symbol table if the program is well-typed, return None otherwise.
+    program's symbol table in a (symbol_table, errors) pair.
     """
     errors = check_symbol_redeclaration(program)
 
@@ -38,7 +38,7 @@ def typecheck(program: List[Op]) -> Optional[Dict[str, int]]:
             else:
                 symbol_table[op.args[0]] = Constant(op.args[1])
 
-    return symbol_table if not errors else None
+    return symbol_table, errors
 
 
 def check_symbol_redeclaration(program: List[Op]) -> bool:

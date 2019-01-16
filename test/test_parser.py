@@ -2,7 +2,14 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import Op
-from hera.parser import parse, read_file, replace_escapes
+from hera.parser import parse, read_file_unsafe, replace_escapes
+
+
+real_parse = parse
+
+
+def parse(*args, **kwargs):
+    return real_parse(*args, **kwargs)[0]
 
 
 def test_replace_escapes_with_one_escape():
@@ -143,33 +150,33 @@ def test_parse_include_amidst_instructions():
 
 
 def test_parse_missing_comma():
-    with pytest.raises(SystemExit):
-        parse("ADD(R1, R2 R3)")
+    _, err = real_parse("ADD(R1, R2 R3)")
+    assert err
 
 
 def test_parse_missing_parenthesis():
-    with pytest.raises(SystemExit):
-        parse("LSL8(R1, R1")
+    _, err = real_parse("LSL8(R1, R1")
+    assert err
 
 
 def test_parse_missing_end_quote():
-    with pytest.raises(SystemExit):
-        parse('LP_STRING("forgot to close my string)')
+    _, err = real_parse('LP_STRING("forgot to close my string)')
+    assert err
 
 
 def test_parse_exception_has_line_number(capsys):
     program = "SETLO(R1, 10)\nSETHI(R1, 255)\nLSL(R1 R1)"
-    with pytest.raises(SystemExit):
-        parse(program)
+    _, err = real_parse(program)
 
     captured = capsys.readouterr().err
+    assert err
     assert "unexpected character" in captured
     assert "line 3 col 8 of <string>" in captured
 
 
 def test_parse_expands_include():
     path = "test/assets/include/simple.hera"
-    program = parse(read_file(path), path=path, includes=True)
+    program = parse(read_file_unsafe(path), path=path, includes=True)
     assert program == [
         Op("BR", ["end_of_add"]),
         Op("LABEL", ["add"]),
