@@ -335,3 +335,31 @@ Virtual machine state after execution:
 2 warnings emitted.
 """
     )
+
+
+def test_warning_for_stack_overflow(capsys):
+    program = "SET(R1, 0xC002)\nADD(SP, SP, R1)\nDEC(SP, 10)\nINC(SP, 30)"
+    execute_program_helper(program)
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Warning: stack has overflowed into data segment, line 2 col 1 of <stdin>
+
+  ADD(SP, SP, R1)
+  ^
+
+
+Virtual machine state after execution:
+	R1  = 0xc002 = 49154
+
+	Carry-block flag is OFF
+	Carry flag is OFF
+	Overflow flag is OFF
+	Zero flag is OFF
+	Sign flag is ON
+
+1 warning emitted.
+"""
+    )

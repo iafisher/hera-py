@@ -51,6 +51,7 @@ class VirtualMachine:
         # Have warnings been issued for use of SWI and RTI instructions?
         self.warned_for_SWI = False
         self.warned_for_RTI = False
+        self.warned_for_overflow = False
 
     def exec_many(self, program):
         """Execute a program (i.e., a list of operations), resetting the machine's
@@ -111,7 +112,14 @@ class VirtualMachine:
         """Store the value in the target register (a string)."""
         index = register_to_index(target)
         if index != 0:
+            old = self.registers[index]
             self.registers[index] = value
+            if index == 15 and value >= HERA_DATA_START:
+                if not self.warned_for_overflow:
+                    emit_warning(
+                        "stack has overflowed into data segment", loc=self.location
+                    )
+                    self.warned_for_overflow = True
 
     def set_zero_and_sign(self, value):
         """Set the zero and sign flags based on the value."""
