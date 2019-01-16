@@ -153,6 +153,25 @@ Error: expected integer, line 1 col 7 of <stdin>
     )
 
 
+def test_error_for_use_of_constant_before_include(capsys):
+    program = 'SET(R1, N)\n#include "test/assets/error/constant_decl.hera"'
+
+    with pytest.raises(SystemExit):
+        execute_program_helper(program)
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: undefined constant, line 1 col 9 of <stdin>
+
+  SET(R1, N)
+          ^
+
+"""
+    )
+
+
 def test_error_for_recursive_constant_declaration(capsys):
     program = "CONSTANT(N, N)"
 
