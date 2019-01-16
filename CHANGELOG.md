@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 **NOTE**: As permitted by semantic versioning, backward compatibility is NOT maintained for initial development, i.e. releases before 1.0.0.
 
 ## [Unreleased]
+### Added
+- Relative branch instructions can now target labels.
+
 ### Changed
 - Argument to skip command in debugger is now interpreted as number of lines to skip instead of destination to skip to.
 

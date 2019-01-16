@@ -143,7 +143,7 @@ def test_convert_not():
 
 def test_preprocess_constant():
     program = [Op(Token("SYMBOL", "SET"), [R("R1"), Token("SYMBOL", "n")])]
-    assert preprocess(program, {"n": 100}) == [
-        Op("SETLO", ["R1", 100]),
-        Op("SETHI", ["R1", 0]),
-    ]
+    nprogram, errors = preprocess(program, {"n": 100})
+
+    assert not errors
+    assert nprogram == [Op("SETLO", ["R1", 100]), Op("SETHI", ["R1", 0])]

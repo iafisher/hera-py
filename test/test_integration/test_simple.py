@@ -268,3 +268,34 @@ void HERA_main() {
     assert not vm.flag_overflow
     assert not vm.flag_carry
     assert not vm.flag_carry_block
+
+
+def test_relative_branching():
+    program = """\
+SET(R1, 10)
+SET(R2, 32)
+BRR(after)
+SET(R2, 656)
+LABEL(after)
+ADD(R3, R1, R2)
+    """
+    vm = execute_program_helper(program)
+
+    assert vm.registers[1] == 10
+    assert vm.registers[2] == 32
+    assert vm.registers[3] == 42
+
+
+def test_relative_branching_backwards():
+    program = """\
+BRR(after)
+LABEL(before)
+HALT()
+LABEL(after)
+SET(R1, 42)
+BRR(before)
+SET(R1, 666)
+    """
+    vm = execute_program_helper(program)
+
+    assert vm.registers[1] == 42

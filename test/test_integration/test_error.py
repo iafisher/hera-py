@@ -225,23 +225,6 @@ Error: data statement after instruction, line 2 col 1 of <stdin>
     )
 
 
-def test_relative_branch_with_label(capsys):
-    with pytest.raises(SystemExit):
-        execute_program_helper("BRR(l)\nLABEL(l)")
-
-    captured = capsys.readouterr().err
-    assert (
-        captured
-        == """\
-Error: relative branches cannot use labels (why not use BR instead?), line 1 col 5 of <stdin>
-
-  BRR(l)
-      ^
-
-"""
-    )
-
-
 def test_error_message_after_symbol_table_error(capsys):
     # Make sure that an error generating the symbol table doesn't immediately end the
     # program--other type errors should still be caught.
@@ -295,6 +278,24 @@ Error: integer must be in range [-32768, 65536), line 1 col 9 of <stdin>
 
   SET(R1, 0xFFFFF)
           ^
+
+"""
+    )
+
+
+def test_relative_branching_too_far(capsys):
+    program = "BRR(l)\n" + ("SET(R1, 1)\n" * 100) + "LABEL(l)"
+    with pytest.raises(SystemExit):
+        execute_program_helper(program)
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: label is too far for a relative branch, line 1 col 5 of <stdin>
+
+  BRR(l)
+      ^
 
 """
     )

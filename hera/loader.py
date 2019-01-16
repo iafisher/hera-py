@@ -43,6 +43,8 @@ def _load_program_common(program, path):
     if symbol_table is None:
         sys.exit(3)
 
-    program = preprocess(program, symbol_table)
+    program, errors = preprocess(program, symbol_table)
+    if errors:
+        sys.exit(3)
 
     return program, symbol_table

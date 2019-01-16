@@ -42,10 +42,10 @@ hera-py also supports several features that HERA-C does not:
   - Relative branching by a fixed integer value (e.g., `BRR(10)`)
   - Branching by the value of a register (e.g., `SET(R1, 20); BR(R1)`)
   - Setting registers to the value of a label
+  - Detecting invalid relative branches
 
 HERA-C has a few features that hera-py does not:
   - C-style #define macros (and more generally the ability to embed arbitrary C++ code in HERA programs)
-  - Relative branching to labels (though the same outcome can be achieved with register-mode branching)
 
 ## Design
 Running a HERA program takes a few steps:

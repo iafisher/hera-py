@@ -173,10 +173,7 @@ def typecheck_op(op: Op, symbol_table: Dict[str, int]) -> bool:
         e = assert_number_of_arguments(op, 1)
         if n > 0:
             if is_symbol(op.args[0]):
-                msg = "relative branches cannot use labels"
-                msg += " (why not use {} instead?)".format(op.name[:-1])
-                emit_error(msg, loc=op.args[0])
-                e1 = False
+                e1 = assert_is_label(op.args[0])
             else:
                 e1 = assert_is_integer(op.args[0], symbol_table, bits=8, signed=True)
         return e and e1

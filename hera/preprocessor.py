@@ -3,26 +3,47 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from .data import Op, Token
-from .utils import is_symbol, REGISTER_BRANCHES, to_u16
+from .utils import emit_error, is_symbol, REGISTER_BRANCHES, RELATIVE_BRANCHES, to_u16
 
 
-def preprocess(program: List[Op], symbol_table: Dict[str, int]) -> List[Op]:
-    """Preprocess the program  into valid input for the exec_many method on the
+def preprocess(
+    program: List[Op], symbol_table: Dict[str, int]
+) -> Tuple[List[Op], bool]:
+    """Preprocess the program into valid input for the exec_many method on the
     VirtualMachine class.
+
+    The return value is (program, errors).
 
     This function does the following
         - Replaces pseudo-instructions with real ones.
         - Resolves labels into their line numbers.
+
+    The program must be type-checked before being passed to this function.
     """
-    program = [substitute_label(op, symbol_table) for op in program]
-    program = [
-        op._replace(original=old_op) for old_op in program for op in convert(old_op)
-    ]
-    program = [op for op in program if op.name not in ("LABEL", "DLABEL", "CONSTANT")]
-    return program
+    nprogram = []
+    errors = False
+    for op in program:
+        if op.name in ("LABEL", "DLABEL", "CONSTANT"):
+            continue
+
+        if op.name in RELATIVE_BRANCHES and is_symbol(op.args[0]):
+            pc = len(nprogram)
+            target = symbol_table[op.args[0]]
+            jump = target - pc
+            if jump < -128 or jump >= 128:
+                emit_error("label is too far for a relative branch", loc=op.args[0])
+                errors = True
+            else:
+                op.args[0] = jump
+        else:
+            op = substitute_label(op, symbol_table)
+
+        for new_op in convert(op):
+            nprogram.append(new_op._replace(original=op))
+    return nprogram, errors
 
 
 def substitute_label(op: Op, symbol_table: Dict[str, int]) -> Op:
