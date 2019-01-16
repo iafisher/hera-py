@@ -252,3 +252,31 @@ HALT()
     assert not vm.flag_overflow
     assert vm.flag_zero
     assert not vm.flag_sign
+
+
+def test_simple_function_calls():
+    # Figure 7.4, p. 41
+    program = """\
+CBON()
+
+SETLO(r1, 100)
+SETLO(r2,  50)
+CALL(FP_alt, updateR3)
+
+SETLO(r1, 10)
+SETLO(r2,  3)
+CALL(FP_alt, updateR3)
+
+HALT()
+
+LABEL(updateR3)
+  ADD(r1, r1, r1)
+  ADD(r1, r1, r2)
+  ADD(r3, r3, r1)
+  RETURN(FP_alt, PC_ret)
+    """
+    vm = execute_program_helper(program)
+
+    assert vm.registers[1] == 23
+    assert vm.registers[2] == 3
+    assert vm.registers[3] == 273
