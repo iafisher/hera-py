@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 - Argument to skip command in debugger is now interpreted as number of lines to skip instead of destination to skip to.
+- Warning for zero-prefixed octal literals will only be printed once per program, rather than for every occurrence.
 
 ### Fixed
 - Use of undefined labels gives proper error message instead of Python exception.
@@ -21,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Re-defined constants prevent execution, instead of just printing an error message.
 - Passing too few parameters to SET no longer crashes the program.
 - Constants can no longer be used before they are declared.
+- Invalid zero-prefixed octal literals no longer crash the interpreter.
 
 ### Removed
 - The --lines command-line argument.

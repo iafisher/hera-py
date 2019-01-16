@@ -1,5 +1,6 @@
 import pytest
 
+from hera import config
 from hera.main import main
 from .utils import execute_program_helper
 
@@ -314,6 +315,31 @@ Error: file "unicorn" does not exist, line 1 col 10 of <stdin>
 
   #include "unicorn"
            ^
+
+"""
+    )
+
+
+def test_invalid_octal_number(capsys):
+    # TODO: This is messy.
+    config.WARNED_FOR_OCTAL = False
+
+    with pytest.raises(SystemExit):
+        execute_program_helper("SET(R1, 018)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Warning: consider using "0o" prefix for octal numbers, line 1 col 9 of <stdin>
+
+  SET(R1, 018)
+          ^
+
+Error: invalid octal literal, line 1 col 9 of <stdin>
+
+  SET(R1, 018)
+          ^
 
 """
     )

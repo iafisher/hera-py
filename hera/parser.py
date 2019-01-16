@@ -110,13 +110,18 @@ def convert_tokens(ops: List[Op], base_location: Location) -> None:
                     arg, augment_location(base_location, arg), base=16
                 )
             elif arg.type == "OCTAL":
+                loc = augment_location(base_location, arg)
                 if not arg.startswith("0o") and not config.WARNED_FOR_OCTAL:
-                    loc = augment_location(base_location, arg)
                     print_warning(
                         'consider using "0o" prefix for octal numbers', loc=loc
                     )
                     config.WARNED_FOR_OCTAL = True
-                op.args[j] = IntToken(arg, augment_location(base_location, arg), base=8)
+                try:
+                    op.args[j] = IntToken(arg, loc, base=8)
+                except ValueError:
+                    # This is only necessary for octal because invalid digits for other
+                    # bases are ruled out in the parser.
+                    emit_error("invalid octal literal", loc=loc)
             elif arg.type == "BINARY":
                 op.args[j] = IntToken(arg, augment_location(base_location, arg), base=2)
             else:
