@@ -109,11 +109,11 @@ def test_parse_hera_boilerplate_no_includes():
 
 
 def test_parse_hera_boilerplate_gives_warning():
-    with patch("hera.parser.emit_warning") as mock_emit_warning:
+    with patch("hera.parser.print_warning") as mock_print_warning:
         parse("void HERA_main() {SETLO(R1, 42)}")
-        assert mock_emit_warning.call_count == 1
-        assert "HERA_main" in mock_emit_warning.call_args[0][0]
-        assert "not necessary" in mock_emit_warning.call_args[0][0]
+        assert mock_print_warning.call_count == 1
+        assert "HERA_main" in mock_print_warning.call_args[0][0]
+        assert "not necessary" in mock_print_warning.call_args[0][0]
 
 
 def test_parse_another_single_line_comments():

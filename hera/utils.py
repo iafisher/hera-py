@@ -103,12 +103,12 @@ def emit_error(msg, *, loc=None):
     """Register an error, to be printed at a later time.
 
     `loc` is either a Location or a Token object. If provided, the location and line of
-    code is indicated in the error message.
+    code will be indicated in the error message.
     """
     config.ERRORS.append((msg, loc))
 
 
-def emit_warning(msg, *, loc=None):
+def print_warning(msg, *, loc=None):
     """Print a warning message to stderr.
 
     `loc` is either a Location or a Token object. If provided, the location and line of
@@ -116,10 +116,14 @@ def emit_warning(msg, *, loc=None):
     """
     msg = config.ANSI_MAGENTA_BOLD + "Warning" + config.ANSI_RESET + ": " + msg
     config.WARNING_COUNT += 1
-    emit_msg(msg, loc=loc)
+    print_message_with_location(msg, loc=loc)
 
 
-def emit_msg(msg, *, loc=None):
+def print_message_with_location(msg, *, loc=None):
+    """Print a message to stderr. If `loc` is provided as either a Location object, or
+    a Token object with a `location` field, then the line of code that the location
+    indicates will be printed with the message.
+    """
     if isinstance(loc, (Token, IntToken)):
         loc = loc.location
 

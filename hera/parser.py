@@ -17,9 +17,9 @@ from .data import IntToken, Location, Op, Token
 from .utils import (
     DATA_STATEMENTS,
     emit_error,
-    emit_warning,
     get_canonical_path,
     is_register,
+    print_warning,
 )
 
 
@@ -113,7 +113,7 @@ def convert_tokens(ops: List[Op], base_location: Location) -> None:
                     msg = "zero-prefixed numbers are interpreted as octal"
                     msg += " (consider using 0o prefix instead)"
                     loc = augment_location(base_location, arg)
-                    emit_warning(msg, loc=loc),
+                    print_warning(msg, loc=loc),
                 op.args[j] = IntToken(arg, augment_location(base_location, arg), base=8)
             elif arg.type == "BINARY":
                 op.args[j] = IntToken(arg, augment_location(base_location, arg), base=2)
@@ -188,7 +188,7 @@ class TreeToOplist(Transformer):
             return matches[0]
 
     def cpp_program(self, matches):
-        emit_warning("void HERA_main() { ... } is not necessary")
+        print_warning("void HERA_main() { ... } is not necessary")
         return matches
 
     def hera_program(self, matches):

@@ -12,7 +12,7 @@ from .data import Op
 from .parser import parse, read_file
 from .preprocessor import preprocess
 from .typechecker import typecheck
-from .utils import emit_msg
+from .utils import print_message_with_location
 
 
 def load_program(text: str) -> Tuple[List[Op], Dict[str, int]]:
@@ -65,7 +65,8 @@ def _load_program_common(program, path):
 def handle_errors():
     for msg, loc in config.ERRORS:
         msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
-        emit_msg(msg, loc=loc)
+        print_message_with_location(msg, loc=loc)
 
     if config.ERRORS:
+        config.ERRORS.clear()
         sys.exit(3)

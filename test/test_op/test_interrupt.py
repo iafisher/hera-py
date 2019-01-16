@@ -10,10 +10,10 @@ def vm():
 
 
 def test_SWI_emits_warning(vm):
-    with patch("hera.vm.emit_warning") as mock_emit_warning:
+    with patch("hera.vm.print_warning") as mock_print_warning:
         vm.exec_SWI(1)
-        assert mock_emit_warning.call_count == 1
-        assert "SWI is a no-op in this simulator" in mock_emit_warning.call_args[0][0]
+        assert mock_print_warning.call_count == 1
+        assert "SWI is a no-op in this simulator" in mock_print_warning.call_args[0][0]
 
 
 def test_SWI_increments_pc(vm):
@@ -22,10 +22,10 @@ def test_SWI_increments_pc(vm):
 
 
 def test_RTI_emits_warning(vm):
-    with patch("hera.vm.emit_warning") as mock_emit_warning:
+    with patch("hera.vm.print_warning") as mock_print_warning:
         vm.exec_RTI()
-        assert mock_emit_warning.call_count == 1
-        assert "RTI is a no-op in this simulator" in mock_emit_warning.call_args[0][0]
+        assert mock_print_warning.call_count == 1
+        assert "RTI is a no-op in this simulator" in mock_print_warning.call_args[0][0]
 
 
 def test_RTI_increments_pc(vm):

@@ -8,9 +8,9 @@ from .utils import (
     ALSU_OPS,
     BRANCHES,
     DATA_STATEMENTS,
-    emit_warning,
     from_u16,
     print_register_debug,
+    print_warning,
     REGISTER_BRANCHES,
     register_to_index,
     to_u16,
@@ -116,7 +116,7 @@ class VirtualMachine:
             self.registers[index] = value
             if index == 15 and value >= HERA_DATA_START:
                 if not self.warned_for_overflow:
-                    emit_warning(
+                    print_warning(
                         "stack has overflowed into data segment", loc=self.location
                     )
                     self.warned_for_overflow = True
@@ -387,13 +387,13 @@ class VirtualMachine:
 
     def exec_SWI(self, i):
         if not self.warned_for_SWI:
-            emit_warning("SWI is a no-op in this simulator", loc=self.location)
+            print_warning("SWI is a no-op in this simulator", loc=self.location)
             self.warned_for_SWI = True
         self.pc += 1
 
     def exec_RTI(self):
         if not self.warned_for_RTI:
-            emit_warning("RTI is a no-op in this simulator", loc=self.location)
+            print_warning("RTI is a no-op in this simulator", loc=self.location)
             self.warned_for_RTI = True
         self.pc += 1
 
