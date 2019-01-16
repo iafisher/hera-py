@@ -4,7 +4,7 @@ from unittest.mock import patch
 from hera.data import Op
 from hera.debugger import debug, Debugger, reverse_lookup_label
 from hera.loader import load_program, load_program_from_file
-from hera.symtab import Constant, Label
+from hera.typechecker import Constant, Label
 
 
 @pytest.fixture

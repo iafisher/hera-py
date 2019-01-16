@@ -51,9 +51,8 @@ HERA-C has a few features that hera-py does not:
 Running a HERA program takes a few steps:
 
 1. The text of the program is parsed into a list of instruction objects.  (`hera/parser.py`)
-2. The symbol table for the program is generated.  (`hera/symtab.py`)
-3. The program is type-checked to ensure that all operations take the proper number and type of operands.  (`hera/typechecker.py`)
-4. Pseudo-instructions are converted into actual instructions, and labels and constants are substituted for their values.  (`hera/preprocessor.py`)
-5. The instructions are executed on a virtual HERA machine.  (`hera/vm.py`)
+2. The program is type-checked to ensure that all operations take the proper number and type of operands, and the symbol table is generated.  (`hera/typechecker.py`)
+3. Pseudo-instructions are converted into actual instructions, and labels and constants are substituted for their values.  (`hera/preprocessor.py`)
+4. The instructions are executed on a virtual HERA machine.  (`hera/vm.py`)
 
 For more details about the implementation, see the docstrings in each module.

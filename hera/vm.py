@@ -3,7 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from .symtab import HERA_DATA_START
+from .config import HERA_DATA_START
 from .utils import (
     ALSU_OPS,
     BRANCHES,

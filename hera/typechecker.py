@@ -5,10 +5,10 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
+from .config import HERA_DATA_START
 from .data import Op, Token
-from .symtab import Constant, DataLabel, get_symbol_table
 from .utils import (
     BINARY_OPS,
     emit_error,
@@ -26,11 +26,17 @@ def typecheck(program: List[Op]) -> Optional[Dict[str, int]]:
     """
     errors = check_symbol_redeclaration(program)
 
-    symbol_table, symbol_table_errors = get_symbol_table(program)
+    symbol_table, symbol_table_errors = get_labels(program)
     errors = errors or symbol_table_errors
     for op in program:
         if not typecheck_op(op, symbol_table):
             errors = True
+
+        if looks_like_a_CONSTANT(op):
+            if out_of_range(op.args[1]):
+                symbol_table[op.args[0]] = Constant(0)
+            else:
+                symbol_table[op.args[0]] = Constant(op.args[1])
 
     return symbol_table if not errors else None
 
@@ -52,6 +58,62 @@ def check_symbol_redeclaration(program: List[Op]) -> bool:
             else:
                 symbols.add(symbol)
     return errors
+
+
+def get_labels(program: List[Op]) -> Tuple[Dict[str, int], bool]:
+    """Return a dictionary mapping the labels and data labels (but not the constants) of
+    the program to their concrete values.
+
+    Return value is (symbol_table, errors).
+    """
+    errors = False
+    symbol_table = {}
+    # We need to maintain a separate dictionary of constants because DSKIP can take a
+    # constant as its argument, which has to be resolved to set the data counter
+    # correctly.
+    constants = {}
+    pc = 0
+    dc = HERA_DATA_START
+    for op in program:
+        odc = dc
+        if op.name == "LABEL":
+            if len(op.args) == 1:
+                symbol_table[op.args[0]] = Label(pc)
+        elif op.name == "DLABEL":
+            if len(op.args) == 1:
+                if out_of_range(dc):
+                    # If data counter has overflowed, put in a dummy value to avoid
+                    # further overflow error messages.
+                    symbol_table[op.args[0]] = DataLabel(0)
+                else:
+                    symbol_table[op.args[0]] = DataLabel(dc)
+        elif op.name == "CONSTANT":
+            if len(op.args) == 2:
+                try:
+                    c = Constant(op.args[1])
+                except ValueError:
+                    continue
+                else:
+                    constants[op.args[0]] = c
+        elif op.name == "INTEGER":
+            dc += 1
+        elif op.name == "LP_STRING":
+            if len(op.args) == 1 and isinstance(op.args[0], str):
+                dc += len(op.args[0]) + 1
+        elif op.name == "DSKIP":
+            if len(op.args) == 1:
+                if isinstance(op.args[0], int):
+                    dc += op.args[0]
+                elif op.args[0] in constants:
+                    dc += constants[op.args[0]]
+        else:
+            pc += operation_length(op)
+
+        if out_of_range(dc) and not out_of_range(odc):
+            emit_error("past the end of available memory", loc=op.name)
+            errors = True
+
+    return symbol_table, errors
 
 
 def typecheck_op(op: Op, symbol_table: Dict[str, int]) -> bool:
@@ -264,3 +326,53 @@ def assert_in_range(arg, symbol_table, *, lo, hi, labels=False):
         return False
     else:
         return True
+
+
+def operation_length(op):
+    # TODO: Better name.
+    if op.name in REGISTER_BRANCHES:
+        return 3
+    elif op.name == "SET":
+        return 2
+    elif op.name == "CMP":
+        return 2
+    elif op.name == "SETRF":
+        return 4
+    elif op.name == "FLAGS":
+        return 2
+    elif op.name == "CALL":
+        if len(op.args) == 2 and isinstance(op.args[1], int) or is_symbol(op.args[1]):
+            return 3
+        else:
+            return 1
+    elif op.name == "NEG":
+        return 2
+    elif op.name == "NOT":
+        return 3
+    else:
+        return 1
+
+
+def looks_like_a_CONSTANT(op):
+    return (
+        op.name == "CONSTANT"
+        and len(op.args) == 2
+        and isinstance(op.args[0], str)
+        and isinstance(op.args[1], int)
+    )
+
+
+def out_of_range(n):
+    return n < -32768 or n >= 65536
+
+
+class Constant(int):
+    pass
+
+
+class Label(int):
+    pass
+
+
+class DataLabel(int):
+    pass

@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 from hera.data import IntToken, Op, Token
-from hera.symtab import Constant, DataLabel, Label
 from hera.typechecker import (
     assert_is_integer,
     assert_is_label,
@@ -9,6 +8,9 @@ from hera.typechecker import (
     assert_is_register_or_label,
     assert_is_string,
     assert_number_of_arguments,
+    Constant,
+    DataLabel,
+    Label,
     typecheck,
     typecheck_op,
 )

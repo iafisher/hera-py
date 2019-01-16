@@ -10,7 +10,6 @@ from typing import Dict, List, Tuple
 from .data import Op
 from .parser import parse, read_file
 from .preprocessor import preprocess
-from .symtab import get_symbol_table
 from .typechecker import typecheck
 
 

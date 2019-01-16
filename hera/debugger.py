@@ -19,7 +19,7 @@ import readline
 from typing import Dict, List
 
 from .data import Op
-from .symtab import Label
+from .typechecker import Label
 from .utils import op_to_string, print_register_debug, REGISTER_BRANCHES
 from .vm import VirtualMachine
 
