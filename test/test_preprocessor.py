@@ -126,14 +126,6 @@ def test_convert_call_with_register():
     assert convert(Op("CALL", ["R12", R("R13")])) == [Op("CALL", ["R12", "R13"])]
 
 
-def test_convert_call_with_label():
-    assert convert(Op("CALL", ["R12", Token("SYMBOL", "div")])) == [
-        Op("SETLO", ["R13", "div"]),
-        Op("SETHI", ["R13", "div"]),
-        Op("CALL", ["R12", "R13"]),
-    ]
-
-
 def test_convert_neg():
     assert convert(Op("NEG", ["R1", "R2"])) == [
         Op("FON", [8]),

@@ -42,15 +42,6 @@ def convert(op: Op) -> List[Op]:
             Op("SETHI", ["R11", lbl >> 8]),
             Op(op.name, ["R11"]),
         ]
-    elif op.name in REGISTER_BRANCHES and is_symbol(op.args[0]):
-        # This clause is only necessary for the symbol table generator--see the note in
-        # `convert_call` below.
-        lbl = op.args[0]
-        new_ops = [
-            Op("SETLO", ["R11", lbl]),
-            Op("SETHI", ["R11", lbl]),
-            Op(op.name, ["R11"]),
-        ]
     elif op.name == "SET":
         new_ops = convert_set(*op.args)
     elif op.name == "CMP":
@@ -104,16 +95,6 @@ def convert_call(a, l):
         return [
             Op("SETLO", ["R13", l & 0xFF]),
             Op("SETHI", ["R13", l >> 8]),
-            Op("CALL", [a, "R13"]),
-        ]
-    elif is_symbol(l):
-        # This clause is only necessary for when the symbol table generator calls
-        # `convert` to calculate the values of labels in the final program. At that
-        # point, labels have not yet been resolved, but we want to make sure we generate
-        # the same number of instructions so that the label offsets are correct.
-        return [
-            Op("SETLO", ["R13", l]),
-            Op("SETHI", ["R13", l]),
             Op("CALL", [a, "R13"]),
         ]
     else:
