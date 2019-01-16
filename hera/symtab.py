@@ -7,8 +7,7 @@ from typing import Dict, List, Tuple
 
 from .config import HERA_DATA_START
 from .data import Op
-from .preprocessor import convert
-from .utils import emit_error, is_symbol
+from .utils import emit_error, is_symbol, REGISTER_BRANCHES
 
 
 # IDEA: convert_constants method.
@@ -49,6 +48,9 @@ def get_symbol_table(program: List[Op]) -> Tuple[Dict[str, int], bool]:
                 except ValueError:
                     continue
 
+                if c >= 0xFFFF or c < -32768:
+                    c = 0
+
                 if update_symbol_table(symbol_table, op.args[0], c, op):
                     errors = True
         elif op.name == "INTEGER":
@@ -64,16 +66,9 @@ def get_symbol_table(program: List[Op]) -> Tuple[Dict[str, int], bool]:
             if len(op.args) == 1 and isinstance(op.args[0], str):
                 dc += len(op.args[0]) + 1
         else:
-            # IDEA: Instead of using the convert function (which introduces undesirable
-            # coupling between this module and the preprocessor), write a function to
-            # calculate this value directly.
-            #
-            # This has the disadvantage of duplicating some of the logic of conversion
-            # though.
-
-            # Another IDEA: Don't even need a concrete value for pc here, can calculate
+            # IDEA: Don't even need a concrete value for pc here, can calculate
             # it later.
-            pc += len(convert(op))
+            pc += length_in_real_ops(op)
 
         if dc >= 0xFFFF and odc < 0xFFFF:
             emit_error("past the end of available memory", loc=op.name)
@@ -101,3 +96,28 @@ class DataLabel(int):
 
 class Constant(int):
     pass
+
+
+def length_in_real_ops(op):
+    # TODO: Better name.
+    if op.name in REGISTER_BRANCHES:
+        return 3
+    elif op.name == "SET":
+        return 2
+    elif op.name == "CMP":
+        return 2
+    elif op.name == "SETRF":
+        return 4
+    elif op.name == "FLAGS":
+        return 2
+    elif op.name == "CALL":
+        if len(op.args) == 2 and isinstance(op.args[1], int) or is_symbol(op.args[1]):
+            return 3
+        else:
+            return 1
+    elif op.name == "NEG":
+        return 2
+    elif op.name == "NOT":
+        return 3
+    else:
+        return 1

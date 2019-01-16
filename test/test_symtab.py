@@ -95,7 +95,9 @@ def test_get_symbol_table_with_empty_lp_string():
 
 
 def test_get_symbol_table_with_invalid_instructions():
-    symbol_table, errors = get_symbol_table([Op("CONSTANT", ["N"]), Op("CONSTANT", ["X", 42])])
+    symbol_table, errors = get_symbol_table(
+        [Op("CONSTANT", ["N"]), Op("CONSTANT", ["X", 42])]
+    )
 
     assert not errors
     assert len(symbol_table) == 1

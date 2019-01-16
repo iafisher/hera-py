@@ -247,6 +247,40 @@ Error: too few args to ADD (expected 3), line 2 col 1 of <stdin>
     )
 
 
+def test_overflowing_CONSTANT(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper("CONSTANT(N, 0xFFFFF)\nSET(R1, N)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: integer must be in range [-32768, 65536), line 1 col 13 of <stdin>
+
+  CONSTANT(N, 0xFFFFF)
+              ^
+
+"""
+    )
+
+
+def test_overflowing_integer_literal(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper("SET(R1, 0xFFFFF)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: integer must be in range [-32768, 65536), line 1 col 9 of <stdin>
+
+  SET(R1, 0xFFFFF)
+          ^
+
+"""
+    )
+
+
 def test_warning_for_interrupt_instructions(capsys):
     program = """\
 // These should give warnings.
