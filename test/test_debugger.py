@@ -226,7 +226,7 @@ def test_handle_list(debugger, capsys):
 
 -> 0000  SET(R1, 3)
    0002  SET(R2, 39)
-   0004  ADD(R3, R1, R2)
+   0004  ADD(R3, R1, R2) [add]
    0005  HALT()
 """
     )
@@ -244,7 +244,7 @@ def test_handle_list_in_middle_of_program(debugger, capsys):
 
    0000  SET(R1, 3)
    0002  SET(R2, 39)
--> 0004  ADD(R3, R1, R2)
+-> 0004  ADD(R3, R1, R2) [add]
    0005  HALT()
 """
     )
@@ -262,7 +262,7 @@ def test_handle_list_with_context_arg(debugger, capsys):
 
    0000  SET(R1, 3)
 -> 0002  SET(R2, 39)
-   0004  ADD(R3, R1, R2)
+   0004  ADD(R3, R1, R2) [add]
 """
     )
 
@@ -305,7 +305,24 @@ def test_handle_long_list(debugger, capsys):
         == """\
 -> 0000  SET(R1, 3)
    0002  SET(R2, 39)
-   0004  ADD(R3, R1, R2)
+   0004  ADD(R3, R1, R2) [add]
+   0005  HALT()
+"""
+    )
+
+
+def test_handle_long_list_with_multiple_labels_on_same_line(debugger, capsys):
+    debugger.reverse_labels[4].append("another_one")
+
+    debugger.handle_command("longlist")
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+-> 0000  SET(R1, 3)
+   0002  SET(R2, 39)
+   0004  ADD(R3, R1, R2) [add, another_one]
    0005  HALT()
 """
     )

@@ -15,6 +15,8 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
 import readline
+from collections import defaultdict
+from contextlib import suppress
 from typing import Dict, List
 
 from . import minilanguage
@@ -74,6 +76,8 @@ class Debugger:
     def __init__(self, program, symbol_table):
         self.program = program
         self.symbol_table = symbol_table
+        # A map from instruction numbers to lists of labels.
+        self.reverse_labels = get_reverse_labels(symbol_table)
         # A map from instruction numbers (i.e., possible values of the program counter)
         # to human-readable line numbers.
         self.breakpoints = {}
@@ -251,14 +255,13 @@ class Debugger:
             last_line = last_op.name.location.line
             print("[{}, lines {}-{}]\n".format(path, first_line, last_line))
 
-        for pc, op in previous_ops:
-            print("   {:0>4x}  {}".format(pc, op_to_string(op)))
+        for pc, _ in previous_ops:
+            self.print_op(pc)
 
-        op = self.program[self.vm.pc].original
-        print("-> {:0>4x}  {}".format(self.vm.pc, op_to_string(op)))
+        self.print_op(self.vm.pc)
 
-        for pc, op in next_ops:
-            print("   {:0>4x}  {}".format(pc, op_to_string(op)))
+        for pc, _ in next_ops:
+            self.print_op(pc)
 
     def handle_long_list(self, args):
         if len(args) != 0:
@@ -267,10 +270,8 @@ class Debugger:
 
         index = 0
         while index < len(self.program):
-            op = self.program[index].original
-            prefix = "-> " if index == self.vm.pc else "   "
-            print(prefix + "{:0>4x}  {}".format(index, op_to_string(op)))
             original = self.program[index].original
+            self.print_op(index)
             while (
                 index < len(self.program) and self.program[index].original == original
             ):
@@ -416,6 +417,18 @@ class Debugger:
             suffix = ""
         print("{} = {}".format(k, v) + suffix)
 
+    def print_op(self, index):
+        op = self.program[index].original
+        prefix = "-> " if index == self.vm.pc else "   "
+        print(prefix + "{:0>4x}  {}".format(index, op_to_string(op)), end="")
+
+        # Print all labels pointing to the line.
+        labels = self.reverse_labels[index]
+        if labels:
+            print(" [{}]".format(", ".join(labels)))
+        else:
+            print()
+
     def get_real_ops(self):
         """Return all the real ops that correspond to the current original op. See
         module docstring for explanation of terminology.
@@ -478,6 +491,7 @@ class Debugger:
             ops.append((index + 1, self.program[index + 1].original))
             if index < 0:
                 break
+
         return list(reversed(ops))
 
     def get_next_ops(self, n):
@@ -510,9 +524,9 @@ def reverse_lookup_label(symbol_table, value):
     return None
 
 
-def looks_like_unknown_command(line):
-    """Return True if the line appears to be an unrecognized command rather than an
-    ill-formatted mini-language expression.
-    """
-    cmd = line.split(maxsplit=1)[0]
-    return cmd.isalpha()
+def get_reverse_labels(symbol_table):
+    reverse_labels = defaultdict(list)
+    for k, v in symbol_table.items():
+        if isinstance(v, Label):
+            reverse_labels[v].append(k)
+    return reverse_labels
