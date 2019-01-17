@@ -91,8 +91,7 @@ class MiniLexer:
     """A lexer for the debugger's expression mini-language."""
 
     def __init__(self, text):
-        # TODO: This won't work with symbols, which are case sensitive.
-        self.text = text.lower()
+        self.text = text
         self.position = 0
 
     def next_token(self):
@@ -104,7 +103,7 @@ class MiniLexer:
             return TOKEN_EOF, ""
 
         ch = self.text[self.position]
-        if ch == "m":
+        if ch in "mM":
             return self.advance_and_return(TOKEN_MEM)
         elif ch == "[":
             return self.advance_and_return(TOKEN_LBRACKET)
@@ -132,26 +131,26 @@ class MiniLexer:
 
     def read_register(self):
         ch = self.text[self.position]
-        if ch == "r":
-            if self.peek() == "t":
+        if ch in "rR":
+            if self.peek() in "tT":
                 return 2
             elif self.peek().isdigit():
                 length = 2
                 while self.peek(length).isdigit():
                     length += 1
                 return length
-        elif ch == "p":
-            if self.text[self.position :].startswith("pc_ret"):
+        elif ch in "pP":
+            if self.text[self.position :].lower().startswith("pc_ret"):
                 return 6
-            elif self.text[self.position :].startswith("pc"):
+            elif self.text[self.position :].lower().startswith("pc"):
                 return 2
-        elif ch == "f":
-            if self.text[self.position :].startswith("fp_alt"):
+        elif ch in "fF":
+            if self.text[self.position :].lower().startswith("fp_alt"):
                 return 6
-            elif self.text[self.position :].startswith("fp"):
+            elif self.text[self.position :].lower().startswith("fp"):
                 return 2
-        elif ch == "s":
-            if self.peek() == "p":
+        elif ch in "sS":
+            if self.peek() in "pP":
                 return 2
 
         # Default: not a register.
@@ -160,10 +159,10 @@ class MiniLexer:
     def read_int(self):
         length = 1
         digits = set([str(i) for i in range(10)])
-        if self.text[self.position] == "0" and self.peek() in ("b", "o", "x"):
+        if self.text[self.position] == "0" and self.peek() in "boxBOX":
             length = 2
-            if self.peek() == "x":
-                digits |= set("abcdef")
+            if self.peek() in "xX":
+                digits |= set("abcdefABCDEF")
 
         while self.peek(length) in digits:
             length += 1

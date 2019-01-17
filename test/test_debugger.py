@@ -323,12 +323,6 @@ def test_handle_abbreviated_long_list(debugger, capsys):
         assert mock_handle_long_list.call_count == 1
 
 
-def test_handle_register_expression(debugger, capsys):
-    debugger.handle_command("R1")
-
-    assert capsys.readouterr().out == "r1 = 0x0000 = 0\n"
-
-
 def test_handle_rr(debugger, capsys):
     debugger.handle_command("rr")
 
@@ -384,6 +378,12 @@ R15 = 0x002a = 42 = '*'
     )
 
 
+def test_handle_register_expression(debugger, capsys):
+    debugger.handle_command("R1")
+
+    assert capsys.readouterr().out == "R1 = 0x0000 = 0\n"
+
+
 def test_handle_memory_expression(debugger, capsys):
     debugger.vm.registers[1] = 4
     debugger.vm.memory[4] = 42
@@ -425,6 +425,14 @@ def test_handle_symbol(debugger, capsys):
     debugger.handle_command("add")
 
     assert capsys.readouterr().out == "add = 4\n"
+
+
+def test_handle_case_sensitive_symbol(debugger, capsys):
+    debugger.symbol_table["ADD"] = 10
+
+    debugger.handle_command("ADD")
+
+    assert capsys.readouterr().out == "ADD = 10\n"
 
 
 def test_handle_setting_register_to_symbol(debugger):
