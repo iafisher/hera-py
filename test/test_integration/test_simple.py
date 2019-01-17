@@ -69,7 +69,7 @@ HALT()
 // Multiply R1 by two, in-place
 LABEL(times_two)
   LSL(R1, R1)
-  RETURN(R12, Rt)
+  RETURN(R12, R13)
     """
     vm = execute_program_helper(program)
 

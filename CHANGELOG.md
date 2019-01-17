@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Error messages for `#include` with non-existent file now print the line number.
 - The `rr` debugging command.
 - The debugging expresson mini-language.
+- A warning is printed when `R11` is used as the second argument of `NOT`.
+- A warning is printed when `CALL` and `RETURN` are used with atypical registers.
 
 ### Changed
 - Argument to skip command in debugger is now interpreted as number of lines to skip instead of destination to skip to.

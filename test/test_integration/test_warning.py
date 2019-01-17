@@ -92,3 +92,99 @@ Virtual machine state after execution:
 1 warning emitted.
 """
     )
+
+
+def test_warning_for_R11_with_NOT(capsys):
+    execute_program_helper("SET(R11, 5)\nNOT(R1, R11)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Warning: don't use R11 with NOT, line 2 col 9 of <stdin>
+
+  NOT(R1, R11)
+          ^
+
+
+Virtual machine state after execution:
+	R1 through R10 are all zero.
+
+	Carry-block flag is OFF
+	Carry flag is OFF
+	Overflow flag is OFF
+	Zero flag is ON
+	Sign flag is OFF
+
+1 warning emitted.
+"""
+    )
+
+
+def test_warning_for_improper_register_with_CALL(capsys):
+    execute_program_helper("CALL(R11, l)\nLABEL(l)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Warning: first argument to CALL should be R12, line 1 col 6 of <stdin>
+
+  CALL(R11, l)
+       ^
+
+
+Virtual machine state after execution:
+	R1 through R10 are all zero.
+
+	All flags are OFF
+
+1 warning emitted.
+"""
+    )
+
+
+def test_warning_for_improper_first_register_with_RETURN(capsys):
+    execute_program_helper("RETURN(R11, R13)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Warning: first argument to RETURN should be R12, line 1 col 8 of <stdin>
+
+  RETURN(R11, R13)
+         ^
+
+
+Virtual machine state after execution:
+	R1 through R10 are all zero.
+
+	All flags are OFF
+
+1 warning emitted.
+"""
+    )
+
+
+def test_warning_for_improper_second_register_with_RETURN(capsys):
+    execute_program_helper("RETURN(R12, R11)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Warning: second argument to RETURN should be R13, line 1 col 13 of <stdin>
+
+  RETURN(R12, R11)
+              ^
+
+
+Virtual machine state after execution:
+	R1 through R10 are all zero.
+
+	All flags are OFF
+
+1 warning emitted.
+"""
+    )

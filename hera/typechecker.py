@@ -5,6 +5,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
+from contextlib import suppress
 from typing import Dict, List
 
 from . import config
@@ -16,6 +17,7 @@ from .utils import (
     emit_error,
     is_register,
     is_symbol,
+    print_warning,
     register_to_index,
     REGISTER_BRANCHES,
     RELATIVE_BRANCHES,
@@ -93,12 +95,8 @@ def get_labels(program: List[Op]) -> Dict[str, int]:
                     symbol_table[op.args[0]] = DataLabel(dc)
         elif op.name == "CONSTANT":
             if len(op.args) == 2:
-                try:
-                    c = Constant(op.args[1])
-                except ValueError:
-                    continue
-                else:
-                    constants[op.args[0]] = c
+                with suppress(ValueError):
+                    constants[op.args[0]] = Constant(op.args[1])
         elif op.name == "INTEGER":
             dc += 1
         elif op.name == "LP_STRING":
@@ -141,6 +139,11 @@ def typecheck_op(op: Op, symbol_table: Dict[str, int]) -> bool:
         assert_number_of_arguments(op, 2)
         n > 0 and assert_is_register(op.args[0])
         n > 1 and assert_is_register(op.args[1])
+        if op.name == "NOT" and n == 2 and is_register(op.args[1]):
+            with suppress(ValueError):
+                i = register_to_index(op.args[1])
+                if i == 11:
+                    print_warning("don't use R11 with NOT", loc=op.args[1])
     elif op.name in ("SAVEF", "RSTRF", "FLAGS", "print_reg"):
         assert_number_of_arguments(op, 1)
         n > 0 and assert_is_register(op.args[0])
@@ -159,6 +162,21 @@ def typecheck_op(op: Op, symbol_table: Dict[str, int]) -> bool:
         assert_number_of_arguments(op, 2)
         n > 0 and assert_is_register(op.args[0])
         n > 1 and assert_is_register_or_label(op.args[1], symbol_table)
+        # Warn if first argument to CALL or RETURN isn't R12.
+        if n >= 1 and is_register(op.args[0]):
+            with suppress(ValueError):
+                i = register_to_index(op.args[0])
+                if i != 12:
+                    msg = "first argument to {} should be R12".format(op.name)
+                    print_warning(msg, loc=op.args[0])
+        # Warn if second argument to RETURN isn't R13.
+        if op.name == "RETURN" and n >= 2 and is_register(op.args[1]):
+            with suppress(ValueError):
+                i = register_to_index(op.args[1])
+                if i != 13:
+                    print_warning(
+                        "second argument to RETURN should be R13", loc=op.args[1]
+                    )
     elif op.name in REGISTER_BRANCHES:
         assert_number_of_arguments(op, 1)
         n > 0 and assert_is_register_or_label(op.args[0], symbol_table)
