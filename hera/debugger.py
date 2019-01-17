@@ -18,7 +18,7 @@ import readline
 from typing import Dict, List
 
 from . import minilanguage
-from .data import Op
+from .data import HERAError, Op
 from .loader import load_program
 from .minilanguage import AssignNode, IntNode, MemoryNode, RegisterNode, SymbolNode
 from .typechecker import Label
@@ -324,36 +324,43 @@ class Debugger:
                 print("Parse error.")
             return
 
-        if isinstance(tree, AssignNode):
-            rhs = self.evaluate_node(tree.rhs)
-            if isinstance(tree.lhs, RegisterNode):
-                if tree.lhs.value == "pc":
-                    self.vm.pc = rhs
+        try:
+            if isinstance(tree, AssignNode):
+                rhs = self.evaluate_node(tree.rhs)
+                if isinstance(tree.lhs, RegisterNode):
+                    if tree.lhs.value == "pc":
+                        self.vm.pc = rhs
+                    else:
+                        self.vm.store_register(tree.lhs.value, rhs)
                 else:
-                    self.vm.store_register(tree.lhs.value, rhs)
+                    address = self.evaluate_node(tree.lhs.address)
+                    self.vm.assign_memory(address, rhs)
+            elif isinstance(tree, RegisterNode):
+                if tree.value == "pc":
+                    print("PC = {}".format(self.vm.pc))
+                else:
+                    value = self.vm.get_register(tree.value)
+                    print_register_debug(tree.value, value, to_stderr=False)
+            elif isinstance(tree, MemoryNode):
+                address = self.evaluate_node(tree.address)
+                print("M[{}] = {}".format(address, self.vm.access_memory(address)))
+            elif isinstance(tree, SymbolNode):
+                try:
+                    v = self.symbol_table[tree.value]
+                except KeyError:
+                    print(
+                        "{} is not a recognized command or symbol.".format(tree.value)
+                    )
+                else:
+                    print("{} = {}".format(tree.value, v))
+            elif isinstance(tree, IntNode):
+                print(tree.value)
             else:
-                address = self.evaluate_node(tree.lhs.address)
-                self.vm.assign_memory(address, rhs)
-        elif isinstance(tree, RegisterNode):
-            if tree.value == "pc":
-                print("PC = {}".format(self.vm.pc))
-            else:
-                value = self.vm.get_register(tree.value)
-                print_register_debug(tree.value, value, to_stderr=False)
-        elif isinstance(tree, MemoryNode):
-            address = self.evaluate_node(tree.address)
-            print("M[{}] = {}".format(address, self.vm.access_memory(address)))
-        elif isinstance(tree, SymbolNode):
-            try:
-                v = self.symbol_table[tree.value]
-            except KeyError:
-                print("{} is not a recognized command or symbol.".format(tree.value))
-            else:
-                print("{} = {}".format(tree.value, v))
-        elif isinstance(tree, IntNode):
-            print(tree.value)
-        else:
-            raise RuntimeError("unknown node type {}".format(node.__class__.__name__))
+                raise RuntimeError(
+                    "unknown node type {}".format(node.__class__.__name__)
+                )
+        except HERAError as e:
+            print("Eval error: " + str(e) + ".")
 
     def evaluate_node(self, node):
         if isinstance(node, IntNode):
@@ -367,8 +374,10 @@ class Debugger:
             address = self.evaluate_node(node.address)
             return self.vm.access_memory(address)
         elif isinstance(node, SymbolNode):
-            # TODO: Can't just do this.
-            return self.symbol_table.get(node.value, 0)
+            try:
+                return self.symbol_table[node.value]
+            except KeyError:
+                raise HERAError("undefined symbol `{}`".format(node.value))
         else:
             raise RuntimeError("unknown node type {}".format(node.__class__.__name__))
 

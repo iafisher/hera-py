@@ -427,6 +427,15 @@ def test_handle_symbol(debugger, capsys):
     assert capsys.readouterr().out == "add = 4\n"
 
 
+def test_handle_undefined_symbol(debugger, capsys):
+    debugger.vm.registers[4] = 42
+
+    debugger.handle_command("r4 = whatever")
+
+    assert debugger.vm.registers[4] == 42
+    assert capsys.readouterr().out == "Eval error: undefined symbol `whatever`.\n"
+
+
 def test_handle_case_sensitive_symbol(debugger, capsys):
     debugger.symbol_table["ADD"] = 10
 
