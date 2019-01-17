@@ -52,9 +52,6 @@ Available commands:
 
     next          Execute the current line.
 
-    print <e>     Evaluate the expression and print the result. The expression
-                  may be a register or a memory location, e.g. "M[123]".
-
     restart       Restart the execution of the program from the beginning.
 
     skip <n>      Skip the next n instructions without executing them. If not
@@ -125,8 +122,6 @@ class Debugger:
             self.handle_long_list(args)
         elif "next".startswith(cmd):
             self.handle_next(args)
-        elif "print".startswith(cmd):
-            self.handle_print(args)
         elif "restart".startswith(cmd):
             self.handle_restart(args)
         elif cmd == "rr":
