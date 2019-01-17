@@ -442,7 +442,7 @@ def test_handle_setting_pc(debugger):
 def test_handle_symbol(debugger, capsys):
     debugger.handle_command("add")
 
-    assert capsys.readouterr().out == "add = 4\n"
+    assert capsys.readouterr().out == "add = 4 (label)\n"
 
 
 def test_handle_undefined_symbol(debugger, capsys):

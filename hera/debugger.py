@@ -180,15 +180,7 @@ class Debugger:
 
         sorted_pairs = sorted(self.symbol_table.items(), key=lambda t: t[0].lower())
         for k, v in sorted_pairs:
-            if isinstance(v, Label):
-                suffix = " (label)"
-            elif isinstance(v, DataLabel):
-                suffix = " (data label)"
-            elif isinstance(v, Constant):
-                suffix = " (constant)"
-            else:
-                suffix = ""
-            print("{} = {}".format(k, v) + suffix)
+            self.print_symbol(k, v)
 
     def handle_skip(self, args):
         if len(args) > 1:
@@ -368,7 +360,7 @@ class Debugger:
                         "{} is not a recognized command or symbol.".format(tree.value)
                     )
                 else:
-                    print("{} = {}".format(tree.value, v))
+                    self.print_symbol(tree.value, v)
             elif isinstance(tree, IntNode):
                 print(tree.value)
             else:
@@ -412,6 +404,17 @@ class Debugger:
             print("{:0>4x}  {}".format(self.vm.pc, opstr))
         else:
             print("Program has finished executing.")
+
+    def print_symbol(self, k, v):
+        if isinstance(v, Label):
+            suffix = " (label)"
+        elif isinstance(v, DataLabel):
+            suffix = " (data label)"
+        elif isinstance(v, Constant):
+            suffix = " (constant)"
+        else:
+            suffix = ""
+        print("{} = {}".format(k, v) + suffix)
 
     def get_real_ops(self):
         """Return all the real ops that correspond to the current original op. See
