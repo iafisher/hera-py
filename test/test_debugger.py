@@ -407,6 +407,20 @@ def test_handle_setting_a_memory_location(debugger):
     assert debugger.vm.memory[1000] == 4000
 
 
+def test_handle_pc(debugger, capsys):
+    debugger.vm.pc = 3
+
+    debugger.handle_command("pc")
+
+    assert capsys.readouterr().out == "PC = 3\n"
+
+
+def test_handle_setting_pc(debugger):
+    debugger.handle_command("pc = 10")
+
+    assert debugger.vm.pc == 10
+
+
 def test_handle_help(debugger, capsys):
     debugger.handle_command("help")
 

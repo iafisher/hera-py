@@ -330,13 +330,19 @@ class Debugger:
         if isinstance(tree, AssignNode):
             rhs = self.evaluate_node(tree.rhs)
             if isinstance(tree.lhs, RegisterNode):
-                self.vm.store_register(tree.lhs.value, rhs)
+                if tree.lhs.value == "pc":
+                    self.vm.pc = rhs
+                else:
+                    self.vm.store_register(tree.lhs.value, rhs)
             else:
                 address = self.evaluate_node(tree.lhs.address)
                 self.vm.assign_memory(address, rhs)
         elif isinstance(tree, RegisterNode):
-            value = self.vm.get_register(tree.value)
-            print_register_debug(tree.value, value, to_stderr=False)
+            if tree.value == "pc":
+                print("PC = {}".format(self.vm.pc))
+            else:
+                value = self.vm.get_register(tree.value)
+                print_register_debug(tree.value, value, to_stderr=False)
         elif isinstance(tree, MemoryNode):
             address = self.evaluate_node(tree.address)
             print("M[{}] = {}".format(address, self.vm.access_memory(address)))
@@ -347,7 +353,10 @@ class Debugger:
         if isinstance(node, IntNode):
             return node.value
         elif isinstance(node, RegisterNode):
-            return self.vm.get_register(node.value)
+            if node.value == "pc":
+                return self.vm.pc
+            else:
+                return self.vm.get_register(node.value)
         elif isinstance(node, MemoryNode):
             address = self.evaluate_node(node.address)
             return self.vm.access_memory(address)
