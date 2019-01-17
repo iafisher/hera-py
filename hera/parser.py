@@ -13,8 +13,8 @@ from lark import Lark, Token as LarkToken, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from . import config
-from .data import IntToken, Location, Op, Token
-from .utils import emit_error, get_canonical_path, is_register, print_warning
+from .data import HERAError, IntToken, Location, Op, Token
+from .utils import emit_error, get_canonical_path, is_register, print_warning, read_file
 
 
 def parse(text: str, *, path=None, includes=True, visited=None) -> List[Op]:
@@ -72,20 +72,6 @@ def parse(text: str, *, path=None, includes=True, visited=None) -> List[Op]:
         ops = expand_includes(ops, path, visited=visited)
 
     return ops
-
-
-def read_file(path, *, loc=None) -> str:
-    """Read a file and return its contents."""
-    try:
-        with open(path) as f:
-            return f.read()
-    except FileNotFoundError:
-        emit_error('file "{}" does not exist'.format(path), loc=loc)
-    except PermissionError:
-        emit_error('permission denied to open file "{}"'.format(path), loc=loc)
-    except OSError:
-        emit_error('could not open file "{}"'.format(path), loc=loc)
-    return ""
 
 
 def convert_tokens(ops: List[Op], base_location: Location) -> None:
@@ -147,7 +133,12 @@ def expand_includes(ops: List[Op], path: str, *, visited=None) -> List[Op]:
                 emit_error("recursive include", loc=op.args[0])
                 continue
 
-            included_program = read_file(include_path, loc=op.args[0])
+            try:
+                included_program = read_file(include_path)
+            except HERAError as e:
+                emit_error(str(e), loc=op.args[0])
+                continue
+
             included_ops = parse(included_program, path=include_path, visited=visited)
             expanded_ops.extend(included_ops)
         else:

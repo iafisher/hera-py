@@ -46,3 +46,7 @@ class Token(str):
         self.type = type_
         self.location = loc
         return self
+
+
+class HERAError(Exception):
+    pass

@@ -2,7 +2,8 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import Op
-from hera.parser import parse, read_file, replace_escapes
+from hera.parser import parse, replace_escapes
+from hera.utils import read_file
 
 
 def test_replace_escapes_with_one_escape():

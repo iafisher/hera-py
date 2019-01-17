@@ -8,11 +8,11 @@ import sys
 from typing import Dict, List, Tuple
 
 from . import config
-from .data import Op
-from .parser import parse, read_file
+from .data import HERAError, Op
+from .parser import parse
 from .preprocessor import preprocess
 from .typechecker import typecheck
-from .utils import print_message_with_location
+from .utils import emit_error, print_message_with_location, read_file
 
 
 def load_program(text: str) -> Tuple[List[Op], Dict[str, int]]:
@@ -43,7 +43,10 @@ def load_program_from_file(path: str) -> Tuple[List[Op], Dict[str, int]]:
             # So that the program and its output are visually separate.
             print()
     else:
-        text = read_file(path)
+        try:
+            text = read_file(path)
+        except HERAError as e:
+            emit_error(str(e))
     handle_errors()
 
     program = parse(text, path=path)

@@ -7,7 +7,7 @@ import os.path
 import sys
 
 from . import config
-from .data import IntToken, Location, Token
+from .data import HERAError, IntToken, Location, Token
 
 
 def to_u16(n):
@@ -161,3 +161,16 @@ def get_canonical_path(fpath):
 def op_to_string(op):
     """Convert a single operation to a string."""
     return "{}({})".format(op.name, ", ".join(str(a) for a in op.args))
+
+
+def read_file(path) -> str:
+    """Read a file and return its contents."""
+    try:
+        with open(path) as f:
+            return f.read()
+    except FileNotFoundError:
+        raise HERAError('file "{}" does not exist'.format(path))
+    except PermissionError:
+        raise HERAError('permission denied to open file "{}"'.format(path))
+    except OSError:
+        raise HERAError('could not open file "{}"'.format(path))
