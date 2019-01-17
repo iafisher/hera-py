@@ -2,7 +2,24 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import Op
-from hera.debugger import debug, Debugger, reverse_lookup_label
+from hera.debugger import (
+    AssignNode,
+    debug,
+    Debugger,
+    IntNode,
+    MemoryNode,
+    MiniLexer,
+    MiniParser,
+    RegisterNode,
+    reverse_lookup_label,
+    TOKEN_ASSIGN,
+    TOKEN_EOF,
+    TOKEN_INT,
+    TOKEN_LBRACKET,
+    TOKEN_MEM,
+    TOKEN_RBRACKET,
+    TOKEN_REGISTER,
+)
 from hera.loader import load_program, load_program_from_file
 from hera.typechecker import Constant, Label
 
@@ -192,83 +209,6 @@ def test_handle_execute_with_label(debugger, capsys):
     assert capsys.readouterr().out == "execute cannot take labels.\n"
 
 
-def test_handle_print_with_register(debugger, capsys):
-    debugger.vm.registers[7] = 42
-
-    debugger.handle_command("print r7")
-
-    assert capsys.readouterr().out == "r7 = 0x002a = 42 = '*'\n"
-
-
-def test_handle_print_with_invalid_register(debugger, capsys):
-    debugger.handle_command("print r17")
-
-    assert capsys.readouterr().out == "Could not parse argument to print.\n"
-
-
-def test_handle_print_with_program_counter(debugger, capsys):
-    debugger.vm.pc = 7
-
-    debugger.handle_command("print PC")
-
-    assert capsys.readouterr().out == "PC = 7\n"
-
-
-def test_handle_print_with_memory_location(debugger, capsys):
-    debugger.vm.assign_memory(97, 1000)
-
-    debugger.handle_command("print m[97]")
-
-    assert capsys.readouterr().out == "M[97] = 1000\n"
-
-
-def test_handle_print_with_hex_memory_location(debugger, capsys):
-    debugger.vm.assign_memory(0xAB, 1000)
-
-    debugger.handle_command("print m[0xaB]")
-
-    assert capsys.readouterr().out == "M[171] = 1000\n"
-
-
-def test_handle_print_with_memory_location_from_register(debugger, capsys):
-    debugger.vm.registers[5] = 0xAB
-    debugger.vm.assign_memory(0xAB, 1000)
-
-    debugger.handle_command("print m[r5]")
-
-    assert capsys.readouterr().out == "M[171] = 1000\n"
-
-
-def test_handle_print_with_invalid_memory_location(debugger, capsys):
-    debugger.handle_command("print m[???]")
-
-    assert capsys.readouterr().out == "Could not parse memory location.\n"
-
-
-def test_handle_print_with_constant(debugger, capsys):
-    debugger.handle_command("print N")
-
-    assert capsys.readouterr().out == "N = 3\n"
-
-
-def test_handle_print_with_too_few_args(debugger, capsys):
-    # TODO: It would be useful if this printed the last printed expression again.
-    debugger.handle_command("print")
-
-    assert capsys.readouterr().out == "print takes one argument.\n"
-
-
-def test_handle_print_abbreviated(debugger):
-    with patch("hera.debugger.Debugger.handle_print") as mock_handle_print:
-        debugger.handle_command("p r7")
-        assert mock_handle_print.call_count == 1
-
-        args, kwargs = mock_handle_print.call_args
-        assert len(args) == 1
-        assert args[0] == ["r7"]
-        assert len(kwargs) == 0
-
-
 def test_handle_skip(debugger):
     debugger.handle_command("skip 2")
 
@@ -400,6 +340,90 @@ def test_handle_abbreviated_long_list(debugger, capsys):
         assert mock_handle_long_list.call_count == 1
 
 
+def test_handle_register_expression(debugger, capsys):
+    debugger.handle_command("R1")
+
+    assert capsys.readouterr().out == "r1 = 0x0000 = 0\n"
+
+
+def test_handle_rr(debugger, capsys):
+    debugger.handle_command("rr")
+
+    assert capsys.readouterr().out == "All registers are set to zero.\n"
+
+
+def test_handle_rr_with_real_values(debugger, capsys):
+    debugger.vm.registers[3] = 11
+    debugger.vm.registers[7] = 42
+
+    debugger.handle_command("rr")
+
+    assert (
+        capsys.readouterr().out
+        == """\
+R1 = 0x0000 = 0
+R2 = 0x0000 = 0
+R3 = 0x000b = 11
+R4 = 0x0000 = 0
+R5 = 0x0000 = 0
+R6 = 0x0000 = 0
+R7 = 0x002a = 42 = '*'
+
+All higher registers are set to zero.
+"""
+    )
+
+
+def test_handle_rr_with_all_registers_set(debugger, capsys):
+    debugger.vm.registers[15] = 42
+
+    debugger.handle_command("rr")
+
+    assert (
+        capsys.readouterr().out
+        == """\
+R1 = 0x0000 = 0
+R2 = 0x0000 = 0
+R3 = 0x0000 = 0
+R4 = 0x0000 = 0
+R5 = 0x0000 = 0
+R6 = 0x0000 = 0
+R7 = 0x0000 = 0
+R8 = 0x0000 = 0
+R9 = 0x0000 = 0
+R10 = 0x0000 = 0
+R11 = 0x0000 = 0
+R12 = 0x0000 = 0
+R13 = 0x0000 = 0
+R14 = 0x0000 = 0
+R15 = 0x002a = 42 = '*'
+"""
+    )
+
+
+def test_handle_memory_expression(debugger, capsys):
+    debugger.vm.registers[1] = 4
+    debugger.vm.memory[4] = 42
+
+    debugger.handle_command("M[r1]")
+
+    assert capsys.readouterr().out == "M[4] = 42\n"
+
+
+def test_handle_setting_a_register(debugger):
+    debugger.handle_command("r12 = 10")
+
+    assert debugger.vm.registers[12] == 10
+
+
+def test_handle_setting_a_memory_location(debugger):
+    debugger.vm.registers[9] = 1000
+
+    debugger.handle_command("m[R9] = 4000")
+
+    assert debugger.vm.memory[1000] == 4000
+
+
 def test_handle_help(debugger, capsys):
     debugger.handle_command("help")
 
@@ -470,3 +494,42 @@ def test_debug_empty_program(capsys):
     debug([], {})
 
     assert capsys.readouterr().out == "Cannot debug an empty program.\n"
+
+
+def test_lex_mini_language_with_small_example():
+    lexer = MiniLexer("r1")
+
+    assert lexer.next_token() == (TOKEN_REGISTER, "r1")
+    assert lexer.next_token() == (TOKEN_EOF, "")
+    assert lexer.next_token() == (TOKEN_EOF, "")
+
+
+def test_lex_mini_language_with_big_example():
+    # This isn't a syntactically valid expression, but it doesn't matter to the lexer.
+    lexer = MiniLexer("M[FP_alt] = R15 0xabc")
+
+    assert lexer.next_token() == (TOKEN_MEM, "m")
+    assert lexer.next_token() == (TOKEN_LBRACKET, "[")
+    assert lexer.next_token() == (TOKEN_REGISTER, "fp_alt")
+    assert lexer.next_token() == (TOKEN_RBRACKET, "]")
+    assert lexer.next_token() == (TOKEN_ASSIGN, "=")
+    assert lexer.next_token() == (TOKEN_REGISTER, "r15")
+    assert lexer.next_token() == (TOKEN_INT, "0xabc")
+    assert lexer.next_token() == (TOKEN_EOF, "")
+    assert lexer.next_token() == (TOKEN_EOF, "")
+
+
+def test_parse_mini_language():
+    parser = MiniParser(MiniLexer("M[M[rt]] = 0xfab"))
+
+    tree = parser.parse()
+
+    assert isinstance(tree, AssignNode)
+
+    assert isinstance(tree.lhs, MemoryNode)
+    assert isinstance(tree.lhs.address, MemoryNode)
+    assert isinstance(tree.lhs.address.address, RegisterNode)
+    assert tree.lhs.address.address.value == "rt"
+
+    assert isinstance(tree.rhs, IntNode)
+    assert tree.rhs.value == 0xFAB

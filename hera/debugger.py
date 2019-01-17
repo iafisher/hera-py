@@ -14,8 +14,8 @@ user, it must be in terms of original ops.
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-import re
 import readline
+from collections import namedtuple
 from typing import Dict, List
 
 from .data import Op
@@ -110,14 +110,20 @@ class Debugger:
         """Parse the command and execute it. Return False if the loop should exit, and
         True otherwise.
         """
-        cmd, *args = response.split()
+        try:
+            cmd, line = response.split(maxsplit=1)
+        except ValueError:
+            cmd = response
+            line = ""
+
+        args = line.split()
         cmd = cmd.lower()
         if "break".startswith(cmd):
             self.handle_break(args)
         elif "continue".startswith(cmd):
             self.handle_continue(args)
         elif "execute".startswith(cmd):
-            self.handle_execute(" ".join(args))
+            self.handle_execute(line)
         elif "list".startswith(cmd):
             self.handle_list(args)
         elif cmd == "longlist" or cmd == "ll":
@@ -128,12 +134,14 @@ class Debugger:
             self.handle_print(args)
         elif "restart".startswith(cmd):
             self.handle_restart(args)
+        elif cmd == "rr":
+            self.handle_rr(args)
         elif "skip".startswith(cmd):
             self.handle_skip(args)
         elif "help".startswith(cmd):
             print(_HELP_MSG)
         else:
-            print("{} is not a known command.".format(cmd))
+            self.handle_expression(response)
 
     def handle_break(self, args):
         if len(args) > 1:
@@ -194,9 +202,9 @@ class Debugger:
 
         self.print_current_op()
 
-    def handle_execute(self, args):
+    def handle_execute(self, line):
         try:
-            ops, _ = load_program(args)
+            ops, _ = load_program(line)
         except SystemExit:
             return
 
@@ -280,44 +288,6 @@ class Debugger:
 
         self.print_current_op()
 
-    # Match strings of the form "m[123]"
-    _MEM_PATTERN = re.compile(r"[Mm]\[(.*?)\]")
-
-    def handle_print(self, args):
-        if len(args) != 1:
-            print("print takes one argument.")
-            return
-
-        match = self._MEM_PATTERN.match(args[0])
-        if match:
-            index_str = match.group(1)
-            try:
-                index = int(index_str, base=0)
-            except ValueError:
-                # If it's not an integer, try parsing it as a register.
-                try:
-                    index = self.vm.get_register(index_str)
-                except ValueError:
-                    print("Could not parse memory location.")
-                    return
-
-            print("M[{}] = {}".format(index, self.vm.access_memory(index)))
-        elif args[0].lower() == "pc":
-            print("PC = {}".format(self.vm.pc))
-        else:
-            try:
-                v = self.vm.get_register(args[0])
-            except ValueError:
-                # If it's not a register, see if it's in the symbol table.
-                try:
-                    v = self.symbol_table[args[0]]
-                except KeyError:
-                    print("Could not parse argument to print.")
-                else:
-                    print("{} = {}".format(args[0], v))
-            else:
-                print_register_debug(args[0], v, to_stderr=False)
-
     def handle_restart(self, args):
         if len(args) != 0:
             print("restart takes no arguments.")
@@ -325,6 +295,67 @@ class Debugger:
 
         self.vm.reset()
         self.print_current_op()
+
+    def handle_rr(self, args):
+        if len(args) != 0:
+            print("rr takes no arguments.")
+            return
+
+        if all(r == 0 for r in self.vm.registers):
+            print("All registers are set to zero.")
+        else:
+            last_non_zero = 15
+            while self.vm.registers[last_non_zero] == 0:
+                last_non_zero -= 1
+
+            if last_non_zero < 13:
+                for i in range(1, last_non_zero + 1):
+                    print_register_debug(
+                        "R" + str(i), self.vm.registers[i], to_stderr=False
+                    )
+                print("\nAll higher registers are set to zero.")
+            else:
+                for i, v in enumerate(self.vm.registers[1:], start=1):
+                    print_register_debug("R" + str(i), v, to_stderr=False)
+
+    def handle_expression(self, line):
+        try:
+            tree = MiniParser(MiniLexer(line)).parse()
+        except SyntaxError as e:
+            if looks_like_unknown_command(line):
+                print("{} is not a known command.".format(line.split(maxsplit=1)[0]))
+            else:
+                msg = str(e)
+                if msg:
+                    print("Could not parse expression: " + msg + ".")
+                else:
+                    print("Could not parse expression.")
+            return
+
+        if isinstance(tree, AssignNode):
+            rhs = self.evaluate_node(tree.rhs)
+            if isinstance(tree.lhs, RegisterNode):
+                self.vm.store_register(tree.lhs.value, rhs)
+            else:
+                address = self.evaluate_node(tree.lhs.address)
+                self.vm.assign_memory(address, rhs)
+        elif isinstance(tree, RegisterNode):
+            value = self.vm.get_register(tree.value)
+            print_register_debug(tree.value, value, to_stderr=False)
+        elif isinstance(tree, MemoryNode):
+            address = self.evaluate_node(tree.address)
+            print("M[{}] = {}".format(address, self.vm.access_memory(address)))
+        else:
+            print(tree.value)
+
+    def evaluate_node(self, node):
+        if isinstance(node, IntNode):
+            return node.value
+        elif isinstance(node, RegisterNode):
+            return self.vm.get_register(node.value)
+        elif isinstance(node, MemoryNode):
+            address = self.evaluate_node(node.address)
+            return self.vm.access_memory(address)
 
     def print_current_op(self):
         """Print the next operation to be executed. If the program has finished
@@ -434,3 +465,182 @@ def reverse_lookup_label(symbol_table, value):
         if value == v and isinstance(v, Label):
             return k
     return None
+
+
+def looks_like_unknown_command(line):
+    """Return True if the line appears to be an unrecognized command rather than an
+    ill-formatted mini-language expression.
+    """
+    cmd = line.split(maxsplit=1)[0]
+    return cmd.isalpha()
+
+
+class MiniParser:
+    """A parser for the debugger's expression mini-language.
+
+      start := expr | assign
+
+      expr := mem | REGISTER | INT
+      mem  := MEM LBRACKET expr RBRACKET
+
+      assign := lvalue ASSIGN expr
+      lvalue := mem | REGISTER
+    """
+
+    def __init__(self, lexer):
+        self.lexer = lexer
+
+    def parse(self):
+        tree = self.match_expr()
+        tkn = self.lexer.next_token()
+        if tkn[0] == TOKEN_EOF:
+            return tree
+        elif tkn[0] == TOKEN_ASSIGN:
+            if isinstance(tree, IntNode):
+                raise SyntaxError("integer cannot be assigned to")
+
+            rhs = self.match_expr()
+            if self.lexer.next_token()[0] == TOKEN_EOF:
+                return AssignNode(tree, rhs)
+            else:
+                raise SyntaxError("trailing input")
+        else:
+            self.raise_unexpected(tkn)
+
+    def match_expr(self):
+        tkn = self.lexer.next_token()
+        if tkn[0] == TOKEN_MEM:
+            self.assert_next(TOKEN_LBRACKET)
+            address = self.match_expr()
+            self.assert_next(TOKEN_RBRACKET)
+            return MemoryNode(address)
+        elif tkn[0] == TOKEN_INT:
+            try:
+                return IntNode(int(tkn[1], base=0))
+            except ValueError:
+                raise SyntaxError("invalid integer literal: {}".format(tkn[1]))
+        elif tkn[0] == TOKEN_REGISTER:
+            return RegisterNode(tkn[1])
+        else:
+            self.raise_unexpected(tkn)
+
+    def assert_next(self, typ):
+        tkn = self.lexer.next_token()
+        if tkn[0] != typ:
+            self.raise_unexpected(tkn)
+
+    def raise_unexpected(self, tkn):
+        if tkn[0] == TOKEN_EOF:
+            raise SyntaxError("premature end of input")
+        elif tkn[0] == TOKEN_UNKNOWN:
+            raise SyntaxError("unrecognized input `{}`".format(tkn[1]))
+        else:
+            raise SyntaxError("did not expect `{}` in this position".format(tkn[1]))
+
+
+MemoryNode = namedtuple("MemoryNode", ["address"])
+AssignNode = namedtuple("AssignNode", ["lhs", "rhs"])
+RegisterNode = namedtuple("RegisterNode", ["value"])
+IntNode = namedtuple("IntNode", ["value"])
+
+
+class MiniLexer:
+    """A lexer for the debugger's expression mini-language."""
+
+    def __init__(self, text):
+        self.text = text.lower()
+        self.position = 0
+
+    def next_token(self):
+        # Skip whitespace.
+        while self.position < len(self.text) and self.text[self.position].isspace():
+            self.position += 1
+
+        if self.position >= len(self.text):
+            return TOKEN_EOF, ""
+
+        ch = self.text[self.position]
+        if ch == "m":
+            return self.advance_and_return(TOKEN_MEM)
+        elif ch == "[":
+            return self.advance_and_return(TOKEN_LBRACKET)
+        elif ch == "]":
+            return self.advance_and_return(TOKEN_RBRACKET)
+        elif ch == "=":
+            return self.advance_and_return(TOKEN_ASSIGN)
+        elif ch in ("r", "p", "f", "s"):
+            length = self.read_register()
+            if length != -1:
+                return self.advance_and_return(TOKEN_REGISTER, length=length)
+            else:
+                return self.advance_and_return(TOKEN_UNKNOWN)
+        elif ch.isdigit():
+            length = self.read_int()
+            return self.advance_and_return(TOKEN_INT, length=length)
+        elif ch == "-":
+            self.position += 1
+            length = self.read_int()
+            self.position -= 1
+            return self.advance_and_return(TOKEN_INT, length=length)
+        else:
+            return self.advance_and_return(TOKEN_UNKNOWN)
+
+    def read_register(self):
+        ch = self.text[self.position]
+        if ch == "r":
+            if self.peek() == "t":
+                return 2
+            elif self.peek().isdigit():
+                length = 2
+                while self.peek(length).isdigit():
+                    length += 1
+                return length
+        elif ch == "p":
+            if self.text[self.position :].startswith("pc_ret"):
+                return 6
+            elif self.text[self.position :].startswith("pc"):
+                return 2
+        elif ch == "f":
+            if self.text[self.position :].startswith("fp_alt"):
+                return 6
+            elif self.text[self.position :].startswith("fp"):
+                return 2
+        elif ch == "s":
+            if self.peek() == "p":
+                return 2
+
+        # Default: not a register.
+        return -1
+
+    def read_int(self):
+        length = 1
+        digits = set([str(i) for i in range(10)])
+        if self.text[self.position] == "0" and self.peek() in ("b", "o", "x"):
+            length = 2
+            if self.peek() == "x":
+                digits |= set("abcdef")
+
+        while self.peek(length) in digits:
+            length += 1
+
+        return length
+
+    def peek(self, n=1):
+        return (
+            self.text[self.position + n] if self.position + n < len(self.text) else ""
+        )
+
+    def advance_and_return(self, typ, *, length=1):
+        start = self.position
+        self.position += length
+        return typ, self.text[start : start + length]
+
+
+TOKEN_INT = "TOKEN_INT"
+TOKEN_MEM = "TOKEN_MEM"
+TOKEN_REGISTER = "TOKEN_REGISTER"
+TOKEN_LBRACKET = "TOKEN_LBRACKET"
+TOKEN_RBRACKET = "TOKEN_RBRACKET"
+TOKEN_ASSIGN = "TOKEN_ASSIGN"
+TOKEN_EOF = "TOKEN_EOF"
+TOKEN_UNKNOWN = "TOKEN_UNKNOWN"

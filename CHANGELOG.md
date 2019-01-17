@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Relative branch instructions can now target labels.
 - Error messages for `#include` with non-existent file now print the line number.
+- The `rr` debugging command.
+- The debugging expresson mini-language.
 
 ### Changed
 - Argument to skip command in debugger is now interpreted as number of lines to skip instead of destination to skip to.
@@ -26,7 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Invalid zero-prefixed octal literals no longer crash the interpreter.
 
 ### Removed
-- The --lines command-line argument.
+- The `--lines` command-line argument.
+- The `print` debugging command.
 
 
 ## [0.4.0] - 2019-01-02
