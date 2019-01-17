@@ -21,7 +21,7 @@ from . import minilanguage
 from .data import HERAError, Op
 from .loader import load_program
 from .minilanguage import AssignNode, IntNode, MemoryNode, RegisterNode, SymbolNode
-from .typechecker import Label
+from .typechecker import Constant, DataLabel, Label
 from .utils import BRANCHES, DATA_STATEMENTS, op_to_string, print_register_debug
 from .vm import VirtualMachine
 
@@ -56,6 +56,8 @@ Available commands:
 
     skip <n>      Skip the next n instructions without executing them. If not
                   provided, n defaults to 1.
+
+    symbols       Print all symbols the debugger is aware of.
 
     quit          Exit the debugger.
 
@@ -128,6 +130,8 @@ class Debugger:
             self.handle_rr(args)
         elif "skip".startswith(cmd):
             self.handle_skip(args)
+        elif cmd.startswith("sym") and "symbols".startswith(cmd):
+            self.handle_symbols(args)
         elif "help".startswith(cmd):
             print(_HELP_MSG)
         else:
@@ -168,6 +172,23 @@ class Debugger:
             self.vm.exec_one(real_op)
 
         self.print_current_op()
+
+    def handle_symbols(self, args):
+        if len(args) != 0:
+            print("symbols takes no arguments.")
+            return
+
+        sorted_pairs = sorted(self.symbol_table.items(), key=lambda t: t[0].lower())
+        for k, v in sorted_pairs:
+            if isinstance(v, Label):
+                suffix = " (label)"
+            elif isinstance(v, DataLabel):
+                suffix = " (data label)"
+            elif isinstance(v, Constant):
+                suffix = " (constant)"
+            else:
+                suffix = ""
+            print("{} = {}".format(k, v) + suffix)
 
     def handle_skip(self, args):
         if len(args) > 1:

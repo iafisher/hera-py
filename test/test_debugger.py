@@ -378,6 +378,24 @@ R15 = 0x002a = 42 = '*'
     )
 
 
+def test_handle_symbols(debugger, capsys):
+    debugger.handle_command("symbols")
+
+    assert capsys.readouterr().out == "add = 4 (label)\nN = 3 (constant)\n"
+
+
+def test_handle_symbols_with_too_many_args(debugger, capsys):
+    debugger.handle_command("symbols a")
+
+    assert capsys.readouterr().out == "symbols takes no arguments.\n"
+
+
+def test_handle_symbols_abbreviated(debugger):
+    with patch("hera.debugger.Debugger.handle_symbols") as mock_handle_symbols:
+        debugger.handle_command("sym")
+        assert mock_handle_symbols.call_count == 1
+
+
 def test_handle_register_expression(debugger, capsys):
     debugger.handle_command("R1")
 
