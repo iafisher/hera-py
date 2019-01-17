@@ -7,21 +7,14 @@ Version: January 2019
 """
 import os
 import re
-import sys
-from typing import List, Tuple
+from typing import List
 
 from lark import Lark, Token as LarkToken, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from . import config
 from .data import IntToken, Location, Op, Token
-from .utils import (
-    DATA_STATEMENTS,
-    emit_error,
-    get_canonical_path,
-    is_register,
-    print_warning,
-)
+from .utils import emit_error, get_canonical_path, is_register, print_warning
 
 
 def parse(text: str, *, path=None, includes=True, visited=None) -> List[Op]:

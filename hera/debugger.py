@@ -22,13 +22,7 @@ from .data import Op
 from .loader import load_program
 from .minilanguage import AssignNode, IntNode, MemoryNode, RegisterNode
 from .typechecker import Label
-from .utils import (
-    BRANCHES,
-    DATA_STATEMENTS,
-    op_to_string,
-    print_register_debug,
-    REGISTER_BRANCHES,
-)
+from .utils import BRANCHES, DATA_STATEMENTS, op_to_string, print_register_debug
 from .vm import VirtualMachine
 
 
@@ -188,7 +182,7 @@ class Debugger:
         if len(args) == 1:
             try:
                 offset = int(args[0])
-            except ValueError as e:
+            except ValueError:
                 print("skip takes an integer argument.")
         else:
             offset = 1

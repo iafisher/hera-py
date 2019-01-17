@@ -5,7 +5,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from . import config
 from .config import HERA_DATA_START

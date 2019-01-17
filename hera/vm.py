@@ -112,7 +112,6 @@ class VirtualMachine:
         """Store the value in the target register (a string)."""
         index = register_to_index(target)
         if index != 0:
-            old = self.registers[index]
             self.registers[index] = value
             if index == 15 and value >= HERA_DATA_START:
                 if not self.warned_for_overflow:

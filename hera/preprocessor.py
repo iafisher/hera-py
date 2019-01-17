@@ -3,7 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from .data import Op, Token
 from .utils import emit_error, is_symbol, REGISTER_BRANCHES, RELATIVE_BRANCHES, to_u16
