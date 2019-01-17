@@ -169,6 +169,11 @@ Error: undefined constant, line 1 col 9 of <stdin>
   SET(R1, N)
           ^
 
+Error: data statement after code, line 1 col 1 of test/assets/error/constant_decl.hera
+
+  CONSTANT(N, 100)
+  ^
+
 """
     )
 
@@ -217,7 +222,7 @@ def test_data_after_code(capsys):
     assert (
         captured
         == """\
-Error: data statement after instruction, line 2 col 1 of <stdin>
+Error: data statement after code, line 2 col 1 of <stdin>
 
   INTEGER(42)
   ^
@@ -340,6 +345,37 @@ Error: invalid octal literal, line 1 col 9 of <stdin>
 
   SET(R1, 018)
           ^
+
+"""
+    )
+
+
+def test_include_before_data(capsys):
+    program = """\
+#include "test/assets/error/included_before_data.hera"
+
+DLABEL(X)
+INTEGER(42)
+
+SET(R1, X)
+LOAD(R2, 0, R1)
+"""
+    with pytest.raises(SystemExit):
+        execute_program_helper(program)
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Error: data statement after code, line 3 col 1 of <stdin>
+
+  DLABEL(X)
+  ^
+
+Error: data statement after code, line 4 col 1 of <stdin>
+
+  INTEGER(42)
+  ^
 
 """
     )

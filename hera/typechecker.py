@@ -12,6 +12,7 @@ from .config import HERA_DATA_START
 from .data import Op, Token
 from .utils import (
     BINARY_OPS,
+    DATA_STATEMENTS,
     emit_error,
     is_symbol,
     register_to_index,
@@ -27,9 +28,16 @@ def typecheck(program: List[Op]) -> Dict[str, int]:
     """
     check_symbol_redeclaration(program)
 
+    seen_code = False
     symbol_table = get_labels(program)
     for op in program:
         typecheck_op(op, symbol_table)
+
+        if op.name in DATA_STATEMENTS:
+            if seen_code:
+                emit_error("data statement after code", loc=op.name)
+        else:
+            seen_code = True
 
         # Add constants to the symbol table as they are encountered, so that a given
         # constant is not in scope until after its declaration.

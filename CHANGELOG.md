@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Argument to skip command in debugger is now interpreted as number of lines to skip instead of destination to skip to.
 - Warning for zero-prefixed octal literals will only be printed once per program, rather than for every occurrence.
+- Data statements may never follow code, even when in different files.
 
 ### Fixed
 - Use of undefined labels gives proper error message instead of Python exception.
