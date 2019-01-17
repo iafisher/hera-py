@@ -421,6 +421,18 @@ def test_handle_setting_pc(debugger):
     assert debugger.vm.pc == 10
 
 
+def test_handle_symbol(debugger, capsys):
+    debugger.handle_command("add")
+
+    assert capsys.readouterr().out == "add = 4\n"
+
+
+def test_handle_setting_register_to_symbol(debugger):
+    debugger.handle_command("r7 = add")
+
+    assert debugger.vm.registers[7] == 4
+
+
 def test_handle_help(debugger, capsys):
     debugger.handle_command("help")
 
@@ -432,7 +444,9 @@ def test_handle_help(debugger, capsys):
 def test_handle_unknown_command(debugger, capsys):
     debugger.handle_command("whatever")
 
-    assert capsys.readouterr().out == "whatever is not a known command.\n"
+    assert (
+        capsys.readouterr().out == "whatever is not a recognized command or symbol.\n"
+    )
 
 
 def test_resolve_location_with_line_number(debugger):

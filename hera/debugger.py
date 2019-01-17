@@ -20,7 +20,7 @@ from typing import Dict, List
 from . import minilanguage
 from .data import Op
 from .loader import load_program
-from .minilanguage import AssignNode, IntNode, MemoryNode, RegisterNode
+from .minilanguage import AssignNode, IntNode, MemoryNode, RegisterNode, SymbolNode
 from .typechecker import Label
 from .utils import BRANCHES, DATA_STATEMENTS, op_to_string, print_register_debug
 from .vm import VirtualMachine
@@ -317,14 +317,11 @@ class Debugger:
         try:
             tree = minilanguage.parse(line)
         except SyntaxError as e:
-            if looks_like_unknown_command(line):
-                print("{} is not a known command.".format(line.split(maxsplit=1)[0]))
+            msg = str(e)
+            if msg:
+                print("Parse error: " + msg + ".")
             else:
-                msg = str(e)
-                if msg:
-                    print("Could not parse expression: " + msg + ".")
-                else:
-                    print("Could not parse expression.")
+                print("Parse error.")
             return
 
         if isinstance(tree, AssignNode):
@@ -346,8 +343,17 @@ class Debugger:
         elif isinstance(tree, MemoryNode):
             address = self.evaluate_node(tree.address)
             print("M[{}] = {}".format(address, self.vm.access_memory(address)))
-        else:
+        elif isinstance(tree, SymbolNode):
+            try:
+                v = self.symbol_table[tree.value]
+            except KeyError:
+                print("{} is not a recognized command or symbol.".format(tree.value))
+            else:
+                print("{} = {}".format(tree.value, v))
+        elif isinstance(tree, IntNode):
             print(tree.value)
+        else:
+            raise RuntimeError("unknown node type {}".format(node.__class__.__name__))
 
     def evaluate_node(self, node):
         if isinstance(node, IntNode):
@@ -360,6 +366,11 @@ class Debugger:
         elif isinstance(node, MemoryNode):
             address = self.evaluate_node(node.address)
             return self.vm.access_memory(address)
+        elif isinstance(node, SymbolNode):
+            # TODO: Can't just do this.
+            return self.symbol_table.get(node.value, 0)
+        else:
+            raise RuntimeError("unknown node type {}".format(node.__class__.__name__))
 
     def print_current_op(self):
         """Print the next operation to be executed. If the program has finished

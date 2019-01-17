@@ -36,6 +36,8 @@ class MiniParser:
         elif tkn[0] == TOKEN_ASSIGN:
             if isinstance(tree, IntNode):
                 raise SyntaxError("integer cannot be assigned to")
+            elif isinstance(tree, SymbolNode):
+                raise SyntaxError("symbol cannot be assigned to")
 
             rhs = self.match_expr()
             if self.lexer.next_token()[0] == TOKEN_EOF:
@@ -59,6 +61,8 @@ class MiniParser:
                 raise SyntaxError("invalid integer literal: {}".format(tkn[1]))
         elif tkn[0] == TOKEN_REGISTER:
             return RegisterNode(tkn[1])
+        elif tkn[0] == TOKEN_SYMBOL:
+            return SymbolNode(tkn[1])
         else:
             self.raise_unexpected(tkn)
 
@@ -80,12 +84,14 @@ MemoryNode = namedtuple("MemoryNode", ["address"])
 AssignNode = namedtuple("AssignNode", ["lhs", "rhs"])
 RegisterNode = namedtuple("RegisterNode", ["value"])
 IntNode = namedtuple("IntNode", ["value"])
+SymbolNode = namedtuple("SymbolNode", ["value"])
 
 
 class MiniLexer:
     """A lexer for the debugger's expression mini-language."""
 
     def __init__(self, text):
+        # TODO: This won't work with symbols, which are case sensitive.
         self.text = text.lower()
         self.position = 0
 
@@ -106,12 +112,13 @@ class MiniLexer:
             return self.advance_and_return(TOKEN_RBRACKET)
         elif ch == "=":
             return self.advance_and_return(TOKEN_ASSIGN)
-        elif ch in ("r", "p", "f", "s"):
+        elif ch.isalpha() or ch == "_":
             length = self.read_register()
             if length != -1:
                 return self.advance_and_return(TOKEN_REGISTER, length=length)
             else:
-                return self.advance_and_return(TOKEN_UNKNOWN)
+                length = self.read_symbol()
+                return self.advance_and_return(TOKEN_SYMBOL, length=length)
         elif ch.isdigit():
             length = self.read_int()
             return self.advance_and_return(TOKEN_INT, length=length)
@@ -163,6 +170,15 @@ class MiniLexer:
 
         return length
 
+    def read_symbol(self):
+        length = 2
+        while True:
+            ch = self.peek(length)
+            if not (ch.isalpha() or ch.isdigit() or ch == "_"):
+                break
+            length += 1
+        return length
+
     def peek(self, n=1):
         return (
             self.text[self.position + n] if self.position + n < len(self.text) else ""
@@ -180,5 +196,6 @@ TOKEN_REGISTER = "TOKEN_REGISTER"
 TOKEN_LBRACKET = "TOKEN_LBRACKET"
 TOKEN_RBRACKET = "TOKEN_RBRACKET"
 TOKEN_ASSIGN = "TOKEN_ASSIGN"
+TOKEN_SYMBOL = "TOKEN_SYMBOL"
 TOKEN_EOF = "TOKEN_EOF"
 TOKEN_UNKNOWN = "TOKEN_UNKNOWN"
