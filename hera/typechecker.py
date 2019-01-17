@@ -14,6 +14,7 @@ from .utils import (
     BINARY_OPS,
     DATA_STATEMENTS,
     emit_error,
+    is_register,
     is_symbol,
     register_to_index,
     REGISTER_BRANCHES,
@@ -112,6 +113,7 @@ def get_labels(program: List[Op]) -> Dict[str, int]:
         else:
             pc += operation_length(op)
 
+        # TODO: Can I move this elsewhere?
         if out_of_range(dc) and not out_of_range(odc):
             emit_error("past the end of available memory", loc=op.name)
 
@@ -308,7 +310,10 @@ def assert_in_range(arg, symbol_table, *, lo, hi, labels=False):
 
 def operation_length(op):
     if op.name in REGISTER_BRANCHES:
-        return 3
+        if len(op.args) == 1 and is_register(op.args[0]):
+            return 1
+        else:
+            return 3
     elif op.name == "SET":
         return 2
     elif op.name == "CMP":

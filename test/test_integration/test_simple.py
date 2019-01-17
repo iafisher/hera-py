@@ -299,3 +299,20 @@ SET(R1, 666)
     vm = execute_program_helper(program)
 
     assert vm.registers[1] == 42
+
+
+def test_branching_by_register():
+    program = """\
+SET(R1, end)
+SET(R2, 42)
+BR(R1)
+
+SET(R2, 666)
+LABEL(end)
+SET(R3, 84)
+    """
+    vm = execute_program_helper(program)
+
+    assert vm.registers[1] == 7
+    assert vm.registers[2] == 42
+    assert vm.registers[3] == 84

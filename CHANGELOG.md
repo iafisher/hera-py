@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Passing too few parameters to SET no longer crashes the program.
 - Constants can no longer be used before they are declared.
 - Invalid zero-prefixed octal literals no longer crash the interpreter.
+- Labels are calculated correctly after branches on registers.
 
 ### Removed
 - The `--lines` command-line argument.

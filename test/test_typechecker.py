@@ -11,6 +11,7 @@ from hera.typechecker import (
     Constant,
     DataLabel,
     Label,
+    operation_length,
     typecheck,
     typecheck_op,
 )
@@ -863,3 +864,47 @@ def test_typecheck_multiple_errors():
         call_args = mock_emit_error.call_args_list[2][0]
         assert "INC" in call_args[0]
         assert "too few" in call_args[0]
+
+
+def test_operation_length_of_register_branch_with_label():
+    assert operation_length(Op("BNZ", [SYM("l")])) == 3
+
+
+def test_operation_length_of_register_branch_with_register():
+    assert operation_length(Op("BNZ", [R("R1")])) == 1
+
+
+def test_operation_length_of_SET():
+    assert operation_length(Op("SET", [R("R1"), 10])) == 2
+
+
+def test_operation_length_of_SETRF():
+    assert operation_length(Op("SETRF", [R("R1"), 10])) == 4
+
+
+def test_operation_length_of_MOVE():
+    assert operation_length(Op("MOVE", [R("R1"), R("R2")])) == 1
+
+
+def test_operation_length_of_CMP():
+    assert operation_length(Op("CMP", [R("R1"), R("R0")])) == 2
+
+
+def test_operation_length_of_NEG():
+    assert operation_length(Op("NEG", [R("R7"), R("R15")])) == 2
+
+
+def test_operation_length_of_NOT():
+    assert operation_length(Op("NOT", [R("R5"), R("R7")])) == 3
+
+
+def test_operation_lentgh_of_FLAGS():
+    assert operation_length(Op("FLAGS", [R("R3")])) == 2
+
+
+def test_operation_length_of_CALL_with_label():
+    assert operation_length(Op("CALL", [R("R12"), SYM("l")])) == 3
+
+
+def test_operation_length_of_CALL_with_register():
+    assert operation_length(Op("CALL", [R("R12"), R("R13")])) == 1
