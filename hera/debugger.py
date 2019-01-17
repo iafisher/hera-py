@@ -113,29 +113,29 @@ class Debugger:
         cmd, *args = response.split()
         cmd = cmd.lower()
         if "break".startswith(cmd):
-            self.exec_break(args)
+            self.handle_break(args)
         elif "continue".startswith(cmd):
-            self.exec_continue(args)
+            self.handle_continue(args)
         elif "execute".startswith(cmd):
-            self.exec_execute(" ".join(args))
+            self.handle_execute(" ".join(args))
         elif "list".startswith(cmd):
-            self.exec_list(args)
+            self.handle_list(args)
         elif cmd == "longlist" or cmd == "ll":
-            self.exec_long_list(args)
+            self.handle_long_list(args)
         elif "next".startswith(cmd):
-            self.exec_next(args)
+            self.handle_next(args)
         elif "print".startswith(cmd):
-            self.exec_print(args)
+            self.handle_print(args)
         elif "restart".startswith(cmd):
-            self.exec_restart(args)
+            self.handle_restart(args)
         elif "skip".startswith(cmd):
-            self.exec_skip(args)
+            self.handle_skip(args)
         elif "help".startswith(cmd):
             print(_HELP_MSG)
         else:
             print("{} is not a known command.".format(cmd))
 
-    def exec_break(self, args):
+    def handle_break(self, args):
         if len(args) > 1:
             print("break takes zero or one arguments.")
             return
@@ -156,7 +156,7 @@ class Debugger:
             else:
                 self.breakpoints[b] = self.get_breakpoint_name(b)
 
-    def exec_next(self, args):
+    def handle_next(self, args):
         if len(args) != 0:
             print("next takes no arguments.")
             return
@@ -171,7 +171,7 @@ class Debugger:
 
         self.print_current_op()
 
-    def exec_skip(self, args):
+    def handle_skip(self, args):
         if len(args) > 1:
             print("skip takes zero or one arguments.")
             return
@@ -194,7 +194,7 @@ class Debugger:
 
         self.print_current_op()
 
-    def exec_execute(self, args):
+    def handle_execute(self, args):
         try:
             ops, _ = load_program(args)
         except SystemExit:
@@ -213,7 +213,7 @@ class Debugger:
             self.vm.exec_one(op)
         self.vm.pc = opc
 
-    def exec_list(self, args):
+    def handle_list(self, args):
         if len(args) > 1:
             print("list takes zero or one arguments.")
             return
@@ -249,7 +249,7 @@ class Debugger:
         for pc, op in next_ops:
             print("   {:0>4x}  {}".format(pc, op_to_string(op)))
 
-    def exec_long_list(self, args):
+    def handle_long_list(self, args):
         if len(args) != 0:
             print("longlist takes no arguments.")
             return
@@ -265,7 +265,7 @@ class Debugger:
             ):
                 index += 1
 
-    def exec_continue(self, args):
+    def handle_continue(self, args):
         if len(args) != 0:
             print("continue takes no arguments.")
             return
@@ -283,7 +283,7 @@ class Debugger:
     # Match strings of the form "m[123]"
     _MEM_PATTERN = re.compile(r"[Mm]\[(.*?)\]")
 
-    def exec_print(self, args):
+    def handle_print(self, args):
         if len(args) != 1:
             print("print takes one argument.")
             return
@@ -318,7 +318,7 @@ class Debugger:
             else:
                 print_register_debug(args[0], v, to_stderr=False)
 
-    def exec_restart(self, args):
+    def handle_restart(self, args):
         if len(args) != 0:
             print("restart takes no arguments.")
             return
