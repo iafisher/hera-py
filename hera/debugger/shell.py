@@ -285,11 +285,14 @@ class Shell:
         try:
             tree = minilanguage.parse(line)
         except SyntaxError as e:
-            msg = str(e)
-            if msg:
-                print("Parse error: " + msg + ".")
+            if looks_like_unknown_command(line):
+                print("{} is not a recognized command or symbol.".format(line.split()[0]))
             else:
-                print("Parse error.")
+                msg = str(e)
+                if msg:
+                    print("Parse error: " + msg + ".")
+                else:
+                    print("Parse error.")
             return
 
         vm = self.debugger.vm
@@ -391,3 +394,10 @@ class Shell:
             print(" [{}]".format(", ".join(labels)))
         else:
             print()
+
+
+def looks_like_unknown_command(line):
+    """Try to detect whether a line of input was an attempt to use an unknown command
+    (as opposed to an mini-language expression that could not be parsed).
+    """
+    return all(word.isalpha() for word in line.split())

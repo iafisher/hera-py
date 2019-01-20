@@ -513,6 +513,12 @@ def test_handle_unknown_command(shell, capsys):
     )
 
 
+def test_handle_unknown_command_with_arg(shell, capsys):
+    shell.handle_command("run program")
+
+    assert capsys.readouterr().out == "run is not a recognized command or symbol.\n"
+
+
 def test_resolve_location_with_line_number(debugger):
     assert debugger.resolve_location(4) == 0
 
