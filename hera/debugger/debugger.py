@@ -20,12 +20,12 @@ from contextlib import suppress
 from typing import Dict, List
 
 from . import minilanguage
-from .data import HERAError, Op
-from .loader import load_program
 from .minilanguage import AssignNode, IntNode, MemoryNode, RegisterNode, SymbolNode
-from .typechecker import Constant, DataLabel, Label
-from .utils import BRANCHES, DATA_STATEMENTS, op_to_string, print_register_debug
-from .vm import VirtualMachine
+from hera.data import HERAError, Op
+from hera.loader import load_program
+from hera.typechecker import Constant, DataLabel, Label
+from hera.utils import BRANCHES, DATA_STATEMENTS, op_to_string, print_register_debug
+from hera.vm import VirtualMachine
 
 
 def debug(program: List[Op], symbol_table: Dict[str, int]) -> None:

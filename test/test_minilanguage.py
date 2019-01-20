@@ -1,4 +1,4 @@
-from hera.minilanguage import (
+from hera.debugger.minilanguage import (
     AssignNode,
     IntNode,
     MemoryNode,
