@@ -1,1 +1,2 @@
-from .debugger import debug, Debugger
+from .debugger import Debugger
+from .shell import debug, Shell

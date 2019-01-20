@@ -2,10 +2,15 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import Op
-from hera.debugger import debug, Debugger
+from hera.debugger import debug, Debugger, Shell
 from hera.debugger.debugger import reverse_lookup_label
 from hera.loader import load_program, load_program_from_file
 from hera.typechecker import Constant, Label
+
+
+@pytest.fixture
+def shell():
+    return Shell(Debugger(SAMPLE_PROGRAM, SYMBOL_TABLE))
 
 
 @pytest.fixture
@@ -27,53 +32,53 @@ HALT()
 )
 
 
-def test_handle_break_prints_breakpoints(debugger, capsys):
-    debugger.breakpoints[4] = "main.hera:7"
-    debugger.handle_command("break")
+def test_handle_break_prints_breakpoints(shell, capsys):
+    shell.debugger.breakpoints[4] = "main.hera:7"
+    shell.handle_command("break")
 
     assert capsys.readouterr().out == "main.hera:7\n"
 
 
-def test_handle_break_prints_breakpoints_with_no_breakpoints_set(debugger, capsys):
-    debugger.handle_command("break")
+def test_handle_break_prints_breakpoints_with_no_breakpoints_set(shell, capsys):
+    shell.handle_command("break")
 
     assert capsys.readouterr().out == "No breakpoints set.\n"
 
 
-def test_handle_break_sets_breakpoint(debugger):
-    assert len(debugger.breakpoints) == 0
+def test_handle_break_sets_breakpoint(shell):
+    assert len(shell.debugger.breakpoints) == 0
 
-    debugger.handle_command("break 4")
+    shell.handle_command("break 4")
 
-    assert len(debugger.breakpoints) == 1
-    assert 0 in debugger.breakpoints
-    assert debugger.breakpoints[0] == "<string>:4"
+    assert len(shell.debugger.breakpoints) == 1
+    assert 0 in shell.debugger.breakpoints
+    assert shell.debugger.breakpoints[0] == "<string>:4"
 
 
-def test_handle_break_with_invalid_location(debugger, capsys):
-    debugger.handle_command("break 1")
+def test_handle_break_with_invalid_location(shell, capsys):
+    shell.handle_command("break 1")
 
-    assert len(debugger.breakpoints) == 0
+    assert len(shell.debugger.breakpoints) == 0
     assert capsys.readouterr().out == "Error: could not find corresponding line.\n"
 
 
-def test_handle_break_with_unparseable_breakpoint(debugger, capsys):
-    debugger.handle_command("break $$$")
+def test_handle_break_with_unparseable_breakpoint(shell, capsys):
+    shell.handle_command("break $$$")
 
-    assert len(debugger.breakpoints) == 0
+    assert len(shell.debugger.breakpoints) == 0
     assert capsys.readouterr().out == "Error: could not locate label `$$$`.\n"
 
 
-def test_handle_break_with_too_many_args(debugger, capsys):
-    debugger.handle_command("break 1 2 3")
+def test_handle_break_with_too_many_args(shell, capsys):
+    shell.handle_command("break 1 2 3")
 
-    assert len(debugger.breakpoints) == 0
+    assert len(shell.debugger.breakpoints) == 0
     assert capsys.readouterr().out == "break takes zero or one arguments.\n"
 
 
-def test_handle_break_abbreviated(debugger):
-    with patch("hera.debugger.Debugger.handle_break") as mock_handle_break:
-        debugger.handle_command("b 7")
+def test_handle_break_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_break") as mock_handle_break:
+        shell.handle_command("b 7")
         assert mock_handle_break.call_count == 1
 
         args, kwargs = mock_handle_break.call_args
@@ -82,132 +87,134 @@ def test_handle_break_abbreviated(debugger):
         assert len(kwargs) == 0
 
 
-def test_handle_next(debugger):
-    assert debugger.vm.registers[1] == 0
-    assert debugger.vm.pc == 0
+def test_handle_next(shell):
+    assert shell.debugger.vm.registers[1] == 0
+    assert shell.debugger.vm.pc == 0
 
-    debugger.handle_command("next")
+    shell.handle_command("next")
 
-    assert debugger.vm.registers[1] == 3
-    assert debugger.vm.pc == 2
+    assert shell.debugger.vm.registers[1] == 3
+    assert shell.debugger.vm.pc == 2
 
 
-def test_handle_next_with_HALT(debugger, capsys):
+def test_handle_next_with_HALT(shell, capsys):
     # Last instruction of SAMPLE_PROGRAM is a HALT operation.
-    debugger.vm.pc = 5
+    shell.debugger.vm.pc = 5
 
-    debugger.handle_command("next")
+    shell.handle_command("next")
 
-    assert debugger.vm.pc == 5
+    assert shell.debugger.vm.pc == 5
     assert capsys.readouterr().out == "Program has finished executing.\n"
 
 
-def test_handle_next_after_end_of_program(debugger, capsys):
-    debugger.vm.pc = 9000
+def test_handle_next_after_end_of_program(shell, capsys):
+    shell.debugger.vm.pc = 9000
 
-    debugger.handle_command("next")
+    shell.handle_command("next")
 
-    assert debugger.vm.pc == 9000
+    assert shell.debugger.vm.pc == 9000
     assert (
         capsys.readouterr().out
-        == "Program has finished executing. Press 'r' to restart.\n"
+        == "Program has finished executing. Enter 'r' to restart.\n"
     )
 
 
-def test_handle_next_with_too_many_args(debugger, capsys):
+def test_handle_next_with_too_many_args(shell, capsys):
     # TODO: It would actually be useful if this worked.
-    debugger.handle_command("next 10")
+    shell.handle_command("next 10")
 
     assert capsys.readouterr().out == "next takes no arguments.\n"
 
 
-def test_handle_next_abbreviated(debugger):
-    with patch("hera.debugger.Debugger.handle_next") as mock_handle_next:
-        debugger.handle_command("n")
+def test_handle_next_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_next") as mock_handle_next:
+        shell.handle_command("n")
         assert mock_handle_next.call_count == 1
 
 
-def test_handle_continue_with_breakpoint(debugger):
-    debugger.breakpoints[4] = ""
+def test_handle_continue_with_breakpoint(shell):
+    shell.debugger.breakpoints[4] = ""
 
-    debugger.handle_command("continue")
+    shell.handle_command("continue")
 
-    assert debugger.vm.registers[1] == 3
-    assert debugger.vm.registers[2] == 39
-    assert debugger.vm.registers[3] == 0
-    assert debugger.vm.pc == 4
+    vm = shell.debugger.vm
+    assert vm.registers[1] == 3
+    assert vm.registers[2] == 39
+    assert vm.registers[3] == 0
+    assert vm.pc == 4
 
     # Make sure continuing again doesn't loop on the same instruction.
-    debugger.handle_command("continue")
-    assert debugger.vm.pc == 5
+    shell.handle_command("continue")
+    assert vm.pc == 5
 
 
-def test_handle_continue_without_breakpoint(debugger, capsys):
-    debugger.handle_command("continue")
+def test_handle_continue_without_breakpoint(shell, capsys):
+    shell.handle_command("continue")
 
-    assert debugger.vm.registers[1] == 3
-    assert debugger.vm.registers[2] == 39
-    assert debugger.vm.registers[3] == 42
-    assert debugger.vm.pc == 5
+    vm = shell.debugger.vm
+    assert vm.registers[1] == 3
+    assert vm.registers[2] == 39
+    assert vm.registers[3] == 42
+    assert vm.pc == 5
     assert capsys.readouterr().out == "Program has finished executing.\n"
 
 
-def test_handle_continue_with_too_many_args(debugger, capsys):
-    debugger.handle_command("continue 10")
+def test_handle_continue_with_too_many_args(shell, capsys):
+    shell.handle_command("continue 10")
 
     assert capsys.readouterr().out == "continue takes no arguments.\n"
 
 
-def test_handle_continue_abbreviated(debugger):
-    with patch("hera.debugger.Debugger.handle_continue") as mock_handle_continue:
-        debugger.handle_command("c")
+def test_handle_continue_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_continue") as mock_handle_continue:
+        shell.handle_command("c")
         assert mock_handle_continue.call_count == 1
 
 
-def test_handle_execute(debugger):
-    debugger.handle_command("execute SET(R7, 42)")
+def test_handle_execute(shell):
+    shell.handle_command("execute SET(R7, 42)")
 
-    assert debugger.vm.pc == 0
-    assert debugger.vm.registers[7] == 42
+    assert shell.debugger.vm.pc == 0
+    assert shell.debugger.vm.registers[7] == 42
 
 
-def test_handle_execute_with_branch(debugger, capsys):
-    debugger.handle_command("execute BRR(10)")
+def test_handle_execute_with_branch(shell, capsys):
+    shell.handle_command("execute BRR(10)")
 
-    assert debugger.vm.pc == 0
+    assert shell.debugger.vm.pc == 0
     assert capsys.readouterr().out == "execute cannot take branching operations.\n"
 
 
-def test_handle_execute_with_data_statement(debugger, capsys):
-    debugger.handle_command("execute INTEGER(42)")
+def test_handle_execute_with_data_statement(shell, capsys):
+    shell.handle_command("execute INTEGER(42)")
 
-    assert debugger.vm.pc == 0
+    assert shell.debugger.vm.pc == 0
     assert capsys.readouterr().out == "execute cannot take data statements.\n"
 
 
 @pytest.mark.skip("Going to be hard to implement this")
-def test_handle_execute_with_label(debugger, capsys):
-    debugger.handle_command("execute LABEL(l)")
+def test_handle_execute_with_label(shell, capsys):
+    shell.handle_command("execute LABEL(l)")
 
-    assert debugger.vm.pc == 0
+    assert shell.debugger.vm.pc == 0
     assert capsys.readouterr().out == "execute cannot take labels.\n"
 
 
-def test_handle_skip(debugger):
-    debugger.handle_command("skip 2")
+def test_handle_skip(shell):
+    shell.handle_command("skip 2")
 
-    assert debugger.vm.pc == 4
-
-
-def test_handle_skip_with_no_arg(debugger):
-    debugger.handle_command("skip")
-
-    assert debugger.vm.pc == 2
+    assert shell.debugger.vm.pc == 4
 
 
-def test_handle_skip_abbreviated(debugger):
-    with patch("hera.debugger.Debugger.handle_skip") as mock_handle_skip:
-        debugger.handle_command("s 10")
+def test_handle_skip_with_no_arg(shell):
+    shell.handle_command("skip")
+
+    assert shell.debugger.vm.pc == 2
+
+
+def test_handle_skip_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_skip") as mock_handle_skip:
+        shell.handle_command("s 10")
         assert mock_handle_skip.call_count == 1
 
         args, kwargs = mock_handle_skip.call_args
@@ -216,8 +223,8 @@ def test_handle_skip_abbreviated(debugger):
         assert len(kwargs) == 0
 
 
-def test_handle_list(debugger, capsys):
-    debugger.handle_command("list")
+def test_handle_list(shell, capsys):
+    shell.handle_command("list")
 
     captured = capsys.readouterr().out
     assert (
@@ -233,9 +240,9 @@ def test_handle_list(debugger, capsys):
     )
 
 
-def test_handle_list_in_middle_of_program(debugger, capsys):
-    debugger.vm.pc = 4
-    debugger.handle_command("list")
+def test_handle_list_in_middle_of_program(shell, capsys):
+    shell.debugger.vm.pc = 4
+    shell.handle_command("list")
 
     captured = capsys.readouterr().out
     assert (
@@ -251,9 +258,9 @@ def test_handle_list_in_middle_of_program(debugger, capsys):
     )
 
 
-def test_handle_list_with_context_arg(debugger, capsys):
-    debugger.vm.pc = 2
-    debugger.handle_command("list 1")
+def test_handle_list_with_context_arg(shell, capsys):
+    shell.debugger.vm.pc = 2
+    shell.handle_command("list 1")
 
     captured = capsys.readouterr().out
     assert (
@@ -268,14 +275,14 @@ def test_handle_list_with_context_arg(debugger, capsys):
     )
 
 
-def test_handle_list_with_invalid_context_arg(debugger, capsys):
-    debugger.handle_command("list abc")
+def test_handle_list_with_invalid_context_arg(shell, capsys):
+    shell.handle_command("list abc")
 
     assert capsys.readouterr().out == "Could not parse argument to list.\n"
 
 
-def test_handle_list_with_too_many_args(debugger, capsys):
-    debugger.handle_command("list 1 2")
+def test_handle_list_with_too_many_args(shell, capsys):
+    shell.handle_command("list 1 2")
 
     assert capsys.readouterr().out == "list takes zero or one arguments.\n"
 
@@ -291,14 +298,14 @@ def test_get_previous_ops(debugger):
     assert previous_three[1][1].args[0] == "R2"
 
 
-def test_handle_list_abbreviated(debugger):
-    with patch("hera.debugger.Debugger.handle_list") as mock_handle_list:
-        debugger.handle_command("l")
+def test_handle_list_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_list") as mock_handle_list:
+        shell.handle_command("l")
         assert mock_handle_list.call_count == 1
 
 
-def test_handle_long_list(debugger, capsys):
-    debugger.handle_command("longlist")
+def test_handle_long_list(shell, capsys):
+    shell.handle_command("longlist")
 
     captured = capsys.readouterr().out
     assert (
@@ -312,10 +319,10 @@ def test_handle_long_list(debugger, capsys):
     )
 
 
-def test_handle_long_list_with_multiple_labels_on_same_line(debugger, capsys):
-    debugger.reverse_labels[4].append("another_one")
+def test_handle_long_list_with_multiple_labels_on_same_line(shell, capsys):
+    shell.debugger.reverse_labels[4].append("another_one")
 
-    debugger.handle_command("longlist")
+    shell.handle_command("longlist")
 
     captured = capsys.readouterr().out
     assert (
@@ -329,29 +336,29 @@ def test_handle_long_list_with_multiple_labels_on_same_line(debugger, capsys):
     )
 
 
-def test_handle_long_list_with_too_many_args(debugger, capsys):
-    debugger.handle_command("longlist 1")
+def test_handle_long_list_with_too_many_args(shell, capsys):
+    shell.handle_command("longlist 1")
 
     assert capsys.readouterr().out == "longlist takes no arguments.\n"
 
 
-def test_handle_abbreviated_long_list(debugger, capsys):
-    with patch("hera.debugger.Debugger.handle_long_list") as mock_handle_long_list:
-        debugger.handle_command("ll")
+def test_handle_abbreviated_long_list(shell, capsys):
+    with patch("hera.debugger.shell.Shell.handle_long_list") as mock_handle_long_list:
+        shell.handle_command("ll")
         assert mock_handle_long_list.call_count == 1
 
 
-def test_handle_rr(debugger, capsys):
-    debugger.handle_command("rr")
+def test_handle_rr(shell, capsys):
+    shell.handle_command("rr")
 
     assert capsys.readouterr().out == "All registers are set to zero.\n"
 
 
-def test_handle_rr_with_real_values(debugger, capsys):
-    debugger.vm.registers[3] = 11
-    debugger.vm.registers[7] = 42
+def test_handle_rr_with_real_values(shell, capsys):
+    shell.debugger.vm.registers[3] = 11
+    shell.debugger.vm.registers[7] = 42
 
-    debugger.handle_command("rr")
+    shell.handle_command("rr")
 
     assert (
         capsys.readouterr().out
@@ -369,10 +376,10 @@ All higher registers are set to zero.
     )
 
 
-def test_handle_rr_with_all_registers_set(debugger, capsys):
-    debugger.vm.registers[15] = 42
+def test_handle_rr_with_all_registers_set(shell, capsys):
+    shell.debugger.vm.registers[15] = 42
 
-    debugger.handle_command("rr")
+    shell.handle_command("rr")
 
     assert (
         capsys.readouterr().out
@@ -396,106 +403,106 @@ R15 = 0x002a = 42 = '*'
     )
 
 
-def test_handle_symbols(debugger, capsys):
-    debugger.handle_command("symbols")
+def test_handle_symbols(shell, capsys):
+    shell.handle_command("symbols")
 
     assert capsys.readouterr().out == "add = 4 (label)\nN = 3 (constant)\n"
 
 
-def test_handle_symbols_with_too_many_args(debugger, capsys):
-    debugger.handle_command("symbols a")
+def test_handle_symbols_with_too_many_args(shell, capsys):
+    shell.handle_command("symbols a")
 
     assert capsys.readouterr().out == "symbols takes no arguments.\n"
 
 
-def test_handle_symbols_abbreviated(debugger):
-    with patch("hera.debugger.Debugger.handle_symbols") as mock_handle_symbols:
-        debugger.handle_command("sym")
+def test_handle_symbols_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_symbols") as mock_handle_symbols:
+        shell.handle_command("sym")
         assert mock_handle_symbols.call_count == 1
 
 
-def test_handle_register_expression(debugger, capsys):
-    debugger.handle_command("R1")
+def test_handle_register_expression(shell, capsys):
+    shell.handle_command("R1")
 
     assert capsys.readouterr().out == "R1 = 0x0000 = 0\n"
 
 
-def test_handle_memory_expression(debugger, capsys):
-    debugger.vm.registers[1] = 4
-    debugger.vm.memory[4] = 42
+def test_handle_memory_expression(shell, capsys):
+    shell.debugger.vm.registers[1] = 4
+    shell.debugger.vm.memory[4] = 42
 
-    debugger.handle_command("M[r1]")
+    shell.handle_command("M[r1]")
 
     assert capsys.readouterr().out == "M[4] = 42\n"
 
 
-def test_handle_setting_a_register(debugger):
-    debugger.handle_command("r12 = 10")
+def test_handle_setting_a_register(shell):
+    shell.handle_command("r12 = 10")
 
-    assert debugger.vm.registers[12] == 10
-
-
-def test_handle_setting_a_memory_location(debugger):
-    debugger.vm.registers[9] = 1000
-
-    debugger.handle_command("m[R9] = 4000")
-
-    assert debugger.vm.memory[1000] == 4000
+    assert shell.debugger.vm.registers[12] == 10
 
 
-def test_handle_pc(debugger, capsys):
-    debugger.vm.pc = 3
+def test_handle_setting_a_memory_location(shell):
+    shell.debugger.vm.registers[9] = 1000
 
-    debugger.handle_command("pc")
+    shell.handle_command("m[R9] = 4000")
+
+    assert shell.debugger.vm.memory[1000] == 4000
+
+
+def test_handle_pc(shell, capsys):
+    shell.debugger.vm.pc = 3
+
+    shell.handle_command("pc")
 
     assert capsys.readouterr().out == "PC = 3\n"
 
 
-def test_handle_setting_pc(debugger):
-    debugger.handle_command("pc = 10")
+def test_handle_setting_pc(shell):
+    shell.handle_command("pc = 10")
 
-    assert debugger.vm.pc == 10
+    assert shell.debugger.vm.pc == 10
 
 
-def test_handle_symbol(debugger, capsys):
-    debugger.handle_command("add")
+def test_handle_symbol(shell, capsys):
+    shell.handle_command("add")
 
     assert capsys.readouterr().out == "add = 4 (label)\n"
 
 
-def test_handle_undefined_symbol(debugger, capsys):
-    debugger.vm.registers[4] = 42
+def test_handle_undefined_symbol(shell, capsys):
+    shell.debugger.vm.registers[4] = 42
 
-    debugger.handle_command("r4 = whatever")
+    shell.handle_command("r4 = whatever")
 
-    assert debugger.vm.registers[4] == 42
+    assert shell.debugger.vm.registers[4] == 42
     assert capsys.readouterr().out == "Eval error: undefined symbol `whatever`.\n"
 
 
-def test_handle_case_sensitive_symbol(debugger, capsys):
-    debugger.symbol_table["ADD"] = 10
+def test_handle_case_sensitive_symbol(shell, capsys):
+    shell.debugger.symbol_table["ADD"] = 10
 
-    debugger.handle_command("ADD")
+    shell.handle_command("ADD")
 
     assert capsys.readouterr().out == "ADD = 10\n"
 
 
-def test_handle_setting_register_to_symbol(debugger):
-    debugger.handle_command("r7 = add")
+def test_handle_setting_register_to_symbol(shell):
+    shell.handle_command("r7 = add")
 
-    assert debugger.vm.registers[7] == 4
+    assert shell.debugger.vm.registers[7] == 4
 
 
-def test_handle_help(debugger, capsys):
-    debugger.handle_command("help")
+def test_handle_help(shell, capsys):
+    shell.handle_command("help")
 
     out = capsys.readouterr().out
     assert "Available commands" in out
     assert "Error:" not in out
 
 
-def test_handle_unknown_command(debugger, capsys):
-    debugger.handle_command("whatever")
+def test_handle_unknown_command(shell, capsys):
+    shell.handle_command("whatever")
 
     assert (
         capsys.readouterr().out == "whatever is not a recognized command or symbol.\n"
@@ -541,8 +548,8 @@ def test_get_breakpoint_name_does_not_include_constant(debugger):
     assert debugger.get_breakpoint_name(3) == "<string>:5"
 
 
-def test_print_current_op(debugger, capsys):
-    debugger.print_current_op()
+def test_print_current_op(shell, capsys):
+    shell.print_current_op()
 
     captured = capsys.readouterr()
     assert captured.out == "[<string>, line 4]\n\n0000  SET(R1, 3)\n"
