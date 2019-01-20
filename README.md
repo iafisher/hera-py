@@ -14,16 +14,22 @@ $ pip3 install hera-py
 ```
 
 ## Usage
-After installation, hera-py can be invoked with the `hera` command to run a HERA program:
+After installation, use the `hera` command to run a HERA program:
 
 ```
-$ hera my-hera-file.hera
+$ hera main.hera
+```
+
+Enter the interactive debugger with the `debug` subcommand:
+
+```
+$ hera debug main.hera
 ```
 
 You can also preprocess a HERA program without running it, to see how pseudo-instructions and labels are resolved to HERA code:
 
 ```
-$ hera preprocess my-hera-file.hera
+$ hera preprocess main.hera
 ```
 
 ### Comparison with HERA-C
