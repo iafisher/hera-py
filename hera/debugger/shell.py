@@ -169,8 +169,8 @@ class Shell:
         else:
             offset = 1
 
-        # TODO: This behavior doesn't match the command's help description.
-        self.debugger.exec_ops(offset)
+        for _ in range(offset):
+            self.debugger.vm.pc += len(self.debugger.get_real_ops())
         self.print_current_op()
 
     def handle_execute(self, line):

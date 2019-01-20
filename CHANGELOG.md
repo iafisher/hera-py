@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Constants can no longer be used before they are declared.
 - Invalid zero-prefixed octal literals no longer crash the interpreter.
 - Labels are calculated correctly after branches on registers.
+- `skip` debugging command no longer executes instructions, matching its help description.
 
 ### Removed
 - The `--lines` command-line argument.

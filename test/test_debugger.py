@@ -203,12 +203,16 @@ def test_handle_execute_with_label(shell, capsys):
 def test_handle_skip(shell):
     shell.handle_command("skip 2")
 
+    assert shell.debugger.vm.registers[1] == 0
+    assert shell.debugger.vm.registers[2] == 0
     assert shell.debugger.vm.pc == 4
 
 
 def test_handle_skip_with_no_arg(shell):
     shell.handle_command("skip")
 
+    assert shell.debugger.vm.registers[1] == 0
+    assert shell.debugger.vm.registers[2] == 0
     assert shell.debugger.vm.pc == 2
 
 
