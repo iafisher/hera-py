@@ -5,6 +5,7 @@ from .debugger import Debugger
 from .minilanguage import AssignNode, IntNode, MemoryNode, RegisterNode, SymbolNode
 from hera.data import HERAError, Op
 from hera.loader import load_program
+from hera.parser import parse
 from hera.typechecker import Constant, DataLabel, Label
 from hera.utils import BRANCHES, DATA_STATEMENTS, op_to_string, print_register_debug
 
@@ -154,17 +155,24 @@ class Shell:
 
     def handle_execute(self, line):
         try:
+            # Make sure there are no disallowed ops.
+            for op in parse(line, includes=False):
+                if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
+                    print("execute cannot take branching operations.")
+                    return
+                elif op.name in DATA_STATEMENTS:
+                    print("execute cannot take data statements.")
+                    return
+                elif op.name == "LABEL":
+                    print("execute cannot take labels.")
+                    return
+                elif op.name == "#include":
+                    print("execute cannot take #include.")
+                    return
+
             ops, _ = load_program(line)
         except SystemExit:
             return
-
-        for op in ops:
-            if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
-                print("execute cannot take branching operations.")
-                return
-            elif op.name in DATA_STATEMENTS:
-                print("execute cannot take data statements.")
-                return
 
         vm = self.debugger.vm
         opc = vm.pc

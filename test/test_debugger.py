@@ -192,12 +192,18 @@ def test_handle_execute_with_data_statement(shell, capsys):
     assert capsys.readouterr().out == "execute cannot take data statements.\n"
 
 
-@pytest.mark.skip("Going to be hard to implement this")
 def test_handle_execute_with_label(shell, capsys):
     shell.handle_command("execute LABEL(l)")
 
     assert shell.debugger.vm.pc == 0
     assert capsys.readouterr().out == "execute cannot take labels.\n"
+
+
+def test_handle_execute_with_include(shell, capsys):
+    shell.handle_command('execute #include "whatever.hera"')
+
+    assert shell.debugger.vm.pc == 0
+    assert capsys.readouterr().out == "execute cannot take #include.\n"
 
 
 def test_handle_skip(shell):

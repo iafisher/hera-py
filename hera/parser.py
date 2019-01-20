@@ -49,7 +49,7 @@ def parse(text: str, *, path=None, includes=True, visited=None) -> List[Op]:
         return []
     except UnexpectedToken as e:
         if e.token.type == "$END":
-            emit_error("unexpected end of file")
+            emit_error("unexpected end of input")
         else:
             loc = base_location._replace(line=e.line, column=e.column)
             emit_error("unexpected character", loc=loc)
