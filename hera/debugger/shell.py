@@ -447,8 +447,12 @@ The expression mini-language is used to inspect and change the program's state.
     M[1000]
   Set a memory location:
     M[1000] = 42
-  A more complicated example:
-    M[R7] = R4""",
+  Different bases:
+    M[0xab] = 0b10100
+  Accessing a memory location from a register's value:
+    M[R7] = R4
+  Using a symbol from the program:
+    R3 = start_of_data""",
     # execute
     "execute": """\
 execute <op>:
