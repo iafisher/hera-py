@@ -9,40 +9,6 @@ from hera.typechecker import Constant, DataLabel, Label
 from hera.utils import BRANCHES, DATA_STATEMENTS, op_to_string, print_register_debug
 
 
-_HELP_MSG = """\
-Available commands:
-    break <n>     Set a breakpoint on the n'th line of the program. When no
-                  arguments are given, all current breakpoints are printed.
-
-    continue      Execute the program until a breakpoint is encountered or the
-                  program terminates.
-
-    execute <op>  Execute a HERA operation. Only non-branching operations may
-                  be executed.
-
-    help          Print this help message.
-
-    list <n>      Print the current lines of source code and the n previous and
-                  next lines. If not provided, n defaults to 3.
-
-    longlist      Print the entire program.
-
-    next          Execute the current line.
-
-    restart       Restart the execution of the program from the beginning.
-
-    skip <n>      Skip the next n instructions without executing them. If not
-                  provided, n defaults to 1.
-
-    symbols       Print all symbols the debugger is aware of.
-
-    quit          Exit the debugger.
-
-Command names can generally be abbreviated with a unique prefix, e.g. "n" for
-"next".
-"""
-
-
 def debug(program: List[Op], symbol_table: Dict[str, int]) -> None:
     """Start the debug loop."""
     debugger = Debugger(program, symbol_table)
@@ -107,7 +73,7 @@ class Shell:
         elif cmd.startswith("sym") and "symbols".startswith(cmd):
             self.handle_symbols(args)
         elif "help".startswith(cmd):
-            print(_HELP_MSG)
+            self.handle_help(args)
         else:
             self.handle_expression(response)
 
@@ -144,6 +110,19 @@ class Shell:
 
         self.debugger.exec_ops(1)
         self.print_current_op()
+
+    def handle_help(self, args):
+        if not args:
+            print(HELP)
+        else:
+            for i, arg in enumerate(args):
+                try:
+                    print(HELP_MAP[arg])
+                except KeyError:
+                    print("{} is not a recognized command.".format(arg))
+
+                if i != len(args) - 1:
+                    print()
 
     def handle_symbols(self, args):
         if len(args) != 0:
@@ -286,7 +265,9 @@ class Shell:
             tree = minilanguage.parse(line)
         except SyntaxError as e:
             if looks_like_unknown_command(line):
-                print("{} is not a recognized command or symbol.".format(line.split()[0]))
+                print(
+                    "{} is not a recognized command or symbol.".format(line.split()[0])
+                )
             else:
                 msg = str(e)
                 if msg:
@@ -401,3 +382,129 @@ def looks_like_unknown_command(line):
     (as opposed to an mini-language expression that could not be parsed).
     """
     return all(word.isalpha() for word in line.split())
+
+
+HELP = """\
+Available commands:
+    break <loc>   Set a breakpoint at the given location. When no arguments
+                  are given, all current breakpoints are printed.
+
+    continue      Execute the program until a breakpoint is encountered or the
+                  program terminates.
+
+    execute <op>  Execute a HERA operation.
+
+    help          Print this help message.
+
+    list <n>      Print the current lines of source code and the n previous and
+                  next lines. If not provided, n defaults to 3.
+
+    longlist      Print the entire program.
+
+    next          Execute the current line.
+
+    restart       Restart the execution of the program from the beginning.
+
+    skip <n>      Skip the next n instructions without executing them. If not
+                  provided, n defaults to 1.
+
+    symbols       Print all symbols the debugger is aware of.
+
+    quit          Exit the debugger.
+
+    <expr>        All other commands are interpreted as expressions in the
+                  debugging mini-language. Enter "help expression" for
+                  details.
+
+Command names can generally be abbreviated with a unique prefix, e.g. "n" for
+"next".
+"""
+
+
+HELP_MAP = {
+    # break
+    "break": """\
+break:
+  Print all current breakpoints.
+
+break <loc>:
+  Set a breakpoint at the given location. The location may be a line number or
+  a label.""",
+    # continue
+    "continue": """\
+continue:
+  Execute the program until a breakpoint is encountered or the program
+  terminates.""",
+    # expression
+    "expression": """\
+The expression mini-language is used to inspect and change the program's state.
+
+  Print a register:
+    R1
+  Set a register:
+    R1 = 42
+  Print a memory location:
+    M[1000]
+  Set a memory location:
+    M[1000] = 42
+  A more complicated example:
+    M[R7] = R4""",
+    # execute
+    "execute": """\
+execute <op>:
+  Execute a HERA operation. The operation must not be a data statement or a
+  branch. The operation may affect registers and memory. Some operations can
+  be more concisely expressed with the debugging mini-language. Type
+  "help expression" for details.
+
+    $ execute ASR(R5, R$)""",
+    # help
+    "help": """\
+help:
+  Print a summary of all debugging commands.
+
+help <cmd>...:
+  Print a detailed help message for each command list.""",
+    # list
+    "list": """\
+list:
+  Print the current line of source and the three previous and next lines.
+
+list <n>:
+  Print the current line of source code and the `n` previous and next lines.""",
+    # longlist
+    "longlist": """\
+longlist:
+  Print every line of the program's source code.""",
+    # next
+    "next": """\
+next:
+  Execute the current line. If the current line is a CALL instruction, the
+  debugger enters the function being called. If you wish to skip over the
+  function call, use `step` instead.""",
+    # restart
+    "restart": """\
+restart:
+  Restart execution of the program from the beginning. All registers and
+  memory cells are reset.""",
+    # rr
+    "rr": """\
+rr:
+  Print the values of all registers.""",
+    # skip
+    "skip": """\
+skip:
+  Skip the current instruction.
+
+skip <n>:
+  Skip the next `n` instructions without executing them.""",
+    # symbols
+    "symbols": """\
+symbols:
+  Print all the symbols (labels, constants, and data labels) the debugger is
+  aware of.""",
+    # quit
+    "quit": """\
+quit:
+  Exit the debugger.""",
+}

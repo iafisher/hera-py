@@ -505,6 +505,42 @@ def test_handle_help(shell, capsys):
     assert "Error:" not in out
 
 
+def test_handle_help_with_one_arg(shell, capsys):
+    shell.handle_command("help next")
+
+    out = capsys.readouterr().out
+    # Make sure it's not just printing the regular help message.
+    assert "Available commands" not in out
+    assert "next" in out
+    assert "Execute the current line" in out
+
+
+def test_handle_help_with_multiple_args(shell, capsys):
+    shell.handle_command("help break next")
+
+    out = capsys.readouterr().out
+    # Make sure it's not just printing the regular help message.
+    assert "Available commands" not in out
+    assert "next" in out
+    assert "Execute the current line" in out
+    assert "break" in out
+
+
+def test_handle_help_with_all_commands(shell, capsys):
+    shell.handle_command(
+        """help break continue execute help list longlist next restart rr skip symbols \
+           quit"""
+    )
+
+    assert "not a recognized command" not in capsys.readouterr().out
+
+
+def test_handle_help_with_unknown_command(shell, capsys):
+    shell.handle_command("help whatever")
+
+    assert capsys.readouterr().out == "whatever is not a recognized command.\n"
+
+
 def test_handle_unknown_command(shell, capsys):
     shell.handle_command("whatever")
 
