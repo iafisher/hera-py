@@ -80,6 +80,7 @@ class Debugger:
             except (KeyError, AssertionError):
                 raise ValueError("could not locate label `{}`.".format(b)) from None
         else:
+            # TODO: This could give wrong results for programs with multiple files.
             for pc, op in enumerate(self.program):
                 if op.name.location.line == lineno:
                     return pc

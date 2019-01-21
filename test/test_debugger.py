@@ -206,8 +206,8 @@ def test_handle_execute_with_include(shell, capsys):
     assert capsys.readouterr().out == "execute cannot take #include.\n"
 
 
-def test_handle_skip(shell):
-    shell.handle_command("skip 2")
+def test_handle_skip_with_increment(shell):
+    shell.handle_command("skip +2")
 
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0
@@ -220,6 +220,32 @@ def test_handle_skip_with_no_arg(shell):
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0
     assert shell.debugger.vm.pc == 2
+
+
+def test_handle_skip_with_line_number(shell):
+    shell.handle_command("skip 7")
+
+    assert shell.debugger.vm.registers[1] == 0
+    assert shell.debugger.vm.registers[2] == 0
+    assert shell.debugger.vm.pc == 4
+
+
+@pytest.mark.skip("Should this work?")
+def test_handle_skip_with_line_number_not_on_operation(shell):
+    # A line number that doesn't correspond to an actual operation.
+    shell.handle_command("skip 6")
+
+    assert shell.debugger.vm.registers[1] == 0
+    assert shell.debugger.vm.registers[2] == 0
+    assert shell.debugger.vm.pc == 4
+
+
+def test_handle_skip_with_label(shell):
+    shell.handle_command("skip add")
+
+    assert shell.debugger.vm.registers[1] == 0
+    assert shell.debugger.vm.registers[2] == 0
+    assert shell.debugger.vm.pc == 4
 
 
 def test_handle_skip_abbreviated(shell):

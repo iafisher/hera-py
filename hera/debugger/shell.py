@@ -148,15 +148,24 @@ class Shell:
             return
 
         if len(args) == 1:
-            try:
-                offset = int(args[0])
-            except ValueError:
-                print("skip takes an integer argument.")
+            if args[0].startswith("+"):
+                try:
+                    offset = int(args[0][1:])
+                except ValueError:
+                    print("Could not parse argument to skip.")
+                else:
+                    for _ in range(offset):
+                        self.debugger.vm.pc += len(self.debugger.get_real_ops())
+            else:
+                try:
+                    new_pc = self.debugger.resolve_location(args[0])
+                except ValueError as e:
+                    print("Error:", str(e))
+                else:
+                    self.debugger.vm.pc = new_pc
         else:
-            offset = 1
-
-        for _ in range(offset):
             self.debugger.vm.pc += len(self.debugger.get_real_ops())
+
         self.print_current_op()
 
     def handle_execute(self, line):
@@ -413,8 +422,7 @@ Available commands:
 
     restart       Restart the execution of the program from the beginning.
 
-    skip <n>      Skip the next n instructions without executing them. If not
-                  provided, n defaults to 1.
+    skip <loc>    Skip ahead to the given location.
 
     symbols       Print all symbols the debugger is aware of.
 
@@ -508,7 +516,11 @@ rr:
 skip:
   Skip the current instruction.
 
-skip <n>:
+skip <loc>:
+  Skip to the given location (either a line number or a label) without
+  executing any of the intermediate instructions.
+
+skip +<n>:
   Skip the next `n` instructions without executing them.""",
     # symbols
     "symbols": """\
