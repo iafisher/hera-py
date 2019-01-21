@@ -174,3 +174,7 @@ def read_file(path) -> str:
         raise HERAError('permission denied to open file "{}"'.format(path))
     except OSError:
         raise HERAError('could not open file "{}"'.format(path))
+
+
+def pad(s, n):
+    return (" " * (n - len(s))) + s

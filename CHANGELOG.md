@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Relative branch instructions can now target labels.
 - Error messages for `#include` with non-existent file now print the line number.
+- The `list` and `longlist` debugging commands.
 - The `execute` debugging command.
 - The `rr` debugging command.
 - The `symbols` debugging command.

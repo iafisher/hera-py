@@ -7,7 +7,13 @@ from hera.data import HERAError, Op
 from hera.loader import load_program
 from hera.parser import parse
 from hera.typechecker import Constant, DataLabel, Label
-from hera.utils import BRANCHES, DATA_STATEMENTS, op_to_string, print_register_debug
+from hera.utils import (
+    BRANCHES,
+    DATA_STATEMENTS,
+    op_to_string,
+    pad,
+    print_register_debug,
+)
 
 
 def debug(program: List[Op], symbol_table: Dict[str, int]) -> None:
@@ -191,45 +197,16 @@ class Shell:
             print("Could not parse argument to list.")
             return
 
-        previous_ops = self.debugger.get_previous_ops(context)
-        next_ops = self.debugger.get_next_ops(context)
-
-        program = self.debugger.program
-        vm = self.debugger.vm
-
-        first_op = previous_ops[0][1] if previous_ops else program[vm.pc]
-        last_op = next_ops[-1][1] if next_ops else program[vm.pc]
-
-        if first_op.name.location is not None:
-            path = (
-                "<stdin>"
-                if first_op.name.location.path == "-"
-                else first_op.name.location.path
-            )
-            first_line = first_op.name.location.line
-            last_line = last_op.name.location.line
-            print("[{}, lines {}-{}]\n".format(path, first_line, last_line))
-
-        for pc, _ in previous_ops:
-            self.print_op(pc)
-
-        self.print_op(vm.pc)
-
-        for pc, _ in next_ops:
-            self.print_op(pc)
+        loc = self.debugger.program[self.debugger.vm.pc].name.location
+        self.print_range_of_ops(loc, context=context)
 
     def handle_long_list(self, args):
         if len(args) != 0:
             print("longlist takes no arguments.")
             return
 
-        index = 0
-        program = self.debugger.program
-        while index < len(program):
-            original = program[index].original
-            self.print_op(index)
-            while index < len(program) and program[index].original == original:
-                index += 1
+        loc = self.debugger.program[self.debugger.vm.pc].name.location
+        self.print_range_of_ops(loc)
 
     def handle_continue(self, args):
         if len(args) != 0:
@@ -347,19 +324,38 @@ class Shell:
         """Print the next operation to be executed. If the program has finished
         executed, nothing is printed.
         """
-        program = self.debugger.program
-        vm = self.debugger.vm
         if not self.debugger.is_finished():
-            op = program[vm.pc].original or program[vm.pc]
-            opstr = op_to_string(op)
-            if op.name.location is not None:
-                path = (
-                    "<stdin>" if op.name.location.path == "-" else op.name.location.path
-                )
-                print("[{}, line {}]\n".format(path, op.name.location.line))
-            print("{:0>4x}  {}".format(vm.pc, opstr))
+            loc = self.debugger.program[self.debugger.vm.pc].name.location
+            print(str(loc.line) + "  " + loc.file_lines[loc.line - 1])
         else:
             print("Program has finished executing.")
+
+    def print_range_of_ops(self, loc, context=None):
+        """Print the line indicated by the Location object `loc`, as well as `context`
+        previous and following lines. If `context` is None, the whole file is printed.
+        """
+        lineno = loc.line - 1
+        lines = loc.file_lines
+        max_lineno_width = len(str(len(lines)))
+
+        if context is None:
+            lo = 0
+            hi = len(lines)
+        else:
+            lo = max(lineno - context, 0)
+            hi = min(lineno + context + 1, len(lines))
+
+        print("[{}]\n".format(normalize_path(loc.path)))
+        for i in range(lo, hi):
+            prefix = "->  " if i == lineno else "    "
+            print(prefix, end="")
+            print(pad(str(i + 1), max_lineno_width), end="")
+
+            line = lines[i].rstrip()
+            if line:
+                print("  " + line)
+            else:
+                print()
 
     def print_symbol(self, k, v):
         if isinstance(v, Label):
@@ -390,6 +386,10 @@ def looks_like_unknown_command(line):
     (as opposed to an mini-language expression that could not be parsed).
     """
     return all(word.isalpha() for word in line.split())
+
+
+def normalize_path(path):
+    return "<stdin>" if path == "-" else path
 
 
 HELP = """\

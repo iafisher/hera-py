@@ -240,47 +240,31 @@ def test_handle_list(shell, capsys):
     assert (
         captured
         == """\
-[<string>, lines 4-8]
+[<string>]
 
--> 0000  SET(R1, 3)
-   0002  SET(R2, 39)
-   0004  ADD(R3, R1, R2) [add]
-   0005  HALT()
-"""
-    )
-
-
-def test_handle_list_in_middle_of_program(shell, capsys):
-    shell.debugger.vm.pc = 4
-    shell.handle_command("list")
-
-    captured = capsys.readouterr().out
-    assert (
-        captured
-        == """\
-[<string>, lines 4-8]
-
-   0000  SET(R1, 3)
-   0002  SET(R2, 39)
--> 0004  ADD(R3, R1, R2) [add]
-   0005  HALT()
+    1  // A comment
+    2  CONSTANT(N, 3)
+    3
+->  4  SET(R1, N)
+    5  SET(R2, 39)
+    6  LABEL(add)
+    7  ADD(R3, R1, R2)
 """
     )
 
 
 def test_handle_list_with_context_arg(shell, capsys):
-    shell.debugger.vm.pc = 2
     shell.handle_command("list 1")
 
     captured = capsys.readouterr().out
     assert (
         captured
         == """\
-[<string>, lines 4-7]
+[<string>]
 
-   0000  SET(R1, 3)
--> 0002  SET(R2, 39)
-   0004  ADD(R3, R1, R2) [add]
+    3
+->  4  SET(R1, N)
+    5  SET(R2, 39)
 """
     )
 
@@ -321,27 +305,16 @@ def test_handle_long_list(shell, capsys):
     assert (
         captured
         == """\
--> 0000  SET(R1, 3)
-   0002  SET(R2, 39)
-   0004  ADD(R3, R1, R2) [add]
-   0005  HALT()
-"""
-    )
+[<string>]
 
-
-def test_handle_long_list_with_multiple_labels_on_same_line(shell, capsys):
-    shell.debugger.reverse_labels[4].append("another_one")
-
-    shell.handle_command("longlist")
-
-    captured = capsys.readouterr().out
-    assert (
-        captured
-        == """\
--> 0000  SET(R1, 3)
-   0002  SET(R2, 39)
-   0004  ADD(R3, R1, R2) [add, another_one]
-   0005  HALT()
+    1  // A comment
+    2  CONSTANT(N, 3)
+    3
+->  4  SET(R1, N)
+    5  SET(R2, 39)
+    6  LABEL(add)
+    7  ADD(R3, R1, R2)
+    8  HALT()
 """
     )
 
@@ -604,7 +577,7 @@ def test_print_current_op(shell, capsys):
     shell.print_current_op()
 
     captured = capsys.readouterr()
-    assert captured.out == "[<string>, line 4]\n\n0000  SET(R1, 3)\n"
+    assert captured.out == "4  SET(R1, N)\n"
 
 
 def test_reverse_lookup_label():
