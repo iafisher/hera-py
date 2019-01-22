@@ -259,6 +259,70 @@ def test_handle_skip_abbreviated(shell):
         assert len(kwargs) == 0
 
 
+def test_handle_info(shell, capsys):
+    shell.handle_command("info")
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+All registers set to zero.
+All flags are off.
+
+Constants: N (3)
+Labels: add (<string>:7)
+"""
+    )
+
+
+def test_handle_info_with_registers_and_flags(shell, capsys):
+    shell.debugger.vm.registers[7] = 42
+    shell.debugger.vm.flag_carry_block = True
+    shell.handle_command("info")
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+R7 = 42, all other registers set to zero.
+Carry-block flag is on, all other flags are off.
+
+Constants: N (3)
+Labels: add (<string>:7)
+"""
+    )
+
+
+def test_handle_info_with_all_registers_set(shell, capsys):
+    shell.debugger.vm.registers = [1] * 16
+    shell.handle_command("info")
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+R1 = 1, R2 = 1, R3 = 1, R4 = 1, R5 = 1, R6 = 1, R7 = 1, R8 = 1, R9 = 1, R10 = 1, \
+R11 = 1, R12 = 1, R13 = 1, R14 = 1, R15 = 1
+All flags are off.
+
+Constants: N (3)
+Labels: add (<string>:7)
+"""
+    )
+
+
+def test_handle_info_with_too_many_args(shell, capsys):
+    shell.handle_command("info 1")
+
+    assert capsys.readouterr().out == "info takes no arguments.\n"
+
+
+def test_handle_info_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_info") as mock_handle_info:
+        shell.handle_command("i")
+        assert mock_handle_info.call_count == 1
+
+
 def test_handle_list(shell, capsys):
     shell.handle_command("list")
 
@@ -355,79 +419,6 @@ def test_handle_abbreviated_long_list(shell, capsys):
     with patch("hera.debugger.shell.Shell.handle_long_list") as mock_handle_long_list:
         shell.handle_command("ll")
         assert mock_handle_long_list.call_count == 1
-
-
-def test_handle_rr(shell, capsys):
-    shell.handle_command("rr")
-
-    assert capsys.readouterr().out == "All registers are set to zero.\n"
-
-
-def test_handle_rr_with_real_values(shell, capsys):
-    shell.debugger.vm.registers[3] = 11
-    shell.debugger.vm.registers[7] = 42
-
-    shell.handle_command("rr")
-
-    assert (
-        capsys.readouterr().out
-        == """\
-R1 = 0x0000 = 0
-R2 = 0x0000 = 0
-R3 = 0x000b = 11
-R4 = 0x0000 = 0
-R5 = 0x0000 = 0
-R6 = 0x0000 = 0
-R7 = 0x002a = 42 = '*'
-
-All higher registers are set to zero.
-"""
-    )
-
-
-def test_handle_rr_with_all_registers_set(shell, capsys):
-    shell.debugger.vm.registers[15] = 42
-
-    shell.handle_command("rr")
-
-    assert (
-        capsys.readouterr().out
-        == """\
-R1 = 0x0000 = 0
-R2 = 0x0000 = 0
-R3 = 0x0000 = 0
-R4 = 0x0000 = 0
-R5 = 0x0000 = 0
-R6 = 0x0000 = 0
-R7 = 0x0000 = 0
-R8 = 0x0000 = 0
-R9 = 0x0000 = 0
-R10 = 0x0000 = 0
-R11 = 0x0000 = 0
-R12 = 0x0000 = 0
-R13 = 0x0000 = 0
-R14 = 0x0000 = 0
-R15 = 0x002a = 42 = '*'
-"""
-    )
-
-
-def test_handle_symbols(shell, capsys):
-    shell.handle_command("symbols")
-
-    assert capsys.readouterr().out == "add = 4 (label)\nN = 3 (constant)\n"
-
-
-def test_handle_symbols_with_too_many_args(shell, capsys):
-    shell.handle_command("symbols a")
-
-    assert capsys.readouterr().out == "symbols takes no arguments.\n"
-
-
-def test_handle_symbols_abbreviated(shell):
-    with patch("hera.debugger.shell.Shell.handle_symbols") as mock_handle_symbols:
-        shell.handle_command("sym")
-        assert mock_handle_symbols.call_count == 1
 
 
 def test_handle_register_expression(shell, capsys):
@@ -533,8 +524,7 @@ def test_handle_help_with_multiple_args(shell, capsys):
 
 def test_handle_help_with_all_commands(shell, capsys):
     shell.handle_command(
-        """help break continue execute help list longlist next restart rr skip symbols \
-           quit"""
+        "help break continue execute help info list longlist next restart skip quit"
     )
 
     assert "not a recognized command" not in capsys.readouterr().out

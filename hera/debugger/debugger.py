@@ -87,7 +87,7 @@ class Debugger:
 
             raise ValueError("could not find corresponding line.")
 
-    def get_breakpoint_name(self, b):
+    def get_breakpoint_name(self, b, *, append_label=True):
         """Turn an instruction number into a human-readable location string with the
         file path and line number. More or less the inverse of `resolve_location`.
         """
@@ -98,10 +98,11 @@ class Debugger:
         else:
             loc = str(op.name.location.line)
 
-        # Look for a label corresponding to the breakpoint.
-        for symbol, value in self.symbol_table.items():
-            if value == b and isinstance(value, Label):
-                return "{} ({})".format(loc, symbol)
+        if append_label:
+            # Look for a label corresponding to the breakpoint.
+            for symbol, value in self.symbol_table.items():
+                if value == b and isinstance(value, Label):
+                    return "{} ({})".format(loc, symbol)
 
         return loc
 

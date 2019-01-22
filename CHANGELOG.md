@@ -11,15 +11,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Error messages for `#include` with non-existent file now print the line number.
 - The `list` and `longlist` debugging commands.
 - The `execute` debugging command.
-- The `rr` debugging command.
-- The `symbols` debugging command.
+- The `info` debugging command.
 - The debugging expresson mini-language.
 - A warning is printed when `R11` is used as the second argument of `NOT`.
 - A warning is printed when `CALL` and `RETURN` are used with atypical registers.
 - `help` debugging command takes one or more arguments and prints more detailed help messages for specific commands.
 
 ### Changed
-- Argument to skip command in debugger is now interpreted as number of lines to skip instead of destination to skip to.
 - Warning for zero-prefixed octal literals will only be printed once per program, rather than for every occurrence.
 - Data statements may never follow code, even when in different files.
 

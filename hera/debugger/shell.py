@@ -65,6 +65,8 @@ class Shell:
             self.handle_continue(args)
         elif "execute".startswith(cmd):
             self.handle_execute(line)
+        elif "info".startswith(cmd):
+            self.handle_info(args)
         elif "list".startswith(cmd):
             self.handle_list(args)
         elif cmd == "longlist" or cmd == "ll":
@@ -73,12 +75,8 @@ class Shell:
             self.handle_next(args)
         elif "restart".startswith(cmd):
             self.handle_restart(args)
-        elif cmd == "rr":
-            self.handle_rr(args)
         elif "skip".startswith(cmd):
             self.handle_skip(args)
-        elif cmd.startswith("sym") and "symbols".startswith(cmd):
-            self.handle_symbols(args)
         elif "help".startswith(cmd):
             self.handle_help(args)
         else:
@@ -130,17 +128,6 @@ class Shell:
 
                 if i != len(args) - 1:
                     print()
-
-    def handle_symbols(self, args):
-        if len(args) != 0:
-            print("symbols takes no arguments.")
-            return
-
-        sorted_pairs = sorted(
-            self.debugger.symbol_table.items(), key=lambda t: t[0].lower()
-        )
-        for k, v in sorted_pairs:
-            self.print_symbol(k, v)
 
     def handle_skip(self, args):
         if len(args) > 1:
@@ -233,26 +220,73 @@ class Shell:
         self.debugger.reset()
         self.print_current_op()
 
-    def handle_rr(self, args):
+    def handle_info(self, args):
         if len(args) != 0:
-            print("rr takes no arguments.")
+            print("info takes no arguments.")
             return
 
-        vm = self.debugger.vm
-        if all(r == 0 for r in vm.registers):
-            print("All registers are set to zero.")
-        else:
-            last_non_zero = 15
-            while vm.registers[last_non_zero] == 0:
-                last_non_zero -= 1
+        self.print_registers()
+        self.print_flags()
+        print()
 
-            if last_non_zero < 13:
-                for i in range(1, last_non_zero + 1):
-                    print_register_debug("R" + str(i), vm.registers[i], to_stderr=False)
-                print("\nAll higher registers are set to zero.")
+        constants = []
+        labels = []
+        dlabels = []
+        for key, val in self.debugger.symbol_table.items():
+            if isinstance(val, Label):
+                lineno = self.debugger.get_breakpoint_name(val, append_label=False)
+                labels.append("{} ({})".format(key, lineno))
+            elif isinstance(val, DataLabel):
+                dlabels.append("{} ({})".format(key, val))
             else:
-                for i, v in enumerate(vm.registers[1:], start=1):
-                    print_register_debug("R" + str(i), v, to_stderr=False)
+                constants.append("{} ({})".format(key, val))
+
+        if constants:
+            print("Constants: " + ", ".join(constants))
+
+        if labels:
+            print("Labels: " + ", ".join(labels))
+
+        if dlabels:
+            print("Data labels: " + ", ".join(dlabels))
+
+    def print_registers(self):
+        nonzero = 0
+        for i, r in enumerate(self.debugger.vm.registers[1:], start=1):
+            if r != 0:
+                nonzero += 1
+                end = ", " if i != 15 or nonzero < 15 else ""
+                print("R{} = {}".format(i, r), end=end)
+
+        if nonzero == 0:
+            print("All registers set to zero.")
+        elif nonzero != 15:
+            print("all other registers set to zero.")
+        else:
+            print()
+
+    def print_flags(self):
+        vm = self.debugger.vm
+        flags = []
+        if vm.flag_carry_block:
+            flags.append("carry-block flag is on")
+        if vm.flag_carry:
+            flags.append("carry flag is on")
+        if vm.flag_overflow:
+            flags.append("overflow flag is on")
+        if vm.flag_zero:
+            flags.append("zero flag is on")
+        if vm.flag_sign:
+            flags.append("sign flag is on")
+
+        if len(flags) == 5:
+            print("All flags are on.")
+        elif len(flags) == 0:
+            print("All flags are off.")
+        else:
+            flagstr = ", ".join(flags)
+            flagstr = flagstr[0].upper() + flagstr[1:]
+            print(flagstr + ", all other flags are off.")
 
     def handle_expression(self, line):
         try:
@@ -398,6 +432,7 @@ def looks_like_unknown_command(line):
 
 
 def normalize_path(path):
+    # TODO: Should this just be done in the parser?
     return "<stdin>" if path == "-" else path
 
 
@@ -413,6 +448,8 @@ Available commands:
 
     help          Print this help message.
 
+    info          Print information about the current state of the program.
+
     list <n>      Print the current lines of source code and the n previous and
                   next lines. If not provided, n defaults to 3.
 
@@ -423,8 +460,6 @@ Available commands:
     restart       Restart the execution of the program from the beginning.
 
     skip <loc>    Skip ahead to the given location.
-
-    symbols       Print all symbols the debugger is aware of.
 
     quit          Exit the debugger.
 
@@ -485,6 +520,10 @@ help:
 
 help <cmd>...:
   Print a detailed help message for each command list.""",
+    # info
+    "info": """\
+info:
+  Print information about the current state of the program.""",
     # list
     "list": """\
 list:
@@ -507,10 +546,6 @@ next:
 restart:
   Restart execution of the program from the beginning. All registers and
   memory cells are reset.""",
-    # rr
-    "rr": """\
-rr:
-  Print the values of all registers.""",
     # skip
     "skip": """\
 skip:
@@ -522,11 +557,6 @@ skip <loc>:
 
 skip +<n>:
   Skip the next `n` instructions without executing them.""",
-    # symbols
-    "symbols": """\
-symbols:
-  Print all the symbols (labels, constants, and data labels) the debugger is
-  aware of.""",
     # quit
     "quit": """\
 quit:
