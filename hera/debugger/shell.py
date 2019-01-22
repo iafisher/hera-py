@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from . import minilanguage
 from .debugger import Debugger
-from .minilanguage import AssignNode, IntNode, MemoryNode, RegisterNode, SymbolNode
+from .minilanguage import IntNode, MemoryNode, RegisterNode, SymbolNode
 from hera.data import HERAError, Op
 from hera.loader import load_program
 from hera.parser import parse
@@ -52,35 +52,41 @@ class Shell:
         True otherwise.
         """
         try:
-            cmd, line = response.split(maxsplit=1)
+            cmd, argstr = response.split(maxsplit=1)
         except ValueError:
             cmd = response
-            line = ""
+            argstr = ""
 
-        args = line.split()
+        arglist = argstr.split()
         cmd = cmd.lower()
+        if "assign".startswith(cmd):
+            self.handle_assign(arglist)
         if "break".startswith(cmd):
-            self.handle_break(args)
+            self.handle_break(arglist)
         elif "continue".startswith(cmd):
-            self.handle_continue(args)
+            self.handle_continue(arglist)
         elif "execute".startswith(cmd):
-            self.handle_execute(line)
+            self.handle_execute(argstr)
         elif "info".startswith(cmd):
-            self.handle_info(args)
+            self.handle_info(arglist)
         elif "list".startswith(cmd):
-            self.handle_list(args)
+            self.handle_list(arglist)
         elif cmd == "longlist" or cmd == "ll":
-            self.handle_long_list(args)
+            self.handle_long_list(arglist)
         elif "next".startswith(cmd):
-            self.handle_next(args)
+            self.handle_next(arglist)
+        elif "print".startswith(cmd):
+            self.handle_print(argstr)
         elif "restart".startswith(cmd):
-            self.handle_restart(args)
+            self.handle_restart(arglist)
         elif "skip".startswith(cmd):
-            self.handle_skip(args)
+            self.handle_skip(arglist)
         elif "help".startswith(cmd):
-            self.handle_help(args)
+            self.handle_help(arglist)
+        elif "=" in response:
+            self.handle_assign(response.split("=", maxsplit=1))
         else:
-            self.handle_expression(response)
+            print("{} is not a recognized command.".format(cmd))
 
     def handle_break(self, args):
         if len(args) > 1:
@@ -89,6 +95,8 @@ class Shell:
 
         # TODO: In pdb, break with no arguments set a breakpoint at the current
         # line. Should I do that too?
+        #
+        # Better idea: accept "." as a location for the current line.
         if len(args) == 0:
             breakpoints = self.debugger.get_breakpoints()
             if breakpoints:
@@ -115,6 +123,46 @@ class Shell:
 
         self.debugger.exec_ops(1)
         self.print_current_op()
+
+    def handle_print(self, argstr):
+        try:
+            tree = minilanguage.parse(argstr)
+        except SyntaxError as e:
+            msg = str(e)
+            if msg:
+                print("Parse error: " + msg + ".")
+            else:
+                print("Parse error.")
+            return
+
+        vm = self.debugger.vm
+        try:
+            if isinstance(tree, RegisterNode):
+                if tree.value == "pc":
+                    print("PC = {}".format(vm.pc))
+                else:
+                    value = vm.get_register(tree.value)
+                    print_register_debug(tree.value, value, to_stderr=False)
+            elif isinstance(tree, MemoryNode):
+                address = self.evaluate_node(tree.address)
+                print("M[{}] = {}".format(address, vm.access_memory(address)))
+            elif isinstance(tree, SymbolNode):
+                try:
+                    v = self.debugger.symbol_table[tree.value]
+                except KeyError:
+                    print(
+                        "{} is not a recognized command or symbol.".format(tree.value)
+                    )
+                else:
+                    self.print_symbol(tree.value, v)
+            elif isinstance(tree, IntNode):
+                print(tree.value)
+            else:
+                raise RuntimeError(
+                    "unknown node type {}".format(tree.__class__.__name__)
+                )
+        except HERAError as e:
+            print("Eval error: " + str(e) + ".")
 
     def handle_help(self, args):
         if not args:
@@ -155,10 +203,10 @@ class Shell:
 
         self.print_current_op()
 
-    def handle_execute(self, line):
+    def handle_execute(self, argstr):
         try:
             # Make sure there are no disallowed ops.
-            for op in parse(line, includes=False):
+            for op in parse(argstr, includes=False):
                 if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
                     print("execute cannot take branching operations.")
                     return
@@ -172,7 +220,7 @@ class Shell:
                     print("execute cannot take #include.")
                     return
 
-            ops, _ = load_program(line)
+            ops, _ = load_program(argstr)
         except SystemExit:
             return
 
@@ -288,58 +336,34 @@ class Shell:
             flagstr = flagstr[0].upper() + flagstr[1:]
             print(flagstr + ", all other flags are off.")
 
-    def handle_expression(self, line):
-        try:
-            tree = minilanguage.parse(line)
-        except SyntaxError as e:
-            if looks_like_unknown_command(line):
-                print(
-                    "{} is not a recognized command or symbol.".format(line.split()[0])
-                )
-            else:
-                msg = str(e)
-                if msg:
-                    print("Parse error: " + msg + ".")
-                else:
-                    print("Parse error.")
+    def handle_assign(self, args):
+        if len(args) != 2:
+            print("assign takes two arguments.")
             return
+
+        try:
+            ltree = minilanguage.parse(args[0])
+            rtree = minilanguage.parse(args[1])
+        except SyntaxError as e:
+            msg = str(e)
+            if msg:
+                print("Parse error: " + msg + ".")
+            else:
+                print("Parse error.")
 
         vm = self.debugger.vm
         try:
-            if isinstance(tree, AssignNode):
-                rhs = self.evaluate_node(tree.rhs)
-                if isinstance(tree.lhs, RegisterNode):
-                    if tree.lhs.value == "pc":
-                        vm.pc = rhs
-                    else:
-                        vm.store_register(tree.lhs.value, rhs)
+            rhs = self.evaluate_node(rtree)
+            if isinstance(ltree, RegisterNode):
+                if ltree.value == "pc":
+                    vm.pc = rhs
                 else:
-                    address = self.evaluate_node(tree.lhs.address)
-                    vm.assign_memory(address, rhs)
-            elif isinstance(tree, RegisterNode):
-                if tree.value == "pc":
-                    print("PC = {}".format(vm.pc))
-                else:
-                    value = vm.get_register(tree.value)
-                    print_register_debug(tree.value, value, to_stderr=False)
-            elif isinstance(tree, MemoryNode):
-                address = self.evaluate_node(tree.address)
-                print("M[{}] = {}".format(address, vm.access_memory(address)))
-            elif isinstance(tree, SymbolNode):
-                try:
-                    v = self.debugger.symbol_table[tree.value]
-                except KeyError:
-                    print(
-                        "{} is not a recognized command or symbol.".format(tree.value)
-                    )
-                else:
-                    self.print_symbol(tree.value, v)
-            elif isinstance(tree, IntNode):
-                print(tree.value)
+                    vm.store_register(ltree.value, rhs)
+            elif isinstance(ltree, MemoryNode):
+                address = self.evaluate_node(ltree.address)
+                vm.assign_memory(address, rhs)
             else:
-                raise RuntimeError(
-                    "unknown node type {}".format(tree.__class__.__name__)
-                )
+                raise RuntimeError
         except HERAError as e:
             print("Eval error: " + str(e) + ".")
 
@@ -438,34 +462,35 @@ def normalize_path(path):
 
 HELP = """\
 Available commands:
-    break <loc>   Set a breakpoint at the given location. When no arguments
-                  are given, all current breakpoints are printed.
+    assign <x> <y>  Assign the value of y to x. You can use <x> = <y> as a
+                    shortcut.
 
-    continue      Execute the program until a breakpoint is encountered or the
-                  program terminates.
+    break <loc>     Set a breakpoint at the given location. When no arguments
+                    are given, all current breakpoints are printed.
 
-    execute <op>  Execute a HERA operation.
+    continue        Execute the program until a breakpoint is encountered or
+                    the program terminates.
 
-    help          Print this help message.
+    execute <op>    Execute a HERA operation.
 
-    info          Print information about the current state of the program.
+    help            Print this help message.
 
-    list <n>      Print the current lines of source code and the n previous and
-                  next lines. If not provided, n defaults to 3.
+    info            Print information about the current state of the program.
 
-    longlist      Print the entire program.
+    list <n>        Print the current lines of source code and the n previous
+                    and next lines. If not provided, n defaults to 3.
 
-    next          Execute the current line.
+    longlist        Print the entire program.
 
-    restart       Restart the execution of the program from the beginning.
+    next            Execute the current line.
 
-    skip <loc>    Skip ahead to the given location.
+    print <x>       Print the value of x.
 
-    quit          Exit the debugger.
+    restart         Restart the execution of the program from the beginning.
 
-    <expr>        All other commands are interpreted as expressions in the
-                  debugging mini-language. Enter "help expression" for
-                  details.
+    skip <loc>      Skip ahead to the given location.
+
+    quit            Exit the debugger.
 
 Command names can generally be abbreviated with a unique prefix, e.g. "n" for
 "next".
@@ -473,6 +498,16 @@ Command names can generally be abbreviated with a unique prefix, e.g. "n" for
 
 
 HELP_MAP = {
+    # assign
+    "assign": """\
+assign <x> <y>:
+  Assign the value of y to x. x may be a register, a memory location, or the
+  program counter. y may be a register, a memory location, the program counter,
+  a symbol, or an integer.
+
+<x> = <y>:
+  Alias for "assign <x> <y>", with the additional advantage that <x> and <y>
+  may contain spaces.""",
     # break
     "break": """\
 break:
@@ -486,24 +521,6 @@ break <loc>:
 continue:
   Execute the program until a breakpoint is encountered or the program
   terminates.""",
-    # expression
-    "expression": """\
-The expression mini-language is used to inspect and change the program's state.
-
-  Print a register:
-    R1
-  Set a register:
-    R1 = 42
-  Print a memory location:
-    M[1000]
-  Set a memory location:
-    M[1000] = 42
-  Different bases:
-    M[0xab] = 0b10100
-  Accessing a memory location from a register's value:
-    M[R7] = R4
-  Using a symbol from the program:
-    R3 = start_of_data""",
     # execute
     "execute": """\
 execute <op>:
@@ -541,6 +558,11 @@ next:
   Execute the current line. If the current line is a CALL instruction, the
   debugger enters the function being called. If you wish to skip over the
   function call, use `step` instead.""",
+    # print
+    "print": """\
+print <x>:
+  Print the value of x, which may be a register, a memory location, the
+  program counter, or a symbol.""",
     # restart
     "restart": """\
 restart:

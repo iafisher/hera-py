@@ -421,28 +421,13 @@ def test_handle_abbreviated_long_list(shell, capsys):
         assert mock_handle_long_list.call_count == 1
 
 
-def test_handle_register_expression(shell, capsys):
-    shell.handle_command("R1")
-
-    assert capsys.readouterr().out == "R1 = 0x0000 = 0\n"
-
-
-def test_handle_memory_expression(shell, capsys):
-    shell.debugger.vm.registers[1] = 4
-    shell.debugger.vm.memory[4] = 42
-
-    shell.handle_command("M[r1]")
-
-    assert capsys.readouterr().out == "M[4] = 42\n"
-
-
-def test_handle_setting_a_register(shell):
+def test_handle_assign_with_register(shell):
     shell.handle_command("r12 = 10")
 
     assert shell.debugger.vm.registers[12] == 10
 
 
-def test_handle_setting_a_memory_location(shell):
+def test_handle_assign_with_a_memory_location(shell):
     shell.debugger.vm.registers[9] = 1000
 
     shell.handle_command("m[R9] = 4000")
@@ -450,27 +435,13 @@ def test_handle_setting_a_memory_location(shell):
     assert shell.debugger.vm.memory[1000] == 4000
 
 
-def test_handle_pc(shell, capsys):
-    shell.debugger.vm.pc = 3
-
-    shell.handle_command("pc")
-
-    assert capsys.readouterr().out == "PC = 3\n"
-
-
-def test_handle_setting_pc(shell):
+def test_handle_assign_with_PC(shell):
     shell.handle_command("pc = 10")
 
     assert shell.debugger.vm.pc == 10
 
 
-def test_handle_symbol(shell, capsys):
-    shell.handle_command("add")
-
-    assert capsys.readouterr().out == "add = 4 (label)\n"
-
-
-def test_handle_undefined_symbol(shell, capsys):
+def test_handle_assign_with_undefined_symbol(shell, capsys):
     shell.debugger.vm.registers[4] = 42
 
     shell.handle_command("r4 = whatever")
@@ -479,18 +450,64 @@ def test_handle_undefined_symbol(shell, capsys):
     assert capsys.readouterr().out == "Eval error: undefined symbol `whatever`.\n"
 
 
-def test_handle_case_sensitive_symbol(shell, capsys):
+def test_handle_assign_register_to_symbol(shell):
+    shell.handle_command("r7 = add")
+
+    assert shell.debugger.vm.registers[7] == 4
+
+
+def test_handle_assign_with_explicit_command(shell):
+    shell.handle_command("assign r7 add")
+
+    assert shell.debugger.vm.registers[7] == 4
+
+
+def test_handle_print_register(shell, capsys):
+    shell.handle_command("print R1")
+
+    assert capsys.readouterr().out == "R1 = 0x0000 = 0\n"
+
+
+def test_handle_print_memory_expression(shell, capsys):
+    shell.debugger.vm.registers[1] = 4
+    shell.debugger.vm.memory[4] = 42
+
+    shell.handle_command("print M[r1]")
+
+    assert capsys.readouterr().out == "M[4] = 42\n"
+
+
+def test_handle_print_PC(shell, capsys):
+    shell.debugger.vm.pc = 3
+
+    shell.handle_command("print pc")
+
+    assert capsys.readouterr().out == "PC = 3\n"
+
+
+def test_handle_print_symbol(shell, capsys):
+    shell.handle_command("print add")
+
+    assert capsys.readouterr().out == "add = 4 (label)\n"
+
+
+def test_handle_print_case_sensitive_symbol(shell, capsys):
     shell.debugger.symbol_table["ADD"] = 10
 
-    shell.handle_command("ADD")
+    shell.handle_command("print ADD")
 
     assert capsys.readouterr().out == "ADD = 10\n"
 
 
-def test_handle_setting_register_to_symbol(shell):
-    shell.handle_command("r7 = add")
+def test_handle_print_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_print") as mock_handle_print:
+        shell.handle_command("p M[ R7 ]")
+        assert mock_handle_print.call_count == 1
 
-    assert shell.debugger.vm.registers[7] == 4
+        args, kwargs = mock_handle_print.call_args
+        assert len(args) == 1
+        assert args[0] == "M[ R7 ]"
+        assert len(kwargs) == 0
 
 
 def test_handle_help(shell, capsys):
@@ -524,7 +541,8 @@ def test_handle_help_with_multiple_args(shell, capsys):
 
 def test_handle_help_with_all_commands(shell, capsys):
     shell.handle_command(
-        "help break continue execute help info list longlist next restart skip quit"
+        "help assign break continue execute help info list longlist next print restart \
+         skip quit"
     )
 
     assert "not a recognized command" not in capsys.readouterr().out
@@ -539,15 +557,19 @@ def test_handle_help_with_unknown_command(shell, capsys):
 def test_handle_unknown_command(shell, capsys):
     shell.handle_command("whatever")
 
-    assert (
-        capsys.readouterr().out == "whatever is not a recognized command or symbol.\n"
-    )
+    assert capsys.readouterr().out == "whatever is not a recognized command.\n"
 
 
 def test_handle_unknown_command_with_arg(shell, capsys):
     shell.handle_command("run program")
 
-    assert capsys.readouterr().out == "run is not a recognized command or symbol.\n"
+    assert capsys.readouterr().out == "run is not a recognized command.\n"
+
+
+def test_handle_attempt_to_print_register(shell, capsys):
+    shell.handle_command("r1")
+
+    assert capsys.readouterr().out == "r1 is not a recognized command.\n"
 
 
 def test_resolve_location_with_line_number(debugger):

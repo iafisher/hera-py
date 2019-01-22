@@ -16,13 +16,10 @@ def parse(line):
 class MiniParser:
     """A parser for the debugger's expression mini-language.
 
-      start := expr | assign
+      start := expr
 
       expr := mem | REGISTER | INT
       mem  := MEM LBRACKET expr RBRACKET
-
-      assign := lvalue ASSIGN expr
-      lvalue := mem | REGISTER
     """
 
     def __init__(self, lexer):
@@ -33,19 +30,8 @@ class MiniParser:
         tkn = self.lexer.next_token()
         if tkn[0] == TOKEN_EOF:
             return tree
-        elif tkn[0] == TOKEN_ASSIGN:
-            if isinstance(tree, IntNode):
-                raise SyntaxError("integer cannot be assigned to")
-            elif isinstance(tree, SymbolNode):
-                raise SyntaxError("symbol cannot be assigned to")
-
-            rhs = self.match_expr()
-            if self.lexer.next_token()[0] == TOKEN_EOF:
-                return AssignNode(tree, rhs)
-            else:
-                raise SyntaxError("trailing input")
         else:
-            self.raise_unexpected(tkn)
+            raise SyntaxError("trailing input")
 
     def match_expr(self):
         tkn = self.lexer.next_token()
@@ -81,7 +67,6 @@ class MiniParser:
 
 
 MemoryNode = namedtuple("MemoryNode", ["address"])
-AssignNode = namedtuple("AssignNode", ["lhs", "rhs"])
 RegisterNode = namedtuple("RegisterNode", ["value"])
 IntNode = namedtuple("IntNode", ["value"])
 SymbolNode = namedtuple("SymbolNode", ["value"])
@@ -109,8 +94,6 @@ class MiniLexer:
             return self.advance_and_return(TOKEN_LBRACKET)
         elif ch == "]":
             return self.advance_and_return(TOKEN_RBRACKET)
-        elif ch == "=":
-            return self.advance_and_return(TOKEN_ASSIGN)
         elif ch.isalpha() or ch == "_":
             length = self.read_register()
             if length != -1:
@@ -194,7 +177,6 @@ TOKEN_MEM = "TOKEN_MEM"
 TOKEN_REGISTER = "TOKEN_REGISTER"
 TOKEN_LBRACKET = "TOKEN_LBRACKET"
 TOKEN_RBRACKET = "TOKEN_RBRACKET"
-TOKEN_ASSIGN = "TOKEN_ASSIGN"
 TOKEN_SYMBOL = "TOKEN_SYMBOL"
 TOKEN_EOF = "TOKEN_EOF"
 TOKEN_UNKNOWN = "TOKEN_UNKNOWN"
