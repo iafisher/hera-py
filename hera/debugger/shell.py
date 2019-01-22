@@ -462,8 +462,7 @@ def normalize_path(path):
 
 HELP = """\
 Available commands:
-    assign <x> <y>  Assign the value of y to x. You can use <x> = <y> as a
-                    shortcut.
+    assign <x> <y>  Assign the value of y to x.
 
     break <loc>     Set a breakpoint at the given location. When no arguments
                     are given, all current breakpoints are printed.
@@ -480,7 +479,7 @@ Available commands:
     list <n>        Print the current lines of source code and the n previous
                     and next lines. If not provided, n defaults to 3.
 
-    longlist        Print the entire program.
+    longlist        Print the entire program. Abbreviates to ll.
 
     next            Execute the current line.
 
@@ -491,6 +490,8 @@ Available commands:
     skip <loc>      Skip ahead to the given location.
 
     quit            Exit the debugger.
+
+    <x> = <y>       Mnemonic for "assign <x> <y>".
 
 Command names can generally be abbreviated with a unique prefix, e.g. "n" for
 "next".
@@ -507,7 +508,13 @@ assign <x> <y>:
 
 <x> = <y>:
   Alias for "assign <x> <y>", with the additional advantage that <x> and <y>
-  may contain spaces.""",
+  may contain spaces.
+
+  Examples:
+    R1 = 42
+    M[R7] = R4
+    M[0xabc] = 0o123
+    R7 = some_label""",
     # break
     "break": """\
 break:
@@ -527,9 +534,10 @@ execute <op>:
   Execute a HERA operation. The operation must not be a data statement or a
   branch. The operation may affect registers and memory. Some operations can
   be more concisely expressed with the debugging mini-language. Type
-  "help expression" for details.
+  "help assign" for details.
 
-    $ execute ASR(R5, R$)""",
+  Examples:
+    execute ASR(R5, R4)""",
     # help
     "help": """\
 help:
@@ -551,7 +559,7 @@ list <n>:
     # longlist
     "longlist": """\
 longlist:
-  Print every line of the program's source code.""",
+  Print every line of the program's source code. Abbreviates to ll.""",
     # next
     "next": """\
 next:
@@ -562,7 +570,13 @@ next:
     "print": """\
 print <x>:
   Print the value of x, which may be a register, a memory location, the
-  program counter, or a symbol.""",
+  program counter, or a symbol.
+
+  Examples:
+    print R7
+    print M[0xc]
+    print some_label
+    print M[M[M[R1]]]""",
     # restart
     "restart": """\
 restart:

@@ -19,7 +19,7 @@ class MiniParser:
       start := expr
 
       expr := mem | REGISTER | INT
-      mem  := MEM LBRACKET expr RBRACKET
+      mem  := MEM expr RBRACKET
     """
 
     def __init__(self, lexer):
@@ -36,7 +36,6 @@ class MiniParser:
     def match_expr(self):
         tkn = self.lexer.next_token()
         if tkn[0] == TOKEN_MEM:
-            self.assert_next(TOKEN_LBRACKET)
             address = self.match_expr()
             self.assert_next(TOKEN_RBRACKET)
             return MemoryNode(address)
@@ -88,10 +87,8 @@ class MiniLexer:
             return TOKEN_EOF, ""
 
         ch = self.text[self.position]
-        if ch in "mM":
-            return self.advance_and_return(TOKEN_MEM)
-        elif ch == "[":
-            return self.advance_and_return(TOKEN_LBRACKET)
+        if ch in "mM" and self.peek() == "[":
+            return self.advance_and_return(TOKEN_MEM, length=2)
         elif ch == "]":
             return self.advance_and_return(TOKEN_RBRACKET)
         elif ch.isalpha() or ch == "_":

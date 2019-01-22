@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `list` and `longlist` debugging commands.
 - The `execute` debugging command.
 - The `info` debugging command.
+- The `assign` debugging command, and its alias `x = y`.
 - The debugging expresson mini-language.
 - A warning is printed when `R11` is used as the second argument of `NOT`.
 - A warning is printed when `CALL` and `RETURN` are used with atypical registers.
@@ -32,10 +33,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Invalid zero-prefixed octal literals no longer crash the interpreter.
 - Labels are calculated correctly after branches on registers.
 - `skip` debugging command no longer executes instructions, matching its help description.
+- Symbols beginning with "m" can now be printed in the debugger.
 
 ### Removed
 - The `--lines` command-line argument.
-- The `print` debugging command.
 
 
 ## [0.4.0] - 2019-01-02

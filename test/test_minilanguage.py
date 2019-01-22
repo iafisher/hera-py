@@ -6,6 +6,7 @@ from hera.debugger.minilanguage import (
     RegisterNode,
     SymbolNode,
     TOKEN_EOF,
+    TOKEN_FLAG,
     TOKEN_INT,
     TOKEN_LBRACKET,
     TOKEN_MEM,
@@ -27,13 +28,21 @@ def test_lex_mini_language_with_big_example():
     # This isn't a syntactically valid expression, but it doesn't matter to the lexer.
     lexer = MiniLexer("M[FP_alt] R15 0xabc some_symbol")
 
-    assert lexer.next_token() == (TOKEN_MEM, "M")
-    assert lexer.next_token() == (TOKEN_LBRACKET, "[")
+    assert lexer.next_token() == (TOKEN_MEM, "M[")
     assert lexer.next_token() == (TOKEN_REGISTER, "FP_alt")
     assert lexer.next_token() == (TOKEN_RBRACKET, "]")
     assert lexer.next_token() == (TOKEN_REGISTER, "R15")
     assert lexer.next_token() == (TOKEN_INT, "0xabc")
     assert lexer.next_token() == (TOKEN_SYMBOL, "some_symbol")
+    assert lexer.next_token() == (TOKEN_EOF, "")
+    assert lexer.next_token() == (TOKEN_EOF, "")
+
+
+def test_lex_mini_language_with_symbols_starting_with_M():
+    lexer = MiniLexer("more m")
+
+    assert lexer.next_token() == (TOKEN_SYMBOL, "more")
+    assert lexer.next_token() == (TOKEN_SYMBOL, "m")
     assert lexer.next_token() == (TOKEN_EOF, "")
     assert lexer.next_token() == (TOKEN_EOF, "")
 
