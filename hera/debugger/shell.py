@@ -2,7 +2,14 @@ from typing import Dict, List
 
 from . import minilanguage
 from .debugger import Debugger
-from .minilanguage import IntNode, MemoryNode, RegisterNode, SymbolNode
+from .minilanguage import (
+    BoolNode,
+    FLAG_LITERALS,
+    IntNode,
+    MemoryNode,
+    RegisterNode,
+    SymbolNode,
+)
 from hera.data import HERAError, Op
 from hera.loader import load_program
 from hera.parser import parse
@@ -147,14 +154,33 @@ class Shell:
                 address = self.evaluate_node(tree.address)
                 print("M[{}] = {}".format(address, vm.access_memory(address)))
             elif isinstance(tree, SymbolNode):
-                try:
-                    v = self.debugger.symbol_table[tree.value]
-                except KeyError:
-                    print(
-                        "{} is not a recognized command or symbol.".format(tree.value)
-                    )
+                if tree.value in FLAG_LITERALS:
+                    if tree.value == "f_cb":
+                        print("Carry-block flag = " + str(vm.flag_carry_block).lower())
+                    elif tree.value == "f_c":
+                        print("Carry flag = " + str(vm.flag_carry).lower())
+                    elif tree.value == "f_v":
+                        print("Overflow flag = " + str(vm.flag_overflow).lower())
+                    elif tree.value == "f_z":
+                        print("Zero flag = " + str(vm.flag_zero).lower())
+                    elif tree.value == "f_s":
+                        print("Sign flag = " + str(vm.flag_sign).lower())
+                    else:
+                        raise RuntimeError("this should never happen!")
+
+                    # If the symbol also happens to identify something in the symbol
+                    # table (as well as a flag), print that too.
+                    if tree.value in self.debugger.symbol_table:
+                        self.print_symbol(
+                            tree.value, self.debugger.symbol_table[tree.value]
+                        )
                 else:
-                    self.print_symbol(tree.value, v)
+                    try:
+                        v = self.debugger.symbol_table[tree.value]
+                    except KeyError:
+                        print("{} is not defined.".format(tree.value))
+                    else:
+                        self.print_symbol(tree.value, v)
             elif isinstance(tree, IntNode):
                 print(tree.value)
             else:
@@ -350,6 +376,7 @@ class Shell:
                 print("Parse error: " + msg + ".")
             else:
                 print("Parse error.")
+            return
 
         vm = self.debugger.vm
         try:
@@ -362,14 +389,39 @@ class Shell:
             elif isinstance(ltree, MemoryNode):
                 address = self.evaluate_node(ltree.address)
                 vm.assign_memory(address, rhs)
+            elif isinstance(ltree, SymbolNode):
+                value = ltree.value.lower()
+                if value in FLAG_LITERALS:
+                    if rhs is not True and rhs is not False:
+                        print(
+                            "Eval error: cannot assign non-boolean value to flag (use #t and #f instead)."
+                        )
+                        return
+
+                    if value == "f_cb":
+                        vm.flag_carry_block = rhs
+                    elif value == "f_c":
+                        vm.flag_carry = rhs
+                    elif value == "f_v":
+                        vm.flag_overflow = rhs
+                    elif value == "f_z":
+                        vm.flag_zero = rhs
+                    elif value == "f_s":
+                        vm.flag_sign = rhs
+                    else:
+                        raise RuntimeError("this should never happen!")
+                else:
+                    print("Eval error: cannot assign to symbol.")
             else:
-                raise RuntimeError
+                raise RuntimeError(
+                    "unknown node type {}".format(ltree.__class__.__name__)
+                )
         except HERAError as e:
             print("Eval error: " + str(e) + ".")
 
     def evaluate_node(self, node):
         vm = self.debugger.vm
-        if isinstance(node, IntNode):
+        if isinstance(node, (IntNode, BoolNode)):
             return node.value
         elif isinstance(node, RegisterNode):
             if node.value == "pc":
@@ -446,13 +498,6 @@ class Shell:
             print(" [{}]".format(", ".join(labels)))
         else:
             print()
-
-
-def looks_like_unknown_command(line):
-    """Try to detect whether a line of input was an attempt to use an unknown command
-    (as opposed to an mini-language expression that could not be parsed).
-    """
-    return all(word.isalpha() for word in line.split())
 
 
 def normalize_path(path):

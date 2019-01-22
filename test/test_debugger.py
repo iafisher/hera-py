@@ -421,13 +421,13 @@ def test_handle_abbreviated_long_list(shell, capsys):
         assert mock_handle_long_list.call_count == 1
 
 
-def test_handle_assign_with_register(shell):
+def test_handle_assign_to_register(shell):
     shell.handle_command("r12 = 10")
 
     assert shell.debugger.vm.registers[12] == 10
 
 
-def test_handle_assign_with_a_memory_location(shell):
+def test_handle_assign_to_memory_location(shell):
     shell.debugger.vm.registers[9] = 1000
 
     shell.handle_command("m[R9] = 4000")
@@ -435,10 +435,32 @@ def test_handle_assign_with_a_memory_location(shell):
     assert shell.debugger.vm.memory[1000] == 4000
 
 
-def test_handle_assign_with_PC(shell):
+def test_handle_assign_to_PC(shell):
     shell.handle_command("pc = 10")
 
     assert shell.debugger.vm.pc == 10
+
+
+def test_handle_assign_to_flag(shell):
+    shell.handle_command("f_c = #t")
+
+    assert shell.debugger.vm.flag_carry
+
+
+def test_handle_assign_to_symbol(shell, capsys):
+    shell.handle_command("foo = 10")
+
+    assert capsys.readouterr().out == "Eval error: cannot assign to symbol.\n"
+    assert "foo" not in shell.debugger.symbol_table
+
+
+def test_handle_assign_non_boolean_to_flag(shell, capsys):
+    shell.handle_command("f_c = 10")
+
+    assert (
+        capsys.readouterr().out
+        == "Eval error: cannot assign non-boolean value to flag (use #t and #f instead).\n"
+    )
 
 
 def test_handle_assign_with_undefined_symbol(shell, capsys):
@@ -489,6 +511,32 @@ def test_handle_print_symbol(shell, capsys):
     shell.handle_command("print add")
 
     assert capsys.readouterr().out == "add = 4 (label)\n"
+
+
+def test_handle_print_flag(shell, capsys):
+    shell.handle_command("print f_cb")
+    shell.handle_command("print f_c")
+    shell.handle_command("print f_v")
+    shell.handle_command("print f_s")
+    shell.handle_command("print f_z")
+
+    assert (
+        capsys.readouterr().out
+        == """\
+Carry-block flag = false
+Carry flag = false
+Overflow flag = false
+Sign flag = false
+Zero flag = false
+"""
+    )
+
+
+def test_handle_print_flag_with_conflicting_symbol(shell, capsys):
+    shell.debugger.symbol_table["f_cb"] = 42
+    shell.handle_command("print f_cb")
+
+    assert capsys.readouterr().out == "Carry-block flag = false\nf_cb = 42\n"
 
 
 def test_handle_print_case_sensitive_symbol(shell, capsys):

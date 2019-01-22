@@ -48,6 +48,10 @@ class MiniParser:
             return RegisterNode(tkn[1])
         elif tkn[0] == TOKEN_SYMBOL:
             return SymbolNode(tkn[1])
+        elif tkn[0] == TOKEN_TRUE:
+            return BoolNode(True)
+        elif tkn[0] == TOKEN_FALSE:
+            return BoolNode(False)
         else:
             self.raise_unexpected(tkn)
 
@@ -68,6 +72,7 @@ class MiniParser:
 MemoryNode = namedtuple("MemoryNode", ["address"])
 RegisterNode = namedtuple("RegisterNode", ["value"])
 IntNode = namedtuple("IntNode", ["value"])
+BoolNode = namedtuple("BoolNode", ["value"])
 SymbolNode = namedtuple("SymbolNode", ["value"])
 
 
@@ -106,6 +111,11 @@ class MiniLexer:
             length = self.read_int()
             self.position -= 1
             return self.advance_and_return(TOKEN_INT, length=length)
+        elif ch == "#" and self.peek() in "tfTF":
+            if self.peek() in "tT":
+                return self.advance_and_return(TOKEN_TRUE, length=2)
+            else:
+                return self.advance_and_return(TOKEN_FALSE, length=2)
         else:
             return self.advance_and_return(TOKEN_UNKNOWN)
 
@@ -175,5 +185,10 @@ TOKEN_REGISTER = "TOKEN_REGISTER"
 TOKEN_LBRACKET = "TOKEN_LBRACKET"
 TOKEN_RBRACKET = "TOKEN_RBRACKET"
 TOKEN_SYMBOL = "TOKEN_SYMBOL"
+TOKEN_TRUE = "TOKEN_TRUE"
+TOKEN_FALSE = "TOKEN_FALSE"
 TOKEN_EOF = "TOKEN_EOF"
 TOKEN_UNKNOWN = "TOKEN_UNKNOWN"
+
+
+FLAG_LITERALS = ("f_cb", "f_c", "f_v", "f_z", "f_s")

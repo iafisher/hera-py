@@ -1,4 +1,5 @@
 from hera.debugger.minilanguage import (
+    BoolNode,
     IntNode,
     MemoryNode,
     MiniLexer,
@@ -6,13 +7,14 @@ from hera.debugger.minilanguage import (
     RegisterNode,
     SymbolNode,
     TOKEN_EOF,
-    TOKEN_FLAG,
+    TOKEN_FALSE,
     TOKEN_INT,
     TOKEN_LBRACKET,
     TOKEN_MEM,
     TOKEN_RBRACKET,
     TOKEN_REGISTER,
     TOKEN_SYMBOL,
+    TOKEN_TRUE,
 )
 
 
@@ -26,7 +28,7 @@ def test_lex_mini_language_with_small_example():
 
 def test_lex_mini_language_with_big_example():
     # This isn't a syntactically valid expression, but it doesn't matter to the lexer.
-    lexer = MiniLexer("M[FP_alt] R15 0xabc some_symbol")
+    lexer = MiniLexer("M[FP_alt] R15 0xabc some_symbol #t #F")
 
     assert lexer.next_token() == (TOKEN_MEM, "M[")
     assert lexer.next_token() == (TOKEN_REGISTER, "FP_alt")
@@ -34,6 +36,8 @@ def test_lex_mini_language_with_big_example():
     assert lexer.next_token() == (TOKEN_REGISTER, "R15")
     assert lexer.next_token() == (TOKEN_INT, "0xabc")
     assert lexer.next_token() == (TOKEN_SYMBOL, "some_symbol")
+    assert lexer.next_token() == (TOKEN_TRUE, "#t")
+    assert lexer.next_token() == (TOKEN_FALSE, "#F")
     assert lexer.next_token() == (TOKEN_EOF, "")
     assert lexer.next_token() == (TOKEN_EOF, "")
 
@@ -66,6 +70,15 @@ def test_parse_memory_expression_with_integer():
     assert isinstance(tree, MemoryNode)
     assert isinstance(tree.address, IntNode)
     assert tree.address.value == 0o12
+
+
+def test_parse_boolean():
+    parser = MiniParser(MiniLexer("#t"))
+
+    tree = parser.parse()
+
+    assert isinstance(tree, BoolNode)
+    assert tree.value is True
 
 
 def test_parse_memory_expression_with_symbol():
