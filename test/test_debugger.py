@@ -388,8 +388,8 @@ def test_handle_list_abbreviated(shell):
         assert mock_handle_list.call_count == 1
 
 
-def test_handle_long_list(shell, capsys):
-    shell.handle_command("longlist")
+def test_handle_ll(shell, capsys):
+    shell.handle_command("ll")
 
     captured = capsys.readouterr().out
     assert (
@@ -409,16 +409,16 @@ def test_handle_long_list(shell, capsys):
     )
 
 
-def test_handle_long_list_with_too_many_args(shell, capsys):
-    shell.handle_command("longlist 1")
+def test_handle_ll_with_too_many_args(shell, capsys):
+    shell.handle_command("ll 1")
 
-    assert capsys.readouterr().out == "longlist takes no arguments.\n"
+    assert capsys.readouterr().out == "ll takes no arguments.\n"
 
 
-def test_handle_abbreviated_long_list(shell, capsys):
-    with patch("hera.debugger.shell.Shell.handle_long_list") as mock_handle_long_list:
+def test_handle_abbreviated_ll(shell, capsys):
+    with patch("hera.debugger.shell.Shell.handle_ll") as mock_handle_ll:
         shell.handle_command("ll")
-        assert mock_handle_long_list.call_count == 1
+        assert mock_handle_ll.call_count == 1
 
 
 def test_handle_assign_to_register(shell):
@@ -589,8 +589,8 @@ def test_handle_help_with_multiple_args(shell, capsys):
 
 def test_handle_help_with_all_commands(shell, capsys):
     shell.handle_command(
-        "help assign break continue execute help info list longlist next print restart \
-         skip quit"
+        "help assign break continue execute help info list ll next print restart skip \
+         quit"
     )
 
     assert "not a recognized command" not in capsys.readouterr().out

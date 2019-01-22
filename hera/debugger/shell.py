@@ -78,8 +78,8 @@ class Shell:
             self.handle_info(arglist)
         elif "list".startswith(cmd):
             self.handle_list(arglist)
-        elif cmd == "longlist" or cmd == "ll":
-            self.handle_long_list(arglist)
+        elif cmd == "ll":
+            self.handle_ll(arglist)
         elif "next".startswith(cmd):
             self.handle_next(arglist)
         elif "print".startswith(cmd):
@@ -270,9 +270,9 @@ class Shell:
         loc = self.debugger.program[self.debugger.vm.pc].name.location
         self.print_range_of_ops(loc, context=context)
 
-    def handle_long_list(self, args):
+    def handle_ll(self, args):
         if len(args) != 0:
-            print("longlist takes no arguments.")
+            print("ll takes no arguments.")
             return
 
         loc = self.debugger.program[self.debugger.vm.pc].name.location
@@ -524,7 +524,7 @@ Available commands:
     list <n>        Print the current lines of source code and the n previous
                     and next lines. If not provided, n defaults to 3.
 
-    longlist        Print the entire program. Abbreviates to ll.
+    ll              Print the entire program.
 
     next            Execute the current line.
 
@@ -536,7 +536,7 @@ Available commands:
 
     quit            Exit the debugger.
 
-    <x> = <y>       Mnemonic for "assign <x> <y>".
+    <x> = <y>       Alias for "assign <x> <y>".
 
 Command names can generally be abbreviated with a unique prefix, e.g. "n" for
 "next".
@@ -601,10 +601,10 @@ list:
 
 list <n>:
   Print the current line of source code and the `n` previous and next lines.""",
-    # longlist
-    "longlist": """\
-longlist:
-  Print every line of the program's source code. Abbreviates to ll.""",
+    # ll
+    "ll": """\
+ll:
+  Print every line of the program's source code.""",
     # next
     "next": """\
 next:
