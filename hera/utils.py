@@ -132,7 +132,7 @@ def print_message_with_location(msg, *, loc=None):
 
         if loc.line is not None:
             if loc.column is not None:
-                caret = _align_caret(loc.file_lines[loc.line - 1], loc.column) + "^"
+                caret = align_caret(loc.file_lines[loc.line - 1], loc.column) + "^"
                 msg += ", line {} col {} of {}\n\n  {}\n  {}\n".format(
                     loc.line, loc.column, loc.path, loc.file_lines[loc.line - 1], caret
                 )
@@ -144,7 +144,7 @@ def print_message_with_location(msg, *, loc=None):
     sys.stderr.write(msg + "\n")
 
 
-def _align_caret(line, col):
+def align_caret(line, col):
     """Return the whitespace necessary to align a caret to underline the desired
     column in the line of text. Mainly this means handling tabs.
     """

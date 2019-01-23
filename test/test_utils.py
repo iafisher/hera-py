@@ -7,7 +7,7 @@ from hera.utils import (
     register_to_index,
     to_u16,
     to_u32,
-    _align_caret,
+    align_caret,
 )
 
 
@@ -163,7 +163,7 @@ def test_register_to_index_with_invalid_register():
 
 
 def test_align_caret():
-    assert _align_caret("\t\t  a", 5) == "\t\t  "
+    assert align_caret("\t\t  a", 5) == "\t\t  "
 
 
 def test_op_to_string():
