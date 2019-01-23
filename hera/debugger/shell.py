@@ -123,6 +123,106 @@ class Shell:
             else:
                 self.debugger.set_breakpoint(b)
 
+    def handle_continue(self, args):
+        if len(args) != 0:
+            print("continue takes no arguments.")
+            return
+
+        self.debugger.exec_ops(until=lambda dbg: dbg.vm.pc in dbg.breakpoints)
+        self.print_current_op()
+
+    def handle_execute(self, argstr):
+        try:
+            # Make sure there are no disallowed ops.
+            for op in parse(argstr, includes=False):
+                if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
+                    print("execute cannot take branching operations.")
+                    return
+                elif op.name in DATA_STATEMENTS:
+                    print("execute cannot take data statements.")
+                    return
+                elif op.name == "LABEL":
+                    print("execute cannot take labels.")
+                    return
+                elif op.name == "#include":
+                    print("execute cannot take #include.")
+                    return
+
+            ops, _ = load_program(argstr)
+        except SystemExit:
+            return
+
+        vm = self.debugger.vm
+        opc = vm.pc
+        for op in ops:
+            vm.exec_one(op)
+        vm.pc = opc
+
+    def handle_help(self, args):
+        if not args:
+            print(HELP)
+        else:
+            for i, arg in enumerate(args):
+                try:
+                    print(HELP_MAP[arg])
+                except KeyError:
+                    print("{} is not a recognized command.".format(arg))
+
+                if i != len(args) - 1:
+                    print()
+
+    def handle_info(self, args):
+        if len(args) != 0:
+            print("info takes no arguments.")
+            return
+
+        self.print_registers()
+        self.print_flags()
+        print()
+
+        constants = []
+        labels = []
+        dlabels = []
+        for key, val in self.debugger.symbol_table.items():
+            if isinstance(val, Label):
+                lineno = self.debugger.get_breakpoint_name(val, append_label=False)
+                labels.append("{} ({})".format(key, lineno))
+            elif isinstance(val, DataLabel):
+                dlabels.append("{} ({})".format(key, val))
+            else:
+                constants.append("{} ({})".format(key, val))
+
+        if constants:
+            print("Constants: " + ", ".join(constants))
+
+        if labels:
+            print("Labels: " + ", ".join(labels))
+
+        if dlabels:
+            print("Data labels: " + ", ".join(dlabels))
+
+    def handle_list(self, args):
+        if len(args) > 1:
+            print("list takes zero or one arguments.")
+            return
+
+        try:
+            context = int(args[0], base=0) if args else 3
+        except ValueError:
+            print("Could not parse argument to list.")
+            return
+
+        loc = self.debugger.program[self.debugger.vm.pc].name.location
+        self.print_range_of_ops(loc, context=context)
+
+    def handle_ll(self, args):
+        if len(args) != 0:
+            print("ll takes no arguments.")
+            return
+
+        loc = self.debugger.program[self.debugger.vm.pc].name.location
+        self.print_range_of_ops(loc)
+
     def handle_next(self, args):
         if len(args) != 0:
             print("next takes no arguments.")
@@ -194,18 +294,13 @@ class Shell:
         except HERAError as e:
             print("Eval error: " + str(e) + ".")
 
-    def handle_help(self, args):
-        if not args:
-            print(HELP)
-        else:
-            for i, arg in enumerate(args):
-                try:
-                    print(HELP_MAP[arg])
-                except KeyError:
-                    print("{} is not a recognized command.".format(arg))
+    def handle_restart(self, args):
+        if len(args) != 0:
+            print("restart takes no arguments.")
+            return
 
-                if i != len(args) - 1:
-                    print()
+        self.debugger.reset()
+        self.print_current_op()
 
     def handle_skip(self, args):
         if len(args) > 1:
@@ -245,101 +340,6 @@ class Shell:
         calls = self.debugger.calls
         self.debugger.exec_ops(until=lambda dbg: dbg.calls == calls)
         self.print_current_op()
-
-    def handle_execute(self, argstr):
-        try:
-            # Make sure there are no disallowed ops.
-            for op in parse(argstr, includes=False):
-                if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
-                    print("execute cannot take branching operations.")
-                    return
-                elif op.name in DATA_STATEMENTS:
-                    print("execute cannot take data statements.")
-                    return
-                elif op.name == "LABEL":
-                    print("execute cannot take labels.")
-                    return
-                elif op.name == "#include":
-                    print("execute cannot take #include.")
-                    return
-
-            ops, _ = load_program(argstr)
-        except SystemExit:
-            return
-
-        vm = self.debugger.vm
-        opc = vm.pc
-        for op in ops:
-            vm.exec_one(op)
-        vm.pc = opc
-
-    def handle_list(self, args):
-        if len(args) > 1:
-            print("list takes zero or one arguments.")
-            return
-
-        try:
-            context = int(args[0], base=0) if args else 3
-        except ValueError:
-            print("Could not parse argument to list.")
-            return
-
-        loc = self.debugger.program[self.debugger.vm.pc].name.location
-        self.print_range_of_ops(loc, context=context)
-
-    def handle_ll(self, args):
-        if len(args) != 0:
-            print("ll takes no arguments.")
-            return
-
-        loc = self.debugger.program[self.debugger.vm.pc].name.location
-        self.print_range_of_ops(loc)
-
-    def handle_continue(self, args):
-        if len(args) != 0:
-            print("continue takes no arguments.")
-            return
-
-        self.debugger.exec_ops(until=lambda dbg: dbg.vm.pc in dbg.breakpoints)
-        self.print_current_op()
-
-    def handle_restart(self, args):
-        if len(args) != 0:
-            print("restart takes no arguments.")
-            return
-
-        self.debugger.reset()
-        self.print_current_op()
-
-    def handle_info(self, args):
-        if len(args) != 0:
-            print("info takes no arguments.")
-            return
-
-        self.print_registers()
-        self.print_flags()
-        print()
-
-        constants = []
-        labels = []
-        dlabels = []
-        for key, val in self.debugger.symbol_table.items():
-            if isinstance(val, Label):
-                lineno = self.debugger.get_breakpoint_name(val, append_label=False)
-                labels.append("{} ({})".format(key, lineno))
-            elif isinstance(val, DataLabel):
-                dlabels.append("{} ({})".format(key, val))
-            else:
-                constants.append("{} ({})".format(key, val))
-
-        if constants:
-            print("Constants: " + ", ".join(constants))
-
-        if labels:
-            print("Labels: " + ", ".join(labels))
-
-        if dlabels:
-            print("Data labels: " + ", ".join(dlabels))
 
     def print_registers(self):
         nonzero = 0
