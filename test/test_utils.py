@@ -1,6 +1,14 @@
 import pytest
 
-from hera.utils import from_u16, register_to_index, to_u16, to_u32, _align_caret
+from hera.data import Op
+from hera.utils import (
+    from_u16,
+    op_to_string,
+    register_to_index,
+    to_u16,
+    to_u32,
+    _align_caret,
+)
 
 
 def test_to_u16_with_max_negative():
@@ -156,3 +164,11 @@ def test_register_to_index_with_invalid_register():
 
 def test_align_caret():
     assert _align_caret("\t\t  a", 5) == "\t\t  "
+
+
+def test_op_to_string():
+    assert op_to_string(Op("SET", ["R1", "top"])) == "SET(R1, top)"
+
+
+def test_op_to_string_with_integer():
+    assert op_to_string(Op("INC", ["R7", 12])) == "INC(R7, 12)"
