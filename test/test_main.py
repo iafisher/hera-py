@@ -132,3 +132,22 @@ Virtual machine state after execution:
 	Sign flag is OFF
 """
     )
+
+
+def test_no_ANSI_color_when_stderr_is_not_tty():
+    buf = StringIO()
+    with patch("sys.stderr", buf):
+        with patch("sys.stdin", StringIO(")")):
+            with pytest.raises(SystemExit):
+                main(["-"])
+
+    assert (
+        buf.getvalue()
+        == """\
+Error: unexpected character, line 1 col 1 of <stdin>
+
+  )
+  ^
+
+"""
+    )

@@ -38,7 +38,7 @@ def main(argv=None, vm=None):
     arguments = docopt(__doc__, argv=argv, version="hera-py 0.4.0 for HERA version 2.4")
     path = arguments["<path>"]
 
-    if arguments["--no-color"]:
+    if arguments["--no-color"] or not sys.stderr.isatty():
         config.ANSI_MAGENTA_BOLD = config.ANSI_RED_BOLD = config.ANSI_RESET = ""
 
     if arguments["preprocess"]:
