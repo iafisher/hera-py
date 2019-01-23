@@ -86,8 +86,12 @@ class Shell:
             self.handle_print(argstr)
         elif "restart".startswith(cmd):
             self.handle_restart(arglist)
+        elif cmd == "s":
+            print("s is ambiguous between skip and step.")
         elif "skip".startswith(cmd):
             self.handle_skip(arglist)
+        elif "step".startswith(cmd):
+            self.handle_step(arglist)
         elif "help".startswith(cmd):
             self.handle_help(arglist)
         elif "=" in response:
@@ -229,6 +233,19 @@ class Shell:
 
         self.print_current_op()
 
+    def handle_step(self, args):
+        if len(args) > 0:
+            print("step takes no arguments.")
+            return
+
+        if self.debugger.program[self.debugger.vm.pc].original.name != "CALL":
+            print("step is only valid when the current instruction is CALL.")
+            return
+
+        calls = self.debugger.calls
+        self.debugger.exec_ops(until=lambda dbg: dbg.calls == calls)
+        self.print_current_op()
+
     def handle_execute(self, argstr):
         try:
             # Make sure there are no disallowed ops.
@@ -283,7 +300,7 @@ class Shell:
             print("continue takes no arguments.")
             return
 
-        self.debugger.exec_ops(len(self.debugger.program))
+        self.debugger.exec_ops(until=lambda dbg: dbg.vm.pc in dbg.breakpoints)
         self.print_current_op()
 
     def handle_restart(self, args):
@@ -534,6 +551,8 @@ Available commands:
 
     skip <loc>      Skip ahead to the given location.
 
+    step            Step over the execution of a function.
+
     quit            Exit the debugger.
 
     <x> = <y>       Alias for "assign <x> <y>".
@@ -638,6 +657,11 @@ skip <loc>:
 
 skip +<n>:
   Skip the next `n` instructions without executing them.""",
+    # step
+    "step": """\
+step:
+  Step over the execution of a function. The step command is only valid when
+  the current instruction is CALL.""",
     # quit
     "quit": """\
 quit:

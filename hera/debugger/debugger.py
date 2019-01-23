@@ -35,6 +35,8 @@ class Debugger:
         # to human-readable line numbers.
         self.breakpoints = {}
         self.vm = VirtualMachine()
+        # How many CALLs without RETURNs?
+        self.calls = 0
 
     def get_breakpoints(self):
         return self.breakpoints
@@ -42,13 +44,24 @@ class Debugger:
     def set_breakpoint(self, b):
         self.breakpoints[b] = self.get_breakpoint_name(b)
 
-    def exec_ops(self, n):
+    def exec_ops(self, n=None, *, until=None):
+        if until is None:
+            until = lambda vm: False
+
+        if n is None:
+            n = len(self.program)
+
         for _ in range(n):
             real_ops = self.get_real_ops()
             for real_op in real_ops:
+                if real_op.name == "CALL":
+                    self.calls += 1
+                elif real_op.name == "RETURN":
+                    self.calls -= 1
+
                 self.vm.exec_one(real_op)
 
-            if self.is_finished() or self.vm.pc in self.breakpoints:
+            if self.is_finished() or until(self):
                 break
 
     def get_labels(self, index):

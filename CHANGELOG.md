@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `execute` debugging command.
 - The `info` debugging command.
 - The `assign` debugging command, and its alias `x = y`.
+- The `step` debugging command.
 - The debugging expresson mini-language.
 - A warning is printed when `R11` is used as the second argument of `NOT`.
 - A warning is printed when `CALL` and `RETURN` are used with atypical registers.

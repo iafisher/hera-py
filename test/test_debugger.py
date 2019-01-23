@@ -18,6 +18,10 @@ def debugger():
     return Debugger(SAMPLE_PROGRAM, SYMBOL_TABLE)
 
 
+def load_shell(program):
+    return Shell(Debugger(*load_program(program)))
+
+
 SAMPLE_PROGRAM, SYMBOL_TABLE = load_program(
     """\
 // A comment
@@ -250,7 +254,7 @@ def test_handle_skip_with_label(shell):
 
 def test_handle_skip_abbreviated(shell):
     with patch("hera.debugger.shell.Shell.handle_skip") as mock_handle_skip:
-        shell.handle_command("s 10")
+        shell.handle_command("sk 10")
         assert mock_handle_skip.call_count == 1
 
         args, kwargs = mock_handle_skip.call_args
@@ -590,7 +594,7 @@ def test_handle_help_with_multiple_args(shell, capsys):
 def test_handle_help_with_all_commands(shell, capsys):
     shell.handle_command(
         "help assign break continue execute help info list ll next print restart skip \
-         quit"
+         step quit"
     )
 
     assert "not a recognized command" not in capsys.readouterr().out
@@ -600,6 +604,69 @@ def test_handle_help_with_unknown_command(shell, capsys):
     shell.handle_command("help whatever")
 
     assert capsys.readouterr().out == "whatever is not a recognized command.\n"
+
+
+def test_handle_help_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_help") as mock_handle_help:
+        shell.handle_command("h break")
+        assert mock_handle_help.call_count == 1
+
+        args, kwargs = mock_handle_help.call_args
+        assert len(args) == 1
+        assert args[0] == ["break"]
+        assert len(kwargs) == 0
+
+
+def test_handle_step(capsys):
+    shell = load_shell(
+        """\
+SET(R1, 4)
+CALL(FP_alt, plus_two)
+SET(R2, 5)
+HALT()
+
+LABEL(plus_two)
+  INC(R1, 2)
+  RETURN(FP_alt, PC_ret)
+"""
+    )
+    shell.handle_command("n")
+    capsys.readouterr()
+    shell.handle_command("step")
+
+    assert shell.debugger.vm.pc == 5
+    assert shell.debugger.vm.registers[1] == 6
+    assert shell.debugger.vm.registers[2] == 0
+
+    captured = capsys.readouterr().out
+    assert captured == "3  SET(R2, 5)\n"
+
+
+def test_handle_step_not_on_CALL(shell, capsys):
+    shell.handle_command("step")
+
+    assert (
+        capsys.readouterr().out
+        == "step is only valid when the current instruction is CALL.\n"
+    )
+
+
+def test_handle_step_with_too_many_args(shell, capsys):
+    shell.handle_command("step 1")
+
+    assert capsys.readouterr().out == "step takes no arguments.\n"
+
+
+def test_handle_step_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_step") as mock_handle_step:
+        shell.handle_command("st")
+        assert mock_handle_step.call_count == 1
+
+
+def test_handle_command_s(shell, capsys):
+    shell.handle_command("s")
+
+    assert capsys.readouterr().out == "s is ambiguous between skip and step.\n"
 
 
 def test_handle_unknown_command(shell, capsys):
