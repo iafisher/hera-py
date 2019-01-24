@@ -23,7 +23,7 @@ def _make_ansi(*params):
 
 # ANSI color codes (https://stackoverflow.com/questions/4842424/)
 # When the --no-color flag is specified, these constants are set to the empty string, so
-# they can be used unconditionally in your code but will still obey the flag value.
+# you can use them unconditionally in your code without worrying about --no-color.
 
 ANSI_RED_BOLD = _make_ansi(31, 1)
 ANSI_MAGENTA_BOLD = _make_ansi(35, 1)

@@ -89,6 +89,8 @@ def convert(op: Op) -> List[Op]:
             Op("SETHI", ["R11", 0xFF]),
             Op("XOR", [op.args[0], "R11", op.args[1]]),
         ]
+    elif op.name == "TIGER_STRING":
+        new_ops = [Op("LP_STRING", [op.args[0]])]
     else:
         new_ops = [op]
     # Copy over the line and column information from the original token.

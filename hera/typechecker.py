@@ -209,7 +209,7 @@ def typecheck_op(op: Op, symbol_table: Dict[str, int]) -> bool:
     elif op.name == "INTEGER":
         assert_number_of_arguments(op, 1)
         n > 0 and assert_is_integer(op.args[0], symbol_table, bits=16, signed=True)
-    elif op.name in ("LP_STRING", "print", "println"):
+    elif op.name in ("LP_STRING", "TIGER_STRING", "print", "println"):
         assert_number_of_arguments(op, 1)
         n > 0 and assert_is_string(op.args[0])
     elif op.name == "DSKIP":

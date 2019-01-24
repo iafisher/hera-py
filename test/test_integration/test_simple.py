@@ -316,3 +316,15 @@ SET(R3, 84)
     assert vm.registers[1] == 7
     assert vm.registers[2] == 42
     assert vm.registers[3] == 84
+
+
+def test_TIGER_STRING_operation():
+    program = """\
+DLABEL(s)
+TIGER_STRING("hello")
+
+SET(R1, 42)
+    """
+    vm = execute_program_helper(program)
+
+    assert vm.registers[1] == 42

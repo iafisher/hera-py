@@ -141,6 +141,10 @@ def test_convert_not():
     ]
 
 
+def test_convert_TIGER_STRING():
+    assert convert(Op("TIGER_STRING", ["hello"])) == [Op("LP_STRING", ["hello"])]
+
+
 def test_preprocess_constant():
     program = [Op(Token("SYMBOL", "SET"), [R("R1"), Token("SYMBOL", "n")])]
     assert preprocess(program, {"n": 100}) == [
