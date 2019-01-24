@@ -164,6 +164,15 @@ Virtual machine state after execution:
     )
 
 
+def test_main_with_big_stack_flag(capsys):
+    program = "DLABEL(X)\nSET(R1, X)"
+    with patch("sys.stdin", StringIO(program)):
+        main(["--big-stack", "-"])
+
+    captured = capsys.readouterr().err
+    assert "R1  = 0xc167" in captured
+
+
 def test_no_ANSI_color_when_stderr_is_not_tty():
     buf = StringIO()
     with patch("sys.stderr", buf):

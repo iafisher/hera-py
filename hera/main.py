@@ -1,13 +1,14 @@
 """hera: an interpreter for the Haverford Educational RISC Architecture.
 
 Usage:
-    hera [-q | --verbose] [--no-color] <path>
+    hera [-q | --verbose] [--no-color] [--big-stack] <path>
     hera [--no-color] preprocess <path>
     hera [--no-color] debug <path>
     hera (-h | --help)
     hera (-v | --version)
 
 Options:
+    --big-stack      Reserve more space for the stack.
     --verbose        Set output level to verbose.
     -q --quiet       Set output level to quiet.
     --no-color       Do not print colored output.
@@ -40,6 +41,14 @@ def main(argv=None, vm=None):
 
     if arguments["--no-color"] or not sys.stderr.isatty():
         config.ANSI_MAGENTA_BOLD = config.ANSI_RED_BOLD = config.ANSI_RESET = ""
+
+    if arguments["--big-stack"]:
+        # Arbitrary value copied over from HERA-C.
+        config.HERA_DATA_START = 0xC167
+    else:
+        # Else case is necessary for test suite, to reset the value of HERA_DATA_START
+        # after any big-stack tests.
+        config.HERA_DATA_START = 0xC001
 
     if arguments["preprocess"]:
         main_preprocess(path)

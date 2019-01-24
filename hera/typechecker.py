@@ -9,7 +9,6 @@ from contextlib import suppress
 from typing import Dict, List
 
 from . import config
-from .config import HERA_DATA_START
 from .data import Op, Token
 from .utils import (
     BINARY_OPS,
@@ -79,7 +78,7 @@ def get_labels(program: List[Op]) -> Dict[str, int]:
     # correctly.
     constants = {}
     pc = 0
-    dc = HERA_DATA_START
+    dc = config.HERA_DATA_START
     for op in program:
         odc = dc
         if op.name == "LABEL":
