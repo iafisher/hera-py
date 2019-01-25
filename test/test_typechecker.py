@@ -395,19 +395,19 @@ def test_typecheck_STORE(state):
 
 def test_typecheck_CALL(state):
     assert typecheck_op(Op("CALL", [R("R12"), R("R11")]), {}, state)
-    assert typecheck_op(Op("CALL", [R("R12"), SYM("f")]), {"f": 0})
+    assert typecheck_op(Op("CALL", [R("R12"), SYM("f")]), {"f": 0}, state)
     assert len(state.errors) == 0
 
 
 def test_typecheck_RETURN(state):
     assert typecheck_op(Op("RETURN", [R("R12"), R("R11")]), {}, state)
-    assert typecheck_op(Op("RETURN", [R("R12"), SYM("f")]), {"f": 0})
+    assert typecheck_op(Op("RETURN", [R("R12"), SYM("f")]), {"f": 0}, state)
     assert len(state.errors) == 0
 
 
 def test_typecheck_BR(state):
     assert typecheck_op(Op("BR", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BR", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BR", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -419,7 +419,7 @@ def test_typecheck_BRR(state):
 
 def test_typecheck_BL(state):
     assert typecheck_op(Op("BL", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BL", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BL", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -431,7 +431,7 @@ def test_typecheck_BLR(state):
 
 def test_typecheck_BGE(state):
     assert typecheck_op(Op("BGE", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BGE", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BGE", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -443,7 +443,7 @@ def test_typecheck_BGER(state):
 
 def test_typecheck_BLE(state):
     assert typecheck_op(Op("BLE", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BLE", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BLE", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -455,7 +455,7 @@ def test_typecheck_BLER(state):
 
 def test_typecheck_BG(state):
     assert typecheck_op(Op("BG", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BG", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BG", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -467,7 +467,7 @@ def test_typecheck_BGR(state):
 
 def test_typecheck_BULE(state):
     assert typecheck_op(Op("BULE", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BULE", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BULE", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -479,7 +479,7 @@ def test_typecheck_BULER(state):
 
 def test_typecheck_BUG(state):
     assert typecheck_op(Op("BUG", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BUG", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BUG", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -491,7 +491,7 @@ def test_typecheck_BUGR(state):
 
 def test_typecheck_BZ(state):
     assert typecheck_op(Op("BZ", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BZ", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BZ", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -503,7 +503,7 @@ def test_typecheck_BZR(state):
 
 def test_typecheck_BNZ(state):
     assert typecheck_op(Op("BNZ", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BNZ", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BNZ", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -515,7 +515,7 @@ def test_typecheck_BNZR(state):
 
 def test_typecheck_BC(state):
     assert typecheck_op(Op("BC", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BC", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BC", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -527,7 +527,7 @@ def test_typecheck_BCR(state):
 
 def test_typecheck_BNC(state):
     assert typecheck_op(Op("BNC", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BNC", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BNC", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -539,7 +539,7 @@ def test_typecheck_BNCR(state):
 
 def test_typecheck_BS(state):
     assert typecheck_op(Op("BS", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BS", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BS", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -551,7 +551,7 @@ def test_typecheck_BSR(state):
 
 def test_typecheck_BNS(state):
     assert typecheck_op(Op("BNS", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BNS", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BNS", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -563,7 +563,7 @@ def test_typecheck_BNSR(state):
 
 def test_typecheck_BV(state):
     assert typecheck_op(Op("BV", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BV", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BV", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 
@@ -575,7 +575,7 @@ def test_typecheck_BVR(state):
 
 def test_typecheck_BNV(state):
     assert typecheck_op(Op("BNV", [R("R11")]), {}, state)
-    assert typecheck_op(Op("BNV", [SYM("l")]), {"l": 0})
+    assert typecheck_op(Op("BNV", [SYM("l")]), {"l": 0}, state)
     assert len(state.errors) == 0
 
 

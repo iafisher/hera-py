@@ -71,7 +71,7 @@ def parse(text: str, *, path=None, includes=True, state=State()) -> List[Op]:
     return ops
 
 
-def convert_tokens(ops: List[Op], base_location: Location, state=State()) -> None:
+def convert_tokens(ops: List[Op], base_location: Location, state: State) -> None:
     """Convert all tokens in the list of ops from Lark Token objects to HERA Token and
     IntToken objects, tagged with `base_location`.
     """
@@ -104,7 +104,7 @@ def convert_tokens(ops: List[Op], base_location: Location, state=State()) -> Non
         ops[i] = op._replace(name=name)
 
 
-def expand_includes(ops: List[Op], path: str, state=State()) -> List[Op]:
+def expand_includes(ops: List[Op], path: str, state: State) -> List[Op]:
     """Scan the list of ops and replace any #include "foo.hera" statement with the
     parsed contents of foo.hera.
 

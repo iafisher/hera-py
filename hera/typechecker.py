@@ -49,7 +49,7 @@ def typecheck(program: List[Op], state=State()) -> Dict[str, int]:
     return symbol_table
 
 
-def check_symbol_redeclaration(program: List[Op], state=State()):
+def check_symbol_redeclaration(program: List[Op], state: State):
     """Check if any symbols are redeclared in the program and emit error messages as
     appropriate.
     """
@@ -65,7 +65,7 @@ def check_symbol_redeclaration(program: List[Op], state=State()):
                 symbols.add(symbol)
 
 
-def get_labels(program: List[Op], state=State()) -> Dict[str, int]:
+def get_labels(program: List[Op], state: State) -> Dict[str, int]:
     """Return a dictionary mapping the labels and data labels (but not the constants) of
     the program to their concrete values.
     """
@@ -114,7 +114,7 @@ def get_labels(program: List[Op], state=State()) -> Dict[str, int]:
     return symbol_table
 
 
-def typecheck_op(op: Op, symbol_table: Dict[str, int], state=State()) -> bool:
+def typecheck_op(op: Op, symbol_table: Dict[str, int], state: State) -> bool:
     """Type-check a single HERA operation and emit error messages as appropriate."""
     n = len(op.args)
     nerrors = len(state.errors)
