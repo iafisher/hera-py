@@ -3,7 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from .data import DEFAULT_DATA_START, State
+from .data import State
 from .utils import (
     ALSU_OPS,
     ANSI_MAGENTA_BOLD,

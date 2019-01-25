@@ -414,7 +414,8 @@ class Shell:
                 if value in FLAG_LITERALS:
                     if rhs is not True and rhs is not False:
                         print(
-                            "Eval error: cannot assign non-boolean value to flag (use #t and #f instead)."
+                            "Eval error: cannot assign non-boolean value to flag "
+                            + "(use #t and #f instead)."
                         )
                         return
 

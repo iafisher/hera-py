@@ -7,7 +7,7 @@ Version: January 2019
 import sys
 from typing import Dict, List, Tuple
 
-from .data import HERAError, Op, State
+from .data import HERAError, Op
 from .parser import parse
 from .preprocessor import preprocess
 from .typechecker import typecheck
