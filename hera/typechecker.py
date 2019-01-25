@@ -122,7 +122,9 @@ def typecheck_op(op: Op, symbol_table: Dict[str, int], state=State()) -> bool:
     if op.name in ("SETLO", "SETHI"):
         assert_number_of_arguments(op, 2, state)
         n > 0 and assert_is_register(op.args[0], state)
-        n > 1 and assert_is_integer(op.args[1], symbol_table, state, bits=8, signed=True)
+        n > 1 and assert_is_integer(
+            op.args[1], symbol_table, state, bits=8, signed=True
+        )
     elif op.name in ("INC", "DEC"):
         assert_number_of_arguments(op, 2, state)
         n > 0 and assert_is_register(op.args[0], state)
@@ -146,14 +148,20 @@ def typecheck_op(op: Op, symbol_table: Dict[str, int], state=State()) -> bool:
         n > 0 and assert_is_register(op.args[0], state)
     elif op.name in ("FON", "FOFF", "FSET5"):
         assert_number_of_arguments(op, 1, state)
-        n > 0 and assert_is_integer(op.args[0], symbol_table, state, bits=5, signed=False)
+        n > 0 and assert_is_integer(
+            op.args[0], symbol_table, state, bits=5, signed=False
+        )
     elif op.name in ("FSET4", "SWI"):
         assert_number_of_arguments(op, 1, state)
-        n > 0 and assert_is_integer(op.args[0], symbol_table, state, bits=4, signed=False)
+        n > 0 and assert_is_integer(
+            op.args[0], symbol_table, state, bits=4, signed=False
+        )
     elif op.name in ("LOAD", "STORE"):
         assert_number_of_arguments(op, 3, state)
         n > 0 and assert_is_register(op.args[0], state)
-        n > 1 and assert_is_integer(op.args[1], symbol_table, state, bits=5, signed=False)
+        n > 1 and assert_is_integer(
+            op.args[1], symbol_table, state, bits=5, signed=False
+        )
         n > 2 and assert_is_register(op.args[2], state)
     elif op.name in ("CALL", "RETURN"):
         assert_number_of_arguments(op, 2, state)
@@ -195,23 +203,31 @@ def typecheck_op(op: Op, symbol_table: Dict[str, int], state=State()) -> bool:
     elif op.name == "SETRF":
         assert_number_of_arguments(op, 2, state)
         n > 0 and assert_is_register(op.args[0], state)
-        n > 1 and assert_is_integer(op.args[1], symbol_table, state, bits=16, signed=True)
+        n > 1 and assert_is_integer(
+            op.args[1], symbol_table, state, bits=16, signed=True
+        )
     elif op.name in ("LABEL", "DLABEL"):
         assert_number_of_arguments(op, 1, state)
         n > 0 and assert_is_label(op.args[0], state)
     elif op.name == "CONSTANT":
         assert_number_of_arguments(op, 2, state)
         n > 0 and assert_is_label(op.args[0], state)
-        n > 1 and assert_is_integer(op.args[1], symbol_table, state, bits=16, signed=True)
+        n > 1 and assert_is_integer(
+            op.args[1], symbol_table, state, bits=16, signed=True
+        )
     elif op.name == "INTEGER":
         assert_number_of_arguments(op, 1, state)
-        n > 0 and assert_is_integer(op.args[0], symbol_table, state, bits=16, signed=True)
+        n > 0 and assert_is_integer(
+            op.args[0], symbol_table, state, bits=16, signed=True
+        )
     elif op.name in ("LP_STRING", "TIGER_STRING", "print", "println"):
         assert_number_of_arguments(op, 1, state)
         n > 0 and assert_is_string(op.args[0], state)
     elif op.name == "DSKIP":
         assert_number_of_arguments(op, 1, state)
-        n > 0 and assert_is_integer(op.args[0], symbol_table, state, bits=16, signed=False)
+        n > 0 and assert_is_integer(
+            op.args[0], symbol_table, state, bits=16, signed=False
+        )
     else:
         state.error("unknown instruction `{}`".format(op.name), loc=op.name)
     return len(state.errors) == nerrors

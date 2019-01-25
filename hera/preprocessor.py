@@ -6,7 +6,7 @@ Version: January 2019
 from typing import Dict, List
 
 from .data import Op, Token, State
-from .utils import emit_error, is_symbol, REGISTER_BRANCHES, RELATIVE_BRANCHES, to_u16
+from .utils import is_symbol, REGISTER_BRANCHES, RELATIVE_BRANCHES, to_u16
 
 
 def preprocess(
@@ -31,7 +31,7 @@ def preprocess(
             target = symbol_table[op.args[0]]
             jump = target - pc
             if jump < -128 or jump >= 128:
-                emit_error("label is too far for a relative branch", loc=op.args[0])
+                state.error("label is too far for a relative branch", loc=op.args[0])
             else:
                 op.args[0] = jump
         else:

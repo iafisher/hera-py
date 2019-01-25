@@ -3,7 +3,7 @@ import re
 from io import StringIO
 from unittest.mock import patch
 
-from hera.data import Op
+from hera.data import Op, State
 from hera.main import dump_state, main, main_preprocess, program_to_string
 from hera.vm import VirtualMachine
 
@@ -18,7 +18,7 @@ def test_program_to_string():
 
 
 def test_dump_state(capsys):
-    dump_state(VirtualMachine(), verbose=True)
+    dump_state(VirtualMachine(), State(), verbose=True)
 
     assert (
         capsys.readouterr().err

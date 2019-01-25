@@ -75,8 +75,7 @@ def test_assert_is_register_with_PC(state):
 
     assert len(state.errors) == 1
     assert (
-        "program counter cannot be accessed or changed directly"
-        in state.errors[0][0]
+        "program counter cannot be accessed or changed directly" in state.errors[0][0]
     )
 
 
@@ -113,8 +112,7 @@ def test_assert_is_register_or_label_with_PC(state):
 
     assert len(state.errors) == 1
     assert (
-        "program counter cannot be accessed or changed directly"
-        in state.errors[0][0]
+        "program counter cannot be accessed or changed directly" in state.errors[0][0]
     )
 
 
@@ -142,10 +140,7 @@ def test_assert_is_register_or_label_with_data_label(state):
     assert not assert_is_register_or_label(SYM("n"), {"n": DataLabel(16000)}, state)
 
     assert len(state.errors) == 1
-    assert (
-        "data label cannot be used as branch label"
-        in state.errors[0][0]
-    )
+    assert "data label cannot be used as branch label" in state.errors[0][0]
 
 
 def test_assert_is_register_or_label_with_constant(state):
@@ -232,7 +227,9 @@ def test_assert_is_integer_with_label(state):
 
 
 def test_assert_is_integer_with_disallowed_label(state):
-    assert not assert_is_integer(SYM("n"), {"n": Label(10)}, state, bits=16, signed=True)
+    assert not assert_is_integer(
+        SYM("n"), {"n": Label(10)}, state, bits=16, signed=True
+    )
 
     assert len(state.errors) == 1
     assert "cannot use label as constant" in state.errors[0][0]

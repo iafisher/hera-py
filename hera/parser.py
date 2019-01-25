@@ -111,8 +111,6 @@ def expand_includes(ops: List[Op], path: str, state=State()) -> List[Op]:
     `path` is the path of the including file, which is necessary for determining the
     correct base path, e.g. #include "lib.hera" in foo/main.hera resolves to
     foo/lib.hera, but #include "lib.hera" in bar/main.hera resolves to bar/lib.hera.
-
-    `visited` is the set of file paths that have already been visited.
     """
     expanded_ops = []
     for op in ops:

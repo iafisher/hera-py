@@ -4,6 +4,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
 from .config import HERA_DATA_START
+from .data import State
 from .utils import (
     ALSU_OPS,
     BRANCHES,
@@ -52,6 +53,7 @@ class VirtualMachine:
         self.warned_for_SWI = False
         self.warned_for_RTI = False
         self.warned_for_overflow = False
+        self.warning_count = 0
 
     def exec_many(self, program):
         """Execute a program (i.e., a list of operations), resetting the machine's
@@ -118,6 +120,7 @@ class VirtualMachine:
                     print_warning(
                         "stack has overflowed into data segment", loc=self.location
                     )
+                    self.warning_count += 1
                     self.warned_for_overflow = True
 
     def set_zero_and_sign(self, value):
@@ -387,12 +390,14 @@ class VirtualMachine:
     def exec_SWI(self, i):
         if not self.warned_for_SWI:
             print_warning("SWI is a no-op in this simulator", loc=self.location)
+            self.warning_count += 1
             self.warned_for_SWI = True
         self.pc += 1
 
     def exec_RTI(self):
         if not self.warned_for_RTI:
             print_warning("RTI is a no-op in this simulator", loc=self.location)
+            self.warning_count += 1
             self.warned_for_RTI = True
         self.pc += 1
 

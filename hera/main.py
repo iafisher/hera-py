@@ -21,9 +21,10 @@ import functools
 from docopt import docopt
 
 from . import config
+from .data import State
 from .debugger import debug
 from .loader import load_program_from_file
-from .utils import op_to_string, print_register_debug
+from .utils import handle_errors, op_to_string, print_register_debug
 from .vm import VirtualMachine
 
 
@@ -62,7 +63,7 @@ def main(argv=None, vm=None):
 
 def main_debug(path):
     """Debug the program."""
-    program, symbol_table = load_program_from_file(path)
+    program, symbol_table = load_program_from_file(path, State())
     debug(program, symbol_table)
 
 
@@ -73,24 +74,24 @@ def main_execute(path, *, verbose=False, quiet=False, vm=None):
     A virtual machine instance may be passed in for testing purposes. If it is not, a
     new one is instantiated. The virtual machine is returned.
     """
-    config.WARNING_COUNT = 0
-
     if vm is None:
         vm = VirtualMachine()
 
-    program, _ = load_program_from_file(path)
+    state = State()
+    program, _ = load_program_from_file(path, state)
 
     vm.exec_many(program)
+    state.warning_count += vm.warning_count
 
     if not quiet:
-        dump_state(vm, verbose=verbose)
+        dump_state(vm, state, verbose=verbose)
 
     return vm
 
 
 def main_preprocess(path):
     """Preprocess the program and print it to standard output."""
-    program, _ = load_program_from_file(path)
+    program, _ = load_program_from_file(path, State())
     print(program_to_string(program))
 
 
@@ -99,7 +100,7 @@ def program_to_string(ops):
     return "\n".join(op_to_string(op) for op in ops)
 
 
-def dump_state(vm, *, verbose=False):
+def dump_state(vm, state, *, verbose=False):
     """Print the state of the virtual machine to standard output."""
     sys.stdout.flush()
 
@@ -141,6 +142,6 @@ def dump_state(vm, *, verbose=False):
         nprint("\tZero flag is " + ("ON" if vm.flag_zero else "OFF"))
         nprint("\tSign flag is " + ("ON" if vm.flag_sign else "OFF"))
 
-    if config.WARNING_COUNT > 0:
-        c = config.WARNING_COUNT
+    if state.warning_count > 0:
+        c = state.warning_count
         nprint("\n{} warning{} emitted.".format(c, "" if c == 1 else "s"))

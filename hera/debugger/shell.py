@@ -10,13 +10,14 @@ from .minilanguage import (
     RegisterNode,
     SymbolNode,
 )
-from hera.data import HERAError, Op
+from hera.data import HERAError, Op, State
 from hera.loader import load_program
 from hera.parser import parse
 from hera.typechecker import Constant, DataLabel, Label
 from hera.utils import (
     BRANCHES,
     DATA_STATEMENTS,
+    handle_errors,
     op_to_string,
     pad,
     print_register_debug,
@@ -132,23 +133,25 @@ class Shell:
         self.print_current_op()
 
     def handle_execute(self, argstr):
-        try:
-            # Make sure there are no disallowed ops.
-            for op in parse(argstr, includes=False):
-                if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
-                    print("execute cannot take branching operations.")
-                    return
-                elif op.name in DATA_STATEMENTS:
-                    print("execute cannot take data statements.")
-                    return
-                elif op.name == "LABEL":
-                    print("execute cannot take labels.")
-                    return
-                elif op.name == "#include":
-                    print("execute cannot take #include.")
-                    return
+        # Make sure there are no disallowed ops.
+        for op in parse(argstr, includes=False):
+            if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
+                print("execute cannot take branching operations.")
+                return
+            elif op.name in DATA_STATEMENTS:
+                print("execute cannot take data statements.")
+                return
+            elif op.name == "LABEL":
+                print("execute cannot take labels.")
+                return
+            elif op.name == "#include":
+                print("execute cannot take #include.")
+                return
 
-            ops, _ = load_program(argstr)
+        state = State()
+        ops, _ = load_program(argstr, state)
+        try:
+            handle_errors(state)
         except SystemExit:
             return
 

@@ -100,15 +100,6 @@ UNARY_OPS = set(["LSL", "LSR", "LSL8", "LSR8", "ASL", "ASR"])
 ALSU_OPS = BINARY_OPS | UNARY_OPS
 
 
-def emit_error(msg, *, loc=None):
-    """Register an error, to be printed at a later time.
-
-    `loc` is either a Location or a Token object. If provided, the location and line of
-    code will be indicated in the error message.
-    """
-    config.ERRORS.append((msg, loc))
-
-
 def print_warning(msg, *, loc=None):
     """Print a warning message to stderr.
 
@@ -116,7 +107,6 @@ def print_warning(msg, *, loc=None):
     code is indicated in the warning message.
     """
     msg = config.ANSI_MAGENTA_BOLD + "Warning" + config.ANSI_RESET + ": " + msg
-    config.WARNING_COUNT += 1
     print_message_with_location(msg, loc=loc)
 
 
@@ -180,3 +170,18 @@ def read_file(path) -> str:
 
 def pad(s, n):
     return (" " * (n - len(s))) + s
+
+
+def handle_errors(state):
+    for msg, loc in state.warnings:
+        print_warning(msg, loc=loc)
+
+    state.warning_count += len(state.warnings)
+    state.warnings.clear()
+
+    for msg, loc in state.errors:
+        msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
+        print_message_with_location(msg, loc=loc)
+
+    if state.errors:
+        sys.exit(3)
