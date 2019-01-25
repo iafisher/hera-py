@@ -86,12 +86,8 @@ def main_execute(path, state, *, verbose=False, quiet=False):
 def main_preprocess(path, state):
     """Preprocess the program and print it to standard output."""
     program, _ = load_program_from_file(path, state)
-    print(program_to_string(program), file=sys.stderr)
-
-
-def program_to_string(ops):
-    """Convert the list of operations to a string."""
-    return "\n".join(op_to_string(op) for op in ops)
+    for i, op in enumerate(program):
+        print("  {:0>4}  {}".format(i, op_to_string(op)), file=sys.stderr)
 
 
 def dump_state(vm, state, *, verbose=False):

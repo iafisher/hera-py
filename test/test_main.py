@@ -4,17 +4,8 @@ from io import StringIO
 from unittest.mock import patch
 
 from hera.data import Op, State
-from hera.main import dump_state, main, main_preprocess, program_to_string
+from hera.main import dump_state, main, main_preprocess
 from hera.vm import VirtualMachine
-
-
-def test_program_to_string():
-    program = [
-        Op("SET", ["R1", 20]),
-        Op("SET", ["R2", 22]),
-        Op("ADD", ["R3", "R1", "R2"]),
-    ]
-    assert program_to_string(program) == "SET(R1, 20)\nSET(R2, 22)\nADD(R3, R1, R2)"
 
 
 def test_dump_state(capsys):
@@ -63,7 +54,14 @@ def test_main_preprocess(capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert captured.err == "\nSETLO(R1, 10)\nSETHI(R1, 0)\n"
+    assert (
+        captured.err
+        == """\
+
+  0000  SETLO(R1, 10)
+  0001  SETHI(R1, 0)
+"""
+    )
 
 
 def test_main_preprocess_non_existent_file(capsys):
@@ -93,7 +91,30 @@ def test_preprocess_from_stdin(capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert captured.err == "\nSETLO(R1, 42)\nSETHI(R1, 0)\n"
+    assert (
+        captured.err
+        == """\
+
+  0000  SETLO(R1, 42)
+  0001  SETHI(R1, 0)
+"""
+    )
+
+
+def test_preprocess_output_with_string(capsys):
+    # TODO: This is wrong. See #87.
+    with patch("sys.stdin", StringIO('LP_STRING("hello")')):
+        main(["preprocess", "-"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert (
+        captured.err
+        == """\
+
+  0000  LP_STRING('hello')
+"""
+    )
 
 
 def test_main_with_short_version_flag(capsys):
