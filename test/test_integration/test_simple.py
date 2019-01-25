@@ -318,18 +318,6 @@ SET(R3, 84)
     assert vm.registers[3] == 84
 
 
-def test_TIGER_STRING_operation():
-    program = """\
-DLABEL(s)
-TIGER_STRING("hello")
-
-SET(R1, 42)
-    """
-    vm = execute_program_helper(program)
-
-    assert vm.registers[1] == 42
-
-
 def test_no_extraneous_output(capsys):
     execute_program_helper("SET(R1, 42)")
 
@@ -346,3 +334,23 @@ Virtual machine state after execution:
 	All flags are OFF
 """
     )
+
+
+def test_two_TIGER_STRING_ops():
+    program = """\
+DLABEL(s1) TIGER_STRING("hello")
+DLABEL(s2) TIGER_STRING("world")
+
+SET(R1, s1)
+SET(R2, s2)
+    """
+    vm = execute_program_helper(program)
+
+    s1_addr = vm.registers[1]
+    s2_addr = vm.registers[2]
+    assert vm.access_memory(s1_addr) == 5
+    assert vm.access_memory(s2_addr) == 5
+
+    for i in range(5):
+        assert vm.access_memory(s1_addr + i + 1) == ord("hello"[i])
+        assert vm.access_memory(s2_addr + i + 1) == ord("world"[i])

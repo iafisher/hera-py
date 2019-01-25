@@ -95,7 +95,7 @@ def get_labels(program: List[Op], state: State) -> Dict[str, int]:
                     constants[op.args[0]] = Constant(op.args[1])
         elif op.name == "INTEGER":
             dc += 1
-        elif op.name == "LP_STRING":
+        elif op.name == "LP_STRING" or op.name == "TIGER_STRING":
             if len(op.args) == 1 and isinstance(op.args[0], str):
                 dc += len(op.args[0]) + 1
         elif op.name == "DSKIP":

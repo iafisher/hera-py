@@ -23,7 +23,7 @@ from docopt import docopt
 from .data import State
 from .debugger import debug
 from .loader import load_program_from_file
-from .utils import op_to_string, print_register_debug
+from .utils import DATA_STATEMENTS, op_to_string, print_register_debug
 from .vm import VirtualMachine
 
 
@@ -86,8 +86,22 @@ def main_execute(path, state, *, verbose=False, quiet=False):
 def main_preprocess(path, state):
     """Preprocess the program and print it to standard output."""
     program, _ = load_program_from_file(path, state)
-    for i, op in enumerate(program):
-        print("  {:0>4}  {}".format(i, op_to_string(op)), file=sys.stderr)
+    if program and program[0].name in DATA_STATEMENTS:
+        sys.stderr.write("[DATA]\n")
+        i = 0
+        while i < len(program) and program[i].name in DATA_STATEMENTS:
+            sys.stderr.write("  {}\n".format(op_to_string(program[i])))
+            i += 1
+
+        if i < len(program):
+            sys.stderr.write("\n[CODE]\n")
+
+        start = i
+    else:
+        start = 0
+
+    for i, op in enumerate(program[start:]):
+        sys.stderr.write("  {:0>4}  {}\n".format(i, op_to_string(op)))
 
 
 def dump_state(vm, state, *, verbose=False):

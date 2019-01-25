@@ -112,7 +112,8 @@ def test_preprocess_output_with_string(capsys):
         captured.err
         == """\
 
-  0000  LP_STRING('hello')
+[DATA]
+  LP_STRING('hello')
 """
     )
 
