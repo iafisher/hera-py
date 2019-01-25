@@ -79,10 +79,8 @@ def test_main_debug(capsys):
 
 
 def test_execute_from_stdin():
-    vm = VirtualMachine()
-
     with patch("sys.stdin", StringIO("SET(R1, 42)")):
-        main(["-"], vm)
+        vm = main(["-"])
 
     assert vm.registers[1] == 42
 

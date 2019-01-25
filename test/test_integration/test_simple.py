@@ -1,4 +1,4 @@
-from hera.config import HERA_DATA_START
+from hera.data import DEFAULT_DATA_START
 from .utils import execute_program_helper
 
 
@@ -166,7 +166,7 @@ LOAD(R2, 0, R1)
     """
     vm = execute_program_helper(program)
 
-    assert vm.registers[1] == HERA_DATA_START
+    assert vm.registers[1] == DEFAULT_DATA_START
     assert vm.registers[2] == 42
 
     for r in vm.registers[3:]:
@@ -178,7 +178,7 @@ LOAD(R2, 0, R1)
     assert not vm.flag_carry
     assert not vm.flag_carry_block
 
-    assert vm.memory[HERA_DATA_START] == 42
+    assert vm.memory[DEFAULT_DATA_START] == 42
 
     assert "Warning" not in capsys.readouterr().err
 
@@ -196,7 +196,7 @@ LOAD(R3, 11, R1)
     """
     vm = execute_program_helper(program)
 
-    assert vm.registers[1] == HERA_DATA_START
+    assert vm.registers[1] == DEFAULT_DATA_START
     assert vm.registers[2] == 42
     assert vm.registers[3] == 84
 
@@ -209,8 +209,8 @@ LOAD(R3, 11, R1)
     assert not vm.flag_carry
     assert not vm.flag_carry_block
 
-    assert vm.memory[HERA_DATA_START] == 42
-    assert vm.memory[HERA_DATA_START + 11] == 84
+    assert vm.memory[DEFAULT_DATA_START] == 42
+    assert vm.memory[DEFAULT_DATA_START + 11] == 84
 
     assert "Warning" not in capsys.readouterr().err
 

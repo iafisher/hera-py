@@ -20,7 +20,6 @@ import functools
 
 from docopt import docopt
 
-from . import config
 from .data import State
 from .debugger import debug
 from .loader import load_program_from_file
@@ -28,58 +27,46 @@ from .utils import handle_errors, op_to_string, print_register_debug
 from .vm import VirtualMachine
 
 
-def main(argv=None, vm=None):
+def main(argv=None):
     """The main entry point into hera-py.
 
     This function consists mostly of argument parsing. The heavy-lifting begins
     with main_execute later in this module.
-
-    A virtual machine may be passed in for testing purposes. Otherwise, a new virtual
-    machine is created.
     """
     arguments = docopt(__doc__, argv=argv, version="hera-py 0.4.0 for HERA version 2.4")
     path = arguments["<path>"]
 
+    state = State()
     if arguments["--no-color"] or not sys.stderr.isatty():
-        config.ANSI_MAGENTA_BOLD = config.ANSI_RED_BOLD = config.ANSI_RESET = ""
+        state.color = False
 
     if arguments["--big-stack"]:
         # Arbitrary value copied over from HERA-C.
-        config.HERA_DATA_START = 0xC167
-    else:
-        # Else case is necessary for test suite, to reset the value of HERA_DATA_START
-        # after any big-stack tests.
-        config.HERA_DATA_START = 0xC001
+        state.data_start = 0xC167
 
     if arguments["preprocess"]:
-        main_preprocess(path)
+        main_preprocess(path, state)
     elif arguments["debug"]:
-        main_debug(path)
+        main_debug(path, state)
     else:
-        main_execute(
-            path, verbose=arguments["--verbose"], quiet=arguments["--quiet"], vm=vm
+        return main_execute(
+            path, state, verbose=arguments["--verbose"], quiet=arguments["--quiet"]
         )
 
 
-def main_debug(path):
+def main_debug(path, state):
     """Debug the program."""
-    program, symbol_table = load_program_from_file(path, State())
+    program, symbol_table = load_program_from_file(path, state)
     debug(program, symbol_table)
 
 
-def main_execute(path, *, verbose=False, quiet=False, vm=None):
+def main_execute(path, state, *, verbose=False, quiet=False):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
-
-    A virtual machine instance may be passed in for testing purposes. If it is not, a
-    new one is instantiated. The virtual machine is returned.
     """
-    if vm is None:
-        vm = VirtualMachine()
-
-    state = State()
     program, _ = load_program_from_file(path, state)
 
+    vm = VirtualMachine(state)
     vm.exec_many(program)
     state.warning_count += vm.warning_count
 
@@ -89,9 +76,9 @@ def main_execute(path, *, verbose=False, quiet=False, vm=None):
     return vm
 
 
-def main_preprocess(path):
+def main_preprocess(path, state):
     """Preprocess the program and print it to standard output."""
-    program, _ = load_program_from_file(path, State())
+    program, _ = load_program_from_file(path, state)
     print(program_to_string(program))
 
 

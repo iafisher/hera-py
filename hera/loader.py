@@ -7,7 +7,6 @@ Version: January 2019
 import sys
 from typing import Dict, List, Tuple
 
-from . import config
 from .data import HERAError, Op, State
 from .parser import parse
 from .preprocessor import preprocess

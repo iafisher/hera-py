@@ -8,7 +8,6 @@ Version: January 2019
 from contextlib import suppress
 from typing import Dict, List
 
-from . import config
 from .data import Op, State, Token
 from .utils import (
     BINARY_OPS,
@@ -76,7 +75,7 @@ def get_labels(program: List[Op], state=State()) -> Dict[str, int]:
     # correctly.
     constants = {}
     pc = 0
-    dc = config.HERA_DATA_START
+    dc = state.data_start
     for op in program:
         odc = dc
         if op.name == "LABEL":

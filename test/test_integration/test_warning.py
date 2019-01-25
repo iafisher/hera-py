@@ -1,4 +1,3 @@
-from hera import config
 from .utils import execute_program_helper
 
 
@@ -68,9 +67,6 @@ Virtual machine state after execution:
 
 
 def test_warning_for_zero_prefixed_octal(capsys):
-    # TODO: This is messy.
-    config.WARNED_FOR_OCTAL = False
-
     execute_program_helper("SET(R1, 016)\nSET(R2, 017)")
 
     captured = capsys.readouterr().err

@@ -12,11 +12,15 @@ Version: December 2018
 from collections import namedtuple
 
 
+DEFAULT_DATA_START = 0xC001
+
+
 class State:
     """The global state of the interpreter."""
 
     def __init__(self):
         self.color = True
+        self.data_start = DEFAULT_DATA_START
         self.warning_count = 0
         self.warned_for_octal = False
         self.visited = set()

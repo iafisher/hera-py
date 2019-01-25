@@ -3,6 +3,7 @@ import pytest
 from hera.data import Op
 from hera.utils import (
     from_u16,
+    make_ansi,
     op_to_string,
     register_to_index,
     to_u16,
@@ -172,3 +173,11 @@ def test_op_to_string():
 
 def test_op_to_string_with_integer():
     assert op_to_string(Op("INC", ["R7", 12])) == "INC(R7, 12)"
+
+
+def test_make_ansi_red():
+    assert make_ansi(31, 1) == "\033[31;1m"
+
+
+def test_make_ansi_reset():
+    assert make_ansi(0) == "\033[0m"

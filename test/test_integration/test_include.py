@@ -1,13 +1,11 @@
 import pytest
 
-from hera.config import HERA_DATA_START
 from hera.main import main
 from hera.vm import VirtualMachine
 
 
 def test_simple_include_program():
-    vm = VirtualMachine()
-    main(["test/assets/include/simple.hera"], vm)
+    vm = main(["test/assets/include/simple.hera"])
 
     assert vm.registers[1] == 20
     assert vm.registers[2] == 22

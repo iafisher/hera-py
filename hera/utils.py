@@ -6,7 +6,6 @@ Version: December 2018
 import os.path
 import sys
 
-from . import config
 from .data import HERAError, IntToken, Location, Token
 
 
@@ -100,16 +99,6 @@ UNARY_OPS = set(["LSL", "LSR", "LSL8", "LSR8", "ASL", "ASR"])
 ALSU_OPS = BINARY_OPS | UNARY_OPS
 
 
-def print_warning(msg, *, loc=None):
-    """Print a warning message to stderr.
-
-    `loc` is either a Location or a Token object. If provided, the location and line of
-    code is indicated in the warning message.
-    """
-    msg = config.ANSI_MAGENTA_BOLD + "Warning" + config.ANSI_RESET + ": " + msg
-    print_message_with_location(msg, loc=loc)
-
-
 def print_message_with_location(msg, *, loc=None):
     """Print a message to stderr. If `loc` is provided as either a Location object, or
     a Token object with a `location` field, then the line of code that the location
@@ -174,14 +163,35 @@ def pad(s, n):
 
 def handle_errors(state):
     for msg, loc in state.warnings:
-        print_warning(msg, loc=loc)
+        if state.color:
+            msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
+        else:
+            msg = "Warning: " + msg
+        print_message_with_location(msg, loc=loc)
 
     state.warning_count += len(state.warnings)
     state.warnings.clear()
 
     for msg, loc in state.errors:
-        msg = config.ANSI_RED_BOLD + "Error" + config.ANSI_RESET + ": " + msg
+        if state.color:
+            msg = ANSI_RED_BOLD + "Error" + ANSI_RESET + ": " + msg
+        else:
+            msg = "Error: " + msg
         print_message_with_location(msg, loc=loc)
 
     if state.errors:
         sys.exit(3)
+
+
+# ANSI color codes (https://stackoverflow.com/questions/4842424/)
+# When the --no-color flag is specified, these constants are set to the empty string, so
+# you can use them unconditionally in your code without worrying about --no-color.
+
+
+def make_ansi(*params):
+    return "\033[" + ";".join(map(str, params)) + "m"
+
+
+ANSI_RED_BOLD = make_ansi(31, 1)
+ANSI_MAGENTA_BOLD = make_ansi(35, 1)
+ANSI_RESET = make_ansi(0)

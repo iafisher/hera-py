@@ -1,11 +1,10 @@
-from hera.config import HERA_DATA_START
+from hera.data import DEFAULT_DATA_START
 from hera.main import main
 from hera.vm import VirtualMachine
 
 
 def test_aslu_program(capsys):
-    vm = VirtualMachine()
-    main(["test/assets/cs240/aslu.hera"], vm)
+    vm = main(["test/assets/cs240/aslu.hera"])
 
     assert vm.registers[1] == 0xBFF2
     assert vm.registers[2] == 0xF000
@@ -28,8 +27,7 @@ def test_aslu_program(capsys):
 
 
 def test_branches_program():
-    vm = VirtualMachine()
-    main(["test/assets/cs240/branches.hera"], vm)
+    vm = main(["test/assets/cs240/branches.hera"])
 
     assert vm.registers[1] == 1
     assert vm.registers[2] == 2
@@ -51,8 +49,7 @@ def test_branches_program():
 
 
 def test_fibonacci_program():
-    vm = VirtualMachine()
-    main(["test/assets/cs240/fib.hera"], vm)
+    vm = main(["test/assets/cs240/fib.hera"])
 
     assert vm.registers[1] == 0
     assert vm.registers[2] == 0
@@ -75,8 +72,7 @@ def test_fibonacci_program():
 
 
 def test_flag_program():
-    vm = VirtualMachine()
-    main(["test/assets/cs240/flag.hera"], vm)
+    vm = main(["test/assets/cs240/flag.hera"])
 
     assert vm.registers[1] == 0x0015
     assert vm.registers[2] == 0x0000
@@ -99,8 +95,7 @@ def test_flag_program():
 
 
 def test_stein_program():
-    vm = VirtualMachine()
-    main(["test/assets/cs240/stein.hera"], vm)
+    vm = main(["test/assets/cs240/stein.hera"])
 
     assert vm.registers[1] == 1
     assert vm.registers[2] == 1
@@ -120,8 +115,7 @@ def test_stein_program():
 
 
 def test_factorial_program(capsys):
-    vm = VirtualMachine()
-    main(["test/assets/cs240/factorial.hera"], vm)
+    vm = main(["test/assets/cs240/factorial.hera"])
 
     assert vm.registers[1] == 7
     assert vm.registers[2] == 5040
@@ -139,8 +133,7 @@ def test_factorial_program(capsys):
 
 
 def test_extended_stein_program():
-    vm = VirtualMachine()
-    main(["test/assets/cs240/extended_stein.hera"], vm)
+    vm = main(["test/assets/cs240/extended_stein.hera"])
 
     assert vm.registers[1] == 0x001
     assert vm.registers[2] == 0x001
@@ -163,8 +156,7 @@ def test_extended_stein_program():
 
 
 def test_call_and_return_program(capsys):
-    vm = VirtualMachine()
-    main(["test/assets/cs240/call_and_return.hera"], vm)
+    vm = main(["test/assets/cs240/call_and_return.hera"])
 
     assert vm.registers[1] == 0x0009
     assert vm.registers[2] == 0x0013
@@ -182,8 +174,7 @@ def test_call_and_return_program(capsys):
 
 
 def test_array_program():
-    vm = VirtualMachine()
-    main(["test/assets/cs240/array.hera"], vm)
+    vm = main(["test/assets/cs240/array.hera"])
 
     assert vm.registers[5] == 5050
 
@@ -197,5 +188,5 @@ def test_array_program():
     assert not vm.flag_carry_block
 
     for i in range(100):
-        assert vm.memory[HERA_DATA_START + i] == i + 1
-    assert vm.memory[HERA_DATA_START + 100] == 5050
+        assert vm.memory[DEFAULT_DATA_START + i] == i + 1
+    assert vm.memory[DEFAULT_DATA_START + 100] == 5050

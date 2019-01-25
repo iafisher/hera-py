@@ -3,15 +3,16 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from .config import HERA_DATA_START
-from .data import State
+from .data import DEFAULT_DATA_START, State
 from .utils import (
     ALSU_OPS,
+    ANSI_MAGENTA_BOLD,
+    ANSI_RESET,
     BRANCHES,
     DATA_STATEMENTS,
     from_u16,
+    print_message_with_location,
     print_register_debug,
-    print_warning,
     REGISTER_BRANCHES,
     register_to_index,
     to_u16,
@@ -22,7 +23,8 @@ from .utils import (
 class VirtualMachine:
     """An abstract representation of a HERA processor."""
 
-    def __init__(self):
+    def __init__(self, state=State()):
+        self.state = state
         self.reset()
 
     def reset(self):
@@ -35,7 +37,7 @@ class VirtualMachine:
         # 16-bit program counter
         self.pc = 0
         # Current memory cell for data instructions
-        self.dc = HERA_DATA_START
+        self.dc = self.state.data_start
         # Status/control flags
         self.flag_sign = False
         self.flag_zero = False
@@ -115,12 +117,11 @@ class VirtualMachine:
         index = register_to_index(target)
         if index != 0:
             self.registers[index] = value
-            if index == 15 and value >= HERA_DATA_START:
+            if index == 15 and value >= self.state.data_start:
                 if not self.warned_for_overflow:
-                    print_warning(
+                    self.print_warning(
                         "stack has overflowed into data segment", loc=self.location
                     )
-                    self.warning_count += 1
                     self.warned_for_overflow = True
 
     def set_zero_and_sign(self, value):
@@ -389,15 +390,13 @@ class VirtualMachine:
 
     def exec_SWI(self, i):
         if not self.warned_for_SWI:
-            print_warning("SWI is a no-op in this simulator", loc=self.location)
-            self.warning_count += 1
+            self.print_warning("SWI is a no-op in this simulator", loc=self.location)
             self.warned_for_SWI = True
         self.pc += 1
 
     def exec_RTI(self):
         if not self.warned_for_RTI:
-            print_warning("RTI is a no-op in this simulator", loc=self.location)
-            self.warning_count += 1
+            self.print_warning("RTI is a no-op in this simulator", loc=self.location)
             self.warned_for_RTI = True
         self.pc += 1
 
@@ -430,3 +429,11 @@ class VirtualMachine:
     def exec_println(self, target):
         print(target)
         self.pc += 1
+
+    def print_warning(self, msg, loc):
+        if self.state.color:
+            msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
+        else:
+            msg = "Warning: " + msg
+        print_message_with_location(msg, loc=loc)
+        self.warning_count += 1

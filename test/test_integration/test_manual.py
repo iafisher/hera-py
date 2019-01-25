@@ -2,7 +2,7 @@
 
 TODO: Check these results against HERA-C.
 """
-from hera.config import HERA_DATA_START
+from hera.data import DEFAULT_DATA_START
 from hera.utils import to_u16
 from .utils import execute_program_helper
 
@@ -131,13 +131,13 @@ HALT()
     """
     vm = execute_program_helper(program)
 
-    assert vm.registers[1] == HERA_DATA_START
+    assert vm.registers[1] == DEFAULT_DATA_START
     assert vm.registers[2] == 42
     assert vm.registers[3] == 4
 
-    assert vm.memory[HERA_DATA_START] == 42
-    assert vm.memory[HERA_DATA_START + 1] == 17
-    assert vm.memory[HERA_DATA_START + 2] == 4
+    assert vm.memory[DEFAULT_DATA_START] == 42
+    assert vm.memory[DEFAULT_DATA_START + 1] == 17
+    assert vm.memory[DEFAULT_DATA_START + 2] == 4
 
 
 def test_arrays():
@@ -177,28 +177,28 @@ HALT()
     """
     vm = execute_program_helper(program)
 
-    assert vm.registers[1] == HERA_DATA_START + 7
-    assert vm.registers[2] == HERA_DATA_START + 15
+    assert vm.registers[1] == DEFAULT_DATA_START + 7
+    assert vm.registers[2] == DEFAULT_DATA_START + 15
     assert vm.registers[3] == to_u16(-1)
     assert vm.registers[4] == 289
 
-    assert vm.memory[HERA_DATA_START] == 7
-    assert vm.memory[HERA_DATA_START + 1] == 2
-    assert vm.memory[HERA_DATA_START + 2] == 3
-    assert vm.memory[HERA_DATA_START + 3] == 5
-    assert vm.memory[HERA_DATA_START + 4] == 7
-    assert vm.memory[HERA_DATA_START + 5] == 11
-    assert vm.memory[HERA_DATA_START + 6] == 13
-    assert vm.memory[HERA_DATA_START + 7] == 17
+    assert vm.memory[DEFAULT_DATA_START] == 7
+    assert vm.memory[DEFAULT_DATA_START + 1] == 2
+    assert vm.memory[DEFAULT_DATA_START + 2] == 3
+    assert vm.memory[DEFAULT_DATA_START + 3] == 5
+    assert vm.memory[DEFAULT_DATA_START + 4] == 7
+    assert vm.memory[DEFAULT_DATA_START + 5] == 11
+    assert vm.memory[DEFAULT_DATA_START + 6] == 13
+    assert vm.memory[DEFAULT_DATA_START + 7] == 17
 
-    assert vm.memory[HERA_DATA_START + 8] == 7
-    assert vm.memory[HERA_DATA_START + 9] == 4
-    assert vm.memory[HERA_DATA_START + 10] == 9
-    assert vm.memory[HERA_DATA_START + 11] == 25
-    assert vm.memory[HERA_DATA_START + 12] == 49
-    assert vm.memory[HERA_DATA_START + 13] == 121
-    assert vm.memory[HERA_DATA_START + 14] == 169
-    assert vm.memory[HERA_DATA_START + 15] == 289
+    assert vm.memory[DEFAULT_DATA_START + 8] == 7
+    assert vm.memory[DEFAULT_DATA_START + 9] == 4
+    assert vm.memory[DEFAULT_DATA_START + 10] == 9
+    assert vm.memory[DEFAULT_DATA_START + 11] == 25
+    assert vm.memory[DEFAULT_DATA_START + 12] == 49
+    assert vm.memory[DEFAULT_DATA_START + 13] == 121
+    assert vm.memory[DEFAULT_DATA_START + 14] == 169
+    assert vm.memory[DEFAULT_DATA_START + 15] == 289
 
 
 def test_strings():
@@ -243,9 +243,9 @@ HALT()
         assert r == 0
 
     s = "Is this an example? With three questions? Really?"
-    assert vm.memory[HERA_DATA_START] == len(s)
+    assert vm.memory[DEFAULT_DATA_START] == len(s)
     for i in range(len(s)):
-        assert vm.memory[HERA_DATA_START + i + 1] == ord(s[i])
+        assert vm.memory[DEFAULT_DATA_START + i + 1] == ord(s[i])
 
     assert vm.flag_carry_block
     assert not vm.flag_carry

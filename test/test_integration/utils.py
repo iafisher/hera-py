@@ -6,7 +6,5 @@ from hera.vm import VirtualMachine
 
 
 def execute_program_helper(program):
-    vm = VirtualMachine()
     with patch("sys.stdin", StringIO(program)):
-        main(["--no-color", "-"], vm)
-    return vm
+        return main(["--no-color", "-"])
