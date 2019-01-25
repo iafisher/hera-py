@@ -11,6 +11,7 @@ from hera.typechecker import (
     assert_number_of_arguments,
     Constant,
     DataLabel,
+    get_labels,
     Label,
     operation_length,
     typecheck,
@@ -805,3 +806,10 @@ def test_operation_length_of_CALL_with_label():
 
 def test_operation_length_of_CALL_with_register():
     assert operation_length(Op("CALL", [R("R12"), R("R13")])) == 1
+
+
+def test_get_labels_with_invalid_code(state):
+    labels = get_labels([Op("CALL", [SYM("l")])], state)
+
+    assert len(labels) == 0
+    assert len(state.errors) == 0

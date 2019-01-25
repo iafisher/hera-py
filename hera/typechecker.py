@@ -353,7 +353,7 @@ def operation_length(op):
     elif op.name == "FLAGS":
         return 2
     elif op.name == "CALL":
-        if len(op.args) == 2 and isinstance(op.args[1], int) or is_symbol(op.args[1]):
+        if len(op.args) == 2 and (isinstance(op.args[1], int) or is_symbol(op.args[1])):
             return 3
         else:
             return 1

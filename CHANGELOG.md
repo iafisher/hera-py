@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Labels are calculated correctly after branches on registers.
 - `skip` debugging command no longer executes instructions, matching its help description.
 - Symbols beginning with "m" can now be printed in the debugger.
+- Too few arguments to `CALL` op now causes an error message to be printed, instead of crashing the interpreter.
 
 ### Removed
 - The `--lines` command-line argument.
