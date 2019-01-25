@@ -13,11 +13,13 @@ from lark import Lark, Token as LarkToken, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from . import config
-from .data import HERAError, IntToken, Location, Op, Token
+from .data import HERAError, IntToken, Location, Op, State, Token
 from .utils import emit_error, get_canonical_path, is_register, print_warning, read_file
 
 
-def parse(text: str, *, path=None, includes=True, visited=None) -> List[Op]:
+def parse(
+    text: str, *, path=None, includes=True, visited=None, state=State()
+) -> List[Op]:
     """Parse a HERA program.
 
     `path` is the path of the file being parsed, as it will appear in error and

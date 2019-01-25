@@ -12,6 +12,18 @@ Version: December 2018
 from collections import namedtuple
 
 
+class State:
+    """The global state of the interpreter."""
+
+    def __init__(self):
+        self.color = True
+        self.warning_count = 0
+        self.warned_for_octal = False
+        self.visited = set()
+        self.errors = []
+        self.warnings = []
+
+
 Location = namedtuple("Location", ["line", "column", "path", "file_lines"])
 
 

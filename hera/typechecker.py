@@ -9,7 +9,7 @@ from contextlib import suppress
 from typing import Dict, List
 
 from . import config
-from .data import Op, Token
+from .data import Op, State, Token
 from .utils import (
     BINARY_OPS,
     DATA_STATEMENTS,
@@ -24,7 +24,7 @@ from .utils import (
 )
 
 
-def typecheck(program: List[Op]) -> Dict[str, int]:
+def typecheck(program: List[Op], state=State()) -> Dict[str, int]:
     """Type-check the program and emit error messages as appropriate. Return the
     program's symbol table.
     """

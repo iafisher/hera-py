@@ -5,11 +5,13 @@ Version: January 2019
 """
 from typing import Dict, List
 
-from .data import Op, Token
+from .data import Op, Token, State
 from .utils import emit_error, is_symbol, REGISTER_BRANCHES, RELATIVE_BRANCHES, to_u16
 
 
-def preprocess(program: List[Op], symbol_table: Dict[str, int]) -> List[Op]:
+def preprocess(
+    program: List[Op], symbol_table: Dict[str, int], state=State()
+) -> List[Op]:
     """Preprocess the program into valid input for the exec_many method on the
     VirtualMachine class.
 

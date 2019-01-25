@@ -8,14 +8,14 @@ import sys
 from typing import Dict, List, Tuple
 
 from . import config
-from .data import HERAError, Op
+from .data import HERAError, Op, State
 from .parser import parse
 from .preprocessor import preprocess
 from .typechecker import typecheck
 from .utils import emit_error, print_message_with_location, read_file
 
 
-def load_program(text: str) -> Tuple[List[Op], Dict[str, int]]:
+def load_program(text: str, state=State()) -> Tuple[List[Op], Dict[str, int]]:
     """Parse the string into a program, type-check it, and preprocess it. A tuple
     (ops, symbol_table) is returned.
 
@@ -23,12 +23,12 @@ def load_program(text: str) -> Tuple[List[Op], Dict[str, int]]:
     method.
     """
     config.ERRORS.clear()
-    program = parse(text, includes=True)
+    program = parse(text, includes=True, state=state)
     handle_errors()
-    return _load_program_common(program, "<string>")
+    return _load_program_common(program, "<string>", state)
 
 
-def load_program_from_file(path: str) -> Tuple[List[Op], Dict[str, int]]:
+def load_program_from_file(path: str, state=State()) -> Tuple[List[Op], Dict[str, int]]:
     """Convenience function to a read a file and then invoke `load_program_from_str` on
     its contents.
     """
@@ -49,17 +49,17 @@ def load_program_from_file(path: str) -> Tuple[List[Op], Dict[str, int]]:
             emit_error(str(e))
     handle_errors()
 
-    program = parse(text, path=path)
+    program = parse(text, path=path, state=state)
     handle_errors()
 
-    return _load_program_common(program, path)
+    return _load_program_common(program, path, state)
 
 
-def _load_program_common(program, path):
-    symbol_table = typecheck(program)
+def _load_program_common(program, path, state):
+    symbol_table = typecheck(program, state=state)
     handle_errors()
 
-    program = preprocess(program, symbol_table)
+    program = preprocess(program, symbol_table, state=state)
     handle_errors()
 
     return program, symbol_table
