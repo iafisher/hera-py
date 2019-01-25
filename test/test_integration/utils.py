@@ -8,3 +8,8 @@ from hera.vm import VirtualMachine
 def execute_program_helper(program):
     with patch("sys.stdin", StringIO(program)):
         return main(["--no-color", "-"])
+
+
+def preprocess_program_helper(program):
+    with patch("sys.stdin", StringIO(program)):
+        main(["preprocess", "--no-color", "-"])

@@ -48,22 +48,6 @@ def test_main_non_existent_file(capsys):
     assert capsys.readouterr().err == 'Error: file "unicorn.hera" does not exist\n'
 
 
-def test_main_preprocess(capsys):
-    with patch("sys.stdin", StringIO("SET(R1, 10)")):
-        main(["preprocess", "-"])
-
-    captured = capsys.readouterr()
-    assert captured.out == ""
-    assert (
-        captured.err
-        == """\
-
-  0000  SETLO(R1, 10)
-  0001  SETHI(R1, 0)
-"""
-    )
-
-
 def test_main_preprocess_non_existent_file(capsys):
     with pytest.raises(SystemExit):
         main(["preprocess", "unicorn.hera"])
@@ -83,39 +67,6 @@ def test_execute_from_stdin():
         vm = main(["-"])
 
     assert vm.registers[1] == 42
-
-
-def test_preprocess_from_stdin(capsys):
-    with patch("sys.stdin", StringIO("SET(R1, 42)")):
-        main(["preprocess", "-"])
-
-    captured = capsys.readouterr()
-    assert captured.out == ""
-    assert (
-        captured.err
-        == """\
-
-  0000  SETLO(R1, 42)
-  0001  SETHI(R1, 0)
-"""
-    )
-
-
-def test_preprocess_output_with_string(capsys):
-    # TODO: This is wrong. See #87.
-    with patch("sys.stdin", StringIO('LP_STRING("hello")')):
-        main(["preprocess", "-"])
-
-    captured = capsys.readouterr()
-    assert captured.out == ""
-    assert (
-        captured.err
-        == """\
-
-[DATA]
-  LP_STRING('hello')
-"""
-    )
 
 
 def test_main_with_short_version_flag(capsys):

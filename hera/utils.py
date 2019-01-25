@@ -3,6 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
+import json
 import os.path
 import sys
 
@@ -146,7 +147,7 @@ def op_to_string(op):
 
 def arg_to_string(arg):
     if isinstance(arg, Token) and arg.type == "STRING":
-        return repr(arg)
+        return json.dumps(arg)
     else:
         return str(arg)
 
