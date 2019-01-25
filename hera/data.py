@@ -23,6 +23,12 @@ class State:
         self.errors = []
         self.warnings = []
 
+    def error(self, msg, loc=None):
+        self.errors.append((msg, loc))
+
+    def warning(self, msg, loc=None):
+        self.warnings.append((msg, loc))
+
 
 Location = namedtuple("Location", ["line", "column", "path", "file_lines"])
 

@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-from hera.data import Op
+from hera.data import Op, State
 from hera.parser import parse, replace_escapes
 from hera.utils import read_file
 
@@ -110,11 +110,11 @@ def test_parse_hera_boilerplate_no_includes():
 
 
 def test_parse_hera_boilerplate_gives_warning():
-    with patch("hera.parser.print_warning") as mock_print_warning:
-        parse("void HERA_main() {SETLO(R1, 42)}")
-        assert mock_print_warning.call_count == 1
-        assert "HERA_main" in mock_print_warning.call_args[0][0]
-        assert "not necessary" in mock_print_warning.call_args[0][0]
+    state = State()
+    parse("void HERA_main() {SETLO(R1, 42)}", state=state)
+    assert len(state.warnings) == 1
+    msg = state.warnings[0][0]
+    assert state.warnings[0][0] == "void HERA_main() { ... } is not necessary"
 
 
 def test_parse_another_single_line_comments():
@@ -143,42 +143,42 @@ def test_parse_include_amidst_instructions():
 
 
 def test_parse_missing_comma():
-    with patch("hera.parser.emit_error") as mock_emit_error:
-        program = parse("ADD(R1, R2 R3)")
+    state = State()
+    program = parse("ADD(R1, R2 R3)", state=state)
 
-        assert program == []
-        assert mock_emit_error.call_count == 1
+    assert program == []
+    assert len(state.errors) == 1
 
 
 def test_parse_missing_parenthesis():
-    with patch("hera.parser.emit_error") as mock_emit_error:
-        program = parse("LSL8(R1, R1")
+    state = State()
+    program = parse("LSL8(R1, R1", state=state)
 
-        assert program == []
-        assert mock_emit_error.call_count == 1
+    assert program == []
+    assert len(state.errors) == 1
 
 
 def test_parse_missing_end_quote():
-    with patch("hera.parser.emit_error") as mock_emit_error:
-        program = parse('LP_STRING("forgot to close my string)')
+    state = State()
+    program = parse('LP_STRING("forgot to close my string)', state=state)
 
-        assert program == []
-        assert mock_emit_error.call_count == 1
+    assert program == []
+    assert len(state.errors) == 1
 
 
 def test_parse_exception_has_line_number():
-    program = "SETLO(R1, 10)\nSETHI(R1, 255)\nLSL(R1 R1)"
-    with patch("hera.parser.emit_error") as mock_emit_error:
-        program = parse(program)
+    state = State()
+    program = parse("SETLO(R1, 10)\nSETHI(R1, 255)\nLSL(R1 R1)", state=state)
 
-        assert program == []
-        assert "unexpected character" in mock_emit_error.call_args[0][0]
+    assert program == []
+    assert len(state.errors) == 1
+    assert "unexpected character" in state.errors[0][0]
 
-        loc = mock_emit_error.call_args[1]["loc"]
-        assert loc is not None
-        assert loc.line == 3
-        assert loc.column == 8
-        assert loc.path == "<string>"
+    loc = state.errors[0][1]
+    assert loc is not None
+    assert loc.line == 3
+    assert loc.column == 8
+    assert loc.path == "<string>"
 
 
 def test_parse_expands_include():
