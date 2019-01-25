@@ -114,7 +114,18 @@ def test_parse_hera_boilerplate_gives_warning():
     parse("void HERA_main() {SETLO(R1, 42)}", state=state)
     assert len(state.warnings) == 1
     msg = state.warnings[0][0]
-    assert state.warnings[0][0] == "void HERA_main() { ... } is not necessary"
+    assert (
+        state.warnings[0][0] == "void HERA_main() { ... } is not necessary for hera-py"
+    )
+
+
+def test_parse_include_hera_dot_h_gives_warning():
+    state = State()
+    parse("#include <HERA.h> SETLO(R1, 42)", state=state)
+    assert len(state.warnings) == 1
+    msg = state.warnings[0][0]
+    assert state.warnings[0][0] == "#include <HERA.h> is not necessary for hera-py"
+    assert state.warnings[0][1] is not None
 
 
 def test_parse_another_single_line_comments():

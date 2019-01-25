@@ -122,6 +122,11 @@ def expand_includes(ops: List[Op], path: str, state: State) -> List[Op]:
                     included_program = TIGER_STDLIB_STACK_DATA
                 elif op.args[0] == "<Tiger-stdlib-stack.hera>":
                     included_program = TIGER_STDLIB_STACK
+                elif op.args[0] == "<HERA.h>":
+                    state.warning(
+                        "#include <HERA.h> is not necessary for hera-py", loc=op.args[0]
+                    )
+                    continue
                 else:
                     # TODO: Probably need to handle these somehow.
                     continue
@@ -168,7 +173,7 @@ class TreeToOplist(Transformer):
             return matches[0]
 
     def cpp_program(self, matches):
-        self.state.warning("void HERA_main() { ... } is not necessary")
+        self.state.warning("void HERA_main() { ... } is not necessary for hera-py")
         return matches
 
     def hera_program(self, matches):
