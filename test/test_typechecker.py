@@ -711,6 +711,11 @@ def test_typecheck_println(state):
     assert len(state.errors) == 0
 
 
+def test_typecheck___eval(state):
+    assert typecheck_op(Op(SYM("__eval"), [STR("print('hello')")]), {}, state)
+    assert len(state.errors) == 0
+
+
 def test_typecheck_undefined_symbol(state):
     typecheck_op(Op("SET", [R("R1"), SYM("N")]), {}, state)
 

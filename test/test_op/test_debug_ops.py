@@ -39,3 +39,18 @@ def test_exec_println(vm, capsys):
 def test_println_increments_pc(vm):
     vm.exec_println("Hello, world!")
     assert vm.pc == 1
+
+
+def test___eval(vm):
+    vm.exec___eval("vm.registers[7] = 10")
+    assert vm.registers[7] == 10
+
+
+def test___eval_cannot_import_anything(vm, capsys):
+    vm.exec___eval("import sys; sys.stdout.write('hi')")
+    assert capsys.readouterr().out == ""
+
+
+def test___eval_increments_pc(vm):
+    vm.exec___eval("")
+    assert vm.pc == 1

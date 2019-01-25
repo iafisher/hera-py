@@ -430,6 +430,16 @@ class VirtualMachine:
         print(target)
         self.pc += 1
 
+    def exec___eval(self, expr):
+        # Rudimentary safeguard to make execution of malicious code harder. Users of
+        # hera-py should keep in mind that running arbitrary HERA code is no safer than
+        # running arbitrary code of any kind.
+        if "import" not in expr:
+            bytecode = compile(expr, "<string>", "exec")
+            exec(bytecode, {}, {"vm": self})
+
+        self.pc += 1
+
     def print_warning(self, msg, loc):
         if self.state.color:
             msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
