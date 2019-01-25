@@ -67,9 +67,16 @@ def parse(text: str, *, path=None, includes=True, state=State()) -> List[Op]:
     convert_tokens(ops, base_location, state)
 
     if includes:
-        ops = expand_includes(ops, path, state)
-
-    return ops
+        expanded_ops = []
+        for op in ops:
+            if op.name == "#include" and len(op.args) == 1:
+                included_ops = expand_include(op.args[0], path, state)
+                expanded_ops.extend(included_ops)
+            else:
+                expanded_ops.append(op)
+        return expanded_ops
+    else:
+        return ops
 
 
 def convert_tokens(ops: List[Op], base_location: Location, state: State) -> None:
@@ -105,52 +112,44 @@ def convert_tokens(ops: List[Op], base_location: Location, state: State) -> None
         ops[i] = op._replace(name=name)
 
 
-def expand_includes(ops: List[Op], path: str, state: State) -> List[Op]:
-    """Scan the list of ops and replace any #include "foo.hera" statement with the
-    parsed contents of foo.hera.
+def expand_include(include_path: str, root_path: str, state: State) -> List[Op]:
+    """Open the file named by `include_path` and return its parsed contents.
 
-    `path` is the path of the including file, which is necessary for determining the
-    correct base path, e.g. #include "lib.hera" in foo/main.hera resolves to
+    `root_path` is the path of the including file, which is necessary for determining
+    the correct base path, e.g. #include "lib.hera" in foo/main.hera resolves to
     foo/lib.hera, but #include "lib.hera" in bar/main.hera resolves to bar/lib.hera.
     """
-    expanded_ops = []
-    for op in ops:
-        if op.name == "#include" and len(op.args) == 1:
-            if op.args[0].startswith("<"):
-                include_path = op.args[0]
-                if op.args[0] == "<Tiger-stdlib-stack-data.hera>":
-                    included_program = TIGER_STDLIB_STACK_DATA
-                elif op.args[0] == "<Tiger-stdlib-stack.hera>":
-                    included_program = TIGER_STDLIB_STACK
-                elif op.args[0] == "<HERA.h>":
-                    state.warning(
-                        "#include <HERA.h> is not necessary for hera-py", loc=op.args[0]
-                    )
-                    continue
-                else:
-                    # TODO: Probably need to handle these somehow.
-                    continue
-            else:
-                # Strip off the leading and trailing quote.
-                include_path = op.args[0][1:-1]
-                if path is not None:
-                    include_path = os.path.join(os.path.dirname(path), include_path)
-
-                if get_canonical_path(include_path) in state.visited:
-                    state.error("recursive include", loc=op.args[0])
-                    continue
-
-                try:
-                    included_program = read_file(include_path)
-                except HERAError as e:
-                    state.error(str(e), loc=op.args[0])
-                    continue
-
-            included_ops = parse(included_program, path=include_path, state=state)
-            expanded_ops.extend(included_ops)
+    # `include_path` is generally a Token object so it can be passed as the `loc`
+    # argument of `state.error` and `state.warning`.
+    loc = include_path
+    if include_path.startswith("<"):
+        if include_path == "<Tiger-stdlib-stack-data.hera>":
+            included_program = TIGER_STDLIB_STACK_DATA
+        elif include_path == "<Tiger-stdlib-stack.hera>":
+            included_program = TIGER_STDLIB_STACK
+        elif include_path == "<HERA.h>":
+            state.warning("#include <HERA.h> is not necessary for hera-py", loc=loc)
+            return []
         else:
-            expanded_ops.append(op)
-    return expanded_ops
+            # TODO: Probably need to handle these somehow.
+            return []
+    else:
+        # Strip off the leading and trailing quote.
+        include_path = include_path[1:-1]
+        if root_path is not None:
+            include_path = os.path.join(os.path.dirname(root_path), include_path)
+
+        if get_canonical_path(include_path) in state.visited:
+            state.error("recursive include", loc=loc)
+            return []
+
+        try:
+            included_program = read_file(include_path)
+        except HERAError as e:
+            state.error(str(e), loc=loc)
+            return []
+
+    return parse(included_program, path=include_path, state=state)
 
 
 class TreeToOplist(Transformer):
