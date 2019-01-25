@@ -13,6 +13,7 @@ from lark import Lark, Token as LarkToken, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from .data import HERAError, IntToken, Location, Op, State, Token
+from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
 from .utils import get_canonical_path, is_register, read_file
 
 
@@ -116,23 +117,29 @@ def expand_includes(ops: List[Op], path: str, state: State) -> List[Op]:
     for op in ops:
         if op.name == "#include" and len(op.args) == 1:
             if op.args[0].startswith("<"):
-                # TODO: Probably need to handle these somehow.
-                continue
+                include_path = op.args[0]
+                if op.args[0] == "<Tiger-stdlib-stack-data.hera>":
+                    included_program = TIGER_STDLIB_STACK_DATA
+                elif op.args[0] == "<Tiger-stdlib-stack.hera>":
+                    included_program = TIGER_STDLIB_STACK
+                else:
+                    # TODO: Probably need to handle these somehow.
+                    continue
+            else:
+                # Strip off the leading and trailing quote.
+                include_path = op.args[0][1:-1]
+                if path is not None:
+                    include_path = os.path.join(os.path.dirname(path), include_path)
 
-            # Strip off the leading and trailing quote.
-            include_path = op.args[0][1:-1]
-            if path is not None:
-                include_path = os.path.join(os.path.dirname(path), include_path)
+                if get_canonical_path(include_path) in state.visited:
+                    state.error("recursive include", loc=op.args[0])
+                    continue
 
-            if get_canonical_path(include_path) in state.visited:
-                state.error("recursive include", loc=op.args[0])
-                continue
-
-            try:
-                included_program = read_file(include_path)
-            except HERAError as e:
-                state.error(str(e), loc=op.args[0])
-                continue
+                try:
+                    included_program = read_file(include_path)
+                except HERAError as e:
+                    state.error(str(e), loc=op.args[0])
+                    continue
 
             included_ops = parse(included_program, path=include_path, state=state)
             expanded_ops.extend(included_ops)

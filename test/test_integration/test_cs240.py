@@ -1,6 +1,5 @@
 from hera.data import DEFAULT_DATA_START
 from hera.main import main
-from hera.vm import VirtualMachine
 
 
 def test_aslu_program(capsys):
