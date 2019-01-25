@@ -61,7 +61,9 @@ def test_main_preprocess(capsys):
     with patch("sys.stdin", StringIO("SET(R1, 10)")):
         main(["preprocess", "-"])
 
-    assert capsys.readouterr().out == "\nSETLO(R1, 10)\nSETHI(R1, 0)\n"
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "\nSETLO(R1, 10)\nSETHI(R1, 0)\n"
 
 
 def test_main_preprocess_non_existent_file(capsys):
@@ -89,8 +91,9 @@ def test_preprocess_from_stdin(capsys):
     with patch("sys.stdin", StringIO("SET(R1, 42)")):
         main(["preprocess", "-"])
 
-    captured = capsys.readouterr().out
-    assert captured == "\nSETLO(R1, 42)\nSETHI(R1, 0)\n"
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "\nSETLO(R1, 42)\nSETHI(R1, 0)\n"
 
 
 def test_main_with_short_version_flag(capsys):
@@ -114,8 +117,8 @@ def test_main_with_short_quiet_flag(capsys):
         main(["-q", "-"])
 
     captured = capsys.readouterr()
-    assert captured.out == "\n"
-    assert captured.err == ""
+    assert captured.out == ""
+    assert captured.err == "\n"
 
 
 def test_main_with_long_quiet_flag(capsys):
@@ -123,8 +126,8 @@ def test_main_with_long_quiet_flag(capsys):
         main(["--quiet", "-"])
 
     captured = capsys.readouterr()
-    assert captured.out == "\n"
-    assert captured.err == ""
+    assert captured.out == ""
+    assert captured.err == "\n"
 
 
 def test_main_with_verbose_flag(capsys):
@@ -135,6 +138,7 @@ def test_main_with_verbose_flag(capsys):
     assert (
         captured
         == """\
+
 
 Virtual machine state after execution:
 	R1  = 0x002a = 42 = '*'
@@ -181,6 +185,7 @@ def test_no_ANSI_color_when_stderr_is_not_tty():
     assert (
         buf.getvalue()
         == """\
+
 Error: unexpected character, line 1 col 1 of <stdin>
 
   )

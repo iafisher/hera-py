@@ -17,6 +17,7 @@ RTI()
     assert (
         captured
         == """\
+
 Warning: SWI is a no-op in this simulator, line 2 col 1 of <stdin>
 
   SWI(10)
@@ -46,6 +47,7 @@ def test_warning_for_stack_overflow(capsys):
     assert (
         captured
         == """\
+
 Warning: stack has overflowed into data segment, line 2 col 1 of <stdin>
 
   ADD(SP, SP, R1)
@@ -73,6 +75,7 @@ def test_warning_for_zero_prefixed_octal(capsys):
     assert (
         captured
         == """\
+
 Warning: consider using "0o" prefix for octal numbers, line 1 col 9 of <stdin>
 
   SET(R1, 016)
@@ -97,6 +100,7 @@ def test_warning_for_R11_with_NOT(capsys):
     assert (
         captured
         == """\
+
 Warning: don't use R11 with NOT, line 2 col 9 of <stdin>
 
   NOT(R1, R11)
@@ -124,6 +128,7 @@ def test_warning_for_improper_register_with_CALL(capsys):
     assert (
         captured
         == """\
+
 Warning: first argument to CALL should be R12, line 1 col 6 of <stdin>
 
   CALL(R11, l)
@@ -147,6 +152,7 @@ def test_warning_for_improper_first_register_with_RETURN(capsys):
     assert (
         captured
         == """\
+
 Warning: first argument to RETURN should be R12, line 1 col 8 of <stdin>
 
   RETURN(R11, R13)
@@ -170,6 +176,7 @@ def test_warning_for_improper_second_register_with_RETURN(capsys):
     assert (
         captured
         == """\
+
 Warning: second argument to RETURN should be R13, line 1 col 13 of <stdin>
 
   RETURN(R12, R11)

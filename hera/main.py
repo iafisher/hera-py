@@ -79,7 +79,7 @@ def main_execute(path, state, *, verbose=False, quiet=False):
 def main_preprocess(path, state):
     """Preprocess the program and print it to standard output."""
     program, _ = load_program_from_file(path, state)
-    print(program_to_string(program))
+    print(program_to_string(program), file=sys.stderr)
 
 
 def program_to_string(ops):
@@ -89,6 +89,7 @@ def program_to_string(ops):
 
 def dump_state(vm, state, *, verbose=False):
     """Print the state of the virtual machine to standard output."""
+    # Make sure that all program output has been printed.
     sys.stdout.flush()
 
     # Redefine print in this function to use stderr.

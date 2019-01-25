@@ -34,11 +34,11 @@ def load_program_from_file(path: str, state) -> Tuple[List[Op], Dict[str, int]]:
         try:
             text = sys.stdin.read()
         except (IOError, KeyboardInterrupt):
-            print()
+            print(file=sys.stderr)
             sys.exit(3)
         else:
             # So that the program and its output are visually separate.
-            print()
+            print(file=sys.stderr)
     else:
         try:
             text = read_file(path)

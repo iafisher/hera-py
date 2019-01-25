@@ -328,3 +328,21 @@ SET(R1, 42)
     vm = execute_program_helper(program)
 
     assert vm.registers[1] == 42
+
+
+def test_no_extraneous_output(capsys):
+    execute_program_helper("SET(R1, 42)")
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert (
+        captured.err
+        == """\
+
+
+Virtual machine state after execution:
+	R1  = 0x002a = 42 = '*'
+
+	All flags are OFF
+"""
+    )
