@@ -27,6 +27,13 @@ from .utils import op_to_string, print_register_debug
 from .vm import VirtualMachine
 
 
+def external_main(argv=None):
+    """A wrapper around main that ignores its return value, so it is not printed to the
+    console when the program exits.
+    """
+    main(argv)
+
+
 def main(argv=None):
     """The main entry point into hera-py.
 

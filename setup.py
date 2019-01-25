@@ -21,7 +21,7 @@ setup(
     author_email='iafisher@protonmail.com',
     entry_points={
         'console_scripts': [
-            'hera = hera.main:main',
+            'hera = hera.main:external_main',
         ],
     },
     packages=find_packages(exclude=['tests']),
