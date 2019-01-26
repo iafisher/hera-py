@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import patch
+from .utils import helper
 
 from hera.data import Op
 from hera.vm import VirtualMachine
@@ -14,7 +15,7 @@ def test_exec_branch_with_register_branch(vm):
     vm.registers[7] = 42
     vm.flag_zero = True
 
-    vm.exec_branch(Op("BZ", ["R7"]))
+    helper(vm, "BZ(R7)")
 
     assert vm.pc == 42
     assert vm.flag_zero
@@ -24,7 +25,7 @@ def test_exec_branch_with_relative_branch(vm):
     vm.pc = 20
     vm.flag_carry = False
 
-    vm.exec_branch(Op("BNCR", [22]))
+    helper(vm, "BNCR(22)")
 
     assert vm.pc == 42
     assert not vm.flag_carry
@@ -222,21 +223,27 @@ def test_should_not_BV_on_not_overflow(vm):
 def test_CALL_changes_pc(vm):
     vm.pc = 100
     vm.registers[13] = 40
-    vm.exec_CALL("R12", "R13")
+
+    helper(vm, "CALL(R12, R13)")
+
     assert vm.pc == 40
 
 
 def test_CALL_updates_second_register(vm):
     vm.pc = 100
     vm.registers[13] = 40
-    vm.exec_CALL("R12", "R13")
+
+    helper(vm, "CALL(R12, R13)")
+
     assert vm.registers[13] == 101
 
 
 def test_CALL_updates_frame_pointer(vm):
     vm.registers[12] = 600
     vm.registers[13] = 40
-    vm.exec_CALL("R12", "R13")
+
+    helper(vm, "CALL(R12, R13)")
+
     assert vm.registers[14] == 600
 
 
@@ -244,13 +251,16 @@ def test_CALL_updates_first_register(vm):
     vm.registers[14] = 550
     vm.registers[12] = 600
     vm.registers[13] = 40
-    vm.exec_CALL("R12", "R13")
+
+    helper(vm, "CALL(R12, R13)")
+
     assert vm.registers[12] == 550
 
 
 def test_exec_one_delegates_to_RETURN(vm):
     with patch("hera.vm.VirtualMachine.exec_RETURN") as mock_exec_RETURN:
-        vm.exec_one(Op("RETURN", ["R12", "R13"]))
+        helper(vm, "RETURN(R12, R13)")
+
         assert mock_exec_RETURN.call_count == 1
         assert mock_exec_RETURN.call_args == (("R12", "R13"), {})
 
@@ -258,21 +268,27 @@ def test_exec_one_delegates_to_RETURN(vm):
 def test_RETURN_changes_pc(vm):
     vm.pc = 100
     vm.registers[13] = 40
-    vm.exec_RETURN("R12", "R13")
+
+    helper(vm, "RETURN(R12, R13)")
+
     assert vm.pc == 40
 
 
 def test_RETURN_updates_second_register(vm):
     vm.pc = 100
     vm.registers[13] = 40
-    vm.exec_RETURN("R12", "R13")
+
+    helper(vm, "RETURN(R12, R13)")
+
     assert vm.registers[13] == 101
 
 
 def test_RETURN_updates_frame_pointer(vm):
     vm.registers[12] = 600
     vm.registers[13] = 40
-    vm.exec_RETURN("R12", "R13")
+
+    helper(vm, "RETURN(R12, R13)")
+
     assert vm.registers[14] == 600
 
 
@@ -280,5 +296,7 @@ def test_RETURN_updates_first_register(vm):
     vm.registers[14] = 550
     vm.registers[12] = 600
     vm.registers[13] = 40
-    vm.exec_RETURN("R12", "R13")
+
+    helper(vm, "RETURN(R12, R13)")
+
     assert vm.registers[12] == 550
