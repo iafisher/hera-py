@@ -109,6 +109,7 @@ class VirtualMachine:
 
     def get_register(self, name):
         """Get the contents of the register with the given name."""
+        # TODO: get_register but access_memory, store_register but assign_memory
         index = register_to_index(name)
         return self.registers[index]
 
