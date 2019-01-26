@@ -1,9 +1,15 @@
+import os
 import pytest
 from unittest.mock import patch
 
 from hera.data import Op, State
 from hera.parser import parse, replace_escapes
 from hera.utils import read_file
+
+
+@pytest.fixture
+def state():
+    return State()
 
 
 def test_replace_escapes_with_one_escape():
@@ -195,3 +201,15 @@ def test_parse_expands_include():
         Op("SET", ["R2", 22]),
         Op("CALL", ["R12", "add"]),
     ]
+
+
+def test_parse_with_angle_bracket_include(state):
+    os.environ["HERA_C_DIR"] = "/some/impossible/path"
+    program = parse("#include <unicorn.hera>", state=state)
+    del os.environ["HERA_C_DIR"]
+
+    assert program == []
+    assert len(state.errors) == 1
+    assert (
+        state.errors[0][0] == 'file "/some/impossible/path/unicorn.hera" does not exist'
+    )

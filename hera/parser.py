@@ -43,7 +43,7 @@ def parse(text: str, *, path=None, visited=None, state=State()) -> List[Op]:
 
     try:
         tree = _parser.parse(text)
-        tree = TreeToOplist(state).transform(tree)
+        ops = TreeToOplist(state).transform(tree)
     except UnexpectedCharacters as e:
         loc = base_location._replace(line=e.line, column=e.column)
         state.error("unexpected character", loc=loc)
@@ -59,13 +59,6 @@ def parse(text: str, *, path=None, visited=None, state=State()) -> List[Op]:
         loc = base_location._replace(line=e.line, column=e.column)
         state.error("invalid syntax", loc=base_location)
         return []
-
-    if isinstance(tree, Tree):
-        ops = tree.children
-    elif isinstance(tree, Op):
-        ops = [tree]
-    else:
-        ops = tree
 
     convert_tokens(ops, base_location, state)
 
@@ -158,16 +151,16 @@ def expand_angle_include(include_path: str, state: State) -> List[Op]:
 
     The `include_path` string still has the angle brackets.
     """
-    # There is no check for recursive includes in this function as it is assumed that
-    # system libraries do not contain them.
+    # There is no check for recursive includes in this function, under the assumption
+    # that system libraries do not have recursive includes.
     loc = include_path
-    if include_path == "<Tiger-stdlib-stack-data.hera>":
+    if include_path == "<HERA.h>":
+        state.warning("#include <HERA.h> is not necessary for hera-py", loc=loc)
+        return []
+    elif include_path == "<Tiger-stdlib-stack-data.hera>":
         included_program = TIGER_STDLIB_STACK_DATA
     elif include_path == "<Tiger-stdlib-stack.hera>":
         included_program = TIGER_STDLIB_STACK
-    elif include_path == "<HERA.h>":
-        state.warning("#include <HERA.h> is not necessary for hera-py", loc=loc)
-        return []
     else:
         include_path = include_path[1:-1]
         root_path = os.environ.get("HERA_C_DIR", "/home/courses/lib/HERA-lib")
@@ -181,21 +174,15 @@ def expand_angle_include(include_path: str, state: State) -> List[Op]:
 
 
 class TreeToOplist(Transformer):
-    """Transform Lark's parse tree into a list of HERA ops."""
+    """A class to transform Lark's parse tree into a list of HERA ops."""
 
     def __init__(self, state, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.state = state
 
     def start(self, matches):
-        # TODO: Figure out why all this is necessary.
         if len(matches) == 2:
-            if isinstance(matches[0], tuple):
-                return [matches[0]] + matches[1]
-            else:
-                return matches[0] + matches[1]
-        elif len(matches) > 2:
-            return matches[:-1] + matches[-1]
+            return [matches[0]] + matches[1]
         else:
             return matches[0]
 
