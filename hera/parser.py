@@ -123,16 +123,7 @@ def expand_include(include_path: str, root_path: str, state: State) -> List[Op]:
     # argument of `state.error` and `state.warning`.
     loc = include_path
     if include_path.startswith("<"):
-        if include_path == "<Tiger-stdlib-stack-data.hera>":
-            included_program = TIGER_STDLIB_STACK_DATA
-        elif include_path == "<Tiger-stdlib-stack.hera>":
-            included_program = TIGER_STDLIB_STACK
-        elif include_path == "<HERA.h>":
-            state.warning("#include <HERA.h> is not necessary for hera-py", loc=loc)
-            return []
-        else:
-            # TODO: Probably need to handle these somehow.
-            return []
+        return expand_angle_include(include_path, state)
     else:
         # Strip off the leading and trailing quote.
         include_path = include_path[1:-1]
@@ -145,6 +136,27 @@ def expand_include(include_path: str, root_path: str, state: State) -> List[Op]:
 
         try:
             included_program = read_file(include_path)
+        except HERAError as e:
+            state.error(str(e), loc=loc)
+            return []
+
+    return parse(included_program, path=include_path, state=state)
+
+
+def expand_angle_include(include_path: str, state: State) -> List[Op]:
+    loc = include_path
+    if include_path == "<Tiger-stdlib-stack-data.hera>":
+        included_program = TIGER_STDLIB_STACK_DATA
+    elif include_path == "<Tiger-stdlib-stack.hera>":
+        included_program = TIGER_STDLIB_STACK
+    elif include_path == "<HERA.h>":
+        state.warning("#include <HERA.h> is not necessary for hera-py", loc=loc)
+        return []
+    else:
+        include_path = include_path[1:-1]
+        root_path = os.environ.get("HERA_C_DIR", "/home/courses/lib/HERA-lib")
+        try:
+            included_program = read_file(os.path.join(root_path, include_path))
         except HERAError as e:
             state.error(str(e), loc=loc)
             return []

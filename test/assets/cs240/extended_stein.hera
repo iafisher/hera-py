@@ -1,7 +1,7 @@
 /* Copied from CS240 common test suite, fall 2018 */
 
 #include <HERA.h>
-#include <HERA-print.h>
+//#include <HERA-print.h>
 
 void HERA_main()
 {
