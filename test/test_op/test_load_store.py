@@ -12,14 +12,6 @@ def vm():
     return VirtualMachine()
 
 
-def test_exec_one_delegates_to_LOAD(vm):
-    with patch("hera.vm.VirtualMachine.exec_LOAD") as mock_exec_LOAD:
-        helper(vm, "LOAD(R1, 0, R2)")
-
-        assert mock_exec_LOAD.call_count == 1
-        assert mock_exec_LOAD.call_args == (("R1", 0, "R2"), {})
-
-
 def test_LOAD_from_small_address(vm):
     vm.memory[3] = 42
     vm.registers[2] = 3
@@ -106,14 +98,6 @@ def test_LOAD_increments_pc(vm):
     helper(vm, "LOAD(R1, 0, R2)")
 
     assert vm.pc == 1
-
-
-def test_exec_one_delegates_to_STORE(vm):
-    with patch("hera.vm.VirtualMachine.exec_STORE") as mock_exec_STORE:
-        helper(vm, "STORE(R1, 0, R2)")
-
-        assert mock_exec_STORE.call_count == 1
-        assert mock_exec_STORE.call_args == (("R1", 0, "R2"), {})
 
 
 def test_STORE_to_small_address(vm):

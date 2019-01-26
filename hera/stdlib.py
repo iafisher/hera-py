@@ -109,7 +109,7 @@ LABEL(malloc)
    LABEL(malloc_give_up)
      SET(R1,malloc_out_of_memory_error)
    LABEL(malloc_exit)
-  
+
     MOVE(FP_alt,SP)
     INC(SP,4)
 
@@ -171,5 +171,5 @@ TIGER_STRING("bad parameters to substring -- program terminated\n")
 DLABEL(tstdlib_not_implemented)
 TIGER_STRING("this function is not yet implemented in tiger standard libarry; halting\n")
 DLABEL(tstdlib_not_tested)
-TIGER_STRING("WARNING: Entering untested territory in tiger stdlib\n") 
+TIGER_STRING("WARNING: Entering untested territory in tiger stdlib\n")
 """

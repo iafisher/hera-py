@@ -2,21 +2,15 @@ import pytest
 from unittest.mock import patch
 
 from hera.data import IntToken, Op, State, Token
+from hera.op import ADD, CALL, INC, resolve_ops, SETHI, SETLO
 from hera.parser import parse
 from hera.typechecker import (
-    assert_is_integer,
-    assert_is_label,
-    assert_is_register,
-    assert_is_register_or_label,
-    assert_is_string,
-    assert_number_of_arguments,
     Constant,
     DataLabel,
     get_labels,
     Label,
     operation_length,
     typecheck,
-    typecheck_op,
 )
 
 
@@ -39,8 +33,11 @@ def state():
 
 def helper(opstr, symbol_table={}):
     state = State()
-    typecheck_op(parse(opstr)[0], symbol_table, state)
-    return state.errors
+    ops = resolve_ops(parse(opstr), state)
+    if not ops or state.errors:
+        return [(True, msg, loc) for msg, loc in state.errors]
+    else:
+        return ops[0].typecheck(symbol_table)
 
 
 def valid(opstr, symbol_table={}):
@@ -49,218 +46,6 @@ def valid(opstr, symbol_table={}):
 
 def invalid(opstr, msg, symbol_table={}):
     errors = helper(opstr, symbol_table)
-
-    assert len(errors) == 1
-    assert msg in errors[0][0]
-
-
-def test_assert_number_of_arguments_with_too_few(state):
-    assert not assert_number_of_arguments(Op("", [R("R1")]), 2, state)
-
-    assert len(state.errors) == 1
-    assert "too few" in state.errors[0][0]
-
-
-def test_assert_number_of_arguments_with_too_many(state):
-    assert not assert_number_of_arguments(Op("", [R("R1"), R("R2")]), 1, state)
-
-    assert len(state.errors) == 1
-    assert "too many" in state.errors[0][0]
-
-
-def test_assert_is_register_with_valid_registers(state):
-    assert assert_is_register(R("R1"), state)
-    assert assert_is_register(R("R15"), state)
-    assert assert_is_register(R("FP"), state)
-    assert assert_is_register(R("SP"), state)
-    assert assert_is_register(R("Rt"), state)
-    assert assert_is_register(R("PC_ret"), state)
-    assert assert_is_register(R("FP_alt"), state)
-
-    assert len(state.errors) == 0
-
-
-def test_assert_is_register_with_non_register_token(state):
-    assert not assert_is_register("R1", state)
-    assert not assert_is_register(10, state)
-
-    assert len(state.errors) == 2
-    assert "expected register" in state.errors[0][0]
-    assert "expected register" in state.errors[1][0]
-
-
-def test_assert_is_register_with_PC(state):
-    assert not assert_is_register(R("PC"), state)
-
-    assert len(state.errors) == 1
-    assert (
-        "program counter cannot be accessed or changed directly" in state.errors[0][0]
-    )
-
-
-def test_assert_is_register_with_invalid_register(state):
-    assert not assert_is_register(R("R20"), state)
-
-    assert len(state.errors) == 1
-    assert "R20 is not a valid register" in state.errors[0][0]
-
-
-def test_assert_is_register_or_label_with_valid_registers(state):
-    assert assert_is_register_or_label(R("R1"), {}, state)
-    assert assert_is_register_or_label(R("R15"), {}, state)
-    assert assert_is_register_or_label(R("FP"), {}, state)
-    assert assert_is_register_or_label(R("SP"), {}, state)
-    assert assert_is_register_or_label(R("Rt"), {}, state)
-    assert assert_is_register_or_label(R("PC_ret"), {}, state)
-    assert assert_is_register_or_label(R("FP_alt"), {}, state)
-
-    assert len(state.errors) == 0
-
-
-def test_assert_is_register_or_label_with_non_register_token(state):
-    assert not assert_is_register_or_label("R1", {}, state)
-    assert not assert_is_register_or_label(10, {}, state)
-
-    assert len(state.errors) == 2
-    assert "expected register or label" in state.errors[0][0]
-    assert "expected register or label" in state.errors[1][0]
-
-
-def test_assert_is_register_or_label_with_PC(state):
-    assert not assert_is_register_or_label(R("PC"), {}, state)
-
-    assert len(state.errors) == 1
-    assert (
-        "program counter cannot be accessed or changed directly" in state.errors[0][0]
-    )
-
-
-def test_assert_is_register_or_label_with_invalid_register(state):
-    assert not assert_is_register_or_label(R("R20"), {}, state)
-
-    assert len(state.errors) == 1
-    assert "R20 is not a valid register" in state.errors[0][0]
-
-
-def test_assert_is_register_or_label_with_defined_label(state):
-    assert assert_is_register_or_label(SYM("n"), {"n": 10}, state)
-
-    assert len(state.errors) == 0
-
-
-def test_assert_is_register_or_label_with_undefined_label(state):
-    assert not assert_is_register_or_label(SYM("n"), {}, state)
-
-    assert len(state.errors) == 1
-    assert "undefined symbol" in state.errors[0][0]
-
-
-def test_assert_is_register_or_label_with_data_label(state):
-    assert not assert_is_register_or_label(SYM("n"), {"n": DataLabel(16000)}, state)
-
-    assert len(state.errors) == 1
-    assert "data label cannot be used as branch label" in state.errors[0][0]
-
-
-def test_assert_is_register_or_label_with_constant(state):
-    assert not assert_is_register_or_label(SYM("n"), {"n": Constant(16000)}, state)
-
-    assert len(state.errors) == 1
-    assert "constant cannot be used as label" in state.errors[0][0]
-
-
-def test_assert_is_label_with_valid_label(state):
-    assert assert_is_label(SYM("l"), state)
-
-    assert len(state.errors) == 0
-
-
-def test_assert_is_label_with_non_label_token(state):
-    assert not assert_is_label(R("R1"), state)
-
-    assert len(state.errors) == 1
-    assert "expected label" in state.errors[0][0]
-
-
-def test_assert_is_string_with_valid_string(state):
-    assert assert_is_string(STR("hello"), state)
-
-    assert len(state.errors) == 0
-
-
-def test_assert_is_string_with_non_string_token(state):
-    assert not assert_is_string(R("R1"), state)
-
-    assert len(state.errors) == 1
-    assert "expected string literal" in state.errors[0][0]
-
-
-def test_assert_is_integer_with_valid_integers(state):
-    assert assert_is_integer(0, {}, state, bits=8, signed=False)
-    assert assert_is_integer(17, {}, state, bits=8, signed=False)
-    assert assert_is_integer(255, {}, state, bits=8, signed=False)
-
-    assert assert_is_integer(0, {}, state, bits=16, signed=True)
-    assert assert_is_integer(4000, {}, state, bits=16, signed=True)
-    assert assert_is_integer(-4000, {}, state, bits=16, signed=True)
-    assert assert_is_integer(65535, {}, state, bits=16, signed=True)
-    assert assert_is_integer(-32768, {}, state, bits=16, signed=True)
-
-    assert len(state.errors) == 0
-
-
-def test_assert_is_integer_with_non_integer_token(state):
-    assert not assert_is_integer(R("R1"), {}, state, bits=8, signed=True)
-
-    assert len(state.errors) == 1
-    assert "expected integer" in state.errors[0][0]
-
-
-def test_assert_is_integer_with_out_of_range_integers(state):
-    assert not assert_is_integer(-1, {}, state, bits=8, signed=False)
-    assert not assert_is_integer(256, {}, state, bits=8, signed=False)
-    assert not assert_is_integer(-32769, {}, state, bits=16, signed=True)
-    assert not assert_is_integer(65536, {}, state, bits=16, signed=True)
-    assert not assert_is_integer(1000000, {}, state, bits=16, signed=True)
-
-    assert len(state.errors) == 5
-    assert "integer must be in range [0, 256)" in state.errors[0][0]
-    assert "integer must be in range [0, 256)" in state.errors[1][0]
-    assert "integer must be in range [-32768, 65536)" in state.errors[2][0]
-    assert "integer must be in range [-32768, 65536)" in state.errors[3][0]
-    assert "integer must be in range [-32768, 65536)" in state.errors[4][0]
-
-
-def test_assert_is_integer_with_constant(state):
-    assert assert_is_integer(SYM("n"), {"n": Constant(10)}, state, bits=16, signed=True)
-
-    assert len(state.errors) == 0
-
-
-def test_assert_is_integer_with_label(state):
-    assert assert_is_integer(
-        SYM("n"), {"n": Label(10)}, state, bits=16, signed=True, labels=True
-    )
-
-    assert len(state.errors) == 0
-
-
-def test_assert_is_integer_with_disallowed_label(state):
-    assert not assert_is_integer(
-        SYM("n"), {"n": Label(10)}, state, bits=16, signed=True
-    )
-
-    assert len(state.errors) == 1
-    assert "cannot use label as constant" in state.errors[0][0]
-
-
-def test_assert_is_integer_with_out_of_range_constant(state):
-    assert not assert_is_integer(
-        SYM("n"), {"n": Constant(1000)}, state, bits=8, signed=False
-    )
-
-    assert len(state.errors) == 1
-    assert "integer must be in range [0, 256)" in state.errors[0][0]
 
 
 def test_typecheck_SET():
@@ -393,7 +178,7 @@ def test_typecheck_CALL():
 
 
 def test_typecheck_RETURN():
-    valid("RETURN(R12, R11)")
+    valid("RETURN(R12, R13)")
     valid("RETURN(R12, f)", {"f": 0})
 
 
@@ -668,7 +453,7 @@ def test_typecheck_unknown_branch_instruction():
 
 def test_typecheck_single_error(state):
     # Second argument to SETHI is out of range.
-    program = [Op("SETLO", [R("R1"), 10]), Op("SETHI", [R("R1"), 1000])]
+    program = [SETLO(R("R1"), 10), SETHI(R("R1"), 1000)]
     symbol_table = typecheck(program, state)
 
     assert len(state.errors) == 1
@@ -676,7 +461,7 @@ def test_typecheck_single_error(state):
 
 
 def test_typecheck_multiple_errors(state):
-    program = [Op("ADD", [R("R1"), 10]), Op("INC", [R("R3")])]
+    program = [ADD(R("R1"), 10), INC(R("R3"))]
     symbol_table = typecheck(program, state)
 
     assert len(state.errors) == 3
@@ -735,7 +520,7 @@ def test_operation_length_of_CALL_with_register():
 
 
 def test_get_labels_with_invalid_code(state):
-    labels = get_labels([Op("CALL", [SYM("l")])], state)
+    labels = get_labels([CALL(SYM("l"))], state)
 
     assert len(labels) == 0
     assert len(state.errors) == 0

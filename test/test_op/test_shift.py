@@ -11,7 +11,7 @@ def vm():
     return VirtualMachine()
 
 
-def test_calculate_LSL_with_small_positive(vm):
+def test_LSL_with_small_positive(vm):
     vm.registers[2] = 7
 
     helper(vm, "LSL(R1, R2)")
@@ -263,7 +263,7 @@ def test_LSR8_with_large_positive(vm):
 
     helper(vm, "LSR8(R1, R2)")
 
-    assert vm.calculate_LSR8(17000) == 66
+    assert vm.registers[1] == 66
 
 
 def test_LSR8_with_small_negative(vm):

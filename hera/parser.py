@@ -9,7 +9,7 @@ import os
 import re
 from typing import List, Set
 
-from lark import Lark, Token as LarkToken, Transformer, Tree
+from lark import Lark, Token as LarkToken, Transformer
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from .data import HERAError, IntToken, Location, Op, State, Token

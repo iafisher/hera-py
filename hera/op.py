@@ -1,16 +1,42 @@
-from hera.data import Op
-from hera.utils import from_u16, print_register_debug, to_u16
+from contextlib import suppress
+from typing import List
+
+from hera.data import Location, Op, State, Token
+from hera.typechecker import Constant, DataLabel
+from hera.utils import (
+    from_u16,
+    is_register,
+    is_symbol,
+    print_register_debug,
+    register_to_index,
+    to_u16,
+    to_u32,
+)
 
 
 class Operation:
     # TODO: Name of this class is confusingly similar to hera.data.Op
 
     def __init__(self, *args, loc=None):
-        self.args = args
-        self.loc = loc
+        self.args = list(args)
+        if isinstance(loc, Location):
+            self.loc = loc
+        elif hasattr(loc, "location"):
+            self.loc = loc.location
+        else:
+            self.loc = None
+        self.original = None
 
-    def typecheck(self):
-        return check_arglist(self.P, self.args)
+    def typecheck(self, symbol_table):
+        errors = []
+        if len(self.P) < len(self.args):
+            msg = "too many args to {} (expected {})".format(self.name, len(self.P))
+            errors.append((True, msg, self.loc))
+        elif len(self.P) > len(self.args):
+            msg = "too few args to {} (expected {})".format(self.name, len(self.P))
+            errors.append((True, msg, self.loc))
+
+        return errors + check_arglist(self.P, self.args, symbol_table)
 
     def convert(self):
         return [self]
@@ -21,16 +47,34 @@ class Operation:
     def execute(self, vm):
         raise NotImplementedError
 
+    def __getattr__(self, name):
+        if name == "name":
+            return self.__class__.__name__
+        else:
+            raise AttributeError(name)
 
-REGISTER = "register"
-REGISTER_OR_LABEL = "register or label"
-STRING = "string literal"
-I16 = "signed 16-bit integer"
-U16 = "unsigned 16-bit integer"
-I8 = "signed 8-bit integer"
-I8_OR_LABEL = "signed 8-bit integer or label"
-U5 = "unsigned 5-bit integer"
-U4 = "unsigned 4-bit integer"
+    def __eq__(self, other):
+        return (
+            isinstance(other, self.__class__)
+            and len(self.args) == len(other.args)
+            and all(a1 == a2 for a1, a2 in zip(self.args, other.args))
+        )
+
+    def __repr__(self):
+        return "{}({})".format(self.name, ", ".join(repr(a) for a in self.args))
+
+
+REGISTER = "REGISTER"
+REGISTER_OR_LABEL = "REGISTER_OR_LABEL"
+STRING = "STRING"
+LABEL_TYPE = "LABEL_TYPE"
+I16 = range(-2 ** 15, 2 ** 16)
+I16_OR_LABEL = "I16_OR_LABEL"
+U16 = range(2 ** 16)
+I8 = range(-2 ** 7, 2 ** 8)
+I8_OR_LABEL = "I8_OR_LABEL"
+U5 = range(2 ** 5)
+U4 = range(2 ** 4)
 
 
 class UnaryOp(Operation):
@@ -156,7 +200,7 @@ class SETHI(Operation):
 
 
 class SET(Operation):
-    P = (REGISTER, I16)
+    P = (REGISTER, I16_OR_LABEL)
 
     def convert(self):
         dest, value = self.args
@@ -256,14 +300,14 @@ class DEC(Operation):
     def execute(self, vm):
         target, value = self.args
 
-        original = self.get_register(target)
+        original = vm.get_register(target)
         result = to_u16((original - value) & 0xFFFF)
-        self.store_register(target, result)
+        vm.store_register(target, result)
 
-        self.set_zero_and_sign(result)
-        self.flag_overflow = from_u16(result) != from_u16(original) - value
-        self.flag_carry = original < value
-        self.pc += 1
+        vm.set_zero_and_sign(result)
+        vm.flag_overflow = from_u16(result) != from_u16(original) - value
+        vm.flag_carry = original < value
+        vm.pc += 1
 
 
 class LSL(UnaryOp):
@@ -272,7 +316,7 @@ class LSL(UnaryOp):
         carry = 1 if vm.flag_carry and not vm.flag_carry_block else 0
         result = ((arg << 1) + carry) & 0xFFFF
 
-        vm.flag_carry = original & 0x8000
+        vm.flag_carry = arg & 0x8000
 
         return result
 
@@ -283,7 +327,7 @@ class LSR(UnaryOp):
         carry = 2 ** 15 if vm.flag_carry and not vm.flag_carry_block else 0
         result = (arg >> 1) + carry
 
-        vm.flag_carry = original % 2 == 1
+        vm.flag_carry = arg % 2 == 1
 
         return result
 
@@ -306,8 +350,8 @@ class ASL(UnaryOp):
         carry = 1 if vm.flag_carry and not vm.flag_carry_block else 0
         result = ((arg << 1) + carry) & 0xFFFF
 
-        vm.flag_carry = original & 0x8000
-        vm.flag_overflow = original & 0x8000 and not result & 0x8000
+        vm.flag_carry = arg & 0x8000
+        vm.flag_overflow = arg & 0x8000 and not result & 0x8000
 
         return result
 
@@ -612,7 +656,7 @@ class BNVR(RelativeBranch):
         return not vm.flag_overflow
 
 
-class CALL(Operation):
+class CALL_AND_RETURN(Operation):
     P = (REGISTER, REGISTER_OR_LABEL)
 
     def execute(self, vm):
@@ -625,25 +669,39 @@ class CALL(Operation):
         vm.store_register("FP", vm.get_register(ra))
         vm.store_register(ra, old_fp)
 
+    def typecheck(self, *args, **kwargs):
+        errors = super().typecheck(*args, **kwargs)
+        if len(self.args) >= 1 and is_register(self.args[0]):
+            with suppress(ValueError):
+                i = register_to_index(self.args[0])
+                if i != 12:
+                    msg = "first argument to {} should be R12".format(self.name)
+                    errors.append((False, msg, self.args[0]))
+        return errors
+
     def convert(self):
         if isinstance(self.args[1], int):
-            return SET("R13", self.args[1]).convert() + CALL(self.args[0], "R13")
+            return SET("R13", self.args[1]).convert() + [
+                self.__class__(self.args[0], "R13")
+            ]
         else:
             return super().convert()
 
 
-class RETURN(Operation):
-    P = (REGISTER, REGISTER_OR_LABEL)
+class CALL(CALL_AND_RETURN):
+    pass
 
-    def execute(self, vm):
-        ra, rb = self.args
 
-        old_pc = vm.pc
-        vm.pc = vm.get_register(rb)
-        vm.store_register(rb, old_pc + 1)
-        old_fp = vm.get_register("FP")
-        vm.store_register("FP", vm.get_register(ra))
-        vm.store_register(ra, old_fp)
+class RETURN(CALL_AND_RETURN):
+    def typecheck(self, *args, **kwargs):
+        errors = super().typecheck(*args, **kwargs)
+        if len(self.args) >= 2 and is_register(self.args[1]):
+            with suppress(ValueError):
+                i = register_to_index(self.args[1])
+                if i != 13:
+                    msg = "second argument to RETURN should be R13"
+                    errors.append((False, msg, self.args[1]))
+        return errors
 
 
 class SWI(Operation):
@@ -651,7 +709,7 @@ class SWI(Operation):
 
     def execute(self, vm):
         if not vm.warned_for_SWI:
-            vm.print_warning("SWI is a no-op in this simulator", loc=vm.location)
+            vm.print_warning("SWI is a no-op in this simulator", loc=self.loc)
             vm.warned_for_SWI = True
         vm.pc += 1
 
@@ -661,7 +719,7 @@ class RTI(Operation):
 
     def execute(self, vm):
         if not vm.warned_for_RTI:
-            vm.print_warning("RTI is a no-op in this simulator", loc=vm.location)
+            vm.print_warning("RTI is a no-op in this simulator", loc=self.loc)
             vm.warned_for_RTI = True
         vm.pc += 1
 
@@ -709,7 +767,7 @@ class MOVE(Operation):
 
 
 class SETRF(Operation):
-    P = (REGISTER, I16)
+    P = (REGISTER, I16_OR_LABEL)
 
     def convert(self):
         return SET(*self.args).convert() + FLAGS(self.args[0]).convert()
@@ -745,6 +803,15 @@ class NEG(Operation):
 
 class NOT(Operation):
     P = (REGISTER, REGISTER)
+
+    def typecheck(self, *args, **kwargs):
+        errors = super().typecheck(*args, **kwargs)
+        if len(self.args) == 2 and is_register(self.args[1]):
+            with suppress(ValueError):
+                i = register_to_index(self.args[1])
+                if i == 11:
+                    errors.append((False, "don't use R11 with NOT", self.args[1]))
+        return errors
 
     def convert(self):
         return [
@@ -784,6 +851,27 @@ class LP_STRING(Operation):
         vm.pc += 1
 
 
+class CONSTANT(Operation):
+    P = (LABEL_TYPE, I16)
+
+    def convert(self):
+        return []
+
+
+class LABEL(Operation):
+    P = (LABEL_TYPE,)
+
+    def convert(self):
+        return []
+
+
+class DLABEL(Operation):
+    P = (LABEL_TYPE,)
+
+    def convert(self):
+        return []
+
+
 class PRINT_REG(Operation):
     P = (REGISTER,)
 
@@ -820,27 +908,201 @@ class __EVAL(Operation):
             bytecode = compile(self.args[0], "<string>", "exec")
             exec(bytecode, {}, {"vm": vm})
 
-        self.pc += 1
+        vm.pc += 1
 
 
-def check_arglist(argtypes, args):
-    errors = []
-    if len(argtypes) != len(args):
-        errors.append("wrong number of arguments")
-
+def check_arglist(argtypes, args, symbol_table):
     errors = []
     for expected, got in zip(argtypes, args):
         if expected == REGISTER:
-            errors += check_register(got)
-        elif expected == I16:
-            errors += check_i16(got)
-        elif isinstance(expected, range):
-            errors += check_range(expected, got)
-        else:
-            raise RuntimeError(
-                "unknown parameter type {}".format(expected.__class__.__name__)
+            err = check_register(got)
+        elif expected == REGISTER_OR_LABEL:
+            err = check_register_or_label(got, symbol_table)
+        elif expected == LABEL_TYPE:
+            err = check_label(got)
+        elif expected == STRING:
+            err = check_string(got)
+        elif expected == I16_OR_LABEL:
+            err = check_in_range(
+                got, symbol_table, lo=-2 ** 15, hi=2 ** 16, labels=True
             )
+        elif expected == I8_OR_LABEL:
+            err = check_in_range(got, symbol_table, lo=-2 ** 7, hi=2 ** 8, labels=True)
+        elif isinstance(expected, range):
+            err = check_in_range(got, symbol_table, lo=expected.start, hi=expected.stop)
+        else:
+            raise RuntimeError("unknown parameter type {!r}".format(expected))
+
+        if err is not None:
+            errors.append((True, err, got))
     return errors
 
 
-name_to_class = {"ADD": Add, "MUL": Mul, "SUB": Sub}
+def check_register(arg):
+    if not isinstance(arg, Token) or arg.type != "REGISTER":
+        return "expected register"
+
+    if arg.lower() == "pc":
+        return "program counter cannot be accessed or changed directly"
+
+    try:
+        register_to_index(arg)
+    except ValueError:
+        return "{} is not a valid register".format(arg)
+    else:
+        return None
+
+
+def check_register_or_label(arg, symbol_table):
+    if not isinstance(arg, Token) or arg.type not in ("REGISTER", "SYMBOL"):
+        return "expected register or label"
+
+    if arg.type == "REGISTER":
+        return check_register(arg)
+    else:
+        try:
+            val = symbol_table[arg]
+        except KeyError:
+            return "undefined symbol"
+        else:
+            if isinstance(val, Constant):
+                return "constant cannot be used as label"
+            elif isinstance(val, DataLabel):
+                return "data label cannot be used as branch label"
+            else:
+                return None
+
+
+def check_label(arg):
+    if not is_symbol(arg):
+        return "expected label"
+    else:
+        return None
+
+
+def check_string(arg):
+    if not isinstance(arg, Token) or arg.type != "STRING":
+        return "expected string literal"
+    else:
+        return None
+
+
+def check_in_range(arg, symbol_table, *, lo, hi, labels=False):
+    if is_symbol(arg):
+        try:
+            arg = symbol_table[arg]
+        except KeyError:
+            return "undefined constant"
+        else:
+            if not labels and not isinstance(arg, Constant):
+                return "cannot use label as constant"
+
+    if not isinstance(arg, int):
+        return "expected integer"
+
+    if arg < lo or arg >= hi:
+        return "integer must be in range [{}, {})".format(lo, hi)
+    else:
+        return None
+
+
+def resolve_ops(program: List[Op], state=State()) -> List[Op]:
+    """Replace all Op objects with their corresponding class from hera/op.py. Operations
+    with unrecognized names are not included in the return value, and errors are emitted
+    for them.
+    """
+    ret = []
+    for op in program:
+        try:
+            cls = name_to_class[op.name]
+        except KeyError:
+            state.error("unknown instruction `{}`".format(op.name), loc=op.name)
+        else:
+            ret.append(cls(*op.args, loc=op.name))
+    return ret
+
+
+name_to_class = {
+    "ADD": ADD,
+    "AND": AND,
+    "ASL": ASL,
+    "ASR": ASR,
+    "BC": BC,
+    "BCR": BCR,
+    "BG": BG,
+    "BGR": BGR,
+    "BGE": BGE,
+    "BGER": BGER,
+    "BL": BL,
+    "BLR": BLR,
+    "BLE": BLE,
+    "BLER": BLER,
+    "BNC": BNC,
+    "BNCR": BNCR,
+    "BNS": BNS,
+    "BNSR": BNSR,
+    "BNV": BNV,
+    "BNVR": BNVR,
+    "BNZ": BNZ,
+    "BNZR": BNZR,
+    "BR": BR,
+    "BRR": BRR,
+    "BS": BS,
+    "BSR": BSR,
+    "BUG": BUG,
+    "BUGR": BUGR,
+    "BULE": BULE,
+    "BULER": BULER,
+    "BV": BV,
+    "BVR": BVR,
+    "BZ": BZ,
+    "BZR": BZR,
+    "CALL": CALL,
+    "CBON": CBON,
+    "CCBOFF": CCBOFF,
+    "CMP": CMP,
+    "COFF": COFF,
+    "CON": CON,
+    "CONSTANT": CONSTANT,
+    "DEC": DEC,
+    "DLABEL": DLABEL,
+    "DSKIP": DSKIP,
+    "FLAGS": FLAGS,
+    "FOFF": FOFF,
+    "FON": FON,
+    "FSET4": FSET4,
+    "FSET5": FSET5,
+    "HALT": HALT,
+    "INC": INC,
+    "INTEGER": INTEGER,
+    "LABEL": LABEL,
+    "LOAD": LOAD,
+    "LP_STRING": LP_STRING,
+    "LSL": LSL,
+    "LSL8": LSL8,
+    "LSR": LSR,
+    "LSR8": LSR8,
+    "MOVE": MOVE,
+    "MUL": MUL,
+    "NEG": NEG,
+    "NOP": NOP,
+    "NOT": NOT,
+    "OR": OR,
+    "print": PRINT,
+    "println": PRINTLN,
+    "print_reg": PRINT_REG,
+    "RETURN": RETURN,
+    "RSTRF": RSTRF,
+    "RTI": RTI,
+    "SAVEF": SAVEF,
+    "SET": SET,
+    "SETHI": SETHI,
+    "SETLO": SETLO,
+    "SETRF": SETRF,
+    "STORE": STORE,
+    "SUB": SUB,
+    "SWI": SWI,
+    "TIGER_STRING": LP_STRING,
+    "XOR": XOR,
+    "__eval": __EVAL,
+}

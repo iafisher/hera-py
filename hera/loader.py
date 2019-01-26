@@ -8,6 +8,7 @@ import sys
 from typing import Dict, List, Tuple
 
 from .data import HERAError, Op
+from .op import resolve_ops
 from .parser import parse
 from .preprocessor import preprocess
 from .typechecker import typecheck
@@ -54,6 +55,7 @@ def load_program_from_file(path: str, state) -> Tuple[List[Op], Dict[str, int]]:
 
 
 def _load_program_common(program, path, state):
+    program = resolve_ops(program, state=state)
     symbol_table = typecheck(program, state=state)
     handle_errors(state)
 

@@ -212,7 +212,7 @@ class Shell:
             print("Could not parse argument to list.")
             return
 
-        loc = self.debugger.program[self.debugger.vm.pc].name.location
+        loc = self.debugger.program[self.debugger.vm.pc].loc
         self.print_range_of_ops(loc, context=context)
 
     def handle_ll(self, args):
@@ -220,7 +220,7 @@ class Shell:
             print("ll takes no arguments.")
             return
 
-        loc = self.debugger.program[self.debugger.vm.pc].name.location
+        loc = self.debugger.program[self.debugger.vm.pc].loc
         self.print_range_of_ops(loc)
 
     def handle_next(self, args):
@@ -462,7 +462,7 @@ class Shell:
         executed, nothing is printed.
         """
         if not self.debugger.is_finished():
-            loc = self.debugger.program[self.debugger.vm.pc].name.location
+            loc = self.debugger.program[self.debugger.vm.pc].loc
             print(str(loc.line) + "  " + loc.file_lines[loc.line - 1])
         else:
             print("Program has finished executing.")

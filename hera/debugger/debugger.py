@@ -95,7 +95,7 @@ class Debugger:
         else:
             # TODO: This could give wrong results for programs with multiple files.
             for pc, op in enumerate(self.program):
-                if op.name.location.line == lineno:
+                if op.loc.line == lineno:
                     return pc
 
             raise ValueError("could not find corresponding line.")
@@ -105,11 +105,8 @@ class Debugger:
         file path and line number. More or less the inverse of `resolve_location`.
         """
         op = self.program[b].original or self.program[b]
-        if op.name.location is not None:
-            path = "<stdin>" if op.name.location.path == "-" else op.name.location.path
-            loc = path + ":" + str(op.name.location.line)
-        else:
-            loc = str(op.name.location.line)
+        path = "<stdin>" if op.loc.path == "-" else op.loc.path
+        loc = path + ":" + str(op.loc.line)
 
         if append_label:
             # Look for a label corresponding to the breakpoint.

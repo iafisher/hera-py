@@ -11,14 +11,6 @@ def vm():
     return VirtualMachine()
 
 
-def test_exec_one_delegates_to_SAVEF(vm):
-    with patch("hera.vm.VirtualMachine.exec_SAVEF") as mock_exec_SAVEF:
-        helper(vm, "SAVEF(R1)")
-
-        assert mock_exec_SAVEF.call_count == 1
-        assert mock_exec_SAVEF.call_args == (("R1",), {})
-
-
 def test_SAVEF_with_sign(vm):
     vm.flag_sign = True
 
@@ -119,14 +111,6 @@ def test_SAVEF_does_not_affect_R0(vm):
     helper(vm, "SAVEF(R0)")
 
     assert vm.registers[0] == 0
-
-
-def test_exec_one_delegates_to_RSTRF(vm):
-    with patch("hera.vm.VirtualMachine.exec_RSTRF") as mock_exec_RSTRF:
-        helper(vm, "RSTRF(R1)")
-
-        assert mock_exec_RSTRF.call_count == 1
-        assert mock_exec_RSTRF.call_args == (("R1",), {})
 
 
 def test_RSTRF_with_sign(vm):
@@ -235,14 +219,6 @@ def test_RSTRF_increments_pc(vm):
     assert vm.pc == 1
 
 
-def test_exec_one_delegates_to_FON(vm):
-    with patch("hera.vm.VirtualMachine.exec_FON") as mock_exec_FON:
-        helper(vm, "FON(5)")
-
-        assert mock_exec_FON.call_count == 1
-        assert mock_exec_FON.call_args == ((5,), {})
-
-
 def test_FON_with_sign(vm):
     helper(vm, "FON(1)")
 
@@ -326,14 +302,6 @@ def test_FON_increments_pc(vm):
     helper(vm, "FON(0)")
 
     assert vm.pc == 1
-
-
-def test_exec_one_delegates_to_FOFF(vm):
-    with patch("hera.vm.VirtualMachine.exec_FOFF") as mock_exec_FOFF:
-        helper(vm, "FOFF(5)")
-
-        assert mock_exec_FOFF.call_count == 1
-        assert mock_exec_FOFF.call_args == ((5,), {})
 
 
 def test_FOFF_with_sign(vm):
@@ -454,14 +422,6 @@ def test_FOFF_increments_pc(vm):
     assert vm.pc == 1
 
 
-def test_exec_one_delegates_to_FSET5(vm):
-    with patch("hera.vm.VirtualMachine.exec_FSET5") as mock_exec_FSET5:
-        helper(vm, "FSET5(5)")
-
-        assert mock_exec_FSET5.call_count == 1
-        assert mock_exec_FSET5.call_args == ((5,), {})
-
-
 def test_FSET5_with_sign(vm):
     helper(vm, "FSET5(1)")
 
@@ -547,14 +507,6 @@ def test_FSET5_increments_pc(vm):
     helper(vm, "FSET5(0)")
 
     assert vm.pc == 1
-
-
-def test_exec_one_delegates_to_FSET4(vm):
-    with patch("hera.vm.VirtualMachine.exec_FSET4") as mock_exec_FSET4:
-        helper(vm, "FSET4(5)")
-
-        assert mock_exec_FSET4.call_count == 1
-        assert mock_exec_FSET4.call_args == ((5,), {})
 
 
 def test_FSET4_with_sign(vm):

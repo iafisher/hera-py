@@ -3,12 +3,18 @@ from unittest.mock import patch
 from .utils import helper
 
 from hera.data import Op
+from hera.op import name_to_class
 from hera.vm import VirtualMachine
 
 
 @pytest.fixture
 def vm():
     return VirtualMachine()
+
+
+def branch_helper(vm, branchname):
+    op = name_to_class[branchname]("l")
+    return op.should(vm)
 
 
 def test_exec_branch_with_register_branch(vm):
@@ -33,191 +39,191 @@ def test_exec_branch_with_relative_branch(vm):
 
 def test_should_BL_on_sign(vm):
     vm.flag_sign = True
-    assert vm.should_BL()
+    assert branch_helper(vm, "BL")
 
 
 def test_should_BL_on_overflow(vm):
     vm.flag_overflow = True
-    assert vm.should_BL()
+    assert branch_helper(vm, "BL")
 
 
 def test_should_not_BL_on_sign_and_overflow(vm):
     vm.flag_sign = True
     vm.flag_overflow = True
-    assert not vm.should_BL()
+    assert not branch_helper(vm, "BL")
 
 
 def test_should_not_BL_on_neither_sign_nor_overflow(vm):
     vm.flag_sign = False
     vm.flag_overflow = False
-    assert not vm.should_BL()
+    assert not branch_helper(vm, "BL")
 
 
 def test_should_BGE_on_no_flags(vm):
-    assert vm.should_BGE()
+    assert branch_helper(vm, "BGE")
 
 
 def test_should_BGE_on_sign_and_overflow(vm):
     vm.flag_overflow = True
     vm.flag_sign = True
-    assert vm.should_BGE()
+    assert branch_helper(vm, "BGE")
 
 
 def test_should_not_BGE_on_sign(vm):
     vm.flag_sign = True
-    assert not vm.should_BGE()
+    assert not branch_helper(vm, "BGE")
 
 
 def test_should_not_BGE_on_overflow(vm):
     vm.flag_overflow = True
-    assert not vm.should_BGE()
+    assert not branch_helper(vm, "BGE")
 
 
 def test_should_BGE_on_zero(vm):
     vm.flag_zero = True
-    assert vm.should_BGE()
+    assert branch_helper(vm, "BGE")
 
 
 def test_should_BLE_on_sign(vm):
     vm.flag_sign = True
-    assert vm.should_BLE()
+    assert branch_helper(vm, "BLE")
 
 
 def test_should_BLE_on_overflow(vm):
     vm.flag_overflow = True
-    assert vm.should_BLE()
+    assert branch_helper(vm, "BLE")
 
 
 def test_should_BLE_on_zero(vm):
     vm.flag_zero = True
-    assert vm.should_BLE()
+    assert branch_helper(vm, "BLE")
 
 
 def test_should_BLE_on_overflow_and_zero(vm):
     vm.flag_overflow = True
     vm.flag_zero = True
-    assert vm.should_BLE()
+    assert branch_helper(vm, "BLE")
 
 
 def test_should_not_BLE_on_no_flags(vm):
-    assert not vm.should_BLE()
+    assert not branch_helper(vm, "BLE")
 
 
 def test_should_not_BLE_on_sign_and_overflow(vm):
     vm.flag_sign = True
     vm.flag_overflow = True
-    assert not vm.should_BLE()
+    assert not branch_helper(vm, "BLE")
 
 
 def test_should_BG_on_no_flags(vm):
-    assert vm.should_BG()
+    assert branch_helper(vm, "BG")
 
 
 def test_should_BG_on_sign_and_overflow(vm):
     vm.flag_overflow = True
     vm.flag_sign = True
-    assert vm.should_BG()
+    assert branch_helper(vm, "BG")
 
 
 def test_should_not_BG_on_sign(vm):
     vm.flag_sign = True
-    assert not vm.should_BG()
+    assert not branch_helper(vm, "BG")
 
 
 def test_should_not_BG_on_overflow(vm):
     vm.flag_overflow = True
-    assert not vm.should_BG()
+    assert not branch_helper(vm, "BG")
 
 
 def test_should_not_BG_on_zero(vm):
     vm.flag_zero = True
-    assert not vm.should_BG()
+    assert not branch_helper(vm, "BG")
 
 
 def test_should_BULE_on_not_carry(vm):
     vm.flag_carry = False
-    assert vm.should_BULE()
+    assert branch_helper(vm, "BULE")
 
 
 def test_should_not_BULE_on_overflow(vm):
     vm.flag_carry = True
     vm.flag_overflow = True
-    assert not vm.should_BULE()
+    assert not branch_helper(vm, "BULE")
 
 
 def test_should_BULE_on_zero(vm):
     vm.flag_carry = True
     vm.flag_zero = True
-    assert vm.should_BULE()
+    assert branch_helper(vm, "BULE")
 
 
 def test_should_not_BULE_on_sign_and_carry(vm):
     vm.flag_carry = True
     vm.flag_sign = True
-    assert not vm.should_BULE()
+    assert not branch_helper(vm, "BULE")
 
 
 def test_should_BUG_on_carry_and_not_zero(vm):
     vm.flag_carry = True
     vm.flag_zero = False
-    assert vm.should_BUG()
+    assert branch_helper(vm, "BUG")
 
 
 def test_should_not_BUG_on_carry_and_zero(vm):
     vm.flag_carry = True
     vm.flag_zero = True
-    assert not vm.should_BUG()
+    assert not branch_helper(vm, "BUG")
 
 
 def test_should_not_BUG_on_not_carry_and_not_zero(vm):
     vm.flag_carry = False
     vm.flag_zero = False
-    assert not vm.should_BUG()
+    assert not branch_helper(vm, "BUG")
 
 
 def test_should_not_BUG_on_sign(vm):
     vm.flag_sign = True
-    assert not vm.should_BUG()
+    assert not branch_helper(vm, "BUG")
 
 
 def test_should_BZ_on_zero(vm):
     vm.flag_zero = True
-    assert vm.should_BZ()
+    assert branch_helper(vm, "BZ")
 
 
 def test_should_not_BZ_on_not_zero(vm):
     vm.flag_zero = False
-    assert not vm.should_BZ()
+    assert not branch_helper(vm, "BZ")
 
 
 def test_should_BC_on_carry(vm):
     vm.flag_carry = True
-    assert vm.should_BC()
+    assert branch_helper(vm, "BC")
 
 
 def test_should_not_BC_on_not_carry(vm):
     vm.flag_carry = False
-    assert not vm.should_BC()
+    assert not branch_helper(vm, "BC")
 
 
 def test_should_BS_on_sign(vm):
     vm.flag_sign = True
-    assert vm.should_BS()
+    assert branch_helper(vm, "BS")
 
 
 def test_should_not_BS_on_not_sign(vm):
     vm.flag_sign = False
-    assert not vm.should_BS()
+    assert not branch_helper(vm, "BS")
 
 
 def test_should_BV_on_overflow(vm):
     vm.flag_overflow = True
-    assert vm.should_BV()
+    assert branch_helper(vm, "BV")
 
 
 def test_should_not_BV_on_not_overflow(vm):
     vm.flag_overflow = False
-    assert not vm.should_BV()
+    assert not branch_helper(vm, "BV")
 
 
 def test_CALL_changes_pc(vm):
@@ -255,14 +261,6 @@ def test_CALL_updates_first_register(vm):
     helper(vm, "CALL(R12, R13)")
 
     assert vm.registers[12] == 550
-
-
-def test_exec_one_delegates_to_RETURN(vm):
-    with patch("hera.vm.VirtualMachine.exec_RETURN") as mock_exec_RETURN:
-        helper(vm, "RETURN(R12, R13)")
-
-        assert mock_exec_RETURN.call_count == 1
-        assert mock_exec_RETURN.call_args == (("R12", "R13"), {})
 
 
 def test_RETURN_changes_pc(vm):

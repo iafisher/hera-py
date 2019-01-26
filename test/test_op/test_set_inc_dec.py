@@ -12,14 +12,6 @@ def vm():
     return VirtualMachine()
 
 
-def test_exec_one_delegates_to_SETLO(vm):
-    with patch("hera.vm.VirtualMachine.exec_SETLO") as mock_exec_SETLO:
-        helper(vm, "SETLO(R1, 47)")
-
-        assert mock_exec_SETLO.call_count == 1
-        assert mock_exec_SETLO.call_args == (("R1", 47), {})
-
-
 def test_SETLO_with_positive(vm):
     helper(vm, "SETLO(R5, 23)")
 
@@ -96,14 +88,6 @@ def test_SETLO_does_not_change_R0(vm):
     assert vm.registers[0] == 0
 
 
-def test_exec_one_delegates_to_SETHI(vm):
-    with patch("hera.vm.VirtualMachine.exec_SETHI") as mock_exec_SETHI:
-        helper(vm, "SETHI(R1, 47)")
-
-        assert mock_exec_SETHI.call_count == 1
-        assert mock_exec_SETHI.call_args == (("R1", 47), {})
-
-
 def test_SETHI_with_positive(vm):
     helper(vm, "SETHI(R5, 23)")
 
@@ -160,14 +144,6 @@ def test_SETHI_does_not_change_R0(vm):
     helper(vm, "SETHI(R0, 20)")
 
     assert vm.registers[0] == 0
-
-
-def test_exec_one_delegates_to_INC(vm):
-    with patch("hera.vm.VirtualMachine.exec_INC") as mock_exec_INC:
-        helper(vm, "INC(R1, 1)")
-
-        assert mock_exec_INC.call_count == 1
-        assert mock_exec_INC.call_args == (("R1", 1), {})
 
 
 def test_INC_with_small_positive(vm):
@@ -255,14 +231,6 @@ def test_INC_does_not_affect_R0(vm):
     helper(vm, "INC(R0, 1)")
 
     assert vm.registers[0] == 0
-
-
-def test_exec_one_delegates_to_DEC(vm):
-    with patch("hera.vm.VirtualMachine.exec_DEC") as mock_exec_DEC:
-        helper(vm, "DEC(R1, 1)")
-
-        assert mock_exec_DEC.call_count == 1
-        assert mock_exec_DEC.call_args == (("R1", 1), {})
 
 
 def test_DEC_with_small_positive(vm):
