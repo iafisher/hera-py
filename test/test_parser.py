@@ -94,15 +94,13 @@ def test_parse_single_line_comment():
 
 
 def test_parse_hera_boilerplate():
-    assert parse(
-        "#include <HERA.h>\nvoid HERA_main() {SETLO(R1, 42)}", includes=False
-    ) == [Op("#include", ["<HERA.h>"]), Op("SETLO", ["R1", 42])]
+    assert parse("#include <HERA.h>\nvoid HERA_main() {SETLO(R1, 42)}") == [
+        Op("SETLO", ["R1", 42])
+    ]
 
 
 def test_parse_hera_boilerplate_weird_whitespace_and_spelling():
-    assert parse(
-        "#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}", includes=False
-    ) == [Op("#include", ["<HERA.h>"])]
+    assert parse("#include <HERA.h>\nvoid   HeRA_mAin( \t)\n {\n\n}") == []
 
 
 def test_parse_hera_boilerplate_no_includes():
@@ -143,14 +141,6 @@ def test_parse_multiline_comment():
 SETLO(R1, 1)
     """
     assert parse(program) == [Op("SETLO", ["R1", 1])]
-
-
-def test_parse_include_amidst_instructions():
-    program = 'SETLO(R1, 42)\n#include "whatever"\n'
-    assert parse(program, includes=False) == [
-        Op("SETLO", ["R1", 42]),
-        Op("#include", ['"whatever"']),
-    ]
 
 
 def test_parse_missing_comma():
@@ -194,7 +184,7 @@ def test_parse_exception_has_line_number():
 
 def test_parse_expands_include():
     path = "test/assets/include/simple.hera"
-    program = parse(read_file(path), path=path, includes=True)
+    program = parse(read_file(path), path=path)
     assert program == [
         Op("BR", ["end_of_add"]),
         Op("LABEL", ["add"]),

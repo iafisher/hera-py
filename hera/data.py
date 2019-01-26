@@ -23,8 +23,6 @@ class State:
         self.data_start = DEFAULT_DATA_START
         self.warning_count = 0
         self.warned_for_octal = False
-        # TODO: Should this really be part of the global state?
-        self.visited = set()
         self.errors = []
         self.warnings = []
 

@@ -7,7 +7,7 @@ Version: January 2019
 """
 import os
 import re
-from typing import List
+from typing import List, Set
 
 from lark import Lark, Token as LarkToken, Transformer, Tree
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
@@ -17,7 +17,7 @@ from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
 from .utils import get_canonical_path, is_register, read_file
 
 
-def parse(text: str, *, path=None, includes=True, state=State()) -> List[Op]:
+def parse(text: str, *, path=None, visited=None, state=State()) -> List[Op]:
     """Parse a HERA program.
 
     `path` is the path of the file being parsed, as it will appear in error and
@@ -32,8 +32,11 @@ def parse(text: str, *, path=None, includes=True, state=State()) -> List[Op]:
     `visited` is a set of file paths that have already been visited, to prevent infinite
     regress if two files include each other directly or indirectly.
     """
+    if visited is None:
+        visited = set()
+
     if path is not None:
-        state.visited.add(get_canonical_path(path))
+        visited.add(get_canonical_path(path))
 
     file_lines = text.splitlines()
     base_location = Location(None, None, path or "<string>", file_lines)
@@ -66,17 +69,15 @@ def parse(text: str, *, path=None, includes=True, state=State()) -> List[Op]:
 
     convert_tokens(ops, base_location, state)
 
-    if includes:
-        expanded_ops = []
-        for op in ops:
-            if op.name == "#include" and len(op.args) == 1:
-                included_ops = expand_include(op.args[0], path, state)
-                expanded_ops.extend(included_ops)
-            else:
-                expanded_ops.append(op)
-        return expanded_ops
-    else:
-        return ops
+    # Expand #include statements.
+    expanded_ops = []
+    for op in ops:
+        if op.name == "#include" and len(op.args) == 1:
+            included_ops = expand_include(op.args[0], path, visited, state)
+            expanded_ops.extend(included_ops)
+        else:
+            expanded_ops.append(op)
+    return expanded_ops
 
 
 def convert_tokens(ops: List[Op], base_location: Location, state: State) -> None:
@@ -112,7 +113,9 @@ def convert_tokens(ops: List[Op], base_location: Location, state: State) -> None
         ops[i] = op._replace(name=name)
 
 
-def expand_include(include_path: str, root_path: str, state: State) -> List[Op]:
+def expand_include(
+    include_path: str, root_path: str, visited: Set[str], state: State
+) -> List[Op]:
     """Open the file named by `include_path` and return its parsed contents.
 
     `root_path` is the path of the including file, which is necessary for determining
@@ -130,7 +133,7 @@ def expand_include(include_path: str, root_path: str, state: State) -> List[Op]:
         if root_path is not None:
             include_path = os.path.join(os.path.dirname(root_path), include_path)
 
-        if get_canonical_path(include_path) in state.visited:
+        if get_canonical_path(include_path) in visited:
             state.error("recursive include", loc=loc)
             return []
 
@@ -140,10 +143,23 @@ def expand_include(include_path: str, root_path: str, state: State) -> List[Op]:
             state.error(str(e), loc=loc)
             return []
 
-    return parse(included_program, path=include_path, state=state)
+    return parse(included_program, path=include_path, visited=visited, state=state)
 
 
 def expand_angle_include(include_path: str, state: State) -> List[Op]:
+    """Same as expand_include, except with `include_path` known to be an angle-bracket
+    include, e.g.
+
+      #include <system-library>
+
+    rather than
+
+      #include "user-library"
+
+    The `include_path` string still has the angle brackets.
+    """
+    # There is no check for recursive includes in this function as it is assumed that
+    # system libraries do not contain them.
     loc = include_path
     if include_path == "<Tiger-stdlib-stack-data.hera>":
         included_program = TIGER_STDLIB_STACK_DATA

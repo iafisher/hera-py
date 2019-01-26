@@ -21,7 +21,7 @@ def load_program(text: str, state) -> Tuple[List[Op], Dict[str, int]]:
     The return value of this function is valid input to the VirtualMachine.exec_many
     method.
     """
-    program = parse(text, includes=True, state=state)
+    program = parse(text, state=state)
     handle_errors(state)
     return _load_program_common(program, "<string>", state)
 

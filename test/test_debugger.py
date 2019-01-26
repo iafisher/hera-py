@@ -204,13 +204,6 @@ def test_handle_execute_with_label(shell, capsys):
     assert capsys.readouterr().out == "execute cannot take labels.\n"
 
 
-def test_handle_execute_with_include(shell, capsys):
-    shell.handle_command('execute #include "whatever.hera"')
-
-    assert shell.debugger.vm.pc == 0
-    assert capsys.readouterr().out == "execute cannot take #include.\n"
-
-
 def test_handle_skip_with_increment(shell):
     shell.handle_command("skip +2")
 

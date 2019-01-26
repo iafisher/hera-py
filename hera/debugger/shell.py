@@ -134,7 +134,7 @@ class Shell:
 
     def handle_execute(self, argstr):
         # Make sure there are no disallowed ops.
-        for op in parse(argstr, includes=False):
+        for op in parse(argstr):
             if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
                 print("execute cannot take branching operations.")
                 return
@@ -143,9 +143,6 @@ class Shell:
                 return
             elif op.name == "LABEL":
                 print("execute cannot take labels.")
-                return
-            elif op.name == "#include":
-                print("execute cannot take #include.")
                 return
 
         state = State()
