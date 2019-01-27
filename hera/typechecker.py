@@ -9,12 +9,7 @@ from contextlib import suppress
 from typing import Dict, List
 
 from .data import Op, State
-from .utils import (
-    DATA_STATEMENTS,
-    is_register,
-    is_symbol,
-    REGISTER_BRANCHES,
-)
+from .utils import DATA_STATEMENTS, is_register, is_symbol, REGISTER_BRANCHES
 
 
 def typecheck(program: List[Op], state=State()) -> Dict[str, int]:

@@ -707,21 +707,9 @@ class RETURN(CALL_AND_RETURN):
 class SWI(Operation):
     P = (U4,)
 
-    def execute(self, vm):
-        if not vm.warned_for_SWI:
-            vm.print_warning("SWI is a no-op in this simulator", loc=self.loc)
-            vm.warned_for_SWI = True
-        vm.pc += 1
-
 
 class RTI(Operation):
     P = ()
-
-    def execute(self, vm):
-        if not vm.warned_for_RTI:
-            vm.print_warning("RTI is a no-op in this simulator", loc=self.loc)
-            vm.warned_for_RTI = True
-        vm.pc += 1
 
 
 class CMP(Operation):

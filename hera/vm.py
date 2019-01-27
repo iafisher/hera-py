@@ -69,9 +69,30 @@ class VirtualMachine:
         self.location = op.loc
 
         opc = self.pc
-        op.execute(self)
+        try:
+            op.execute(self)
+        except NotImplementedError:
+            self.handle_not_implemented(op.name)
         if self.pc == opc:
             self.halted = True
+
+    def handle_not_implemented(self, name):
+        if name == "SWI":
+            if not self.warned_for_SWI:
+                self.print_warning(
+                    "SWI is a no-op in this simulator", loc=self.location
+                )
+                self.warned_for_SWI = True
+            self.pc += 1
+        elif name == "RTI":
+            if not self.warned_for_RTI:
+                self.print_warning(
+                    "RTI is a no-op in this simulator", loc=self.location
+                )
+                self.warned_for_RTI = True
+            self.pc += 1
+        else:
+            raise RuntimeError("unsupported operation {}".format(name))
 
     def get_register(self, name):
         """Get the contents of the register with the given name."""
