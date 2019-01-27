@@ -1,9 +1,8 @@
 """Utilities for the HERA interpreter.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: December 2018
+Version: January 2019
 """
-import json
 import os.path
 import sys
 
@@ -70,6 +69,10 @@ def is_register(s):
     return (s[0] in "rR" and s[1:].isdigit()) or s.lower() in NAMED_REGISTERS
 
 
+def is_symbol(s):
+    return isinstance(s, Token) and s.type == "SYMBOL"
+
+
 def print_register_debug(target, v, *, to_stderr=True):
     file_ = sys.stderr if to_stderr else sys.stdout
 
@@ -79,10 +82,6 @@ def print_register_debug(target, v, *, to_stderr=True):
     if v < 128 and chr(v).isprintable():
         print(" = {!r}".format(chr(v)), end="", file=file_)
     print(file=file_)
-
-
-def is_symbol(s):
-    return isinstance(s, Token) and s.type == "SYMBOL"
 
 
 REGISTER_BRANCHES = set(
@@ -138,18 +137,6 @@ def get_canonical_path(fpath):
         return fpath
     else:
         return os.path.realpath(fpath)
-
-
-def op_to_string(op):
-    """Convert a single operation to a string."""
-    return "{}({})".format(op.name, ", ".join(arg_to_string(a) for a in op.args))
-
-
-def arg_to_string(arg):
-    if isinstance(arg, Token) and arg.type == "STRING":
-        return json.dumps(arg)
-    else:
-        return str(arg)
 
 
 def read_file(path) -> str:

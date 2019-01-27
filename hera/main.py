@@ -23,7 +23,7 @@ from docopt import docopt
 from .data import Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
 from .loader import load_program_from_file
-from .utils import op_to_string, print_register_debug
+from .utils import print_register_debug
 from .vm import VirtualMachine
 
 
@@ -90,13 +90,13 @@ def main_preprocess(path, settings):
     if program.data:
         sys.stderr.write("[DATA]\n")
         for data_op in program.data:
-            sys.stderr.write("  {}\n".format(op_to_string(data_op)))
+            sys.stderr.write("  {}\n".format(data_op))
 
         if program.code:
             sys.stderr.write("\n[CODE]\n")
 
     for i, op in enumerate(program.code):
-        sys.stderr.write("  {:0>4}  {}\n".format(i, op_to_string(op)))
+        sys.stderr.write("  {:0>4}  {}\n".format(i, op))
 
 
 def dump_state(vm, settings):

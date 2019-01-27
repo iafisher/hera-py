@@ -11,13 +11,7 @@ from .minilanguage import (
 from hera.data import Constant, DataLabel, HERAError, Label, Program
 from hera.loader import load_program
 from hera.parser import parse
-from hera.utils import (
-    BRANCHES,
-    DATA_STATEMENTS,
-    op_to_string,
-    pad,
-    print_register_debug,
-)
+from hera.utils import BRANCHES, DATA_STATEMENTS, pad, print_register_debug
 
 
 def debug(program: Program) -> None:
@@ -502,7 +496,7 @@ class Shell:
     def print_op(self, index):
         op = self.debugger.program[index].original
         prefix = "-> " if index == self.debugger.vm.pc else "   "
-        print(prefix + "{:0>4x}  {}".format(index, op_to_string(op)), end="")
+        print(prefix + "{:0>4x}  {}".format(index, op), end="")
 
         # Print all labels pointing to the line.
         labels = self.debugger.get_labels(index)

@@ -1,3 +1,4 @@
+import json
 from contextlib import suppress
 from typing import Dict, List, Tuple
 
@@ -61,6 +62,18 @@ class Operation:
 
     def __repr__(self):
         return "{}({})".format(self.name, ", ".join(repr(a) for a in self.args))
+
+    def __str__(self):
+        return "{}({})".format(
+            self.name, ", ".join(arg_to_string(a) for a in self.args)
+        )
+
+
+def arg_to_string(arg):
+    if isinstance(arg, Token) and arg.type == "STRING":
+        return json.dumps(arg)
+    else:
+        return str(arg)
 
 
 REGISTER = "REGISTER"
