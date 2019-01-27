@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple
 from .checker import check
 from .data import HERAError, Op
 from .parser import parse
-from .utils import handle_errors, read_file
+from .utils import handle_errors, handle_messages, read_file
 
 
 def load_program(text: str, state) -> Tuple[List[Op], Dict[str, int]]:
@@ -20,8 +20,8 @@ def load_program(text: str, state) -> Tuple[List[Op], Dict[str, int]]:
     The return value of this function is valid input to the VirtualMachine.exec_many
     method.
     """
-    program = parse(text, state=state)
-    handle_errors(state)
+    program, messages = parse(text, state=state)
+    handle_messages(state, messages)
     return check(program, state)
 
 
@@ -46,7 +46,7 @@ def load_program_from_file(path: str, state) -> Tuple[List[Op], Dict[str, int]]:
             state.error(str(e))
     handle_errors(state)
 
-    program = parse(text, path=path, state=state)
-    handle_errors(state)
+    program, messages = parse(text, path=path, state=state)
+    handle_messages(state, messages)
 
     return check(program, state)

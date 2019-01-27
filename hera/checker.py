@@ -1,5 +1,5 @@
 from contextlib import suppress
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from .data import Constant, DataLabel, Label, Op, Program, State, Token
 from .op import resolve_ops
@@ -13,7 +13,7 @@ from .utils import (
 )
 
 
-def check(program: List[Op], state: State) -> Program:
+def check(program: List[Op], state: State) -> Tuple[Program, List[str]]:
     program = resolve_ops(program, state=state)
     symbol_table = typecheck(program, state=state)
     handle_errors(state)

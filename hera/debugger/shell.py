@@ -133,7 +133,7 @@ class Shell:
 
     def handle_execute(self, argstr):
         # Make sure there are no disallowed ops.
-        for op in parse(argstr):
+        for op in parse(argstr)[0]:
             if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
                 print("execute cannot take branching operations.")
                 return

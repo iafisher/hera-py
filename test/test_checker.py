@@ -35,7 +35,7 @@ def state():
 
 def helper(opstr, symbol_table={}):
     state = State()
-    ops = resolve_ops(parse(opstr), state)
+    ops = resolve_ops(parse(opstr)[0], state)
     if not ops or state.errors:
         return [(True, msg, loc) for msg, loc in state.errors]
     else:

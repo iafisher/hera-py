@@ -10,6 +10,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
 from collections import namedtuple
+from typing import Optional, Tuple
 
 
 DEFAULT_DATA_START = 0xC001
@@ -56,7 +57,7 @@ class Op(namedtuple("Op", ["name", "args", "original"])):
         )
 
 
-Program = namedtuple("Program", ["data", "code", "symbol_table", "errors"])
+Program = namedtuple("Program", ["data", "code", "symbol_table"])
 
 
 class IntToken(int):
@@ -72,6 +73,30 @@ class Token(str):
         self.type = type_
         self.location = loc
         return self
+
+
+class Messages:
+    def __init__(self, msg=None, loc=None, *, warning=False):
+        self.errors = []
+        self.warnings = []
+        if msg is not None:
+            if warning:
+                self.warnings.append((msg, loc))
+            else:
+                self.errors.append((msg, loc))
+
+    def extend(self, messages):
+        self.errors.extend(messages.errors)
+        self.warnings.extend(messages.warnings)
+
+    def err(self, msg, loc=None):
+        self.errors.append((msg, loc))
+
+    def warn(self, msg, loc=None):
+        self.warnings.append((msg, loc))
+
+
+ErrorType = Tuple[str, Optional[Location]]
 
 
 class HERAError(Exception):

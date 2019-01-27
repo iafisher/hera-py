@@ -7,7 +7,7 @@ import json
 import os.path
 import sys
 
-from .data import HERAError, IntToken, Location, Token
+from .data import HERAError, IntToken, Location, State, Token
 
 
 def to_u16(n):
@@ -167,6 +167,12 @@ def read_file(path) -> str:
 
 def pad(s, n):
     return (" " * (n - len(s))) + s
+
+
+def handle_messages(state, messages):
+    state.errors = messages.errors
+    state.warnings = messages.warnings
+    handle_errors(state)
 
 
 def handle_errors(state):

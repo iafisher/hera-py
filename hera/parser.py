@@ -7,17 +7,19 @@ Version: January 2019
 """
 import os
 import re
-from typing import List, Set
+from typing import List, Set, Tuple
 
 from lark import Lark, Token as LarkToken, Transformer
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
-from .data import HERAError, IntToken, Location, Op, State, Token
+from .data import ErrorType, HERAError, IntToken, Location, Messages, Op, State, Token
 from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
 from .utils import get_canonical_path, is_register, read_file
 
 
-def parse(text: str, *, path=None, visited=None, state=State()) -> List[Op]:
+def parse(
+    text: str, *, path=None, visited=None, state=State()
+) -> Tuple[List[Op], Messages]:
     """Parse a HERA program.
 
     `path` is the path of the file being parsed, as it will appear in error and
@@ -40,43 +42,47 @@ def parse(text: str, *, path=None, visited=None, state=State()) -> List[Op]:
 
     file_lines = text.splitlines()
     base_location = Location(None, None, path or "<string>", file_lines)
+    messages = Messages()
 
     try:
         tree = _parser.parse(text)
-        ops = TreeToOplist(state).transform(tree)
+        ops = TreeToOplist(messages).transform(tree)
     except UnexpectedCharacters as e:
         loc = base_location._replace(line=e.line, column=e.column)
-        state.error("unexpected character", loc=loc)
-        return []
+        return ([], Messages("unexpected character", loc))
     except UnexpectedToken as e:
         if e.token.type == "$END":
-            state.error("unexpected end of input")
+            return ([], Messages("unexpected end of input"))
         else:
             loc = base_location._replace(line=e.line, column=e.column)
-            state.error("unexpected character", loc=loc)
-        return []
+            return ([], Messages("unexpected character", loc))
     except LarkError as e:
         loc = base_location._replace(line=e.line, column=e.column)
-        state.error("invalid syntax", loc=base_location)
-        return []
+        return ([], Messages("invalid syntax", base_location))
 
-    convert_tokens(ops, base_location, state)
+    conversion_messages = convert_tokens(ops, base_location, state)
+    # Don't need to check errors immediately, as none of them could be fatal.
+    messages.extend(conversion_messages)
 
     # Expand #include statements.
     expanded_ops = []
     for op in ops:
         if op.name == "#include" and len(op.args) == 1:
-            included_ops = expand_include(op.args[0], path, visited, state)
+            included_ops, include_messages = expand_include(
+                op.args[0], path, visited, state
+            )
+            messages.extend(include_messages)
             expanded_ops.extend(included_ops)
         else:
             expanded_ops.append(op)
-    return expanded_ops
+    return (expanded_ops, messages)
 
 
-def convert_tokens(ops: List[Op], base_location: Location, state: State) -> None:
+def convert_tokens(ops: List[Op], base_location: Location, state: State) -> Messages:
     """Convert all tokens in the list of ops from Lark Token objects to HERA Token and
     IntToken objects, tagged with `base_location`.
     """
+    messages = Messages()
     for i, op in enumerate(ops):
         name = Token(op.name.type, op.name, augment_location(base_location, op.name))
         for j, arg in enumerate(op.args):
@@ -89,26 +95,25 @@ def convert_tokens(ops: List[Op], base_location: Location, state: State) -> None
             elif arg.type == "OCTAL":
                 loc = augment_location(base_location, arg)
                 if not arg.startswith("0o") and not state.warned_for_octal:
-                    state.warning(
-                        'consider using "0o" prefix for octal numbers', loc=loc
-                    )
+                    messages.warn('consider using "0o" prefix for octal numbers', loc)
                     state.warned_for_octal = True
                 try:
                     op.args[j] = IntToken(arg, loc, base=8)
                 except ValueError:
                     # This is only necessary for octal because invalid digits for other
                     # bases are ruled out in the parser.
-                    state.error("invalid octal literal", loc=loc)
+                    messages.err("invalid octal literal", loc)
             elif arg.type == "BINARY":
                 op.args[j] = IntToken(arg, augment_location(base_location, arg), base=2)
             else:
                 op.args[j] = Token(arg.type, arg, augment_location(base_location, arg))
         ops[i] = op._replace(name=name)
+    return messages
 
 
 def expand_include(
     include_path: str, root_path: str, visited: Set[str], state: State
-) -> List[Op]:
+) -> Tuple[List[Op], Messages]:
     """Open the file named by `include_path` and return its parsed contents.
 
     `root_path` is the path of the including file, which is necessary for determining
@@ -127,19 +132,17 @@ def expand_include(
             include_path = os.path.join(os.path.dirname(root_path), include_path)
 
         if get_canonical_path(include_path) in visited:
-            state.error("recursive include", loc=loc)
-            return []
+            return ([], Messages("recursive include", loc))
 
         try:
             included_program = read_file(include_path)
         except HERAError as e:
-            state.error(str(e), loc=loc)
-            return []
+            return ([], Messages(str(e), loc))
 
     return parse(included_program, path=include_path, visited=visited, state=state)
 
 
-def expand_angle_include(include_path: str, state: State) -> List[Op]:
+def expand_angle_include(include_path: str, state: State) -> Tuple[List[Op], Messages]:
     """Same as expand_include, except with `include_path` known to be an angle-bracket
     include, e.g.
 
@@ -155,8 +158,12 @@ def expand_angle_include(include_path: str, state: State) -> List[Op]:
     # that system libraries do not have recursive includes.
     loc = include_path
     if include_path == "<HERA.h>":
-        state.warning("#include <HERA.h> is not necessary for hera-py", loc=loc)
-        return []
+        return (
+            [],
+            Messages(
+                "#include <HERA.h> is not necessary for hera-py", loc, warning=True
+            ),
+        )
     elif include_path == "<Tiger-stdlib-stack-data.hera>":
         included_program = TIGER_STDLIB_STACK_DATA
     elif include_path == "<Tiger-stdlib-stack.hera>":
@@ -167,8 +174,7 @@ def expand_angle_include(include_path: str, state: State) -> List[Op]:
         try:
             included_program = read_file(os.path.join(root_path, include_path))
         except HERAError as e:
-            state.error(str(e), loc=loc)
-            return []
+            return ([], Messages(str(e), loc))
 
     return parse(included_program, path=include_path, state=state)
 
@@ -176,9 +182,9 @@ def expand_angle_include(include_path: str, state: State) -> List[Op]:
 class TreeToOplist(Transformer):
     """A class to transform Lark's parse tree into a list of HERA ops."""
 
-    def __init__(self, state, *args, **kwargs):
+    def __init__(self, messages, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.state = state
+        self.messages = messages
 
     def start(self, matches):
         if len(matches) == 2:
@@ -187,7 +193,7 @@ class TreeToOplist(Transformer):
             return matches[0]
 
     def cpp_program(self, matches):
-        self.state.warning("void HERA_main() { ... } is not necessary for hera-py")
+        self.messages.warn("void HERA_main() { ... } is not necessary for hera-py")
         return matches
 
     def hera_program(self, matches):
