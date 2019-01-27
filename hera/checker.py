@@ -19,7 +19,7 @@ def check(oplist: List[Op], settings: Settings) -> Tuple[Optional[Program], Mess
     if messages.errors:
         return (None, messages)
 
-    oplist, preprocess_messages = preprocess(oplist, symbol_table)
+    oplist, preprocess_messages = convert_ops(oplist, symbol_table)
     messages.extend(preprocess_messages)
 
     data = []
@@ -176,23 +176,19 @@ def out_of_range(n):
     return n < -32768 or n >= 65536
 
 
-def preprocess(
-    program: List[Operation], symbol_table: Dict[str, int]
+def convert_ops(
+    oplist: List[Operation], symbol_table: Dict[str, int]
 ) -> Tuple[List[Operation], Messages]:
-    """Preprocess the program into valid input for the exec_many method on the
-    VirtualMachine class.
-
-    This function does the following
-        - Replaces pseudo-instructions with real ones.
-        - Resolves labels into their line numbers.
+    """Convert the operations from pseudo-ops to real ops, and substitute values for
+    labels and constants.
 
     The program must be type-checked before being passed to this function.
     """
     messages = Messages()
-    nprogram = []
-    for op in program:
+    retlist = []
+    pc = 0
+    for op in oplist:
         if op.name in RELATIVE_BRANCHES and is_symbol(op.args[0]):
-            pc = len(nprogram)
             target = symbol_table[op.args[0]]
             jump = target - pc
             # TODO: Will this work? I think pc takes data statements into account here
@@ -204,11 +200,15 @@ def preprocess(
         else:
             op = substitute_label(op, symbol_table)
 
-        for new_op in op.convert():
+        new_ops = op.convert()
+        for new_op in new_ops:
             new_op.loc = op.loc
             new_op.original = op
-            nprogram.append(new_op)
-    return (nprogram, messages)
+            retlist.append(new_op)
+
+        if op.name not in DATA_STATEMENTS:
+            pc += len(new_ops)
+    return (retlist, messages)
 
 
 def substitute_label(op: Operation, symbol_table: Dict[str, int]) -> Operation:

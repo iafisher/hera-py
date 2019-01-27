@@ -7,7 +7,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 ### Added
-- Relative branch instructions can now target labels.
 - Error messages for `#include` with non-existent file now print the line number.
 - The `list` and `ll` debugging commands.
 - The `execute` debugging command.
@@ -22,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `--big-stack` command-line flag.
 
 ### Changed
+- Relative branch instructions can now target labels.
 - Warning for zero-prefixed octal literals will only be printed once per program, rather than for every occurrence.
 - Data statements may never follow code, even when in different files.
 - ANSI colors are not used when standard error is not a tty-like device.

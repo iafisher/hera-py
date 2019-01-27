@@ -1,14 +1,14 @@
 import pytest
 
 from hera.checker import (
+    convert_ops,
     get_labels,
     operation_length,
-    preprocess,
     substitute_label,
     typecheck,
 )
 from hera.data import Op, Settings, Token
-from hera.op import ADD, CALL, INC, resolve_ops, SET, SETHI, SETLO
+from hera.op import ADD, BRR, CALL, INC, INTEGER, resolve_ops, SET, SETHI, SETLO
 from hera.parser import parse
 
 
@@ -546,6 +546,23 @@ def test_substitute_label_with_other_op():
     )
 
 
-def test_preprocess_constant():
-    program = [SET(R("R1"), Token("SYMBOL", "n"))]
-    assert preprocess(program, {"n": 100})[0] == [SETLO("R1", 100), SETHI("R1", 0)]
+def test_convert_ops_with_constant():
+    oplist, messages = convert_ops([SET(R("R1"), Token("SYMBOL", "n"))], {"n": 100})
+
+    assert len(messages.errors) == 0
+    assert oplist == [SETLO("R1", 100), SETHI("R1", 0)]
+
+
+def test_convert_ops_reports_error_for_invalid_relative_branch():
+    oplist, messages = convert_ops([BRR(SYM("l"))], {"l": 9000})
+
+    assert len(messages.errors) == 1
+    assert "too far" in messages.errors[0][0]
+
+
+def test_convert_ops_does_not_report_error_for_valid_relative_branch():
+    data = [INTEGER(1)] * 200
+    oplist, messages = convert_ops(data + [BRR(SYM("l"))], {"l": 1})
+
+    assert len(messages.errors) == 0
+    assert oplist == data + [BRR(1)]
