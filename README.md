@@ -33,7 +33,7 @@ $ hera preprocess main.hera
 ```
 
 ### Comparison with HERA-C
-HERA-C is the current HERA interpreter used as Haverford. It is implemented as a shell-script wrapper around a set of C++ macros that expand HERA instructions into C++ code. hera-py aims to improve on HERA-C in the following areas:
+HERA-C is the current HERA interpreter used at Haverford. It is implemented as a shell-script wrapper around a set of C++ macros that expand HERA instructions into C++ code, which is then compiled by g++. hera-py aims to improve on HERA-C in the following areas:
   - Ease of use
     - Cross-platform and easy to install
     - Configurable with command-line options
@@ -52,13 +52,3 @@ hera-py also supports several features that HERA-C does not:
 
 HERA-C has a few features that hera-py does not:
   - C-style #define macros (and more generally the ability to embed arbitrary C++ code in HERA programs)
-
-## Design
-Running a HERA program takes a few steps:
-
-1. The text of the program is parsed into a list of instruction objects.  (`hera/parser.py`)
-2. The program is type-checked to ensure that all operations take the proper number and type of operands, and the symbol table is generated.  (`hera/typechecker.py`)
-3. Pseudo-instructions are converted into actual instructions, and labels and constants are substituted for their values.  (`hera/preprocessor.py`)
-4. The instructions are executed on a virtual HERA machine.  (`hera/vm.py`)
-
-For more details about the implementation, see the docstrings in each module.
