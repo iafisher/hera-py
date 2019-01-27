@@ -1007,7 +1007,7 @@ def check_in_range(arg, symbol_table, *, lo, hi, labels=False):
         return None
 
 
-def resolve_ops(program: List[Op]) -> Tuple[List[Op], Messages]:
+def resolve_ops(program: List[Op]) -> Tuple[List[Operation], Messages]:
     """Replace all Op objects with their corresponding class from hera/op.py. Operations
     with unrecognized names are not included in the return value.
     """

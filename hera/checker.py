@@ -1,8 +1,8 @@
 from contextlib import suppress
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from .data import Constant, DataLabel, Label, Op, Messages, Program, Settings, Token
-from .op import resolve_ops
+from .op import Operation, resolve_ops
 from .utils import (
     DATA_STATEMENTS,
     is_register,
@@ -12,12 +12,12 @@ from .utils import (
 )
 
 
-def check(oplist: List[Op], settings: Settings) -> Tuple[Program, Messages]:
+def check(oplist: List[Op], settings: Settings) -> Tuple[Optional[Program], Messages]:
     oplist, messages = resolve_ops(oplist)
     symbol_table, typecheck_messages = typecheck(oplist, settings=settings)
     messages.extend(typecheck_messages)
     if messages.errors:
-        return (oplist, messages)
+        return (None, messages)
 
     oplist, preprocess_messages = preprocess(oplist, symbol_table)
     messages.extend(preprocess_messages)
@@ -34,7 +34,7 @@ def check(oplist: List[Op], settings: Settings) -> Tuple[Program, Messages]:
 
 
 def typecheck(
-    program: List[Op], settings=Settings()
+    program: List[Operation], settings=Settings()
 ) -> Tuple[Dict[str, int], Messages]:
     """Type-check the program and emit error messages as appropriate. Return the
     program's symbol table.
@@ -66,7 +66,7 @@ def typecheck(
     return (symbol_table, messages)
 
 
-def check_symbol_redeclaration(program: List[Op]) -> Messages:
+def check_symbol_redeclaration(program: List[Operation]) -> Messages:
     """Check if any symbols are redeclared in the program and return the error
     messages.
     """
@@ -85,7 +85,7 @@ def check_symbol_redeclaration(program: List[Op]) -> Messages:
 
 
 def get_labels(
-    program: List[Op], settings: Settings
+    program: List[Operation], settings: Settings
 ) -> Tuple[Dict[str, int], Messages]:
     """Return a dictionary mapping the labels and data labels (but not the constants) of
     the program to their concrete values.
@@ -177,8 +177,8 @@ def out_of_range(n):
 
 
 def preprocess(
-    program: List[Op], symbol_table: Dict[str, int]
-) -> Tuple[List[Op], Messages]:
+    program: List[Operation], symbol_table: Dict[str, int]
+) -> Tuple[List[Operation], Messages]:
     """Preprocess the program into valid input for the exec_many method on the
     VirtualMachine class.
 
@@ -209,7 +209,7 @@ def preprocess(
     return (nprogram, messages)
 
 
-def substitute_label(op: Op, symbol_table: Dict[str, int]) -> Op:
+def substitute_label(op: Operation, symbol_table: Dict[str, int]) -> Operation:
     """Substitute any label in the instruction with its concrete value."""
     for i, arg in enumerate(op.args):
         if isinstance(arg, Token) and arg.type == "SYMBOL":
