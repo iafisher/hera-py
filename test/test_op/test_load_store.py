@@ -1,8 +1,6 @@
 import pytest
-from unittest.mock import patch
 from .utils import helper
 
-from hera.data import Op
 from hera.utils import to_u16
 from hera.vm import VirtualMachine
 

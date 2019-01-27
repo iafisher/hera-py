@@ -7,7 +7,6 @@ from .data import State
 from .utils import (
     ANSI_MAGENTA_BOLD,
     ANSI_RESET,
-    DATA_STATEMENTS,
     print_message_with_location,
     register_to_index,
 )

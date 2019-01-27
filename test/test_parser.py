@@ -1,6 +1,5 @@
 import os
 import pytest
-from unittest.mock import patch
 
 from hera.data import Op, State
 from hera.parser import parse, replace_escapes

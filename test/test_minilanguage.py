@@ -9,7 +9,6 @@ from hera.debugger.minilanguage import (
     TOKEN_EOF,
     TOKEN_FALSE,
     TOKEN_INT,
-    TOKEN_LBRACKET,
     TOKEN_MEM,
     TOKEN_RBRACKET,
     TOKEN_REGISTER,

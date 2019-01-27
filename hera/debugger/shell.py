@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 from . import minilanguage
 from .debugger import Debugger
 from .minilanguage import (
@@ -10,7 +8,7 @@ from .minilanguage import (
     RegisterNode,
     SymbolNode,
 )
-from hera.data import Constant, DataLabel, HERAError, Label, Op, Program, State
+from hera.data import Constant, DataLabel, HERAError, Label, Program, State
 from hera.loader import load_program
 from hera.parser import parse
 from hera.utils import (

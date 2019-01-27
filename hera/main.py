@@ -23,7 +23,7 @@ from docopt import docopt
 from .data import State
 from .debugger import debug
 from .loader import load_program_from_file
-from .utils import DATA_STATEMENTS, op_to_string, print_register_debug
+from .utils import op_to_string, print_register_debug
 from .vm import VirtualMachine
 
 

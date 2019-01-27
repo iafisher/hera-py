@@ -12,7 +12,7 @@ from typing import List, Set, Tuple
 from lark import Lark, Token as LarkToken, Transformer
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
-from .data import ErrorType, HERAError, IntToken, Location, Messages, Op, State, Token
+from .data import HERAError, IntToken, Location, Messages, Op, State, Token
 from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
 from .utils import get_canonical_path, is_register, read_file
 

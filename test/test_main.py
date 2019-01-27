@@ -3,8 +3,8 @@ import re
 from io import StringIO
 from unittest.mock import patch
 
-from hera.data import Op, State
-from hera.main import dump_state, main, main_preprocess
+from hera.data import State
+from hera.main import dump_state, main
 from hera.vm import VirtualMachine
 
 

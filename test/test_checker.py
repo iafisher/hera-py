@@ -1,17 +1,13 @@
 import pytest
-from unittest.mock import patch
 
 from hera.checker import (
-    Constant,
-    DataLabel,
     get_labels,
-    Label,
     operation_length,
     preprocess,
     substitute_label,
     typecheck,
 )
-from hera.data import IntToken, Op, State, Token
+from hera.data import Op, State, Token
 from hera.op import ADD, CALL, INC, resolve_ops, SET, SETHI, SETLO
 from hera.parser import parse
 
@@ -47,6 +43,8 @@ def valid(opstr, symbol_table={}):
 
 def invalid(opstr, msg, symbol_table={}):
     errors = helper(opstr, symbol_table)
+
+    assert len(errors) > 0
 
 
 def test_typecheck_SET():

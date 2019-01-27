@@ -1,7 +1,6 @@
 import pytest
 
 from hera.main import main
-from hera.vm import VirtualMachine
 
 
 def test_simple_include_program():

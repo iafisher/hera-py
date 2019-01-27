@@ -7,7 +7,7 @@ import json
 import os.path
 import sys
 
-from .data import HERAError, IntToken, Location, Messages, State, Token
+from .data import HERAError, IntToken, Location, Messages, Token
 
 
 def to_u16(n):

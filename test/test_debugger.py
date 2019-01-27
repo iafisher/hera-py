@@ -1,10 +1,10 @@
 import pytest
 from unittest.mock import patch
 
-from hera.data import Constant, Label, Op, Program, State
+from hera.data import Constant, Label, Program, State
 from hera.debugger import debug, Debugger, Shell
 from hera.debugger.debugger import reverse_lookup_label
-from hera.loader import load_program, load_program_from_file
+from hera.loader import load_program
 
 
 @pytest.fixture
@@ -729,7 +729,7 @@ def test_print_current_op(shell, capsys):
 def test_reverse_lookup_label():
     symbol_table = {"n": Constant(11), "end": Label(11)}
     assert reverse_lookup_label(symbol_table, 11) == "end"
-    assert reverse_lookup_label(symbol_table, 12) == None
+    assert reverse_lookup_label(symbol_table, 12) is None
 
 
 def test_debug_empty_program(capsys):

@@ -1,7 +1,6 @@
 import pytest
 from .utils import helper
 
-from hera.data import Op
 from hera.utils import to_u16
 from hera.vm import VirtualMachine
 
