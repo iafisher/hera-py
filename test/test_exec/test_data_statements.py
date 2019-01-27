@@ -22,10 +22,10 @@ def test_INTEGER_increments_data_counter(vm):
     assert vm.dc == DEFAULT_DATA_START + 1
 
 
-def test_INTEGER_increments_pc(vm):
+def test_INTEGER_does_not_increment_pc(vm):
     helper(vm, "INTEGER(42)")
 
-    assert vm.pc == 1
+    assert vm.pc == 0
 
 
 def test_DSKIP_increments_data_counter(vm):
@@ -34,10 +34,10 @@ def test_DSKIP_increments_data_counter(vm):
     assert vm.dc == DEFAULT_DATA_START + 10
 
 
-def test_DSKIP_increments_pc(vm):
+def test_DSKIP_does_not_increment_pc(vm):
     helper(vm, "DSKIP(10)")
 
-    assert vm.pc == 1
+    assert vm.pc == 0
 
 
 def test_LP_STRING_fills_in_memory(vm):
@@ -57,7 +57,7 @@ def test_LP_STRING_increments_data_counter(vm):
     assert vm.dc == DEFAULT_DATA_START + 6
 
 
-def test_LP_STRING_increments_pc(vm):
+def test_LP_STRING_does_not_increment_pc(vm):
     helper(vm, 'LP_STRING("hello")')
 
-    assert vm.pc == 1
+    assert vm.pc == 0

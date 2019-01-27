@@ -14,7 +14,7 @@ from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
 from .data import HERAError, IntToken, Location, Messages, Op, Token
 from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
-from .utils import get_canonical_path, is_register, read_file
+from .utils import is_register, read_file
 
 
 def parse(text: str, *, path=None, visited=None) -> Tuple[List[Op], Messages]:
@@ -280,11 +280,6 @@ _parser = Lark(
 )
 
 
-def augment_location(base_location, token):
-    """Add the line and column information from the token to the Location object."""
-    return base_location._replace(line=token.line, column=token.column)
-
-
 def replace_escapes(s):
     """Replace all backslash escape sequences in the string with the special characters
     that they encode.
@@ -308,3 +303,15 @@ def char_to_escape(c):
         return '"'
     else:
         raise HERAError("invalid backslash escape: " + c)
+
+
+def get_canonical_path(fpath):
+    if fpath == "-" or fpath == "<string>":
+        return fpath
+    else:
+        return os.path.realpath(fpath)
+
+
+def augment_location(base_location, token):
+    """Add the line and column information from the token to the Location object."""
+    return base_location._replace(line=token.line, column=token.column)

@@ -39,6 +39,8 @@ def load_program_from_file(
         else:
             # So that the program and its output are visually separate.
             print(file=sys.stderr)
+
+        path = "<stdin>"
     else:
         try:
             text = read_file(path)

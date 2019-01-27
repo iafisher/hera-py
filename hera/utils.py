@@ -3,7 +3,6 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-import os.path
 import sys
 
 from .data import HERAError, IntToken, Location, Messages, Token
@@ -130,13 +129,6 @@ def align_caret(line, col):
     column in the line of text. Mainly this means handling tabs.
     """
     return "".join("\t" if c == "\t" else " " for c in line[: col - 1])
-
-
-def get_canonical_path(fpath):
-    if fpath == "-" or fpath == "<string>":
-        return fpath
-    else:
-        return os.path.realpath(fpath)
 
 
 def read_file(path) -> str:

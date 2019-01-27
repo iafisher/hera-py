@@ -7,6 +7,7 @@ from .data import Settings
 from .utils import (
     ANSI_MAGENTA_BOLD,
     ANSI_RESET,
+    DATA_STATEMENTS,
     print_message_with_location,
     register_to_index,
 )
@@ -58,7 +59,6 @@ class VirtualMachine:
         for data_op in program.data:
             self.exec_one(data_op)
 
-        self.pc = 0
         while not self.halted and self.pc < len(program.code):
             self.exec_one(program.code[self.pc])
 
@@ -71,7 +71,7 @@ class VirtualMachine:
             op.execute(self)
         except NotImplementedError:
             self.handle_not_implemented(op.name)
-        if self.pc == opc:
+        if self.pc == opc and op.name not in DATA_STATEMENTS:
             self.halted = True
 
     def handle_not_implemented(self, name):

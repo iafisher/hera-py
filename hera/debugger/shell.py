@@ -470,7 +470,7 @@ class Shell:
             lo = max(lineno - context, 0)
             hi = min(lineno + context + 1, len(lines))
 
-        print("[{}]\n".format(normalize_path(loc.path)))
+        print("[{}]\n".format(loc.path))
         for i in range(lo, hi):
             prefix = "->  " if i == lineno else "    "
             print(prefix, end="")
@@ -504,11 +504,6 @@ class Shell:
             print(" [{}]".format(", ".join(labels)))
         else:
             print()
-
-
-def normalize_path(path):
-    # TODO: Should this just be done in the parser?
-    return "<stdin>" if path == "-" else path
 
 
 HELP = """\

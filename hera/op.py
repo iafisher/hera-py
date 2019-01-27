@@ -215,15 +215,11 @@ class SET(Operation):
     P = (REGISTER, I16_OR_LABEL)
 
     def convert(self):
-        dest, value = self.args
-        if isinstance(value, int):
-            value = to_u16(value)
-            lo = value & 0xFF
-            hi = value >> 8
-            return [SETLO(dest, lo, loc=self.loc), SETHI(dest, hi, loc=self.loc)]
-        else:
-            # TODO: When does this case actually happen?
-            return [SETLO(dest, value), SETHI(dest, value)]
+        dest = self.args[0]
+        value = to_u16(self.args[1])
+        lo = value & 0xFF
+        hi = value >> 8
+        return [SETLO(dest, lo, loc=self.loc), SETHI(dest, hi, loc=self.loc)]
 
 
 class ADD(BinaryOp):
@@ -828,8 +824,6 @@ class INTEGER(Operation):
     def execute(self, vm):
         vm.assign_memory(vm.dc, to_u16(self.args[0]))
         vm.dc += 1
-        # TODO: This doesn't seem right.
-        vm.pc += 1
 
 
 class DSKIP(Operation):
@@ -837,7 +831,6 @@ class DSKIP(Operation):
 
     def execute(self, vm):
         vm.dc += self.args[0]
-        vm.pc += 1
 
 
 class LP_STRING(Operation):
@@ -849,7 +842,6 @@ class LP_STRING(Operation):
         for c in self.args[0]:
             vm.assign_memory(vm.dc, ord(c))
             vm.dc += 1
-        vm.pc += 1
 
 
 class CONSTANT(Operation):
