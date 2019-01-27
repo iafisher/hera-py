@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-from hera.data import Constant, Label, Op, State
+from hera.data import Constant, Label, Op, Program, State
 from hera.debugger import debug, Debugger, Shell
 from hera.debugger.debugger import reverse_lookup_label
 from hera.loader import load_program, load_program_from_file
@@ -9,19 +9,19 @@ from hera.loader import load_program, load_program_from_file
 
 @pytest.fixture
 def shell():
-    return Shell(Debugger(SAMPLE_PROGRAM, SYMBOL_TABLE))
+    return Shell(Debugger(SAMPLE_PROGRAM))
 
 
 @pytest.fixture
 def debugger():
-    return Debugger(SAMPLE_PROGRAM, SYMBOL_TABLE)
+    return Debugger(SAMPLE_PROGRAM)
 
 
 def load_shell(program):
-    return Shell(Debugger(*load_program(program, State())))
+    return Shell(Debugger(load_program(program, State())))
 
 
-SAMPLE_PROGRAM, SYMBOL_TABLE = load_program(
+SAMPLE_PROGRAM = load_program(
     """\
 // A comment
 CONSTANT(N, 3)
@@ -733,6 +733,6 @@ def test_reverse_lookup_label():
 
 
 def test_debug_empty_program(capsys):
-    debug([], {})
+    debug(Program([], [], {}))
 
     assert capsys.readouterr().out == "Cannot debug an empty program.\n"

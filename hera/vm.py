@@ -56,13 +56,12 @@ class VirtualMachine:
         """
         self.reset()
 
-        while program and program[0].name in DATA_STATEMENTS:
-            data_statement = program.pop(0)
-            self.exec_one(data_statement)
+        for data_op in program.data:
+            self.exec_one(data_op)
 
         self.pc = 0
-        while not self.halted and self.pc < len(program):
-            self.exec_one(program[self.pc])
+        while not self.halted and self.pc < len(program.code):
+            self.exec_one(program.code[self.pc])
 
     def exec_one(self, op):
         """Execute a single operation."""

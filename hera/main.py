@@ -63,15 +63,15 @@ def main(argv=None):
 
 def main_debug(path, state):
     """Debug the program."""
-    program, symbol_table = load_program_from_file(path, state)
-    debug(program, symbol_table)
+    program = load_program_from_file(path, state)
+    debug(program)
 
 
 def main_execute(path, state, *, verbose=False, quiet=False):
     """Execute the program with the given options, most of which correspond to
     command-line arguments.
     """
-    program, _ = load_program_from_file(path, state)
+    program = load_program_from_file(path, state)
 
     vm = VirtualMachine(state)
     vm.exec_many(program)
@@ -85,22 +85,16 @@ def main_execute(path, state, *, verbose=False, quiet=False):
 
 def main_preprocess(path, state):
     """Preprocess the program and print it to standard output."""
-    program, _ = load_program_from_file(path, state)
-    if program and program[0].name in DATA_STATEMENTS:
+    program = load_program_from_file(path, state)
+    if program.data:
         sys.stderr.write("[DATA]\n")
-        i = 0
-        while i < len(program) and program[i].name in DATA_STATEMENTS:
-            sys.stderr.write("  {}\n".format(op_to_string(program[i])))
-            i += 1
+        for data_op in program.data:
+            sys.stderr.write("  {}\n".format(op_to_string(data_op)))
 
-        if i < len(program):
+        if program.code:
             sys.stderr.write("\n[CODE]\n")
 
-        start = i
-    else:
-        start = 0
-
-    for i, op in enumerate(program[start:]):
+    for i, op in enumerate(program.code):
         sys.stderr.write("  {:0>4}  {}\n".format(i, op_to_string(op)))
 
 

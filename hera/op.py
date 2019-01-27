@@ -1,7 +1,7 @@
 from contextlib import suppress
-from typing import List
+from typing import Dict, List, Tuple
 
-from hera.data import Constant, DataLabel, Location, Op, State, Token
+from hera.data import Constant, DataLabel, Location, Messages, Op, Token
 from hera.utils import (
     from_u16,
     is_register,
@@ -26,24 +26,24 @@ class Operation:
             self.loc = None
         self.original = None
 
-    def typecheck(self, symbol_table):
-        errors = []
+    def typecheck(self, symbol_table: Dict[str, int]) -> Messages:
+        messages = Messages()
         if len(self.P) < len(self.args):
             msg = "too many args to {} (expected {})".format(self.name, len(self.P))
-            errors.append((True, msg, self.loc))
+            messages.err(msg, self.loc)
         elif len(self.P) > len(self.args):
             msg = "too few args to {} (expected {})".format(self.name, len(self.P))
-            errors.append((True, msg, self.loc))
+            messages.err(msg, self.loc)
 
-        return errors + check_arglist(self.P, self.args, symbol_table)
+        return messages.extend(check_arglist(self.P, self.args, symbol_table))
 
-    def convert(self):
+    def convert(self) -> List["Operation"]:
         return [self]
 
     def assemble(self):
         raise NotImplementedError
 
-    def execute(self, vm):
+    def execute(self, vm) -> None:
         raise NotImplementedError
 
     def __getattr__(self, name):
@@ -669,14 +669,14 @@ class CALL_AND_RETURN(Operation):
         vm.store_register(ra, old_fp)
 
     def typecheck(self, *args, **kwargs):
-        errors = super().typecheck(*args, **kwargs)
+        messages = super().typecheck(*args, **kwargs)
         if len(self.args) >= 1 and is_register(self.args[0]):
             with suppress(ValueError):
                 i = register_to_index(self.args[0])
                 if i != 12:
                     msg = "first argument to {} should be R12".format(self.name)
-                    errors.append((False, msg, self.args[0]))
-        return errors
+                    messages.warn(msg, self.args[0])
+        return messages
 
     def convert(self):
         if isinstance(self.args[1], int):
@@ -693,14 +693,15 @@ class CALL(CALL_AND_RETURN):
 
 class RETURN(CALL_AND_RETURN):
     def typecheck(self, *args, **kwargs):
-        errors = super().typecheck(*args, **kwargs)
+        messages = super().typecheck(*args, **kwargs)
         if len(self.args) >= 2 and is_register(self.args[1]):
             with suppress(ValueError):
                 i = register_to_index(self.args[1])
                 if i != 13:
-                    msg = "second argument to RETURN should be R13"
-                    errors.append((False, msg, self.args[1]))
-        return errors
+                    messages.warn(
+                        "second argument to RETURN should be R13", self.args[1]
+                    )
+        return messages
 
 
 class SWI(Operation):
@@ -792,13 +793,13 @@ class NOT(Operation):
     P = (REGISTER, REGISTER)
 
     def typecheck(self, *args, **kwargs):
-        errors = super().typecheck(*args, **kwargs)
+        messages = super().typecheck(*args, **kwargs)
         if len(self.args) == 2 and is_register(self.args[1]):
             with suppress(ValueError):
                 i = register_to_index(self.args[1])
                 if i == 11:
-                    errors.append((False, "don't use R11 with NOT", self.args[1]))
-        return errors
+                    messages.warn("don't use R11 with NOT", self.args[1])
+        return messages
 
     def convert(self):
         return [
@@ -899,7 +900,7 @@ class __EVAL(Operation):
 
 
 def check_arglist(argtypes, args, symbol_table):
-    errors = []
+    messages = Messages()
     for expected, got in zip(argtypes, args):
         if expected == REGISTER:
             err = check_register(got)
@@ -921,8 +922,8 @@ def check_arglist(argtypes, args, symbol_table):
             raise RuntimeError("unknown parameter type {!r}".format(expected))
 
         if err is not None:
-            errors.append((True, err, got))
-    return errors
+            messages.err(err, got)
+    return messages
 
 
 def check_register(arg):
@@ -993,20 +994,20 @@ def check_in_range(arg, symbol_table, *, lo, hi, labels=False):
         return None
 
 
-def resolve_ops(program: List[Op], state=State()) -> List[Op]:
+def resolve_ops(program: List[Op]) -> Tuple[List[Op], Messages]:
     """Replace all Op objects with their corresponding class from hera/op.py. Operations
-    with unrecognized names are not included in the return value, and errors are emitted
-    for them.
+    with unrecognized names are not included in the return value.
     """
+    messages = Messages()
     ret = []
     for op in program:
         try:
             cls = name_to_class[op.name]
         except KeyError:
-            state.error("unknown instruction `{}`".format(op.name), loc=op.name)
+            messages.err("unknown instruction `{}`".format(op.name), loc=op.name)
         else:
             ret.append(cls(*op.args, loc=op.name))
-    return ret
+    return (ret, messages)
 
 
 name_to_class = {

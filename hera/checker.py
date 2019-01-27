@@ -1,11 +1,10 @@
 from contextlib import suppress
 from typing import Dict, List, Tuple
 
-from .data import Constant, DataLabel, Label, Op, Program, State, Token
+from .data import Constant, DataLabel, Label, Op, Messages, Program, State, Token
 from .op import resolve_ops
 from .utils import (
     DATA_STATEMENTS,
-    handle_errors,
     is_register,
     is_symbol,
     REGISTER_BRANCHES,
@@ -13,36 +12,44 @@ from .utils import (
 )
 
 
-def check(program: List[Op], state: State) -> Tuple[Program, List[str]]:
-    program = resolve_ops(program, state=state)
-    symbol_table = typecheck(program, state=state)
-    handle_errors(state)
+def check(oplist: List[Op], state: State) -> Tuple[Program, Messages]:
+    oplist, messages = resolve_ops(oplist)
+    symbol_table, typecheck_messages = typecheck(oplist, state=state)
+    messages.extend(typecheck_messages)
+    if messages.errors:
+        return (oplist, messages)
 
-    program = preprocess(program, symbol_table, state=state)
-    handle_errors(state)
-    return program, symbol_table
+    oplist, preprocess_messages = preprocess(oplist, symbol_table, state=state)
+    messages.extend(preprocess_messages)
+
+    data = []
+    code = []
+    for op in oplist:
+        if op.name in DATA_STATEMENTS:
+            data.append(op)
+        else:
+            code.append(op)
+
+    return (Program(data, code, symbol_table), messages)
 
 
-def typecheck(program: List[Op], state=State()) -> Dict[str, int]:
+def typecheck(program: List[Op], state=State()) -> Tuple[Dict[str, int], Messages]:
     """Type-check the program and emit error messages as appropriate. Return the
     program's symbol table.
     """
-    check_symbol_redeclaration(program, state)
+    messages = check_symbol_redeclaration(program, state)
 
     seen_code = False
-    symbol_table = get_labels(program, state)
-    for op in program:
-        errors = op.typecheck(symbol_table)
+    symbol_table, label_messages = get_labels(program, state)
+    messages.extend(label_messages)
 
-        for is_error, msg, loc in errors:
-            if is_error:
-                state.error(msg, loc=loc)
-            else:
-                state.warning(msg, loc=loc)
+    for op in program:
+        op_messages = op.typecheck(symbol_table)
+        messages.extend(op_messages)
 
         if op.name in DATA_STATEMENTS:
             if seen_code:
-                state.error("data statement after code", loc=op.loc)
+                messages.err("data statement after code", loc=op.loc)
         else:
             seen_code = True
 
@@ -54,29 +61,32 @@ def typecheck(program: List[Op], state=State()) -> Dict[str, int]:
             else:
                 symbol_table[op.args[0]] = Constant(op.args[1])
 
-    return symbol_table
+    return (symbol_table, messages)
 
 
-def check_symbol_redeclaration(program: List[Op], state: State):
-    """Check if any symbols are redeclared in the program and emit error messages as
-    appropriate.
+def check_symbol_redeclaration(program: List[Op], state: State) -> Messages:
+    """Check if any symbols are redeclared in the program and return the error
+    messages.
     """
+    messages = Messages()
     symbols = set()
     for op in program:
         if op.name in ("CONSTANT", "LABEL", "DLABEL") and len(op.args) >= 1:
             symbol = op.args[0]
             if symbol in symbols:
-                state.error(
+                messages.err(
                     "symbol `{}` has already been defined".format(symbol), loc=op.loc
                 )
             else:
                 symbols.add(symbol)
+    return messages
 
 
-def get_labels(program: List[Op], state: State) -> Dict[str, int]:
+def get_labels(program: List[Op], state: State) -> Tuple[Dict[str, int], Messages]:
     """Return a dictionary mapping the labels and data labels (but not the constants) of
     the program to their concrete values.
     """
+    messages = Messages()
     symbol_table = {}
     # We need to maintain a separate dictionary of constants because DSKIP can take a
     # constant as its argument, which has to be resolved to set the data counter
@@ -117,9 +127,9 @@ def get_labels(program: List[Op], state: State) -> Dict[str, int]:
 
         # TODO: Can I move this elsewhere?
         if out_of_range(dc) and not out_of_range(odc):
-            state.error("past the end of available memory", loc=op.loc)
+            messages.err("past the end of available memory", loc=op.loc)
 
-    return symbol_table
+    return (symbol_table, messages)
 
 
 def operation_length(op):
@@ -164,7 +174,7 @@ def out_of_range(n):
 
 def preprocess(
     program: List[Op], symbol_table: Dict[str, int], state=State()
-) -> List[Op]:
+) -> Tuple[List[Op], Messages]:
     """Preprocess the program into valid input for the exec_many method on the
     VirtualMachine class.
 
@@ -174,6 +184,7 @@ def preprocess(
 
     The program must be type-checked before being passed to this function.
     """
+    messages = Messages()
     nprogram = []
     for op in program:
         if op.name in RELATIVE_BRANCHES and is_symbol(op.args[0]):
@@ -181,7 +192,7 @@ def preprocess(
             target = symbol_table[op.args[0]]
             jump = target - pc
             if jump < -128 or jump >= 128:
-                state.error("label is too far for a relative branch", loc=op.args[0])
+                messages.err("label is too far for a relative branch", loc=op.args[0])
             else:
                 op.args[0] = jump
         else:
@@ -191,7 +202,7 @@ def preprocess(
             new_op.loc = op.loc
             new_op.original = op
             nprogram.append(new_op)
-    return nprogram
+    return (nprogram, messages)
 
 
 def substitute_label(op: Op, symbol_table: Dict[str, int]) -> Op:

@@ -7,7 +7,7 @@ import json
 import os.path
 import sys
 
-from .data import HERAError, IntToken, Location, State, Token
+from .data import HERAError, IntToken, Location, Messages, State, Token
 
 
 def to_u16(n):
@@ -169,32 +169,38 @@ def pad(s, n):
     return (" " * (n - len(s))) + s
 
 
-def handle_messages(state, messages):
-    state.errors = messages.errors
-    state.warnings = messages.warnings
-    handle_errors(state)
+def handle_messages(state, ret_messages_pair):
+    if (
+        isinstance(ret_messages_pair, tuple)
+        and len(ret_messages_pair) == 2
+        and isinstance(ret_messages_pair[1], Messages)
+    ):
+        ret, messages = ret_messages_pair
+    else:
+        ret = None
+        messages = ret_messages_pair
 
-
-def handle_errors(state):
-    for msg, loc in state.warnings:
+    for msg, loc in messages.warnings:
         if state.color:
             msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
         else:
             msg = "Warning: " + msg
         print_message_with_location(msg, loc=loc)
 
-    state.warning_count += len(state.warnings)
-    state.warnings.clear()
+    state.warning_count += len(messages.warnings)
+    messages.warnings.clear()
 
-    for msg, loc in state.errors:
+    for msg, loc in messages.errors:
         if state.color:
             msg = ANSI_RED_BOLD + "Error" + ANSI_RESET + ": " + msg
         else:
             msg = "Error: " + msg
         print_message_with_location(msg, loc=loc)
 
-    if state.errors:
+    if messages.errors:
         sys.exit(3)
+    else:
+        return ret
 
 
 # ANSI color codes (https://stackoverflow.com/questions/4842424/)

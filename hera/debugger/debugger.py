@@ -26,11 +26,11 @@ class Debugger:
     `debug` function instead of this class.
     """
 
-    def __init__(self, program, symbol_table):
-        self.program = program
-        self.symbol_table = symbol_table
+    def __init__(self, program):
+        self.program = program.code
+        self.symbol_table = program.symbol_table
         # A map from instruction numbers to lists of labels.
-        self.reverse_labels = get_reverse_labels(symbol_table)
+        self.reverse_labels = get_reverse_labels(self.symbol_table)
         # A map from instruction numbers (i.e., possible values of the program counter)
         # to human-readable line numbers.
         self.breakpoints = {}

@@ -26,14 +26,6 @@ class State:
         self.data_start = DEFAULT_DATA_START
         self.warning_count = 0
         self.warned_for_octal = False
-        self.errors = []
-        self.warnings = []
-
-    def error(self, msg, loc=None):
-        self.errors.append((msg, loc))
-
-    def warning(self, msg, loc=None):
-        self.warnings.append((msg, loc))
 
 
 Location = namedtuple("Location", ["line", "column", "path", "file_lines"])
@@ -88,6 +80,7 @@ class Messages:
     def extend(self, messages):
         self.errors.extend(messages.errors)
         self.warnings.extend(messages.warnings)
+        return self
 
     def err(self, msg, loc=None):
         self.errors.append((msg, loc))

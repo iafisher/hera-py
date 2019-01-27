@@ -10,22 +10,21 @@ from .minilanguage import (
     RegisterNode,
     SymbolNode,
 )
-from hera.data import Constant, DataLabel, HERAError, Label, Op, State
+from hera.data import Constant, DataLabel, HERAError, Label, Op, Program, State
 from hera.loader import load_program
 from hera.parser import parse
 from hera.utils import (
     BRANCHES,
     DATA_STATEMENTS,
-    handle_errors,
     op_to_string,
     pad,
     print_register_debug,
 )
 
 
-def debug(program: List[Op], symbol_table: Dict[str, int]) -> None:
+def debug(program: Program) -> None:
     """Start the debug loop."""
-    debugger = Debugger(program, symbol_table)
+    debugger = Debugger(program)
     Shell(debugger).loop()
 
 
@@ -144,16 +143,14 @@ class Shell:
                 print("execute cannot take labels.")
                 return
 
-        state = State()
-        ops, _ = load_program(argstr, state)
         try:
-            handle_errors(state)
+            program = load_program(argstr, State())
         except SystemExit:
             return
 
         vm = self.debugger.vm
         opc = vm.pc
-        for op in ops:
+        for op in program.code:
             vm.exec_one(op)
         vm.pc = opc
 

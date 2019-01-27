@@ -34,12 +34,11 @@ def state():
 
 
 def helper(opstr, symbol_table={}):
-    state = State()
-    ops = resolve_ops(parse(opstr)[0], state)
-    if not ops or state.errors:
-        return [(True, msg, loc) for msg, loc in state.errors]
+    ops, messages = resolve_ops(parse(opstr)[0])
+    if not ops or messages.errors:
+        return [(True, msg, loc) for msg, loc in messages.errors]
     else:
-        return ops[0].typecheck(symbol_table)
+        return ops[0].typecheck(symbol_table).errors
 
 
 def valid(opstr, symbol_table={}):
@@ -453,28 +452,28 @@ def test_typecheck_unknown_branch_instruction():
     invalid("BNWR(R1)", "unknown instruction")
 
 
-def test_typecheck_single_error(state):
+def test_typecheck_single_error():
     # Second argument to SETHI is out of range.
     program = [SETLO(R("R1"), 10), SETHI(R("R1"), 1000)]
-    symbol_table = typecheck(program, state)
+    symbol_table, messages = typecheck(program)
 
-    assert len(state.errors) == 1
-    assert "integer must be in range [-128, 256)" in state.errors[0][0]
+    assert len(messages.errors) == 1
+    assert "integer must be in range [-128, 256)" in messages.errors[0][0]
 
 
-def test_typecheck_multiple_errors(state):
+def test_typecheck_multiple_errors():
     program = [ADD(R("R1"), 10), INC(R("R3"))]
-    symbol_table = typecheck(program, state)
+    symbol_table, messages = typecheck(program)
 
-    assert len(state.errors) == 3
+    assert len(messages.errors) == 3
 
-    assert "ADD" in state.errors[0][0]
-    assert "too few" in state.errors[0][0]
+    assert "ADD" in messages.errors[0][0]
+    assert "too few" in messages.errors[0][0]
 
-    assert "expected register" in state.errors[1][0]
+    assert "expected register" in messages.errors[1][0]
 
-    assert "INC" in state.errors[2][0]
-    assert "too few" in state.errors[2][0]
+    assert "INC" in messages.errors[2][0]
+    assert "too few" in messages.errors[2][0]
 
 
 def test_operation_length_of_register_branch_with_label():
@@ -522,10 +521,10 @@ def test_operation_length_of_CALL_with_register():
 
 
 def test_get_labels_with_invalid_code(state):
-    labels = get_labels([CALL(SYM("l"))], state)
+    labels, messages = get_labels([CALL(SYM("l"))], state)
 
     assert len(labels) == 0
-    assert len(state.errors) == 0
+    assert len(messages.errors) == 0
 
 
 def test_substitute_label_with_SETLO():
@@ -551,4 +550,4 @@ def test_substitute_label_with_other_op():
 
 def test_preprocess_constant():
     program = [SET(R("R1"), Token("SYMBOL", "n"))]
-    assert preprocess(program, {"n": 100}) == [SETLO("R1", 100), SETHI("R1", 0)]
+    assert preprocess(program, {"n": 100})[0] == [SETLO("R1", 100), SETHI("R1", 0)]
