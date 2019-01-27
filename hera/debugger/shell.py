@@ -8,7 +8,7 @@ from .minilanguage import (
     RegisterNode,
     SymbolNode,
 )
-from hera.data import Constant, DataLabel, HERAError, Label, Program, State
+from hera.data import Constant, DataLabel, HERAError, Label, Program
 from hera.loader import load_program
 from hera.parser import parse
 from hera.utils import (
@@ -142,7 +142,7 @@ class Shell:
                 return
 
         try:
-            program = load_program(argstr, State())
+            program = load_program(argstr)
         except SystemExit:
             return
 

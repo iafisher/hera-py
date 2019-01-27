@@ -1,14 +1,8 @@
 import os
-import pytest
 
-from hera.data import Op, State
+from hera.data import Op
 from hera.parser import parse, replace_escapes
 from hera.utils import read_file
-
-
-@pytest.fixture
-def state():
-    return State()
 
 
 def helper(text, *, warnings=False, **kwargs):
@@ -119,7 +113,7 @@ def test_parse_negative_octal_number():
 
 
 def test_parse_octal_number_without_o():
-    program = helper("SETLO(R3, 0173)")
+    program = helper("SETLO(R3, 0173)", warnings=True)
 
     assert program == [Op("SETLO", ["R3", 123])]
 
@@ -248,9 +242,9 @@ def test_parse_expands_include():
     ]
 
 
-def test_parse_with_angle_bracket_include(state):
+def test_parse_with_angle_bracket_include():
     os.environ["HERA_C_DIR"] = "/some/impossible/path"
-    program, messages = parse("#include <unicorn.hera>", state=state)
+    program, messages = parse("#include <unicorn.hera>")
     del os.environ["HERA_C_DIR"]
 
     assert program == []

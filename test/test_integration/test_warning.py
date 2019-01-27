@@ -81,6 +81,11 @@ Warning: consider using "0o" prefix for octal numbers, line 1 col 9 of <stdin>
   SET(R1, 016)
           ^
 
+Warning: consider using "0o" prefix for octal numbers, line 2 col 9 of <stdin>
+
+  SET(R2, 017)
+          ^
+
 
 Virtual machine state after execution:
     R1  = 0x000e = 14
@@ -88,7 +93,7 @@ Virtual machine state after execution:
 
     All flags are OFF
 
-1 warning emitted.
+2 warnings emitted.
 """
     )
 

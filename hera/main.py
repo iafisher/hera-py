@@ -20,7 +20,7 @@ import functools
 
 from docopt import docopt
 
-from .data import State
+from .data import Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
 from .loader import load_program_from_file
 from .utils import op_to_string, print_register_debug
@@ -43,49 +43,50 @@ def main(argv=None):
     arguments = docopt(__doc__, argv=argv, version="hera-py 0.4.0 for HERA version 2.4")
     path = arguments["<path>"]
 
-    state = State()
+    settings = Settings()
     if arguments["--no-color"] or not sys.stderr.isatty():
-        state.color = False
+        settings.color = False
 
     if arguments["--big-stack"]:
         # Arbitrary value copied over from HERA-C.
-        state.data_start = 0xC167
+        settings.data_start = 0xC167
+
+    if arguments["--verbose"]:
+        settings.volume = VOLUME_VERBOSE
+    elif arguments["--quiet"]:
+        settings.volume = VOLUME_QUIET
 
     if arguments["preprocess"]:
-        main_preprocess(path, state)
+        main_preprocess(path, settings)
     elif arguments["debug"]:
-        main_debug(path, state)
+        main_debug(path, settings)
     else:
-        return main_execute(
-            path, state, verbose=arguments["--verbose"], quiet=arguments["--quiet"]
-        )
+        return main_execute(path, settings)
 
 
-def main_debug(path, state):
+def main_debug(path, settings):
     """Debug the program."""
-    program = load_program_from_file(path, state)
+    program = load_program_from_file(path, settings)
     debug(program)
 
 
-def main_execute(path, state, *, verbose=False, quiet=False):
-    """Execute the program with the given options, most of which correspond to
-    command-line arguments.
-    """
-    program = load_program_from_file(path, state)
+def main_execute(path, settings):
+    """Execute the program."""
+    program = load_program_from_file(path, settings)
 
-    vm = VirtualMachine(state)
+    vm = VirtualMachine(settings)
     vm.exec_many(program)
-    state.warning_count += vm.warning_count
+    settings.warning_count += vm.warning_count
 
-    if not quiet:
-        dump_state(vm, state, verbose=verbose)
+    if settings.volume != VOLUME_QUIET:
+        dump_state(vm, settings)
 
     return vm
 
 
-def main_preprocess(path, state):
+def main_preprocess(path, settings):
     """Preprocess the program and print it to standard output."""
-    program = load_program_from_file(path, state)
+    program = load_program_from_file(path, settings)
     if program.data:
         sys.stderr.write("[DATA]\n")
         for data_op in program.data:
@@ -98,7 +99,7 @@ def main_preprocess(path, state):
         sys.stderr.write("  {:0>4}  {}\n".format(i, op_to_string(op)))
 
 
-def dump_state(vm, state, *, verbose=False):
+def dump_state(vm, settings):
     """Print the state of the virtual machine to standard output."""
     # Make sure that all program output has been printed.
     sys.stdout.flush()
@@ -106,6 +107,7 @@ def dump_state(vm, state, *, verbose=False):
     # Redefine print in this function to use stderr.
     nprint = functools.partial(print, file=sys.stderr)
 
+    verbose = settings.volume == VOLUME_VERBOSE
     if verbose:
         last_register = 15
     else:
@@ -141,6 +143,6 @@ def dump_state(vm, state, *, verbose=False):
         nprint("    Zero flag is " + ("ON" if vm.flag_zero else "OFF"))
         nprint("    Sign flag is " + ("ON" if vm.flag_sign else "OFF"))
 
-    if state.warning_count > 0:
-        c = state.warning_count
+    if settings.warning_count > 0:
+        c = settings.warning_count
         nprint("\n{} warning{} emitted.".format(c, "" if c == 1 else "s"))

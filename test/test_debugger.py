@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-from hera.data import Constant, Label, Program, State
+from hera.data import Constant, Label, Program
 from hera.debugger import debug, Debugger, Shell
 from hera.debugger.debugger import reverse_lookup_label
 from hera.loader import load_program
@@ -18,7 +18,7 @@ def debugger():
 
 
 def load_shell(program):
-    return Shell(Debugger(load_program(program, State())))
+    return Shell(Debugger(load_program(program)))
 
 
 SAMPLE_PROGRAM = load_program(
@@ -31,8 +31,7 @@ SET(R2, 39)
 LABEL(add)
 ADD(R3, R1, R2)
 HALT()
-""",
-    State(),
+"""
 )
 
 

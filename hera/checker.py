@@ -1,7 +1,7 @@
 from contextlib import suppress
 from typing import Dict, List, Tuple
 
-from .data import Constant, DataLabel, Label, Op, Messages, Program, State, Token
+from .data import Constant, DataLabel, Label, Op, Messages, Program, Settings, Token
 from .op import resolve_ops
 from .utils import (
     DATA_STATEMENTS,
@@ -12,14 +12,14 @@ from .utils import (
 )
 
 
-def check(oplist: List[Op], state: State) -> Tuple[Program, Messages]:
+def check(oplist: List[Op], settings: Settings) -> Tuple[Program, Messages]:
     oplist, messages = resolve_ops(oplist)
-    symbol_table, typecheck_messages = typecheck(oplist, state=state)
+    symbol_table, typecheck_messages = typecheck(oplist, settings=settings)
     messages.extend(typecheck_messages)
     if messages.errors:
         return (oplist, messages)
 
-    oplist, preprocess_messages = preprocess(oplist, symbol_table, state=state)
+    oplist, preprocess_messages = preprocess(oplist, symbol_table)
     messages.extend(preprocess_messages)
 
     data = []
@@ -33,14 +33,16 @@ def check(oplist: List[Op], state: State) -> Tuple[Program, Messages]:
     return (Program(data, code, symbol_table), messages)
 
 
-def typecheck(program: List[Op], state=State()) -> Tuple[Dict[str, int], Messages]:
+def typecheck(
+    program: List[Op], settings=Settings()
+) -> Tuple[Dict[str, int], Messages]:
     """Type-check the program and emit error messages as appropriate. Return the
     program's symbol table.
     """
-    messages = check_symbol_redeclaration(program, state)
+    messages = check_symbol_redeclaration(program)
 
     seen_code = False
-    symbol_table, label_messages = get_labels(program, state)
+    symbol_table, label_messages = get_labels(program, settings)
     messages.extend(label_messages)
 
     for op in program:
@@ -64,7 +66,7 @@ def typecheck(program: List[Op], state=State()) -> Tuple[Dict[str, int], Message
     return (symbol_table, messages)
 
 
-def check_symbol_redeclaration(program: List[Op], state: State) -> Messages:
+def check_symbol_redeclaration(program: List[Op]) -> Messages:
     """Check if any symbols are redeclared in the program and return the error
     messages.
     """
@@ -82,7 +84,9 @@ def check_symbol_redeclaration(program: List[Op], state: State) -> Messages:
     return messages
 
 
-def get_labels(program: List[Op], state: State) -> Tuple[Dict[str, int], Messages]:
+def get_labels(
+    program: List[Op], settings: Settings
+) -> Tuple[Dict[str, int], Messages]:
     """Return a dictionary mapping the labels and data labels (but not the constants) of
     the program to their concrete values.
     """
@@ -93,7 +97,7 @@ def get_labels(program: List[Op], state: State) -> Tuple[Dict[str, int], Message
     # correctly.
     constants = {}
     pc = 0
-    dc = state.data_start
+    dc = settings.data_start
     for op in program:
         odc = dc
         if op.name == "LABEL":
@@ -173,7 +177,7 @@ def out_of_range(n):
 
 
 def preprocess(
-    program: List[Op], symbol_table: Dict[str, int], state=State()
+    program: List[Op], symbol_table: Dict[str, int]
 ) -> Tuple[List[Op], Messages]:
     """Preprocess the program into valid input for the exec_many method on the
     VirtualMachine class.

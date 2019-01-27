@@ -15,17 +15,21 @@ from typing import Optional, Tuple
 
 DEFAULT_DATA_START = 0xC001
 
+VOLUME_QUIET = "quiet"
+VOLUME_NORMAL = "normal"
+VOLUME_VERBOSE = "verbose"
 
-class State:
-    """The global state of the interpreter."""
 
-    # TODO: Rename to Settings?
+class Settings:
+    """Global settings of the interpreter."""
 
-    def __init__(self):
-        self.color = True
-        self.data_start = DEFAULT_DATA_START
+    def __init__(
+        self, *, color=True, data_start=DEFAULT_DATA_START, volume=VOLUME_NORMAL
+    ):
+        self.color = color
+        self.data_start = data_start
         self.warning_count = 0
-        self.warned_for_octal = False
+        self.volume = volume
 
 
 Location = namedtuple("Location", ["line", "column", "path", "file_lines"])

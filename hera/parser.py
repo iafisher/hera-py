@@ -12,14 +12,12 @@ from typing import List, Set, Tuple
 from lark import Lark, Token as LarkToken, Transformer
 from lark.exceptions import LarkError, UnexpectedCharacters, UnexpectedToken
 
-from .data import HERAError, IntToken, Location, Messages, Op, State, Token
+from .data import HERAError, IntToken, Location, Messages, Op, Token
 from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
 from .utils import get_canonical_path, is_register, read_file
 
 
-def parse(
-    text: str, *, path=None, visited=None, state=State()
-) -> Tuple[List[Op], Messages]:
+def parse(text: str, *, path=None, visited=None) -> Tuple[List[Op], Messages]:
     """Parse a HERA program.
 
     `path` is the path of the file being parsed, as it will appear in error and
@@ -60,7 +58,7 @@ def parse(
         loc = base_location._replace(line=e.line, column=e.column)
         return ([], Messages("invalid syntax", base_location))
 
-    conversion_messages = convert_tokens(ops, base_location, state)
+    conversion_messages = convert_tokens(ops, base_location)
     # Don't need to check errors immediately, as none of them could be fatal.
     messages.extend(conversion_messages)
 
@@ -68,9 +66,7 @@ def parse(
     expanded_ops = []
     for op in ops:
         if op.name == "#include" and len(op.args) == 1:
-            included_ops, include_messages = expand_include(
-                op.args[0], path, visited, state
-            )
+            included_ops, include_messages = expand_include(op.args[0], path, visited)
             messages.extend(include_messages)
             expanded_ops.extend(included_ops)
         else:
@@ -78,7 +74,7 @@ def parse(
     return (expanded_ops, messages)
 
 
-def convert_tokens(ops: List[Op], base_location: Location, state: State) -> Messages:
+def convert_tokens(ops: List[Op], base_location: Location) -> Messages:
     """Convert all tokens in the list of ops from Lark Token objects to HERA Token and
     IntToken objects, tagged with `base_location`.
     """
@@ -94,9 +90,8 @@ def convert_tokens(ops: List[Op], base_location: Location, state: State) -> Mess
                 )
             elif arg.type == "OCTAL":
                 loc = augment_location(base_location, arg)
-                if not arg.startswith("0o") and not state.warned_for_octal:
+                if not arg.startswith("0o"):
                     messages.warn('consider using "0o" prefix for octal numbers', loc)
-                    state.warned_for_octal = True
                 try:
                     op.args[j] = IntToken(arg, loc, base=8)
                 except ValueError:
@@ -112,7 +107,7 @@ def convert_tokens(ops: List[Op], base_location: Location, state: State) -> Mess
 
 
 def expand_include(
-    include_path: str, root_path: str, visited: Set[str], state: State
+    include_path: str, root_path: str, visited: Set[str]
 ) -> Tuple[List[Op], Messages]:
     """Open the file named by `include_path` and return its parsed contents.
 
@@ -121,10 +116,10 @@ def expand_include(
     foo/lib.hera, but #include "lib.hera" in bar/main.hera resolves to bar/lib.hera.
     """
     # `include_path` is generally a Token object so it can be passed as the `loc`
-    # argument of `state.error` and `state.warning`.
+    # argument of `messages.err` and `messages.warn`.
     loc = include_path
     if include_path.startswith("<"):
-        return expand_angle_include(include_path, state)
+        return expand_angle_include(include_path)
     else:
         # Strip off the leading and trailing quote.
         include_path = include_path[1:-1]
@@ -139,10 +134,10 @@ def expand_include(
         except HERAError as e:
             return ([], Messages(str(e), loc))
 
-    return parse(included_program, path=include_path, visited=visited, state=state)
+    return parse(included_program, path=include_path, visited=visited)
 
 
-def expand_angle_include(include_path: str, state: State) -> Tuple[List[Op], Messages]:
+def expand_angle_include(include_path: str) -> Tuple[List[Op], Messages]:
     """Same as expand_include, except with `include_path` known to be an angle-bracket
     include, e.g.
 
@@ -176,7 +171,7 @@ def expand_angle_include(include_path: str, state: State) -> Tuple[List[Op], Mes
         except HERAError as e:
             return ([], Messages(str(e), loc))
 
-    return parse(included_program, path=include_path, state=state)
+    return parse(included_program, path=include_path)
 
 
 class TreeToOplist(Transformer):

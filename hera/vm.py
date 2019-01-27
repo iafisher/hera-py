@@ -3,7 +3,7 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-from .data import State
+from .data import Settings
 from .utils import (
     ANSI_MAGENTA_BOLD,
     ANSI_RESET,
@@ -15,8 +15,8 @@ from .utils import (
 class VirtualMachine:
     """An abstract representation of a HERA processor."""
 
-    def __init__(self, state=State()):
-        self.state = state
+    def __init__(self, settings=Settings()):
+        self.settings = settings
         self.reset()
 
     def reset(self):
@@ -29,7 +29,7 @@ class VirtualMachine:
         # 16-bit program counter
         self.pc = 0
         # Current memory cell for data instructions
-        self.dc = self.state.data_start
+        self.dc = self.settings.data_start
         # Status/control flags
         self.flag_sign = False
         self.flag_zero = False
@@ -103,7 +103,7 @@ class VirtualMachine:
         index = register_to_index(target)
         if index != 0:
             self.registers[index] = value
-            if index == 15 and value >= self.state.data_start:
+            if index == 15 and value >= self.settings.data_start:
                 if not self.warned_for_overflow:
                     self.print_warning(
                         "stack has overflowed into data segment", loc=self.location
@@ -130,7 +130,7 @@ class VirtualMachine:
             return self.memory[address]
 
     def print_warning(self, msg, loc):
-        if self.state.color:
+        if self.settings.color:
             msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
         else:
             msg = "Warning: " + msg

@@ -7,7 +7,7 @@ from hera.checker import (
     substitute_label,
     typecheck,
 )
-from hera.data import Op, State, Token
+from hera.data import Op, Settings, Token
 from hera.op import ADD, CALL, INC, resolve_ops, SET, SETHI, SETLO
 from hera.parser import parse
 
@@ -25,8 +25,8 @@ def STR(s):
 
 
 @pytest.fixture
-def state():
-    return State()
+def settings():
+    return Settings()
 
 
 def helper(opstr, symbol_table={}):
@@ -518,8 +518,8 @@ def test_operation_length_of_CALL_with_register():
     assert operation_length(Op("CALL", [R("R12"), R("R13")])) == 1
 
 
-def test_get_labels_with_invalid_code(state):
-    labels, messages = get_labels([CALL(SYM("l"))], state)
+def test_get_labels_with_invalid_code(settings):
+    labels, messages = get_labels([CALL(SYM("l"))], settings)
 
     assert len(labels) == 0
     assert len(messages.errors) == 0

@@ -1,5 +1,5 @@
 from hera.checker import check
-from hera.data import State
+from hera.data import Settings
 from hera.parser import parse
 
 
@@ -8,7 +8,7 @@ def helper(vm, opstr):
     # changes.
     oplist, messages = parse(opstr)
     assert not messages.errors
-    program, messages = check(oplist, State())
+    program, messages = check(oplist, Settings())
     assert not messages.errors
 
     # Take first op, or first data statement if there are no ops.

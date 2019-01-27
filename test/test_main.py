@@ -3,13 +3,13 @@ import re
 from io import StringIO
 from unittest.mock import patch
 
-from hera.data import State
+from hera.data import Settings, VOLUME_VERBOSE
 from hera.main import dump_state, main
 from hera.vm import VirtualMachine
 
 
 def test_dump_state(capsys):
-    dump_state(VirtualMachine(), State(), verbose=True)
+    dump_state(VirtualMachine(), Settings(volume=VOLUME_VERBOSE))
 
     assert (
         capsys.readouterr().err
