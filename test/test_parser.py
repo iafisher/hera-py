@@ -193,28 +193,31 @@ SETLO(R1, 1)
     assert program == [Op("SETLO", ["R1", 1])]
 
 
-def test_parse_missing_comma():
+def test_parse_error_missing_comma():
     program, messages = parse("ADD(R1, R2 R3)")
 
-    assert program == []
     assert len(messages.errors) == 1
 
 
-def test_parse_missing_parenthesis():
+def test_parse_error_missing_parenthesis():
     program, messages = parse("LSL8(R1, R1")
 
-    assert program == []
     assert len(messages.errors) == 1
 
 
-def test_parse_missing_end_quote():
+def test_parse_error_missing_end_quote():
     program, messages = parse('LP_STRING("forgot to close my string)')
 
-    assert program == []
     assert len(messages.errors) == 1
 
 
-def test_parse_exception_has_line_number():
+def test_parse_error_newline_in_string_literal():
+    program, messages = parse('LP_STRING("\n")')
+
+    assert len(messages.errors) == 1
+
+
+def test_parse_error_has_line_number():
     program, messages = parse("SETLO(R1, 10)\nSETHI(R1, 255)\nLSL(R1 R1)")
 
     assert program == []

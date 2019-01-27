@@ -8,7 +8,7 @@ LABEL(printint)
 
 
 LABEL(print)
-  __eval("addr = vm.access_memory(vm.registers[14]+3); n = vm.access_memory(addr)\nfor i in range(n):\n  print(chr(vm.access_memory(addr+i+1)), end='')")
+  __eval("addr = vm.access_memory(vm.registers[14]+3); n = vm.access_memory(addr)\\nfor i in range(n):\\n  print(chr(vm.access_memory(addr+i+1)), end='')")
   RETURN(FP_alt, PC_ret)
 
 
@@ -163,16 +163,16 @@ INTEGER(0)  // 0=undefined; 1=defined
 INTEGER(0)  // the character
 
 DLABEL(malloc_inconsistent_error)
-TIGER_STRING("internal inconsistency in malloc -- program terminated\n")
+TIGER_STRING("internal inconsistency in malloc -- program terminated\\n")
 
 DLABEL(malloc_out_of_memory_error)
-TIGER_STRING("out of memory in malloc -- program terminated\n")
+TIGER_STRING("out of memory in malloc -- program terminated\\n")
 
 DLABEL(substring_got_bad_params)
-TIGER_STRING("bad parameters to substring -- program terminated\n")
+TIGER_STRING("bad parameters to substring -- program terminated\\n")
 
 DLABEL(tstdlib_not_implemented)
-TIGER_STRING("this function is not yet implemented in tiger standard libarry; halting\n")
+TIGER_STRING("this function is not yet implemented in tiger standard libarry; halting\\n")
 DLABEL(tstdlib_not_tested)
-TIGER_STRING("WARNING: Entering untested territory in tiger stdlib\n")
+TIGER_STRING("WARNING: Entering untested territory in tiger stdlib\\n")
 """

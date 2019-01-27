@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Data statements may never follow code, even when in different files.
 - ANSI colors are not used when standard error is not a tty-like device.
 - Invalid backslash escapes in string literals are now errors.
+- Newlines in string literals are no longer allowed.
 
 ### Fixed
 - Use of undefined labels gives proper error message instead of Python exception.

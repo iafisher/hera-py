@@ -207,12 +207,18 @@ class TreeToOplist(Transformer):
 
         if matches[0].type == "STRING":
             otkn = matches[0]
+            loc = self.base_location._replace(line=line, column=column)
+
+            # Disallow newlines.
+            if "\n" in otkn:
+                self.messages.err("string literals may not contain newlines", loc)
+
             try:
                 s = replace_escapes(otkn[1:-1])
             except HERAError:
-                loc = self.base_location._replace(line=line, column=column)
                 self.messages.err("invalid backslash escape", loc)
                 return otkn
+
             ntkn = LarkToken("STRING", s)
             # Preserve data from the original token.
             ntkn.pos_in_stream = otkn.pos_in_stream
