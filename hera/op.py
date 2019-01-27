@@ -1,8 +1,7 @@
 from contextlib import suppress
 from typing import List
 
-from hera.data import Location, Op, State, Token
-from hera.typechecker import Constant, DataLabel
+from hera.data import Constant, DataLabel, Location, Op, State, Token
 from hera.utils import (
     from_u16,
     is_register,

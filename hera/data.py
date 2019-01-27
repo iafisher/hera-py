@@ -18,6 +18,8 @@ DEFAULT_DATA_START = 0xC001
 class State:
     """The global state of the interpreter."""
 
+    # TODO: Rename to Settings?
+
     def __init__(self):
         self.color = True
         self.data_start = DEFAULT_DATA_START
@@ -54,6 +56,9 @@ class Op(namedtuple("Op", ["name", "args", "original"])):
         )
 
 
+Program = namedtuple("Program", ["data", "code", "symbol_table", "errors"])
+
+
 class IntToken(int):
     def __new__(cls, value, loc=None, **kwargs):
         self = super(IntToken, cls).__new__(cls, value, **kwargs)
@@ -70,4 +75,16 @@ class Token(str):
 
 
 class HERAError(Exception):
+    pass
+
+
+class Constant(int):
+    pass
+
+
+class Label(int):
+    pass
+
+
+class DataLabel(int):
     pass

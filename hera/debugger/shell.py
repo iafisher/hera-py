@@ -10,10 +10,9 @@ from .minilanguage import (
     RegisterNode,
     SymbolNode,
 )
-from hera.data import HERAError, Op, State
+from hera.data import Constant, DataLabel, HERAError, Label, Op, State
 from hera.loader import load_program
 from hera.parser import parse
-from hera.typechecker import Constant, DataLabel, Label
 from hera.utils import (
     BRANCHES,
     DATA_STATEMENTS,

@@ -1,6 +1,5 @@
 from hera.op import resolve_ops
 from hera.parser import parse
-from hera.preprocessor import preprocess
 
 
 def helper(vm, opstr):

@@ -17,7 +17,7 @@ Version: January 2019
 import readline
 from collections import defaultdict
 
-from hera.typechecker import Label
+from hera.data import Label
 from hera.vm import VirtualMachine
 
 

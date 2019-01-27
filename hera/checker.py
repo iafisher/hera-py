@@ -1,15 +1,26 @@
-"""Type-check HERA programs.
-
-`typecheck` is the public interface of this module.
-
-Author:  Ian Fisher (iafisher@protonmail.com)
-Version: January 2019
-"""
 from contextlib import suppress
 from typing import Dict, List
 
-from .data import Op, State
-from .utils import DATA_STATEMENTS, is_register, is_symbol, REGISTER_BRANCHES
+from .data import Constant, DataLabel, Label, Op, Program, State, Token
+from .op import resolve_ops
+from .utils import (
+    DATA_STATEMENTS,
+    handle_errors,
+    is_register,
+    is_symbol,
+    REGISTER_BRANCHES,
+    RELATIVE_BRANCHES,
+)
+
+
+def check(program: List[Op], state: State) -> Program:
+    program = resolve_ops(program, state=state)
+    symbol_table = typecheck(program, state=state)
+    handle_errors(state)
+
+    program = preprocess(program, symbol_table, state=state)
+    handle_errors(state)
+    return program, symbol_table
 
 
 def typecheck(program: List[Op], state=State()) -> Dict[str, int]:
@@ -151,13 +162,41 @@ def out_of_range(n):
     return n < -32768 or n >= 65536
 
 
-class Constant(int):
-    pass
+def preprocess(
+    program: List[Op], symbol_table: Dict[str, int], state=State()
+) -> List[Op]:
+    """Preprocess the program into valid input for the exec_many method on the
+    VirtualMachine class.
+
+    This function does the following
+        - Replaces pseudo-instructions with real ones.
+        - Resolves labels into their line numbers.
+
+    The program must be type-checked before being passed to this function.
+    """
+    nprogram = []
+    for op in program:
+        if op.name in RELATIVE_BRANCHES and is_symbol(op.args[0]):
+            pc = len(nprogram)
+            target = symbol_table[op.args[0]]
+            jump = target - pc
+            if jump < -128 or jump >= 128:
+                state.error("label is too far for a relative branch", loc=op.args[0])
+            else:
+                op.args[0] = jump
+        else:
+            op = substitute_label(op, symbol_table)
+
+        for new_op in op.convert():
+            new_op.loc = op.loc
+            new_op.original = op
+            nprogram.append(new_op)
+    return nprogram
 
 
-class Label(int):
-    pass
-
-
-class DataLabel(int):
-    pass
+def substitute_label(op: Op, symbol_table: Dict[str, int]) -> Op:
+    """Substitute any label in the instruction with its concrete value."""
+    for i, arg in enumerate(op.args):
+        if isinstance(arg, Token) and arg.type == "SYMBOL":
+            op.args[i] = symbol_table[arg]
+    return op

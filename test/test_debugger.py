@@ -1,11 +1,10 @@
 import pytest
 from unittest.mock import patch
 
-from hera.data import Op, State
+from hera.data import Constant, Label, Op, State
 from hera.debugger import debug, Debugger, Shell
 from hera.debugger.debugger import reverse_lookup_label
 from hera.loader import load_program, load_program_from_file
-from hera.typechecker import Constant, Label
 
 
 @pytest.fixture

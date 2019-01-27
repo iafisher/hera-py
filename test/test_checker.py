@@ -1,17 +1,19 @@
 import pytest
 from unittest.mock import patch
 
-from hera.data import IntToken, Op, State, Token
-from hera.op import ADD, CALL, INC, resolve_ops, SETHI, SETLO
-from hera.parser import parse
-from hera.typechecker import (
+from hera.checker import (
     Constant,
     DataLabel,
     get_labels,
     Label,
     operation_length,
+    preprocess,
+    substitute_label,
     typecheck,
 )
+from hera.data import IntToken, Op, State, Token
+from hera.op import ADD, CALL, INC, resolve_ops, SET, SETHI, SETLO
+from hera.parser import parse
 
 
 def R(s):
@@ -524,3 +526,29 @@ def test_get_labels_with_invalid_code(state):
 
     assert len(labels) == 0
     assert len(state.errors) == 0
+
+
+def test_substitute_label_with_SETLO():
+    labels = {"N": 10}
+    assert substitute_label(Op(SYM("SETLO"), [R("R1"), SYM("N")]), labels) == Op(
+        "SETLO", ["R1", 10]
+    )
+
+
+def test_substitute_label_with_SETHI():
+    labels = {"N": 10}
+    assert substitute_label(Op(SYM("SETHI"), [R("R1"), SYM("N")]), labels) == Op(
+        "SETHI", ["R1", 10]
+    )
+
+
+def test_substitute_label_with_other_op():
+    labels = {"N": 10}
+    assert substitute_label(Op(SYM("INC"), [R("R1"), SYM("N")]), labels) == Op(
+        "INC", ["R1", 10]
+    )
+
+
+def test_preprocess_constant():
+    program = [SET(R("R1"), Token("SYMBOL", "n"))]
+    assert preprocess(program, {"n": 100}) == [SETLO("R1", 100), SETHI("R1", 0)]

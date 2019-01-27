@@ -7,11 +7,9 @@ Version: January 2019
 import sys
 from typing import Dict, List, Tuple
 
+from .checker import check
 from .data import HERAError, Op
-from .op import resolve_ops
 from .parser import parse
-from .preprocessor import preprocess
-from .typechecker import typecheck
 from .utils import handle_errors, read_file
 
 
@@ -24,7 +22,7 @@ def load_program(text: str, state) -> Tuple[List[Op], Dict[str, int]]:
     """
     program = parse(text, state=state)
     handle_errors(state)
-    return _load_program_common(program, "<string>", state)
+    return check(program, state)
 
 
 def load_program_from_file(path: str, state) -> Tuple[List[Op], Dict[str, int]]:
@@ -51,15 +49,4 @@ def load_program_from_file(path: str, state) -> Tuple[List[Op], Dict[str, int]]:
     program = parse(text, path=path, state=state)
     handle_errors(state)
 
-    return _load_program_common(program, path, state)
-
-
-def _load_program_common(program, path, state):
-    program = resolve_ops(program, state=state)
-    symbol_table = typecheck(program, state=state)
-    handle_errors(state)
-
-    program = preprocess(program, symbol_table, state=state)
-    handle_errors(state)
-
-    return program, symbol_table
+    return check(program, state)
