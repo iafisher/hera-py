@@ -329,9 +329,9 @@ def test_no_extraneous_output(capsys):
 
 
 Virtual machine state after execution:
-	R1  = 0x002a = 42 = '*'
+    R1  = 0x002a = 42 = '*'
 
-	All flags are OFF
+    All flags are OFF
 """
     )
 

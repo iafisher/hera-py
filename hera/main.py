@@ -115,13 +115,13 @@ def dump_state(vm, state, *, verbose=False):
 
     nprint("\nVirtual machine state after execution:")
     for i, value in enumerate(vm.registers[1 : last_register + 1], start=1):
-        rname = "\tR" + str(i) + (" " if i < 10 else "")
+        rname = "    R" + str(i) + (" " if i < 10 else "")
         print_register_debug(rname, value)
 
     if last_register > 0:
         nprint()
     else:
-        nprint("\tR1 through R10 are all zero.\n")
+        nprint("    R1 through R10 are all zero.\n")
 
     flags = [
         vm.flag_carry_block,
@@ -131,15 +131,15 @@ def dump_state(vm, state, *, verbose=False):
         vm.flag_sign,
     ]
     if not verbose and all(flags):
-        nprint("\tAll flags are ON")
+        nprint("    All flags are ON")
     elif not verbose and all(not f for f in flags):
-        nprint("\tAll flags are OFF")
+        nprint("    All flags are OFF")
     else:
-        nprint("\tCarry-block flag is " + ("ON" if vm.flag_carry_block else "OFF"))
-        nprint("\tCarry flag is " + ("ON" if vm.flag_carry else "OFF"))
-        nprint("\tOverflow flag is " + ("ON" if vm.flag_overflow else "OFF"))
-        nprint("\tZero flag is " + ("ON" if vm.flag_zero else "OFF"))
-        nprint("\tSign flag is " + ("ON" if vm.flag_sign else "OFF"))
+        nprint("    Carry-block flag is " + ("ON" if vm.flag_carry_block else "OFF"))
+        nprint("    Carry flag is " + ("ON" if vm.flag_carry else "OFF"))
+        nprint("    Overflow flag is " + ("ON" if vm.flag_overflow else "OFF"))
+        nprint("    Zero flag is " + ("ON" if vm.flag_zero else "OFF"))
+        nprint("    Sign flag is " + ("ON" if vm.flag_sign else "OFF"))
 
     if state.warning_count > 0:
         c = state.warning_count

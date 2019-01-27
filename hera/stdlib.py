@@ -1,3 +1,6 @@
+# flake8: noqa
+
+
 TIGER_STDLIB_STACK = """
 LABEL(printint)
   __eval("print(vm.access_memory(vm.registers[14]+3), end='')")

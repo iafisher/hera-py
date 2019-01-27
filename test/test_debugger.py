@@ -456,7 +456,8 @@ def test_handle_assign_non_boolean_to_flag(shell, capsys):
 
     assert (
         capsys.readouterr().out
-        == "Eval error: cannot assign non-boolean value to flag (use #t and #f instead).\n"
+        == "Eval error: "
+        + "cannot assign non-boolean value to flag (use #t and #f instead).\n"
     )
 
 

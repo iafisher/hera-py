@@ -30,9 +30,9 @@ Warning: RTI is a no-op in this simulator, line 3 col 1 of <stdin>
 
 
 Virtual machine state after execution:
-	R1 through R10 are all zero.
+    R1 through R10 are all zero.
 
-	All flags are OFF
+    All flags are OFF
 
 2 warnings emitted.
 """
@@ -55,13 +55,13 @@ Warning: stack has overflowed into data segment, line 2 col 1 of <stdin>
 
 
 Virtual machine state after execution:
-	R1  = 0xc002 = 49154
+    R1  = 0xc002 = 49154
 
-	Carry-block flag is OFF
-	Carry flag is OFF
-	Overflow flag is OFF
-	Zero flag is OFF
-	Sign flag is ON
+    Carry-block flag is OFF
+    Carry flag is OFF
+    Overflow flag is OFF
+    Zero flag is OFF
+    Sign flag is ON
 
 1 warning emitted.
 """
@@ -83,10 +83,10 @@ Warning: consider using "0o" prefix for octal numbers, line 1 col 9 of <stdin>
 
 
 Virtual machine state after execution:
-	R1  = 0x000e = 14
-	R2  = 0x000f = 15
+    R1  = 0x000e = 14
+    R2  = 0x000f = 15
 
-	All flags are OFF
+    All flags are OFF
 
 1 warning emitted.
 """
@@ -108,13 +108,13 @@ Warning: don't use R11 with NOT, line 2 col 9 of <stdin>
 
 
 Virtual machine state after execution:
-	R1 through R10 are all zero.
+    R1 through R10 are all zero.
 
-	Carry-block flag is OFF
-	Carry flag is OFF
-	Overflow flag is OFF
-	Zero flag is ON
-	Sign flag is OFF
+    Carry-block flag is OFF
+    Carry flag is OFF
+    Overflow flag is OFF
+    Zero flag is ON
+    Sign flag is OFF
 
 1 warning emitted.
 """
@@ -136,9 +136,9 @@ Warning: first argument to CALL should be R12, line 1 col 6 of <stdin>
 
 
 Virtual machine state after execution:
-	R1 through R10 are all zero.
+    R1 through R10 are all zero.
 
-	All flags are OFF
+    All flags are OFF
 
 1 warning emitted.
 """
@@ -160,9 +160,9 @@ Warning: first argument to RETURN should be R12, line 1 col 8 of <stdin>
 
 
 Virtual machine state after execution:
-	R1 through R10 are all zero.
+    R1 through R10 are all zero.
 
-	All flags are OFF
+    All flags are OFF
 
 1 warning emitted.
 """
@@ -184,9 +184,9 @@ Warning: second argument to RETURN should be R13, line 1 col 13 of <stdin>
 
 
 Virtual machine state after execution:
-	R1 through R10 are all zero.
+    R1 through R10 are all zero.
 
-	All flags are OFF
+    All flags are OFF
 
 1 warning emitted.
 """

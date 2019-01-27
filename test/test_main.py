@@ -16,27 +16,27 @@ def test_dump_state(capsys):
         == """\
 
 Virtual machine state after execution:
-	R1  = 0x0000 = 0
-	R2  = 0x0000 = 0
-	R3  = 0x0000 = 0
-	R4  = 0x0000 = 0
-	R5  = 0x0000 = 0
-	R6  = 0x0000 = 0
-	R7  = 0x0000 = 0
-	R8  = 0x0000 = 0
-	R9  = 0x0000 = 0
-	R10 = 0x0000 = 0
-	R11 = 0x0000 = 0
-	R12 = 0x0000 = 0
-	R13 = 0x0000 = 0
-	R14 = 0x0000 = 0
-	R15 = 0x0000 = 0
+    R1  = 0x0000 = 0
+    R2  = 0x0000 = 0
+    R3  = 0x0000 = 0
+    R4  = 0x0000 = 0
+    R5  = 0x0000 = 0
+    R6  = 0x0000 = 0
+    R7  = 0x0000 = 0
+    R8  = 0x0000 = 0
+    R9  = 0x0000 = 0
+    R10 = 0x0000 = 0
+    R11 = 0x0000 = 0
+    R12 = 0x0000 = 0
+    R13 = 0x0000 = 0
+    R14 = 0x0000 = 0
+    R15 = 0x0000 = 0
 
-	Carry-block flag is OFF
-	Carry flag is OFF
-	Overflow flag is OFF
-	Zero flag is OFF
-	Sign flag is OFF
+    Carry-block flag is OFF
+    Carry flag is OFF
+    Overflow flag is OFF
+    Zero flag is OFF
+    Sign flag is OFF
 """
     )
 
@@ -114,27 +114,27 @@ def test_main_with_verbose_flag(capsys):
 
 
 Virtual machine state after execution:
-	R1  = 0x002a = 42 = '*'
-	R2  = 0x0000 = 0
-	R3  = 0x0000 = 0
-	R4  = 0x0000 = 0
-	R5  = 0x0000 = 0
-	R6  = 0x0000 = 0
-	R7  = 0x0000 = 0
-	R8  = 0x0000 = 0
-	R9  = 0x0000 = 0
-	R10 = 0x0000 = 0
-	R11 = 0x0000 = 0
-	R12 = 0x0000 = 0
-	R13 = 0x0000 = 0
-	R14 = 0x0000 = 0
-	R15 = 0x0000 = 0
+    R1  = 0x002a = 42 = '*'
+    R2  = 0x0000 = 0
+    R3  = 0x0000 = 0
+    R4  = 0x0000 = 0
+    R5  = 0x0000 = 0
+    R6  = 0x0000 = 0
+    R7  = 0x0000 = 0
+    R8  = 0x0000 = 0
+    R9  = 0x0000 = 0
+    R10 = 0x0000 = 0
+    R11 = 0x0000 = 0
+    R12 = 0x0000 = 0
+    R13 = 0x0000 = 0
+    R14 = 0x0000 = 0
+    R15 = 0x0000 = 0
 
-	Carry-block flag is OFF
-	Carry flag is OFF
-	Overflow flag is OFF
-	Zero flag is OFF
-	Sign flag is OFF
+    Carry-block flag is OFF
+    Carry flag is OFF
+    Overflow flag is OFF
+    Zero flag is OFF
+    Sign flag is OFF
 """
     )
 

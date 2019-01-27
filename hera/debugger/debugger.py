@@ -14,7 +14,7 @@ user, it must be in terms of original ops.
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
-import readline
+import readline  # noqa: F401
 from collections import defaultdict
 
 from hera.data import Label
@@ -46,7 +46,7 @@ class Debugger:
 
     def exec_ops(self, n=None, *, until=None):
         if until is None:
-            until = lambda vm: False
+            until = lambda vm: False  # noqa: E731
 
         if n is None:
             n = len(self.program)
