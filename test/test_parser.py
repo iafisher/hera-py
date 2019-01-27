@@ -1,6 +1,7 @@
 import os
+import pytest
 
-from hera.data import Op
+from hera.data import HERAError, Op
 from hera.parser import parse, replace_escapes
 from hera.utils import read_file
 
@@ -22,7 +23,8 @@ def test_replace_escapes_with_many_escapes():
 
 
 def test_replace_escapes_with_invalid_escape():
-    assert replace_escapes("\\c") == "\\c"
+    with pytest.raises(HERAError):
+        replace_escapes("\\c")
 
 
 def test_parse_op():

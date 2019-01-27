@@ -44,7 +44,7 @@ def parse(text: str, *, path=None, visited=None) -> Tuple[List[Op], Messages]:
 
     try:
         tree = _parser.parse(text)
-        ops = TreeToOplist(messages).transform(tree)
+        ops = TreeToOplist(messages, base_location).transform(tree)
     except UnexpectedCharacters as e:
         loc = base_location._replace(line=e.line, column=e.column)
         return ([], Messages("unexpected character", loc))
@@ -177,9 +177,10 @@ def expand_angle_include(include_path: str) -> Tuple[List[Op], Messages]:
 class TreeToOplist(Transformer):
     """A class to transform Lark's parse tree into a list of HERA ops."""
 
-    def __init__(self, messages, *args, **kwargs):
+    def __init__(self, messages, base_location, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.messages = messages
+        self.base_location = base_location
 
     def start(self, matches):
         if len(matches) == 2:
@@ -206,7 +207,12 @@ class TreeToOplist(Transformer):
 
         if matches[0].type == "STRING":
             otkn = matches[0]
-            s = replace_escapes(otkn[1:-1])
+            try:
+                s = replace_escapes(otkn[1:-1])
+            except HERAError:
+                loc = self.base_location._replace(line=line, column=column)
+                self.messages.err("invalid backslash escape", loc)
+                return otkn
             ntkn = LarkToken("STRING", s)
             # Preserve data from the original token.
             ntkn.pos_in_stream = otkn.pos_in_stream
@@ -219,7 +225,12 @@ class TreeToOplist(Transformer):
             # Strip the leading and trailing quote.
             s = matches[0][1:-1]
             if s.startswith("\\"):
-                c = char_to_escape(s[1])
+                try:
+                    c = char_to_escape(s[1])
+                except HERAError:
+                    c = "\0"
+                    loc = self.base_location._replace(line=line, column=column + 2)
+                    self.messages.err("invalid backslash escape", loc)
             else:
                 c = s
             return LarkToken("CHAR", ord(c), line=line, column=column)
@@ -296,5 +307,4 @@ def char_to_escape(c):
     elif c == '"':
         return '"'
     else:
-        # TODO: Give a warning for this.
-        return "\\" + c
+        raise HERAError("invalid backslash escape: " + c)

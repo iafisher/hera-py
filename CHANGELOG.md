@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Warning for zero-prefixed octal literals will only be printed once per program, rather than for every occurrence.
 - Data statements may never follow code, even when in different files.
 - ANSI colors are not used when standard error is not a tty-like device.
+- Invalid backslash escapes in string literals are now errors.
 
 ### Fixed
 - Use of undefined labels gives proper error message instead of Python exception.
@@ -39,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `skip` debugging command no longer executes instructions, matching its help description.
 - Symbols beginning with "m" can now be printed in the debugger.
 - Too few arguments to `CALL` op now causes an error message to be printed, instead of crashing the interpreter.
+- Invalid backslash escapes in character literals now cause an error instead of crashing the interpreter.
 
 ### Removed
 - The `--lines` command-line argument.

@@ -392,3 +392,39 @@ Error: data statement after code, line 4 col 1 of <stdin>
 
 """
     )
+
+
+def test_error_for_invalid_backslash_escape_in_char(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper("SET(R1, '\\u')")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Error: invalid backslash escape, line 1 col 11 of <stdin>
+
+  SET(R1, '\\u')
+            ^
+
+"""
+    )
+
+
+def test_error_for_invalid_backslash_escape_in_string(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper('LP_STRING("bad: \\o")')
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Error: invalid backslash escape, line 1 col 11 of <stdin>
+
+  LP_STRING("bad: \\o")
+            ^
+
+"""
+    )
