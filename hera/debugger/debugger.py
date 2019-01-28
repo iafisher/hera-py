@@ -15,7 +15,6 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
 import readline  # noqa: F401
-from collections import defaultdict
 
 from hera.data import Label
 from hera.vm import VirtualMachine
@@ -29,8 +28,6 @@ class Debugger:
     def __init__(self, program):
         self.program = program.code
         self.symbol_table = program.symbol_table
-        # A map from instruction numbers to lists of labels.
-        self.reverse_labels = get_reverse_labels(self.symbol_table)
         # A map from instruction numbers (i.e., possible values of the program counter)
         # to human-readable line numbers.
         self.breakpoints = {}
@@ -63,9 +60,6 @@ class Debugger:
 
             if self.is_finished() or until(self):
                 break
-
-    def get_labels(self, index):
-        return self.reverse_labels[index]
 
     def reset(self):
         self.vm.reset()
@@ -162,11 +156,3 @@ def reverse_lookup_label(symbol_table, value):
         if value == v and isinstance(v, Label):
             return k
     return None
-
-
-def get_reverse_labels(symbol_table):
-    reverse_labels = defaultdict(list)
-    for k, v in symbol_table.items():
-        if isinstance(v, Label):
-            reverse_labels[v].append(k)
-    return reverse_labels
