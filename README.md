@@ -52,3 +52,6 @@ hera-py also supports several features that HERA-C does not:
 
 HERA-C has a few features that hera-py does not:
   - C-style #define macros (and more generally the ability to embed arbitrary C++ code in HERA programs)
+
+### Acknowledgements
+Thank you to [Christopher Villalta](https://github.com/csvillalta) for valuable feedback on early iterations of this project.
