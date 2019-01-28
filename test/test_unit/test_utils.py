@@ -174,17 +174,21 @@ def test_make_ansi_reset():
     assert make_ansi(0) == "\033[0m"
 
 
-def test_format_int_with_small_positive(capsys):
+def test_format_int_with_small_positive():
     assert format_int(5) == "0x0005 = 5"
 
 
-def test_format_int_with_ASCII_value(capsys):
+def test_format_int_with_ASCII_value():
     assert format_int(65) == "0x0041 = 65 = 'A'"
 
 
-def test_format_int_with_large_positive(capsys):
+def test_format_int_with_large_positive():
     assert format_int(4000) == "0x0fa0 = 4000"
 
 
-def test_format_int_with_negative(capsys):
+def test_format_int_with_negative():
     assert format_int(65535) == "0xffff = 65535 = -1"
+
+
+def test_format_int_with_non_default_format():
+    assert format_int(2, spec="bds") == "0b0000000000000010 = 2"

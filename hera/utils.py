@@ -72,14 +72,33 @@ def is_symbol(s):
     return isinstance(s, Token) and s.type == "SYMBOL"
 
 
-def format_int(v):
-    common = "0x{0:0>4x} = {0}".format(v)
-    if v & 0x8000:
-        return common + " = " + str(from_u16(v))
-    elif v < 128 and chr(v).isprintable():
-        return common + " = " + repr(chr(v))
-    else:
-        return common
+def format_int(v, *, spec="xdsc"):
+    """Return a string of the form "... = ... = ..." where each ellipsis stands for a
+    formatted integer determined by a character in the `spec` parameter. The following
+    formats are supported: d for decimal, x for hexadecimal, o for octal, b for binary,
+    c for character literal, and s for signed integer. The latter two formats only
+    generate output when applicable, e.g. for integers that actually represent printable
+    characters and signed integers, respectively.
+    """
+    ret = []
+    for c in spec:
+        if c == "d":
+            ret.append(str(v))
+        elif c == "x":
+            ret.append("0x{:0>4x}".format(v))
+        elif c == "o":
+            ret.append("0o{:0>8o}".format(v))
+        elif c == "b":
+            ret.append("0b{:0>16b}".format(v))
+        elif c == "c":
+            if v < 128 and chr(v).isprintable():
+                ret.append(repr(chr(v)))
+        elif c == "s":
+            if v & 0x8000:
+                ret.append(str(from_u16(v)))
+        else:
+            raise RuntimeError("unknown format specifier: " + c)
+    return " = ".join(ret)
 
 
 REGISTER_BRANCHES = set(
