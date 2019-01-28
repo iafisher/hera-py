@@ -14,13 +14,7 @@ from .minilanguage import (
 from hera.data import Constant, DataLabel, HERAError, Label, Program, Settings
 from hera.loader import load_program
 from hera.parser import parse
-from hera.utils import (
-    BRANCHES,
-    DATA_STATEMENTS,
-    pad,
-    print_register_debug,
-    register_to_index,
-)
+from hera.utils import BRANCHES, DATA_STATEMENTS, format_int, pad, register_to_index
 
 
 def debug(program: Program, settings=Settings()) -> None:
@@ -290,24 +284,28 @@ class Shell:
         try:
             if isinstance(tree, RegisterNode):
                 if tree.value == "pc":
-                    print_register_debug("PC", vm.pc, to_stderr=False, end="")
                     try:
-                        print(" [{}]".format(self.debugger.get_breakpoint_name(vm.pc)))
+                        label = self.debugger.get_breakpoint_name(vm.pc)
                     except IndexError:
-                        print()
+                        print("PC = {}".format(format_int(vm.pc)))
+                    else:
+                        print("PC = {} [{}]".format(format_int(vm.pc), label))
                 else:
                     value = vm.get_register(tree.value)
                     i = register_to_index(tree.value)
                     if i == 13:
-                        print_register_debug(tree.value, value, to_stderr=False, end="")
                         try:
-                            print(
-                                " [{}]".format(self.debugger.get_breakpoint_name(value))
-                            )
+                            label = self.debugger.get_breakpoint_name(value)
                         except IndexError:
-                            print()
+                            print("{} = {}".format(tree.value, format_int(value)))
+                        else:
+                            print(
+                                "{} = {} [{}]".format(
+                                    tree.value, format_int(value), label
+                                )
+                            )
                     else:
-                        print_register_debug(tree.value, value, to_stderr=False)
+                        print("{} = {}".format(tree.value, format_int(value)))
             elif isinstance(tree, MemoryNode):
                 address = self.evaluate_node(tree.address)
                 print("M[{}] = {}".format(address, vm.access_memory(address)))

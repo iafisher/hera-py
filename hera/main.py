@@ -23,7 +23,7 @@ from docopt import docopt
 from .data import Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
 from .loader import load_program_from_file
-from .utils import print_register_debug
+from .utils import format_int
 from .vm import VirtualMachine
 
 
@@ -118,7 +118,7 @@ def dump_state(vm, settings):
     nprint("\nVirtual machine state after execution:")
     for i, value in enumerate(vm.registers[1 : last_register + 1], start=1):
         rname = "    R" + str(i) + (" " if i < 10 else "")
-        print_register_debug(rname, value)
+        nprint("{} = {}".format(rname, format_int(value)))
 
     if last_register > 0:
         nprint()

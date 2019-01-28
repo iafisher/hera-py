@@ -4,10 +4,10 @@ from typing import Dict, List, Optional, Tuple
 
 from hera.data import Constant, DataLabel, Location, Messages, Op, Token
 from hera.utils import (
+    format_int,
     from_u16,
     is_register,
     is_symbol,
-    print_register_debug,
     register_to_index,
     to_u16,
     to_u32,
@@ -875,7 +875,7 @@ class PRINT_REG(Operation):
 
     def execute(self, vm):
         v = vm.get_register(self.args[0])
-        print_register_debug(self.args[0], v, to_stderr=False)
+        print("{} = {}".format(self.args[0], format_int(v)))
         vm.pc += 1
 
 

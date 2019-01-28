@@ -72,15 +72,14 @@ def is_symbol(s):
     return isinstance(s, Token) and s.type == "SYMBOL"
 
 
-def print_register_debug(target, v, *, to_stderr=True, end="\n"):
-    file_ = sys.stderr if to_stderr else sys.stdout
-
-    print("{0} = 0x{1:0>4x} = {1}".format(target, v), end="", file=file_)
+def format_int(v):
+    common = "0x{0:0>4x} = {0}".format(v)
     if v & 0x8000:
-        print(" = {}".format(from_u16(v)), end="", file=file_)
-    if v < 128 and chr(v).isprintable():
-        print(" = {!r}".format(chr(v)), end="", file=file_)
-    print(end=end, file=file_)
+        return common + " = " + str(from_u16(v))
+    elif v < 128 and chr(v).isprintable():
+        return common + " = " + repr(chr(v))
+    else:
+        return common
 
 
 REGISTER_BRANCHES = set(

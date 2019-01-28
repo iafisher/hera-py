@@ -1,9 +1,9 @@
 import pytest
 
 from hera.utils import (
+    format_int,
     from_u16,
     make_ansi,
-    print_register_debug,
     register_to_index,
     to_u16,
     to_u32,
@@ -174,25 +174,17 @@ def test_make_ansi_reset():
     assert make_ansi(0) == "\033[0m"
 
 
-def test_print_register_debug_with_small_positive(capsys):
-    print_register_debug("R1", 5)
-
-    assert capsys.readouterr().err == "R1 = 0x0005 = 5\n"
+def test_format_int_with_small_positive(capsys):
+    assert format_int(5) == "0x0005 = 5"
 
 
-def test_print_register_debug_with_ASCII_value(capsys):
-    print_register_debug("R1", 65)
-
-    assert capsys.readouterr().err == "R1 = 0x0041 = 65 = 'A'\n"
+def test_format_int_with_ASCII_value(capsys):
+    assert format_int(65) == "0x0041 = 65 = 'A'"
 
 
-def test_print_register_debug_with_large_positive(capsys):
-    print_register_debug("R1", 4000)
-
-    assert capsys.readouterr().err == "R1 = 0x0fa0 = 4000\n"
+def test_format_int_with_large_positive(capsys):
+    assert format_int(4000) == "0x0fa0 = 4000"
 
 
-def test_print_register_debug_with_negative(capsys):
-    print_register_debug("R1", 65535)
-
-    assert capsys.readouterr().err == "R1 = 0xffff = 65535 = -1\n"
+def test_format_int_with_negative(capsys):
+    assert format_int(65535) == "0xffff = 65535 = -1"
