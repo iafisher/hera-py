@@ -707,7 +707,7 @@ def test_handle_help_with_multiple_args(shell, capsys):
 def test_handle_help_with_all_commands(shell, capsys):
     shell.handle_command(
         "help assign break continue execute help info list ll next print restart jump \
-         step quit"
+         step undo quit"
     )
 
     assert "not a recognized command" not in capsys.readouterr().out
@@ -772,8 +772,75 @@ def test_handle_step_with_too_many_args(shell, capsys):
 
 def test_handle_step_abbreviated(shell):
     with patch("hera.debugger.shell.Shell.handle_step") as mock_handle_step:
-        shell.handle_command("st")
+        shell.handle_command("s")
         assert mock_handle_step.call_count == 1
+
+
+def test_handle_undo_after_next(shell):
+    shell.handle_command("n")
+    shell.handle_command("undo")
+
+    assert shell.debugger.vm.pc == 0
+    assert shell.debugger.vm.registers[1] == 0
+
+
+def test_handle_undo_after_next_and_print(shell):
+    shell.handle_command("n")
+    shell.handle_command("p r1")
+    shell.handle_command("undo")
+
+    assert shell.debugger.vm.pc == 0
+    assert shell.debugger.vm.registers[1] == 0
+
+
+def test_handle_undo_after_break_and_continue(shell):
+    shell.handle_command("b add")
+    shell.handle_command("continue")
+    shell.handle_command("undo")
+    shell.handle_command("undo")
+
+    assert shell.debugger.vm.pc == 0
+    assert shell.debugger.vm.registers[1] == 0
+    assert shell.debugger.vm.registers[2] == 0
+    assert len(shell.debugger.breakpoints) == 0
+
+
+def test_handle_undo_after_print(shell, capsys):
+    shell.handle_command("print r1")
+    capsys.readouterr()
+    shell.handle_command("undo")
+
+    assert capsys.readouterr().out == "Nothing to undo.\n"
+
+
+def test_handle_undo_after_nothing(shell, capsys):
+    shell.handle_command("undo")
+
+    assert capsys.readouterr().out == "Nothing to undo.\n"
+
+
+def test_handle_undo_twice(shell, capsys):
+    shell.handle_command("n")
+    shell.handle_command("n")
+    capsys.readouterr()
+    shell.handle_command("undo")
+    shell.handle_command("undo")
+
+    assert shell.debugger.vm.pc == 0
+    assert shell.debugger.vm.registers[1] == 0
+    assert shell.debugger.vm.registers[2] == 0
+
+
+def test_handle_undo_with_too_many_args(shell, capsys):
+    shell.handle_command("undo 1")
+
+    assert capsys.readouterr().out == "undo takes no arguments.\n"
+
+
+def test_handle_undo_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_undo") as mock_handle_undo:
+        shell.handle_command("u")
+        assert mock_handle_undo.call_count == 1
 
 
 def test_handle_unknown_command(shell, capsys):

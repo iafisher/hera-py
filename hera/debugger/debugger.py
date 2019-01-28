@@ -14,6 +14,7 @@ user, it must be in terms of original ops.
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
+import copy
 import readline  # noqa: F401
 
 from hera.data import Label
@@ -34,6 +35,16 @@ class Debugger:
         self.vm = VirtualMachine()
         # How many CALLs without RETURNs?
         self.calls = 0
+        # Back-up of the debugger's state, to implement the "undo" command.
+        # Set to None when no operations have been performed, and to "undone" when an
+        # "undo" has just been executed.
+        self.old = None
+
+    def save(self):
+        self.old = copy.copy(self)
+        self.old.symbol_table = self.symbol_table.copy()
+        self.old.breakpoints = self.breakpoints.copy()
+        self.old.vm = self.vm.copy()
 
     def get_breakpoints(self):
         return self.breakpoints

@@ -3,7 +3,11 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
 """
+import copy
+from typing import List
+
 from .data import Settings
+from .op import Operation
 from .utils import (
     ANSI_MAGENTA_BOLD,
     ANSI_RESET,
@@ -50,7 +54,13 @@ class VirtualMachine:
         self.warned_for_overflow = False
         self.warning_count = 0
 
-    def exec_many(self, program):
+    def copy(self):
+        ret = copy.copy(self)
+        ret.registers = self.registers.copy()
+        ret.memory = self.memory.copy()
+        return ret
+
+    def exec_many(self, program: List[Operation]) -> None:
         """Execute a program (i.e., a list of operations), resetting the machine's
         state beforehand.
         """

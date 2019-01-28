@@ -1,3 +1,5 @@
+import functools
+
 from . import minilanguage
 from .debugger import Debugger
 from .minilanguage import (
@@ -19,6 +21,18 @@ def debug(program: Program, settings=Settings()) -> None:
     """Start the debug loop."""
     debugger = Debugger(program)
     Shell(debugger, settings).loop()
+
+
+def mutates(f):
+    """Decorator for command handlers in the Shell class that mutate the state of the
+    debugger."""
+
+    @functools.wraps(f)
+    def inner(self, *args, **kwargs):
+        self.debugger.save()
+        return f(self, *args, **kwargs)
+
+    return inner
 
 
 class Shell:
@@ -67,6 +81,8 @@ class Shell:
             self.handle_continue(arglist)
         elif "execute".startswith(cmd):
             self.handle_execute(argstr)
+        elif "help".startswith(cmd):
+            self.handle_help(arglist)
         elif "info".startswith(cmd):
             self.handle_info(arglist)
         elif "jump".startswith(cmd):
@@ -84,13 +100,14 @@ class Shell:
             self.handle_restart(arglist)
         elif "step".startswith(cmd):
             self.handle_step(arglist)
-        elif "help".startswith(cmd):
-            self.handle_help(arglist)
+        elif "undo".startswith(cmd):
+            self.handle_undo(arglist)
         elif "=" in response:
             self.handle_assign(response.split("=", maxsplit=1))
         else:
             print("{} is not a recognized command.".format(cmd))
 
+    @mutates
     def handle_break(self, args):
         if len(args) > 1:
             print("break takes zero or one arguments.")
@@ -115,6 +132,7 @@ class Shell:
             else:
                 self.debugger.set_breakpoint(b)
 
+    @mutates
     def handle_continue(self, args):
         if len(args) != 0:
             print("continue takes no arguments.")
@@ -123,6 +141,7 @@ class Shell:
         self.debugger.exec_ops(until=lambda dbg: dbg.vm.pc in dbg.breakpoints)
         self.print_current_op()
 
+    @mutates
     def handle_execute(self, argstr):
         # Make sure there are no disallowed ops.
         for op in parse(argstr)[0]:
@@ -190,6 +209,7 @@ class Shell:
         if dlabels:
             print("Data labels: " + ", ".join(dlabels))
 
+    @mutates
     def handle_jump(self, args):
         if len(args) > 1:
             print("jump takes zero or one arguments.")
@@ -240,6 +260,7 @@ class Shell:
         loc = self.debugger.program[self.debugger.vm.pc].loc
         self.print_range_of_ops(loc)
 
+    @mutates
     def handle_next(self, args):
         if len(args) != 0:
             print("next takes no arguments.")
@@ -311,6 +332,7 @@ class Shell:
         except HERAError as e:
             print("Eval error: " + str(e) + ".")
 
+    @mutates
     def handle_restart(self, args):
         if len(args) != 0:
             print("restart takes no arguments.")
@@ -319,6 +341,7 @@ class Shell:
         self.debugger.reset()
         self.print_current_op()
 
+    @mutates
     def handle_step(self, args):
         if len(args) > 0:
             print("step takes no arguments.")
@@ -331,6 +354,17 @@ class Shell:
         calls = self.debugger.calls
         self.debugger.exec_ops(until=lambda dbg: dbg.calls == calls)
         self.print_current_op()
+
+    def handle_undo(self, args):
+        if len(args) > 0:
+            print("undo takes no arguments.")
+            return
+
+        if self.debugger.old is None:
+            print("Nothing to undo.")
+            return
+
+        self.debugger = self.debugger.old
 
     def print_registers(self):
         nonzero = 0
@@ -530,6 +564,8 @@ Available commands:
 
     step            Step over the execution of a function.
 
+    undo            Undo the last operation.
+
     quit            Exit the debugger.
 
     <x> = <y>       Alias for "assign <x> <y>".
@@ -639,6 +675,10 @@ restart:
 step:
   Step over the execution of a function. The step command is only valid when
   the current instruction is CALL.""",
+    # undo
+    "undo": """\
+undo:
+  Undo the last operation that changed the state of the debugger.""",
     # quit
     "quit": """\
 quit:
