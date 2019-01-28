@@ -14,7 +14,13 @@ from .minilanguage import (
 from hera.data import Constant, DataLabel, HERAError, Label, Program, Settings
 from hera.loader import load_program
 from hera.parser import parse
-from hera.utils import BRANCHES, DATA_STATEMENTS, pad, print_register_debug
+from hera.utils import (
+    BRANCHES,
+    DATA_STATEMENTS,
+    pad,
+    print_register_debug,
+    register_to_index,
+)
 
 
 def debug(program: Program, settings=Settings()) -> None:
@@ -284,10 +290,24 @@ class Shell:
         try:
             if isinstance(tree, RegisterNode):
                 if tree.value == "pc":
-                    print("PC = {}".format(vm.pc))
+                    print_register_debug("PC", vm.pc, to_stderr=False, end="")
+                    try:
+                        print(" [{}]".format(self.debugger.get_breakpoint_name(vm.pc)))
+                    except IndexError:
+                        print()
                 else:
                     value = vm.get_register(tree.value)
-                    print_register_debug(tree.value, value, to_stderr=False)
+                    i = register_to_index(tree.value)
+                    if i == 13:
+                        print_register_debug(tree.value, value, to_stderr=False, end="")
+                        try:
+                            print(
+                                " [{}]".format(self.debugger.get_breakpoint_name(value))
+                            )
+                        except IndexError:
+                            print()
+                    else:
+                        print_register_debug(tree.value, value, to_stderr=False)
             elif isinstance(tree, MemoryNode):
                 address = self.evaluate_node(tree.address)
                 print("M[{}] = {}".format(address, vm.access_memory(address)))

@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - The `undo` debugging command.
 - The `next` debugging command now takes an optional argument.
+- Printing the program counter or `PC_ret` (`R13`) in the debugger now indicates what line of code the registers correspond to.
 
 ### Changed
 - The `restart` debugging command may no longer be abbreviated.
@@ -22,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `assign` debugging command no longer prints a spurious error message when invoked.
 - Negative numbers are parsed correctly in the debugging minilanguage.
 - The debugger now respects the `--no-color` command-line flag.
+- The printed register values after program execution now correctly print negative numbers under the signed interpretation of 16 bits.
 
 ## [0.5.0] - 2019-01-27
 ### Added

@@ -571,6 +571,13 @@ def test_handle_print_register(shell, capsys):
     assert capsys.readouterr().out == "R1 = 0x0000 = 0\n"
 
 
+def test_handle_print_PC_ret(shell, capsys):
+    shell.debugger.vm.registers[13] = 2
+    shell.handle_command("print PC_ret")
+
+    assert capsys.readouterr().out == "PC_ret = 0x0002 = 2 [<string>:5]\n"
+
+
 def test_handle_print_memory_expression(shell, capsys):
     shell.debugger.vm.registers[1] = 4
     shell.debugger.vm.memory[4] = 42
@@ -581,11 +588,19 @@ def test_handle_print_memory_expression(shell, capsys):
 
 
 def test_handle_print_PC(shell, capsys):
-    shell.debugger.vm.pc = 3
+    shell.debugger.vm.pc = 4
 
     shell.handle_command("print pc")
 
-    assert capsys.readouterr().out == "PC = 3\n"
+    assert capsys.readouterr().out == "PC = 0x0004 = 4 [<string>:7 (add)]\n"
+
+
+def test_handle_print_PC_with_nonsense_value(shell, capsys):
+    shell.debugger.vm.pc = 300
+
+    shell.handle_command("print pc")
+
+    assert capsys.readouterr().out == "PC = 0x012c = 300\n"
 
 
 def test_handle_print_int(shell, capsys):
@@ -742,6 +757,44 @@ LABEL(plus_two)
 
     captured = capsys.readouterr().out
     assert captured == "3  SET(R2, 5)\n"
+
+
+@pytest.mark.skip("Not ready for this")
+def test_handle_step_with_recursive_function(capsys):
+    shell = load_shell(
+        """\
+SET(R1, 9)
+CALL(FP_alt, rec)
+HALT()
+
+LABEL(rec)
+  INC(SP, 2)
+  STORE(PC_ret, 0, FP)
+  STORE(FP_alt, 1, FP)
+
+  CMP(R1, R0)
+  BZ(end)
+  INC(R2, 1)
+  DEC(R1, 1)
+  CALL(FP_alt, rec)
+  LABEL(end)
+
+  LOAD(PC_ret, 0, FP)
+  LOAD(FP_alt, 1, FP)
+  DEC(SP, 2)
+  RETURN(FP_alt, PC_ret)
+"""
+    )
+    shell.handle_command("n")
+    capsys.readouterr()
+    shell.handle_command("step")
+
+    assert shell.debugger.vm.pc == 5
+    assert shell.debugger.vm.registers[1] == 0
+    assert shell.debugger.vm.registers[2] == 9
+
+    captured = capsys.readouterr().out
+    assert captured == "3  HALT()\n"
 
 
 def test_handle_step_not_on_CALL(shell, capsys):
