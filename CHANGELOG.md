@@ -6,7 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 **NOTE**: As permitted by semantic versioning, backward compatibility is NOT maintained for initial development, i.e. releases before 1.0.0.
 
 ## [Unreleased]
-Nothing yet!
+### Fixed
+- A label may no longer be the second argument to `RETURN`.
 
 ## [0.5.0] - 2019-01-27
 ### Added

@@ -160,6 +160,8 @@ class RegisterBranch(Operation):
 
     def convert(self):
         if isinstance(self.args[0], int):
+            # When the argument to the branch is a label, which has already been
+            # substituted for its value.
             lbl = self.args[0]
             return [
                 SETLO("R11", lbl & 0xFF),
@@ -167,6 +169,7 @@ class RegisterBranch(Operation):
                 self.__class__("R11"),
             ]
         else:
+            # When the argument to the branch is a concrete register.
             return super().convert()
 
 
@@ -687,6 +690,10 @@ class CALL_AND_RETURN(Operation):
                     messages.warn(msg, self.args[0])
         return messages
 
+
+class CALL(CALL_AND_RETURN):
+    P = (REGISTER, REGISTER_OR_LABEL)
+
     def convert(self):
         if isinstance(self.args[1], int):
             return SET("R13", self.args[1]).convert() + [
@@ -696,11 +703,9 @@ class CALL_AND_RETURN(Operation):
             return super().convert()
 
 
-class CALL(CALL_AND_RETURN):
-    pass
-
-
 class RETURN(CALL_AND_RETURN):
+    P = (REGISTER, REGISTER)
+
     def typecheck(self, *args, **kwargs):
         messages = super().typecheck(*args, **kwargs)
         if len(self.args) >= 2 and is_register(self.args[1]):

@@ -32,7 +32,7 @@ def settings():
 def helper(opstr, symbol_table={}):
     ops, messages = resolve_ops(parse(opstr)[0])
     if not ops or messages.errors:
-        return [(True, msg, loc) for msg, loc in messages.errors]
+        return messages.errors
     else:
         return ops[0].typecheck(symbol_table).errors
 
@@ -45,6 +45,7 @@ def invalid(opstr, msg, symbol_table={}):
     errors = helper(opstr, symbol_table)
 
     assert len(errors) > 0
+    assert msg in errors[0][0]
 
 
 def test_typecheck_SET():
@@ -178,7 +179,7 @@ def test_typecheck_CALL():
 
 def test_typecheck_RETURN():
     valid("RETURN(R12, R13)")
-    valid("RETURN(R12, f)", {"f": 0})
+    invalid("RETURN(R12, f)", "expected register", {"f": 0})
 
 
 def test_typecheck_BR():
