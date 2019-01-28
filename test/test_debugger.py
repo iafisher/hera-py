@@ -418,17 +418,6 @@ def test_handle_list_with_too_many_args(shell, capsys):
     assert capsys.readouterr().out == "list takes zero or one arguments.\n"
 
 
-def test_get_previous_ops(debugger):
-    debugger.vm.pc = 4
-    previous_three = debugger.get_previous_ops(3)
-
-    assert len(previous_three) == 2
-    assert previous_three[0][1].name == "SET"
-    assert previous_three[0][1].args[0] == "R1"
-    assert previous_three[1][1].name == "SET"
-    assert previous_three[1][1].args[0] == "R2"
-
-
 def test_handle_list_abbreviated(shell):
     with patch("hera.debugger.shell.Shell.handle_list") as mock_handle_list:
         shell.handle_command("l")

@@ -121,40 +121,6 @@ class Debugger:
 
         return loc
 
-    def get_previous_ops(self, n):
-        """Return the `n` original ops before the current one."""
-        # TODO: Refactor this.
-        if self.vm.pc == 0:
-            return []
-
-        ops = []
-        index = self.vm.pc - 1
-        for _ in range(n):
-            original = self.program[index].original
-            while index >= 0 and self.program[index].original == original:
-                index -= 1
-            ops.append((index + 1, self.program[index + 1].original))
-            if index < 0:
-                break
-
-        return list(reversed(ops))
-
-    def get_next_ops(self, n):
-        """Return the `n` original ops after the current one."""
-        ops = []
-        index = self.vm.pc
-        for _ in range(n):
-            original = self.program[index].original
-            while (
-                index < len(self.program) and self.program[index].original == original
-            ):
-                index += 1
-            if index < len(self.program):
-                ops.append((index, self.program[index].original))
-            else:
-                break
-        return ops
-
     def is_finished(self):
         return self.vm.halted or self.vm.pc >= len(self.program)
 
