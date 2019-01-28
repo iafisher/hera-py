@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 ### Changed
 - The `restart` debugging command may no longer be abbreviated.
+- The `skip` debugging command has been renamed to `jump`.
 
 ### Fixed
 - A label may no longer be the second argument to `RETURN`.

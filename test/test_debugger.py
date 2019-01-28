@@ -217,30 +217,30 @@ Error: too few args to ADD (expected 3), line 1 col 1 of <string>
     )
 
 
-def test_handle_skip_with_increment(shell):
-    shell.handle_command("skip +2")
+def test_handle_jump_with_increment(shell):
+    shell.handle_command("jump +2")
 
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0
     assert shell.debugger.vm.pc == 4
 
 
-def test_handle_skip_with_unparseable_increment(shell, capsys):
-    shell.handle_command("skip +a")
+def test_handle_jump_with_unparseable_increment(shell, capsys):
+    shell.handle_command("jump +a")
 
-    assert capsys.readouterr().out == "Could not parse argument to skip.\n"
+    assert capsys.readouterr().out == "Could not parse argument to jump.\n"
 
 
-def test_handle_skip_with_no_arg(shell):
-    shell.handle_command("skip")
+def test_handle_jump_with_no_arg(shell):
+    shell.handle_command("jump")
 
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0
     assert shell.debugger.vm.pc == 2
 
 
-def test_handle_skip_with_line_number(shell):
-    shell.handle_command("skip 7")
+def test_handle_jump_with_line_number(shell):
+    shell.handle_command("jump 7")
 
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0
@@ -248,41 +248,41 @@ def test_handle_skip_with_line_number(shell):
 
 
 @pytest.mark.skip("Should this work?")
-def test_handle_skip_with_line_number_not_on_operation(shell):
+def test_handle_jump_with_line_number_not_on_operation(shell):
     # A line number that doesn't correspond to an actual operation.
-    shell.handle_command("skip 6")
+    shell.handle_command("jump 6")
 
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0
     assert shell.debugger.vm.pc == 4
 
 
-def test_handle_skip_with_label(shell):
-    shell.handle_command("skip add")
+def test_handle_jump_with_label(shell):
+    shell.handle_command("jump add")
 
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0
     assert shell.debugger.vm.pc == 4
 
 
-def test_handle_skip_with_unknown_label(shell, capsys):
-    shell.handle_command("skip whatever")
+def test_handle_jump_with_unknown_label(shell, capsys):
+    shell.handle_command("jump whatever")
 
     assert capsys.readouterr().out == "Error: could not locate label `whatever`.\n"
 
 
-def test_handle_skip_with_too_many_arguments(shell, capsys):
-    shell.handle_command("skip 1 2 3")
+def test_handle_jump_with_too_many_arguments(shell, capsys):
+    shell.handle_command("jump 1 2 3")
 
-    assert capsys.readouterr().out == "skip takes zero or one arguments.\n"
+    assert capsys.readouterr().out == "jump takes zero or one arguments.\n"
 
 
-def test_handle_skip_abbreviated(shell):
-    with patch("hera.debugger.shell.Shell.handle_skip") as mock_handle_skip:
-        shell.handle_command("sk 10")
-        assert mock_handle_skip.call_count == 1
+def test_handle_jump_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_jump") as mock_handle_jump:
+        shell.handle_command("j 10")
+        assert mock_handle_jump.call_count == 1
 
-        args, kwargs = mock_handle_skip.call_args
+        args, kwargs = mock_handle_jump.call_args
         assert len(args) == 1
         assert args[0] == ["10"]
         assert len(kwargs) == 0
@@ -706,7 +706,7 @@ def test_handle_help_with_multiple_args(shell, capsys):
 
 def test_handle_help_with_all_commands(shell, capsys):
     shell.handle_command(
-        "help assign break continue execute help info list ll next print restart skip \
+        "help assign break continue execute help info list ll next print restart jump \
          step quit"
     )
 
@@ -774,12 +774,6 @@ def test_handle_step_abbreviated(shell):
     with patch("hera.debugger.shell.Shell.handle_step") as mock_handle_step:
         shell.handle_command("st")
         assert mock_handle_step.call_count == 1
-
-
-def test_handle_command_s(shell, capsys):
-    shell.handle_command("s")
-
-    assert capsys.readouterr().out == "s is ambiguous between skip and step.\n"
 
 
 def test_handle_unknown_command(shell, capsys):

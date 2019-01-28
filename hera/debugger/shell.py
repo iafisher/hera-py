@@ -69,6 +69,8 @@ class Shell:
             self.handle_execute(argstr)
         elif "info".startswith(cmd):
             self.handle_info(arglist)
+        elif "jump".startswith(cmd):
+            self.handle_jump(arglist)
         elif "list".startswith(cmd):
             self.handle_list(arglist)
         elif cmd == "ll":
@@ -80,10 +82,6 @@ class Shell:
         # restart cannot be abbreviated, so that users don't accidentally restart.
         elif cmd == "restart":
             self.handle_restart(arglist)
-        elif cmd == "s":
-            print("s is ambiguous between skip and step.")
-        elif "skip".startswith(cmd):
-            self.handle_skip(arglist)
         elif "step".startswith(cmd):
             self.handle_step(arglist)
         elif "help".startswith(cmd):
@@ -192,6 +190,34 @@ class Shell:
         if dlabels:
             print("Data labels: " + ", ".join(dlabels))
 
+    def handle_jump(self, args):
+        if len(args) > 1:
+            print("jump takes zero or one arguments.")
+            return
+
+        if len(args) == 1:
+            if args[0].startswith("+"):
+                try:
+                    offset = int(args[0][1:])
+                except ValueError:
+                    print("Could not parse argument to jump.")
+                    return
+                else:
+                    for _ in range(offset):
+                        self.debugger.vm.pc += len(self.debugger.get_real_ops())
+            else:
+                try:
+                    new_pc = self.debugger.resolve_location(args[0])
+                except ValueError as e:
+                    print("Error:", str(e))
+                    return
+                else:
+                    self.debugger.vm.pc = new_pc
+        else:
+            self.debugger.vm.pc += len(self.debugger.get_real_ops())
+
+        self.print_current_op()
+
     def handle_list(self, args):
         if len(args) > 1:
             print("list takes zero or one arguments.")
@@ -291,34 +317,6 @@ class Shell:
             return
 
         self.debugger.reset()
-        self.print_current_op()
-
-    def handle_skip(self, args):
-        if len(args) > 1:
-            print("skip takes zero or one arguments.")
-            return
-
-        if len(args) == 1:
-            if args[0].startswith("+"):
-                try:
-                    offset = int(args[0][1:])
-                except ValueError:
-                    print("Could not parse argument to skip.")
-                    return
-                else:
-                    for _ in range(offset):
-                        self.debugger.vm.pc += len(self.debugger.get_real_ops())
-            else:
-                try:
-                    new_pc = self.debugger.resolve_location(args[0])
-                except ValueError as e:
-                    print("Error:", str(e))
-                    return
-                else:
-                    self.debugger.vm.pc = new_pc
-        else:
-            self.debugger.vm.pc += len(self.debugger.get_real_ops())
-
         self.print_current_op()
 
     def handle_step(self, args):
@@ -517,6 +515,8 @@ Available commands:
 
     info            Print information about the current state of the program.
 
+    jump <loc>      Jump to the given location.
+
     list <n>        Print the current lines of source code and the n previous
                     and next lines. If not provided, n defaults to 3.
 
@@ -527,8 +527,6 @@ Available commands:
     print <x>       Print the value of x.
 
     restart         Restart the execution of the program from the beginning.
-
-    skip <loc>      Skip ahead to the given location.
 
     step            Step over the execution of a function.
 
@@ -592,6 +590,17 @@ help <cmd>...:
     "info": """\
 info:
   Print information about the current state of the program.""",
+    # jump
+    "jump": """\
+jump:
+  Skip the current instruction.
+
+jump <loc>:
+  Jump to the given location (either a line number or a label) without
+  executing any of the intermediate instructions.
+
+jump +<n>:
+  Jump past the next `n` instructions without executing them.""",
     # list
     "list": """\
 list:
@@ -625,17 +634,6 @@ print <x>:
 restart:
   Restart execution of the program from the beginning. All registers and
   memory cells are reset.""",
-    # skip
-    "skip": """\
-skip:
-  Skip the current instruction.
-
-skip <loc>:
-  Skip to the given location (either a line number or a label) without
-  executing any of the intermediate instructions.
-
-skip +<n>:
-  Skip the next `n` instructions without executing them.""",
     # step
     "step": """\
 step:
