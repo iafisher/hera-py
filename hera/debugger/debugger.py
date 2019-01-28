@@ -52,14 +52,16 @@ class Debugger:
     def set_breakpoint(self, b):
         self.breakpoints[b] = self.get_breakpoint_name(b)
 
-    def exec_ops(self, n=None, *, until=None):
+    def exec_ops(self, n=-1, *, until=None):
+        """Execute `n` real instructions of the program. If `until` is provided, it
+        should be a function that returns True when execution should stop. If `n` is not
+        provided or set to a negative number, execution continues until the `until`
+        function returns True.
+        """
         if until is None:
             until = lambda vm: False  # noqa: E731
 
-        if n is None:
-            n = len(self.program)
-
-        for _ in range(n):
+        while n != 0:
             real_ops = self.get_real_ops()
             for real_op in real_ops:
                 if real_op.name == "CALL":
@@ -71,6 +73,8 @@ class Debugger:
 
             if self.is_finished() or until(self):
                 break
+
+            n -= 1
 
     def reset(self):
         self.vm.reset()

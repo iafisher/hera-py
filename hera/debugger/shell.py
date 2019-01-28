@@ -691,7 +691,8 @@ restart:
     "step": """\
 step:
   Step over the execution of a function. The step command is only valid when
-  the current instruction is CALL.""",
+  the current instruction is CALL. Stepping may behave unexpectedly in HERA
+  programs that do not follow conventional function call idioms.""",
     # undo
     "undo": """\
 undo:

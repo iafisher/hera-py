@@ -777,7 +777,6 @@ LABEL(plus_two)
     )
 
 
-@pytest.mark.skip("Not ready for this")
 def test_handle_step_with_recursive_function(capsys):
     shell = load_shell(
         """\
@@ -786,6 +785,7 @@ CALL(FP_alt, rec)
 HALT()
 
 LABEL(rec)
+  MOVE(FP, SP)
   INC(SP, 2)
   STORE(PC_ret, 0, FP)
   STORE(FP_alt, 1, FP)
@@ -812,7 +812,16 @@ LABEL(rec)
     assert shell.debugger.vm.registers[2] == 9
 
     captured = capsys.readouterr().out
-    assert captured == "3  HALT()\n"
+    assert (
+        captured
+        == """\
+[<string>]
+
+     2  CALL(FP_alt, rec)
+->   3  HALT()
+     4
+"""
+    )
 
 
 def test_handle_step_not_on_CALL(shell, capsys):

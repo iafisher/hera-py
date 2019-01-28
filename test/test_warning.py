@@ -55,7 +55,7 @@ Warning: stack has overflowed into data segment, line 2 col 1 of <stdin>
 
 
 Virtual machine state after execution:
-    R1  = 0xc002 = 49154
+    R1  = 0xc002 = 49154 = -16382
 
     Carry-block flag is OFF
     Carry flag is OFF

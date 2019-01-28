@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Negative numbers are parsed correctly in the debugging minilanguage.
 - The debugger now respects the `--no-color` command-line flag.
 - The printed register values after program execution now correctly print negative numbers under the signed interpretation of 16 bits.
+- The `step` command no longer stops prematurely when the number of instructions executed exceeds the length of the program.
 
 ## [0.5.0] - 2019-01-27
 ### Added
