@@ -1,6 +1,6 @@
 import json
 from contextlib import suppress
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from hera.data import Constant, DataLabel, Location, Messages, Op, Token
 from hera.utils import (
@@ -936,7 +936,7 @@ def check_arglist(argtypes, args, symbol_table):
     return messages
 
 
-def check_register(arg):
+def check_register(arg) -> Optional[str]:
     if not isinstance(arg, Token) or arg.type != "REGISTER":
         return "expected register"
 
@@ -951,7 +951,7 @@ def check_register(arg):
         return None
 
 
-def check_register_or_label(arg, symbol_table):
+def check_register_or_label(arg, symbol_table: Dict[str, int]) -> Optional[str]:
     if not isinstance(arg, Token) or arg.type not in ("REGISTER", "SYMBOL"):
         return "expected register or label"
 
@@ -971,7 +971,7 @@ def check_register_or_label(arg, symbol_table):
                 return None
 
 
-def check_label(arg):
+def check_label(arg) -> Optional[str]:
     if not is_symbol(arg):
         return "expected label"
     else:
