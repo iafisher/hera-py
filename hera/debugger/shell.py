@@ -506,7 +506,7 @@ class Shell:
         """
         if not self.debugger.is_finished():
             loc = self.debugger.program[self.debugger.vm.pc].loc
-            print(str(loc.line) + "  " + loc.file_lines[loc.line - 1])
+            self.print_range_of_ops(loc, context=1)
         else:
             print("Program has finished executing.")
 

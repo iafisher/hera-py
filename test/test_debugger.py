@@ -468,7 +468,16 @@ def test_handle_restart(shell, capsys):
     assert vm.pc == 0
     assert vm.registers[1] == 0
     assert vm.registers[2] == 0
-    assert capsys.readouterr().out == "4  SET(R1, N)\n"
+    assert (
+        capsys.readouterr().out
+        == """\
+[<string>]
+
+    3
+->  4  SET(R1, N)
+    5  SET(R2, 39)
+"""
+    )
 
 
 def test_handle_restart_with_too_many_args(shell, capsys):
@@ -756,7 +765,16 @@ LABEL(plus_two)
     assert shell.debugger.vm.registers[2] == 0
 
     captured = capsys.readouterr().out
-    assert captured == "3  SET(R2, 5)\n"
+    assert (
+        captured
+        == """\
+[<string>]
+
+    2  CALL(FP_alt, plus_two)
+->  3  SET(R2, 5)
+    4  HALT()
+"""
+    )
 
 
 @pytest.mark.skip("Not ready for this")
@@ -946,7 +964,16 @@ def test_print_current_op(shell, capsys):
     shell.print_current_op()
 
     captured = capsys.readouterr()
-    assert captured.out == "4  SET(R1, N)\n"
+    assert (
+        captured.out
+        == """\
+[<string>]
+
+    3
+->  4  SET(R1, N)
+    5  SET(R2, 39)
+"""
+    )
 
 
 def test_reverse_lookup_label():
