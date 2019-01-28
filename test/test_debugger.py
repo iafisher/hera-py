@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-from hera.data import Constant, Label, Program
+from hera.data import Constant, DataLabel, Label, Program, Settings
 from hera.debugger import debug, Debugger, Shell
 from hera.debugger.debugger import reverse_lookup_label
 from hera.loader import load_program
@@ -9,7 +9,7 @@ from hera.loader import load_program
 
 @pytest.fixture
 def shell():
-    return Shell(Debugger(SAMPLE_PROGRAM))
+    return Shell(Debugger(SAMPLE_PROGRAM), Settings(color=False))
 
 
 @pytest.fixture
@@ -202,12 +202,33 @@ def test_handle_execute_with_label(shell, capsys):
     assert capsys.readouterr().out == "execute cannot take labels.\n"
 
 
+def test_handle_execute_with_invalid_op(shell, capsys):
+    shell.handle_command("execute ADD(R1, R2)")
+
+    assert (
+        capsys.readouterr().err
+        == """\
+Error: too few args to ADD (expected 3), line 1 col 1 of <string>
+
+  ADD(R1, R2)
+  ^
+
+"""
+    )
+
+
 def test_handle_skip_with_increment(shell):
     shell.handle_command("skip +2")
 
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0
     assert shell.debugger.vm.pc == 4
+
+
+def test_handle_skip_with_unparseable_increment(shell, capsys):
+    shell.handle_command("skip +a")
+
+    assert capsys.readouterr().out == "Could not parse argument to skip.\n"
 
 
 def test_handle_skip_with_no_arg(shell):
@@ -242,6 +263,18 @@ def test_handle_skip_with_label(shell):
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0
     assert shell.debugger.vm.pc == 4
+
+
+def test_handle_skip_with_unknown_label(shell, capsys):
+    shell.handle_command("skip whatever")
+
+    assert capsys.readouterr().out == "Error: could not locate label `whatever`.\n"
+
+
+def test_handle_skip_with_too_many_arguments(shell, capsys):
+    shell.handle_command("skip 1 2 3")
+
+    assert capsys.readouterr().out == "skip takes zero or one arguments.\n"
 
 
 def test_handle_skip_abbreviated(shell):
@@ -303,6 +336,24 @@ All flags are off.
 
 Constants: N (3)
 Labels: add (<string>:7)
+"""
+    )
+
+
+def test_handle_info_with_data_label(shell, capsys):
+    shell.debugger.symbol_table["array"] = DataLabel(0xC001)
+    shell.handle_command("info")
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+All registers set to zero.
+All flags are off.
+
+Constants: N (3)
+Labels: add (<string>:7)
+Data labels: array (0xc001)
 """
     )
 
@@ -417,10 +468,42 @@ def test_handle_abbreviated_ll(shell, capsys):
         assert mock_handle_ll.call_count == 1
 
 
+def test_handle_restart(shell, capsys):
+    shell.handle_command("n")
+    shell.handle_command("n")
+    capsys.readouterr()
+
+    shell.handle_command("restart")
+
+    vm = shell.debugger.vm
+    assert vm.pc == 0
+    assert vm.registers[1] == 0
+    assert vm.registers[2] == 0
+    assert capsys.readouterr().out == "4  SET(R1, N)\n"
+
+
+def test_handle_restart_with_too_many_args(shell, capsys):
+    shell.handle_command("restart 1")
+
+    assert capsys.readouterr().out == "restart takes no arguments.\n"
+
+
+def test_restart_cannot_be_abbreviated(shell, capsys):
+    with patch("hera.debugger.shell.Shell.handle_restart") as mock_handle_restart:
+        shell.handle_command("r")
+        assert mock_handle_restart.call_count == 0
+
+
 def test_handle_assign_to_register(shell):
     shell.handle_command("r12 = 10")
 
     assert shell.debugger.vm.registers[12] == 10
+
+
+def test_handle_assign_negative_number_to_register(shell):
+    shell.handle_command("r12 = -0xabc")
+
+    assert shell.debugger.vm.registers[12] == -0xABC
 
 
 def test_handle_assign_to_memory_location(shell):
@@ -466,7 +549,7 @@ def test_handle_assign_with_undefined_symbol(shell, capsys):
     shell.handle_command("r4 = whatever")
 
     assert shell.debugger.vm.registers[4] == 42
-    assert capsys.readouterr().out == "Eval error: undefined symbol `whatever`.\n"
+    assert capsys.readouterr().out == "Eval error: whatever is not defined.\n"
 
 
 def test_handle_assign_register_to_symbol(shell):
@@ -475,10 +558,22 @@ def test_handle_assign_register_to_symbol(shell):
     assert shell.debugger.vm.registers[7] == 4
 
 
+def test_handle_assign_with_invalid_syntax(shell, capsys):
+    shell.handle_command("M[1 = R5")
+
+    assert capsys.readouterr().out == "Parse error: premature end of input.\n"
+
+
 def test_handle_assign_with_explicit_command(shell):
     shell.handle_command("assign r7 add")
 
     assert shell.debugger.vm.registers[7] == 4
+
+
+def test_handle_assign_with_too_many_args(shell, capsys):
+    shell.handle_command("assign r1 r2 r3")
+
+    assert capsys.readouterr().out == "assign takes two arguments.\n"
 
 
 def test_handle_print_register(shell, capsys):
@@ -504,10 +599,35 @@ def test_handle_print_PC(shell, capsys):
     assert capsys.readouterr().out == "PC = 3\n"
 
 
+def test_handle_print_int(shell, capsys):
+    shell.handle_command("print 17")
+
+    assert capsys.readouterr().out == "17\n"
+
+
+def test_handle_print_invalid_syntax(shell, capsys):
+    # TODO: It would be useful if this worked.
+    shell.handle_command("print r1 r2")
+
+    assert capsys.readouterr().out == "Parse error: trailing input.\n"
+
+
 def test_handle_print_symbol(shell, capsys):
     shell.handle_command("print add")
 
     assert capsys.readouterr().out == "add = 4 (label)\n"
+
+
+def test_handle_print_undefined_symbol(shell, capsys):
+    shell.handle_command("print whatever")
+
+    assert capsys.readouterr().out == "whatever is not defined.\n"
+
+
+def test_handle_print_undefined_symbol_in_memory_expression(shell, capsys):
+    shell.handle_command("print M[whatever]")
+
+    assert capsys.readouterr().out == "Eval error: whatever is not defined.\n"
 
 
 def test_handle_print_flag(shell, capsys):

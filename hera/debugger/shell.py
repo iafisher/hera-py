@@ -5,24 +5,26 @@ from .minilanguage import (
     FLAG_LITERALS,
     IntNode,
     MemoryNode,
+    MinusNode,
     RegisterNode,
     SymbolNode,
 )
-from hera.data import Constant, DataLabel, HERAError, Label, Program
+from hera.data import Constant, DataLabel, HERAError, Label, Program, Settings
 from hera.loader import load_program
 from hera.parser import parse
 from hera.utils import BRANCHES, DATA_STATEMENTS, pad, print_register_debug
 
 
-def debug(program: Program) -> None:
+def debug(program: Program, settings=Settings()) -> None:
     """Start the debug loop."""
     debugger = Debugger(program)
-    Shell(debugger).loop()
+    Shell(debugger, settings).loop()
 
 
 class Shell:
-    def __init__(self, debugger):
+    def __init__(self, debugger, settings=Settings()):
         self.debugger = debugger
+        self.settings = settings
 
     def loop(self):
         if not self.debugger.program:
@@ -59,7 +61,7 @@ class Shell:
         cmd = cmd.lower()
         if "assign".startswith(cmd):
             self.handle_assign(arglist)
-        if "break".startswith(cmd):
+        elif "break".startswith(cmd):
             self.handle_break(arglist)
         elif "continue".startswith(cmd):
             self.handle_continue(arglist)
@@ -75,7 +77,8 @@ class Shell:
             self.handle_next(arglist)
         elif "print".startswith(cmd):
             self.handle_print(argstr)
-        elif "restart".startswith(cmd):
+        # restart cannot be abbreviated, so that users don't accidentally restart.
+        elif cmd == "restart":
             self.handle_restart(arglist)
         elif cmd == "s":
             print("s is ambiguous between skip and step.")
@@ -136,7 +139,7 @@ class Shell:
                 return
 
         try:
-            program = load_program(argstr)
+            program = load_program(argstr, self.settings)
         except SystemExit:
             return
 
@@ -176,7 +179,7 @@ class Shell:
                 lineno = self.debugger.get_breakpoint_name(val, append_label=False)
                 labels.append("{} ({})".format(key, lineno))
             elif isinstance(val, DataLabel):
-                dlabels.append("{} ({})".format(key, val))
+                dlabels.append("{} (0x{:x})".format(key, val))
             else:
                 constants.append("{} ({})".format(key, val))
 
@@ -301,6 +304,7 @@ class Shell:
                     offset = int(args[0][1:])
                 except ValueError:
                     print("Could not parse argument to skip.")
+                    return
                 else:
                     for _ in range(offset):
                         self.debugger.vm.pc += len(self.debugger.get_real_ops())
@@ -309,6 +313,7 @@ class Shell:
                     new_pc = self.debugger.resolve_location(args[0])
                 except ValueError as e:
                     print("Error:", str(e))
+                    return
                 else:
                     self.debugger.vm.pc = new_pc
         else:
@@ -441,7 +446,9 @@ class Shell:
             try:
                 return self.debugger.symbol_table[node.value]
             except KeyError:
-                raise HERAError("undefined symbol `{}`".format(node.value))
+                raise HERAError("{} is not defined".format(node.value))
+        elif isinstance(node, MinusNode):
+            return -self.evaluate_node(node.arg)
         else:
             raise RuntimeError("unknown node type {}".format(node.__class__.__name__))
 
@@ -492,18 +499,6 @@ class Shell:
         else:
             suffix = ""
         print("{} = {}".format(k, v) + suffix)
-
-    def print_op(self, index):
-        op = self.debugger.program[index].original
-        prefix = "-> " if index == self.debugger.vm.pc else "   "
-        print(prefix + "{:0>4x}  {}".format(index, op), end="")
-
-        # Print all labels pointing to the line.
-        labels = self.debugger.get_labels(index)
-        if labels:
-            print(" [{}]".format(", ".join(labels)))
-        else:
-            print()
 
 
 HELP = """\

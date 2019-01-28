@@ -67,7 +67,7 @@ def main(argv=None):
 def main_debug(path, settings):
     """Debug the program."""
     program = load_program_from_file(path, settings)
-    debug(program)
+    debug(program, settings)
 
 
 def main_execute(path, settings):

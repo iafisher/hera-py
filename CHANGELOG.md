@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 **NOTE**: As permitted by semantic versioning, backward compatibility is NOT maintained for initial development, i.e. releases before 1.0.0.
 
 ## [Unreleased]
+### Changed
+- The `restart` debugging command may no longer be abbreviated.
+
 ### Fixed
 - A label may no longer be the second argument to `RETURN`.
+- The `assign` debugging command no longer prints a spurious error message when invoked.
+- Negative numbers are parsed correctly in the debugging minilanguage.
+- The debugger now respects the `--no-color` command-line flag.
 
 ## [0.5.0] - 2019-01-27
 ### Added
