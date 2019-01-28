@@ -40,7 +40,7 @@ def main(argv=None):
     This function consists mostly of argument parsing. The heavy-lifting begins
     with main_execute later in this module.
     """
-    arguments = docopt(__doc__, argv=argv, version="hera-py 0.4.0 for HERA version 2.4")
+    arguments = docopt(__doc__, argv=argv, version="hera-py 0.5.0 for HERA version 2.4")
     path = arguments["<path>"]
 
     settings = Settings()
