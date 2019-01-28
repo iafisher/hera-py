@@ -216,23 +216,13 @@ class Shell:
             return
 
         if len(args) == 1:
-            if args[0].startswith("+"):
-                try:
-                    offset = int(args[0][1:])
-                except ValueError:
-                    print("Could not parse argument to jump.")
-                    return
-                else:
-                    for _ in range(offset):
-                        self.debugger.vm.pc += len(self.debugger.get_real_ops())
+            try:
+                new_pc = self.debugger.resolve_location(args[0])
+            except ValueError as e:
+                print("Error:", str(e))
+                return
             else:
-                try:
-                    new_pc = self.debugger.resolve_location(args[0])
-                except ValueError as e:
-                    print("Error:", str(e))
-                    return
-                else:
-                    self.debugger.vm.pc = new_pc
+                self.debugger.vm.pc = new_pc
         else:
             self.debugger.vm.pc += len(self.debugger.get_real_ops())
 
@@ -262,15 +252,21 @@ class Shell:
 
     @mutates
     def handle_next(self, args):
-        if len(args) != 0:
-            print("next takes no arguments.")
+        if len(args) > 1:
+            print("next takes zero or one arguments.")
             return
 
         if self.debugger.is_finished():
             print("Program has finished executing. Enter 'r' to restart.")
             return
 
-        self.debugger.exec_ops(1)
+        try:
+            n = int(args[0]) if args else 1
+        except ValueError:
+            print("Could not parse argument to next.")
+            return
+
+        self.debugger.exec_ops(n)
         self.print_current_op()
 
     def handle_print(self, argstr):
@@ -633,10 +629,7 @@ jump:
 
 jump <loc>:
   Jump to the given location (either a line number or a label) without
-  executing any of the intermediate instructions.
-
-jump +<n>:
-  Jump past the next `n` instructions without executing them.""",
+  executing any of the intermediate instructions.""",
     # list
     "list": """\
 list:
@@ -653,7 +646,11 @@ ll:
 next:
   Execute the current line. If the current line is a CALL instruction, the
   debugger enters the function being called. If you wish to skip over the
-  function call, use `step` instead.""",
+  function call, use `step` instead.
+
+next <n>:
+  Execute the next n instructions. This command will follow branches, so be
+  careful!""",
     # print
     "print": """\
 print <x>:

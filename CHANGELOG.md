@@ -8,10 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 ### Added
 - The `undo` debugging command.
+- The `next` debugging command now takes an optional argument.
 
 ### Changed
 - The `restart` debugging command may no longer be abbreviated.
 - The `skip` debugging command has been renamed to `jump`.
+
+### Removed
+- The `+n` argument to the `jump` debugging command.
 
 ### Fixed
 - A label may no longer be the second argument to `RETURN`.

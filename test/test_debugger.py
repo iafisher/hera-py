@@ -100,6 +100,21 @@ def test_handle_next(shell):
     assert shell.debugger.vm.pc == 2
 
 
+def test_handle_next_with_argument(shell):
+    shell.handle_command("next 2")
+
+    assert shell.debugger.vm.registers[1] == 3
+    assert shell.debugger.vm.registers[2] == 39
+    assert shell.debugger.vm.pc == 4
+
+
+def test_handle_next_with_unparseable_argument(shell, capsys):
+    shell.handle_command("next a")
+
+    assert shell.debugger.vm.pc == 0
+    assert capsys.readouterr().out == "Could not parse argument to next.\n"
+
+
 def test_handle_next_with_HALT(shell, capsys):
     # Last instruction of SAMPLE_PROGRAM is a HALT operation.
     shell.debugger.vm.pc = 5
@@ -123,10 +138,9 @@ def test_handle_next_after_end_of_program(shell, capsys):
 
 
 def test_handle_next_with_too_many_args(shell, capsys):
-    # TODO: It would actually be useful if this worked.
-    shell.handle_command("next 10")
+    shell.handle_command("next 10 11")
 
-    assert capsys.readouterr().out == "next takes no arguments.\n"
+    assert capsys.readouterr().out == "next takes zero or one arguments.\n"
 
 
 def test_handle_next_abbreviated(shell):
@@ -215,20 +229,6 @@ Error: too few args to ADD (expected 3), line 1 col 1 of <string>
 
 """
     )
-
-
-def test_handle_jump_with_increment(shell):
-    shell.handle_command("jump +2")
-
-    assert shell.debugger.vm.registers[1] == 0
-    assert shell.debugger.vm.registers[2] == 0
-    assert shell.debugger.vm.pc == 4
-
-
-def test_handle_jump_with_unparseable_increment(shell, capsys):
-    shell.handle_command("jump +a")
-
-    assert capsys.readouterr().out == "Could not parse argument to jump.\n"
 
 
 def test_handle_jump_with_no_arg(shell):
