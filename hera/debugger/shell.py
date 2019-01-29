@@ -338,6 +338,11 @@ class Shell:
                 if c not in "dxobcsl":
                     print("Unknown format specifier `{}`.".format(c))
                     return
+            # 'c' and 's' do not always generate output, if the given value is not a
+            # char or signed integer, respectively. Output can be forced with the 'C'
+            # and 'S', which we do if the user explicitly provided these formats.
+            spec = spec.replace("c", "C")
+            spec = spec.replace("s", "S")
         else:
             spec = ""
 

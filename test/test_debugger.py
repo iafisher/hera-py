@@ -601,6 +601,26 @@ def test_handle_print_with_format_string(shell, capsys):
     assert capsys.readouterr().out == "r5 = 0b0000000000000010 [<string>:5]\n"
 
 
+def test_handle_print_zero_register_with_char_format_string(shell, capsys):
+    shell.handle_command("print :c R0")
+
+    assert capsys.readouterr().out == "R0 = '\\x00'\n"
+
+
+def test_handle_print_large_int_with_char_format_string(shell, capsys):
+    shell.debugger.vm.registers[5] = 1000
+    shell.handle_command("print :c R5")
+
+    assert capsys.readouterr().out == "R5 = not an ASCII character\n"
+
+
+def test_handle_print_unsigned_integer_with_signed_format_string(shell, capsys):
+    shell.debugger.vm.registers[5] = 42
+    shell.handle_command("print :s R5")
+
+    assert capsys.readouterr().out == "R5 = not a signed integer\n"
+
+
 def test_handle_print_with_restrictive_format_string(shell, capsys):
     shell.debugger.vm.registers[13] = 2
     shell.handle_command("print :o r13")

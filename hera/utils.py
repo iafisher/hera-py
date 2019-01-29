@@ -78,7 +78,8 @@ def format_int(v, *, spec="xdsc"):
     formats are supported: d for decimal, x for hexadecimal, o for octal, b for binary,
     c for character literal, and s for signed integer. The latter two formats only
     generate output when applicable, e.g. for integers that actually represent printable
-    characters and signed integers, respectively.
+    characters and signed integers, respectively. Output can be forced for either of
+    these formats by capitalizing the letter.
     """
     ret = []
     for c in spec:
@@ -93,9 +94,19 @@ def format_int(v, *, spec="xdsc"):
         elif c == "c":
             if v < 128 and chr(v).isprintable():
                 ret.append(repr(chr(v)))
+        elif c == "C":
+            if v < 128:
+                ret.append(repr(chr(v)))
+            else:
+                ret.append("not an ASCII character")
         elif c == "s":
             if v & 0x8000:
                 ret.append(str(from_u16(v)))
+        elif c == "S":
+            if v & 0x8000:
+                ret.append(str(from_u16(v)))
+            else:
+                ret.append("not a signed integer")
         else:
             raise RuntimeError("unknown format specifier: " + c)
     return " = ".join(ret)
