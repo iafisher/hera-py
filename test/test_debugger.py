@@ -727,7 +727,7 @@ def test_handle_print_memory_expression(shell, capsys):
 
     shell.handle_command("print @r1")
 
-    assert capsys.readouterr().out == "@[r1 = 4] = 0x002a = 42 = '*'\n"
+    assert capsys.readouterr().out == "@(4) = 0x002a = 42 = '*'\n"
 
 
 def test_handle_print_PC(shell, capsys):
@@ -752,10 +752,16 @@ def test_handle_print_int(shell, capsys):
     assert capsys.readouterr().out == "17\n"
 
 
+def test_handle_print_arithmetic_expression(shell, capsys):
+    shell.handle_command("print :x 21 * (1+1)")
+
+    assert capsys.readouterr().out == "0x002a\n"
+
+
 def test_handle_print_with_multiple_arguments(shell, capsys):
     shell.debugger.vm.registers[1] = 5
     shell.debugger.vm.registers[2] = 7
-    shell.handle_command("print :d r1 r2")
+    shell.handle_command("print :d r1, r2")
 
     assert capsys.readouterr().out == "r1 = 5\nr2 = 7\n"
 
@@ -769,16 +775,19 @@ def test_handle_print_symbol(shell, capsys):
 def test_handle_print_undefined_symbol(shell, capsys):
     shell.handle_command("print whatever")
 
-    assert (
-        capsys.readouterr().out
-        == "Eval error on `whatever`: whatever is not defined.\n"
-    )
+    assert capsys.readouterr().out == "Eval error: whatever is not defined.\n"
 
 
 def test_handle_print_invalid_register(shell, capsys):
     shell.handle_command("print R17")
 
-    assert capsys.readouterr().out == "Eval error on `R17`: no such register.\n"
+    assert capsys.readouterr().out == "Eval error: no such register.\n"
+
+
+def test_handle_print_with_division_by_zero(shell, capsys):
+    shell.handle_command("print 10 / 0")
+
+    assert capsys.readouterr().out == "Eval error: division by zero.\n"
 
 
 def test_handle_print_with_invalid_format(shell, capsys):
@@ -790,10 +799,7 @@ def test_handle_print_with_invalid_format(shell, capsys):
 def test_handle_print_undefined_symbol_in_memory_expression(shell, capsys):
     shell.handle_command("print @whatever")
 
-    assert (
-        capsys.readouterr().out
-        == "Eval error on `@whatever`: whatever is not defined.\n"
-    )
+    assert capsys.readouterr().out == "Eval error: whatever is not defined.\n"
 
 
 def test_handle_print_case_sensitive_symbol(shell, capsys):
@@ -817,7 +823,7 @@ def test_handle_print_abbreviated(shell):
 
         args, kwargs = mock_handle_print.call_args
         assert len(args) == 1
-        assert args[0] == ["@R7"]
+        assert args[0] == "@R7"
         assert len(kwargs) == 0
 
 

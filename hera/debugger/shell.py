@@ -2,7 +2,17 @@ import functools
 
 from . import minilanguage
 from .debugger import Debugger
-from .minilanguage import IntNode, MemoryNode, MinusNode, RegisterNode, SymbolNode
+from .minilanguage import (
+    AddNode,
+    DivNode,
+    IntNode,
+    MemoryNode,
+    MinusNode,
+    MulNode,
+    RegisterNode,
+    SubNode,
+    SymbolNode,
+)
 from hera.data import Constant, DataLabel, HERAError, Label, Program, Settings
 from hera.loader import load_program
 from hera.parser import parse
@@ -90,7 +100,7 @@ class Shell:
         elif cmd == "on":
             self.handle_on(arglist)
         elif "print".startswith(cmd):
-            self.handle_print(arglist)
+            self.handle_print(argstr)
         # restart cannot be abbreviated, so that users don't accidentally restart.
         elif cmd == "restart":
             self.handle_restart(arglist)
@@ -118,6 +128,17 @@ class Shell:
             else:
                 print("Parse error.")
             return
+
+        if len(ltree.seq) > 1:
+            print("Parse error: cannot assign to sequence.")
+            return
+
+        if len(rtree.seq) > 1:
+            print("Parse error: cannot assign sequence value.")
+            return
+
+        ltree = ltree.seq[0]
+        rtree = rtree.seq[0]
 
         vm = self.debugger.vm
         try:
@@ -331,40 +352,40 @@ class Shell:
         for flag in flags:
             setattr(self.debugger.vm, flag, True)
 
-    def handle_print(self, args):
-        if len(args) == 0:
+    def handle_print(self, argstr):
+        if not argstr:
             print("print takes one or more arguments.")
             return
 
-        if args[0].startswith(":"):
-            spec = args.pop(0)[1:]
+        try:
+            tree = minilanguage.parse(argstr)
+        except SyntaxError as e:
+            msg = str(e)
+            if msg:
+                print("Parse error: {}.".format(msg))
+            else:
+                print("Parse error.".format(msg))
+        else:
+            spec = tree.fmt
             for c in spec:
                 if c not in "dxobcsl":
                     print("Unknown format specifier `{}`.".format(c))
                     return
-            # 'c' and 's' do not always generate output, if the given value is not a
-            # char or signed integer, respectively. Output can be forced with the 'C'
-            # and 'S', which we do if the user explicitly provided these formats.
-            spec = spec.replace("c", "C")
-            spec = spec.replace("s", "S")
-        else:
-            spec = ""
 
-        for arg in args:
-            try:
-                self.print_one_expr(arg, spec)
-            except SyntaxError as e:
-                msg = str(e)
-                if msg:
-                    print("Parse error on `{}`: {}.".format(arg, msg))
-                else:
-                    print("Parse error on `{}`.".format(arg, msg))
-            except HERAError as e:
-                print("Eval error on `{}`: {}.".format(arg, e))
+                # 'c' and 's' do not always generate output, if the given value is not a
+                # char or signed integer, respectively. Output can be forced with the
+                # 'C' and 'S', which we do if the user explicitly provided these
+                # formats.
+                spec = spec.replace("c", "C")
+                spec = spec.replace("s", "S")
+            for arg in tree.seq:
+                try:
+                    self.print_one_expr(arg, spec)
+                except HERAError as e:
+                    print("Eval error: {}.".format(e))
 
-    def print_one_expr(self, expr: str, spec: str):
+    def print_one_expr(self, tree, spec):
         """Print a single expression with the given format specification."""
-        tree = minilanguage.parse(expr)
         vm = self.debugger.vm
 
         # This if block defines two variables, `lhs` and `rhs`, which are printed
@@ -387,7 +408,7 @@ class Shell:
                         spec = augment_spec(spec, "l")
         elif isinstance(tree, MemoryNode):
             address = self.evaluate_node(tree.address)
-            lhs = "@[{} = {}]".format(expr[1:].rstrip(), address)
+            lhs = "@({})".format(address)
             rhs = vm.access_memory(address)
         elif isinstance(tree, SymbolNode):
             try:
@@ -410,6 +431,9 @@ class Shell:
             rhs = tree.value
             if not spec:
                 spec = "d"
+        elif isinstance(tree, (AddNode, SubNode, MulNode, DivNode, MinusNode)):
+            lhs = ""
+            rhs = self.evaluate_node(tree)
         else:
             raise RuntimeError("unknown node type {}".format(tree.__class__.__name__))
 
@@ -509,6 +533,24 @@ class Shell:
                 raise HERAError("{} is not defined".format(node.value))
         elif isinstance(node, MinusNode):
             return -self.evaluate_node(node.arg)
+        elif isinstance(node, AddNode):
+            left = self.evaluate_node(node.left)
+            right = self.evaluate_node(node.right)
+            return left + right
+        elif isinstance(node, SubNode):
+            left = self.evaluate_node(node.left)
+            right = self.evaluate_node(node.right)
+            return left - right
+        elif isinstance(node, MulNode):
+            left = self.evaluate_node(node.left)
+            right = self.evaluate_node(node.right)
+            return left * right
+        elif isinstance(node, DivNode):
+            left = self.evaluate_node(node.left)
+            right = self.evaluate_node(node.right)
+            if right == 0:
+                raise HERAError("division by zero")
+            return left // right
         else:
             raise RuntimeError("unknown node type {}".format(node.__class__.__name__))
 
@@ -665,10 +707,10 @@ assign <x> <y>:
   may contain spaces.
 
   Examples:
-    R1 = 42
-    @R7 = R4
-    @(0xabc) = 0o123
-    R7 = some_label""",
+    Assign to a register:          R1 = 42
+    Assign to a memory location:   @(1000) = R4
+    Assign a label to a register:  R1 = some_label
+    Arithmetic:                    R7 = R5 * 10""",
     # break
     "break": """\
 break:
@@ -746,8 +788,7 @@ on <f1> <f2>...:
     # print
     "print": """\
 print <x> <y> <z>...:
-  Print the values of all the suppleid arguments, which may be registers,
-  memory locations, the program counter, or symbols. The first argument may
+  Print the values of all the supplied arguments. The first argument may
   optionally be a format specifier, e.g. ":xds". Each character of the string
   identifies a format in which to print the value. The following formats are
   recognized: d for decimal, x for hexadecimal, o for octal, b for binary, c
@@ -755,10 +796,12 @@ print <x> <y> <z>...:
   locations. When not provided, the format specifier defaults to ":xdsc".
 
   Examples:
-    print R7
-    print @(0xc) @(0xd)
-    print some_label
-    print :b @@@R1""",
+    A register:        print R7
+    A memory location: print @1000
+    A symbol:          print some_label
+    Multiple values:   print R1, R2, R3
+    Formatted:         print :bl PC_ret
+    Arithmetic:        print @(@(FP+1)) * 7""",
     # restart
     "restart": """\
 restart:

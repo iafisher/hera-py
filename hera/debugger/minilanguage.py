@@ -17,7 +17,9 @@ class MiniParser:
     """A parser for the debugger's expression mini-language. Arithmetic operations have
     the usual precedence.
 
-      start := expr
+      start := FORMAT? exprlist
+
+      exprlist := (expr COMMA)* expr
 
       expr := expr op expr | LPAREN expr RPAREN | MINUS expr | AT expr | atom
       op   := PLUS | MINUS | ASTERISK | SLASH
@@ -25,27 +27,48 @@ class MiniParser:
 
     Based on the Pratt parser from Thorsten Ball's "Writing an Interpreter in Go".
     https://interpreterbook.com/
+
+    All match methods in this class expect that self.lexer.tkn is equal to the first
+    token of the expression to be matched, and they leave self.lexer.tkn on the first
+    token of the next expression.
     """
 
     def __init__(self, lexer):
         self.lexer = lexer
 
     def parse(self):
-        tree = self.match_expr(PREC_LOWEST)
-        tkn = self.lexer.next_token()
-        if tkn[0] == TOKEN_EOF:
+        self.lexer.next_token()
+        tree = self.match_exprlist()
+        if self.lexer.tkn[0] == TOKEN_EOF:
             return tree
         else:
             raise SyntaxError("trailing input")
 
-    def match_expr(self, precedence):
-        """Given that lexer.next_token() will return the first token of the expression,
-        parse the expression with the given expression.
+    def match_exprlist(self):
+        """Match a sequence of comma-separated expressions."""
+        seq = []
 
-        The method leaves lexer.tkn on first token of the next expression.
-        """
-        tkn = self.lexer.next_token()
+        if self.lexer.tkn[0] == TOKEN_FMT:
+            fmt = self.lexer.tkn[1]
+            self.lexer.next_token()
+        else:
+            fmt = ""
+
+        while True:
+            expr = self.match_expr(PREC_LOWEST)
+            seq.append(expr)
+            if self.lexer.tkn[0] == TOKEN_COMMA:
+                self.lexer.next_token()
+            else:
+                break
+
+        return SeqNode(fmt, seq)
+
+    def match_expr(self, precedence):
+        """Parse the expression with the given precedence."""
+        tkn = self.lexer.tkn
         if tkn[0] == TOKEN_AT:
+            self.lexer.next_token()
             address = self.match_expr(PREC_PREFIX)
             left = MemoryNode(address)
         elif tkn[0] == TOKEN_INT:
@@ -56,6 +79,7 @@ class MiniParser:
             else:
                 self.lexer.next_token()
         elif tkn[0] == TOKEN_MINUS:
+            self.lexer.next_token()
             left = MinusNode(self.match_expr(PREC_PREFIX))
         elif tkn[0] == TOKEN_REGISTER:
             left = RegisterNode(tkn[1])
@@ -64,6 +88,7 @@ class MiniParser:
             left = SymbolNode(tkn[1])
             self.lexer.next_token()
         elif tkn[0] == TOKEN_LPAREN:
+            self.lexer.next_token()
             left = self.match_expr(PREC_LOWEST)
             if self.lexer.tkn[0] != TOKEN_RPAREN:
                 self.raise_unexpected(self.lexer.tkn)
@@ -77,6 +102,7 @@ class MiniParser:
         else:
             infix_precedence = PREC_MAP[infix_tkn[0]]
             if precedence < infix_precedence:
+                self.lexer.next_token()
                 right = self.match_expr(precedence)
                 if infix_tkn[0] == TOKEN_PLUS:
                     return AddNode(left, right)
@@ -104,6 +130,7 @@ class MiniParser:
             raise SyntaxError("did not expect `{}` in this position".format(tkn[1]))
 
 
+SeqNode = namedtuple("SeqNode", ["fmt", "seq"])
 MemoryNode = namedtuple("MemoryNode", ["address"])
 RegisterNode = namedtuple("RegisterNode", ["value"])
 IntNode = namedtuple("IntNode", ["value"])
@@ -146,6 +173,10 @@ class MiniLexer:
         elif ch.isdigit():
             length = self.read_int()
             return self.advance_and_return(TOKEN_INT, length=length)
+        elif ch == ":":
+            self.position += 1
+            length = self.read_symbol()
+            return self.advance_and_return(TOKEN_FMT, length=length)
         elif ch == "-":
             return self.advance_and_return(TOKEN_MINUS)
         elif ch == "+":
@@ -160,6 +191,8 @@ class MiniLexer:
             return self.advance_and_return(TOKEN_LPAREN)
         elif ch == ")":
             return self.advance_and_return(TOKEN_RPAREN)
+        elif ch == ",":
+            return self.advance_and_return(TOKEN_COMMA)
         else:
             return self.advance_and_return(TOKEN_UNKNOWN)
 
@@ -204,7 +237,7 @@ class MiniLexer:
         return length
 
     def read_symbol(self):
-        length = 2
+        length = 1
         while True:
             ch = self.peek(length)
             if not (ch.isalpha() or ch.isdigit() or ch == "_"):
@@ -226,6 +259,7 @@ class MiniLexer:
 TOKEN_INT = "TOKEN_INT"
 TOKEN_REGISTER = "TOKEN_REGISTER"
 TOKEN_SYMBOL = "TOKEN_SYMBOL"
+TOKEN_FMT = "TOKEN_FMT"
 TOKEN_MINUS = "TOKEN_MINUS"
 TOKEN_AT = "TOKEN_AT"
 TOKEN_ASTERISK = "TOKEN_ASTERISK"
@@ -233,6 +267,7 @@ TOKEN_PLUS = "TOKEN_PLUS"
 TOKEN_SLASH = "TOKEN_SLASH"
 TOKEN_LPAREN = "TOKEN_LPAREN"
 TOKEN_RPAREN = "TOKEN_RPAREN"
+TOKEN_COMMA = "TOKEN_COMMA"
 TOKEN_EOF = "TOKEN_EOF"
 TOKEN_UNKNOWN = "TOKEN_UNKNOWN"
 

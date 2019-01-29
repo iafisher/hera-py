@@ -8,11 +8,14 @@ from hera.debugger.minilanguage import (
     MinusNode,
     MulNode,
     RegisterNode,
+    SeqNode,
     SubNode,
     SymbolNode,
     TOKEN_ASTERISK,
     TOKEN_AT,
+    TOKEN_COMMA,
     TOKEN_EOF,
+    TOKEN_FMT,
     TOKEN_INT,
     TOKEN_LPAREN,
     TOKEN_MINUS,
@@ -29,8 +32,13 @@ def lex_helper(text):
     return MiniLexer(text)
 
 
-def parse_helper(text):
-    return MiniParser(MiniLexer(text)).parse()
+def parse_helper(text, keep_seq=False):
+    tree = MiniParser(MiniLexer(text)).parse()
+    if not keep_seq and isinstance(tree, SeqNode):
+        assert len(tree.seq) == 1
+        return tree.seq[0]
+    else:
+        return tree
 
 
 def test_lex_mini_language_with_small_example():
@@ -43,15 +51,18 @@ def test_lex_mini_language_with_small_example():
 
 def test_lex_mini_language_with_big_example():
     # This isn't a syntactically valid expression, but it doesn't matter to the lexer.
-    lexer = lex_helper("@FP_alt R15 0xabc some_symbol -10 ()+*/?")
+    lexer = lex_helper("@FP_alt R15 0xabc some_symbol :xdc -10 ,, ()+*/?")
 
     assert lexer.next_token() == (TOKEN_AT, "@")
     assert lexer.next_token() == (TOKEN_REGISTER, "FP_alt")
     assert lexer.next_token() == (TOKEN_REGISTER, "R15")
     assert lexer.next_token() == (TOKEN_INT, "0xabc")
     assert lexer.next_token() == (TOKEN_SYMBOL, "some_symbol")
+    assert lexer.next_token() == (TOKEN_FMT, "xdc")
     assert lexer.next_token() == (TOKEN_MINUS, "-")
     assert lexer.next_token() == (TOKEN_INT, "10")
+    assert lexer.next_token() == (TOKEN_COMMA, ",")
+    assert lexer.next_token() == (TOKEN_COMMA, ",")
     assert lexer.next_token() == (TOKEN_LPAREN, "(")
     assert lexer.next_token() == (TOKEN_RPAREN, ")")
     assert lexer.next_token() == (TOKEN_PLUS, "+")
@@ -150,3 +161,49 @@ def test_parse_complicated_arithmetic():
     assert tree.right.left.address.address.value == 5
     assert isinstance(tree.right.right, RegisterNode)
     assert tree.right.right.value == "r1"
+
+
+def test_parse_expression_with_format_spec():
+    tree = parse_helper(":y R1", keep_seq=True)
+
+    assert isinstance(tree, SeqNode)
+    assert tree.fmt == "y"
+    assert len(tree.seq) == 1
+
+    assert isinstance(tree.seq[0], RegisterNode)
+    assert tree.seq[0].value == "R1"
+
+
+def test_parse_sequence_of_expressions():
+    tree = parse_helper("r1, @r2, 1 + 3", keep_seq=True)
+
+    assert isinstance(tree, SeqNode)
+    assert tree.fmt == ""
+    assert len(tree.seq) == 3
+
+    assert isinstance(tree.seq[0], RegisterNode)
+    assert tree.seq[0].value == "r1"
+
+    assert isinstance(tree.seq[1], MemoryNode)
+    assert isinstance(tree.seq[1].address, RegisterNode)
+    assert tree.seq[1].address.value == "r2"
+
+    assert isinstance(tree.seq[2], AddNode)
+    assert isinstance(tree.seq[2].left, IntNode)
+    assert isinstance(tree.seq[2].right, IntNode)
+    assert tree.seq[2].left.value == 1
+    assert tree.seq[2].right.value == 3
+
+
+def test_parse_sequence_of_expressions_with_format_spec():
+    tree = parse_helper(":xdc r1, r2", keep_seq=True)
+
+    assert isinstance(tree, SeqNode)
+    assert tree.fmt == "xdc"
+    assert len(tree.seq) == 2
+
+    assert isinstance(tree.seq[0], RegisterNode)
+    assert tree.seq[0].value == "r1"
+
+    assert isinstance(tree.seq[1], RegisterNode)
+    assert tree.seq[1].value == "r2"
