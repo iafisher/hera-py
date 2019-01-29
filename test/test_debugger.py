@@ -634,6 +634,15 @@ def test_handle_assign_to_symbol(shell, capsys):
     assert "f_c" not in shell.debugger.symbol_table
 
 
+def test_handle_assign_to_arithmetic_expression(shell, capsys):
+    shell.handle_command("1 + 1 = 3")
+
+    assert (
+        capsys.readouterr().out
+        == "Eval error: cannot assign to arithmetic expression.\n"
+    )
+
+
 def test_handle_assign_with_undefined_symbol(shell, capsys):
     shell.debugger.vm.registers[4] = 42
 

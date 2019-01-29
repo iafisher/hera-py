@@ -154,6 +154,8 @@ class Shell:
                 vm.assign_memory(address, rhs)
             elif isinstance(ltree, SymbolNode):
                 print("Eval error: cannot assign to symbol.")
+            elif isinstance(ltree, (AddNode, SubNode, DivNode, MulNode, MinusNode)):
+                print("Eval error: cannot assign to arithmetic expression.")
             else:
                 raise RuntimeError(
                     "unknown node type {}".format(ltree.__class__.__name__)
