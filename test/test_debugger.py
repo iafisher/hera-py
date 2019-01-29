@@ -457,6 +457,115 @@ def test_handle_abbreviated_ll(shell, capsys):
         assert mock_handle_ll.call_count == 1
 
 
+def test_handle_on(shell):
+    shell.handle_command("on carry-block")
+    shell.handle_command("on carry")
+    shell.handle_command("on overflow")
+    shell.handle_command("on sign")
+    shell.handle_command("on zero")
+
+    assert shell.debugger.vm.flag_carry_block
+    assert shell.debugger.vm.flag_carry
+    assert shell.debugger.vm.flag_overflow
+    assert shell.debugger.vm.flag_sign
+    assert shell.debugger.vm.flag_zero
+
+
+def test_handle_on_with_abbreviated_flag(shell):
+    shell.handle_command("on cb")
+    shell.handle_command("on c")
+    shell.handle_command("on v")
+    shell.handle_command("on s")
+    shell.handle_command("on z")
+
+    assert shell.debugger.vm.flag_carry_block
+    assert shell.debugger.vm.flag_carry
+    assert shell.debugger.vm.flag_overflow
+    assert shell.debugger.vm.flag_sign
+    assert shell.debugger.vm.flag_zero
+
+
+def test_handle_on_with_multiple_args(shell):
+    shell.handle_command("on c v")
+
+    assert shell.debugger.vm.flag_carry
+    assert shell.debugger.vm.flag_overflow
+
+
+def test_handle_on_with_invalid_flag(shell, capsys):
+    shell.handle_command("on c y")
+
+    assert capsys.readouterr().out == "Unrecognized flag: `y`.\n"
+
+
+def test_handle_on_with_no_args(shell, capsys):
+    shell.handle_command("on")
+
+    assert capsys.readouterr().out == "on takes one or more arguments.\n"
+
+
+def test_handle_off(shell):
+    shell.debugger.vm.flag_carry_block = True
+    shell.debugger.vm.flag_carry = True
+    shell.debugger.vm.flag_overflow = True
+    shell.debugger.vm.flag_sign = True
+    shell.debugger.vm.flag_zero = True
+
+    shell.handle_command("off carry-block")
+    shell.handle_command("off carry")
+    shell.handle_command("off overflow")
+    shell.handle_command("off sign")
+    shell.handle_command("off zero")
+
+    assert not shell.debugger.vm.flag_carry_block
+    assert not shell.debugger.vm.flag_carry
+    assert not shell.debugger.vm.flag_overflow
+    assert not shell.debugger.vm.flag_sign
+    assert not shell.debugger.vm.flag_zero
+
+
+def test_handle_off_with_abbreviated_flag(shell):
+    shell.debugger.vm.flag_carry_block = True
+    shell.debugger.vm.flag_carry = True
+    shell.debugger.vm.flag_overflow = True
+    shell.debugger.vm.flag_sign = True
+    shell.debugger.vm.flag_zero = True
+
+    shell.handle_command("off cb")
+    shell.handle_command("off c")
+    shell.handle_command("off v")
+    shell.handle_command("off s")
+    shell.handle_command("off z")
+
+    assert not shell.debugger.vm.flag_carry_block
+    assert not shell.debugger.vm.flag_carry
+    assert not shell.debugger.vm.flag_overflow
+    assert not shell.debugger.vm.flag_sign
+    assert not shell.debugger.vm.flag_zero
+
+
+def test_handle_off_with_multiple_args(shell):
+    shell.debugger.vm.flag_carry = True
+    shell.debugger.vm.flag_overflow = True
+
+    shell.handle_command("off c v")
+
+    assert not shell.debugger.vm.flag_carry
+    assert not shell.debugger.vm.flag_overflow
+
+
+def test_handle_off_with_invalid_flag(shell, capsys):
+    shell.handle_command("off c y")
+
+    assert capsys.readouterr().out == "Unrecognized flag: `y`.\n"
+
+
+def test_handle_off_with_no_args(shell, capsys):
+    shell.handle_command("off")
+
+    assert capsys.readouterr().out == "off takes one or more arguments.\n"
+
+
 def test_handle_restart(shell, capsys):
     shell.handle_command("n")
     shell.handle_command("n")
@@ -518,27 +627,11 @@ def test_handle_assign_to_PC(shell):
     assert shell.debugger.vm.pc == 10
 
 
-def test_handle_assign_to_flag(shell):
-    shell.handle_command("f_c = #t")
-
-    assert shell.debugger.vm.flag_carry
-
-
 def test_handle_assign_to_symbol(shell, capsys):
-    shell.handle_command("foo = 10")
-
-    assert capsys.readouterr().out == "Eval error: cannot assign to symbol.\n"
-    assert "foo" not in shell.debugger.symbol_table
-
-
-def test_handle_assign_non_boolean_to_flag(shell, capsys):
     shell.handle_command("f_c = 10")
 
-    assert (
-        capsys.readouterr().out
-        == "Eval error: "
-        + "cannot assign non-boolean value to flag (use #t and #f instead).\n"
-    )
+    assert capsys.readouterr().out == "Eval error: cannot assign to symbol.\n"
+    assert "f_c" not in shell.debugger.symbol_table
 
 
 def test_handle_assign_with_undefined_symbol(shell, capsys):
@@ -759,8 +852,8 @@ def test_handle_help_with_multiple_args(shell, capsys):
 
 def test_handle_help_with_all_commands(shell, capsys):
     shell.handle_command(
-        "help assign break continue execute help info list ll next print restart jump \
-         step undo quit"
+        "help assign break continue execute help info list ll next off on print \
+         restart jump step undo quit"
     )
 
     assert "not a recognized command" not in capsys.readouterr().out

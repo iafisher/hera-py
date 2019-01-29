@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 ### Added
 - The `undo` debugging command.
+- The `on` and `off` debugging commands for flag manipulation.
 - The `next` debugging command now takes an optional argument.
 - The `print` debugging command now takes accepts an optional format specifier argument.
 - The `print` debugging command now takes multiple arguments.
@@ -21,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Removed
 - The `+n` argument to the `jump` debugging command.
 - Flags can no longer be printed with the `print` debugging command. Use the `info` command instead.
+- Flags can no longer be changed with the `assign` debugging command. Use the new `on` and `off` commands instead.
 
 ### Fixed
 - A label may no longer be the second argument to `RETURN`.

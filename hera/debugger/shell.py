@@ -2,15 +2,7 @@ import functools
 
 from . import minilanguage
 from .debugger import Debugger
-from .minilanguage import (
-    BoolNode,
-    FLAG_LITERALS,
-    IntNode,
-    MemoryNode,
-    MinusNode,
-    RegisterNode,
-    SymbolNode,
-)
+from .minilanguage import IntNode, MemoryNode, MinusNode, RegisterNode, SymbolNode
 from hera.data import Constant, DataLabel, HERAError, Label, Program, Settings
 from hera.loader import load_program
 from hera.parser import parse
@@ -93,6 +85,10 @@ class Shell:
             self.handle_ll(arglist)
         elif "next".startswith(cmd):
             self.handle_next(arglist)
+        elif cmd == "off":
+            self.handle_off(arglist)
+        elif cmd == "on":
+            self.handle_on(arglist)
         elif "print".startswith(cmd):
             self.handle_print(arglist)
         # restart cannot be abbreviated, so that users don't accidentally restart.
@@ -135,29 +131,7 @@ class Shell:
                 address = self.evaluate_node(ltree.address)
                 vm.assign_memory(address, rhs)
             elif isinstance(ltree, SymbolNode):
-                value = ltree.value.lower()
-                if value in FLAG_LITERALS:
-                    if rhs is not True and rhs is not False:
-                        print(
-                            "Eval error: cannot assign non-boolean value to flag "
-                            + "(use #t and #f instead)."
-                        )
-                        return
-
-                    if value == "f_cb":
-                        vm.flag_carry_block = rhs
-                    elif value == "f_c":
-                        vm.flag_carry = rhs
-                    elif value == "f_v":
-                        vm.flag_overflow = rhs
-                    elif value == "f_z":
-                        vm.flag_zero = rhs
-                    elif value == "f_s":
-                        vm.flag_sign = rhs
-                    else:
-                        raise RuntimeError("this should never happen!")
-                else:
-                    print("Eval error: cannot assign to symbol.")
+                print("Eval error: cannot assign to symbol.")
             else:
                 raise RuntimeError(
                     "unknown node type {}".format(ltree.__class__.__name__)
@@ -327,6 +301,36 @@ class Shell:
         self.debugger.exec_ops(n)
         self.print_current_op()
 
+    @mutates
+    def handle_off(self, args):
+        if len(args) == 0:
+            print("off takes one or more arguments.")
+            return
+
+        try:
+            flags = resolve_flags(args)
+        except HERAError as e:
+            print(e)
+            return
+
+        for flag in flags:
+            setattr(self.debugger.vm, flag, False)
+
+    @mutates
+    def handle_on(self, args):
+        if len(args) == 0:
+            print("on takes one or more arguments.")
+            return
+
+        try:
+            flags = resolve_flags(args)
+        except HERAError as e:
+            print(e)
+            return
+
+        for flag in flags:
+            setattr(self.debugger.vm, flag, True)
+
     def handle_print(self, args):
         if len(args) == 0:
             print("print takes one or more arguments.")
@@ -483,7 +487,7 @@ class Shell:
 
     def evaluate_node(self, node):
         vm = self.debugger.vm
-        if isinstance(node, (IntNode, BoolNode)):
+        if isinstance(node, IntNode):
             return node.value
         elif isinstance(node, RegisterNode):
             if node.value == "pc":
@@ -572,6 +576,31 @@ def augment_spec(spec, f):
         return spec + f if f not in spec else spec
 
 
+FLAG_SHORT_TO_LONG = {
+    "cb": "carry_block",
+    "c": "carry",
+    "v": "overflow",
+    "s": "sign",
+    "z": "zero",
+}
+
+
+def resolve_flags(args):
+    flags = []
+    for arg in args:
+        arg = arg.replace("-", "_")
+        if arg not in FLAG_SHORT_TO_LONG.values():
+            try:
+                longflag = FLAG_SHORT_TO_LONG[arg]
+            except KeyError:
+                raise HERAError("Unrecognized flag: `{}`.".format(arg))
+            else:
+                flags.append("flag_" + longflag)
+        else:
+            flags.append("flag_" + arg)
+    return flags
+
+
 HELP = """\
 Available commands:
     assign <x> <y>  Assign the value of y to x.
@@ -596,6 +625,10 @@ Available commands:
     ll              Print the entire program.
 
     next            Execute the current line.
+
+    off <flag>      Turn the given machine flag off.
+
+    on <flag>       Turn the given machine flag on.
 
     print <x>       Print the value of x.
 
@@ -694,6 +727,17 @@ next:
 next <n>:
   Execute the next n instructions. This command will follow branches, so be
   careful!""",
+    # off
+    "off": """\
+off <f1> <f2>...:
+    Turn off all the HERA machine flags listed. Flags may be given in long
+    form (carry-block, carry, overflow, sign, zero) or short form (cb, c, v,
+    s, z).""",
+    # on
+    "on": """\
+on <f1> <f2>...:
+    Turn on all the HERA machine flags listed. Flags may be given in long form
+    (carry-block, carry, overflow, sign, zero) or short form (cb, c, v, s, z).""",
     # print
     "print": """\
 print <x> <y> <z>...:
