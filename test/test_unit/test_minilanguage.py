@@ -6,11 +6,10 @@ from hera.debugger.minilanguage import (
     MinusNode,
     RegisterNode,
     SymbolNode,
+    TOKEN_AT,
     TOKEN_EOF,
     TOKEN_INT,
-    TOKEN_MEM,
     TOKEN_MINUS,
-    TOKEN_RBRACKET,
     TOKEN_REGISTER,
     TOKEN_SYMBOL,
     TOKEN_UNKNOWN,
@@ -27,11 +26,10 @@ def test_lex_mini_language_with_small_example():
 
 def test_lex_mini_language_with_big_example():
     # This isn't a syntactically valid expression, but it doesn't matter to the lexer.
-    lexer = MiniLexer("M[FP_alt] R15 0xabc some_symbol -10 ?")
+    lexer = MiniLexer("@FP_alt R15 0xabc some_symbol -10 ?")
 
-    assert lexer.next_token() == (TOKEN_MEM, "M[")
+    assert lexer.next_token() == (TOKEN_AT, "@")
     assert lexer.next_token() == (TOKEN_REGISTER, "FP_alt")
-    assert lexer.next_token() == (TOKEN_RBRACKET, "]")
     assert lexer.next_token() == (TOKEN_REGISTER, "R15")
     assert lexer.next_token() == (TOKEN_INT, "0xabc")
     assert lexer.next_token() == (TOKEN_SYMBOL, "some_symbol")
@@ -52,7 +50,7 @@ def test_lex_mini_language_with_symbols_starting_with_M():
 
 
 def test_parse_memory_expression():
-    parser = MiniParser(MiniLexer("M[M[rt]]"))
+    parser = MiniParser(MiniLexer("@@rt"))
 
     tree = parser.parse()
 
@@ -63,7 +61,7 @@ def test_parse_memory_expression():
 
 
 def test_parse_memory_expression_with_integer():
-    parser = MiniParser(MiniLexer("M[-0o12]"))
+    parser = MiniParser(MiniLexer("@-0o12"))
 
     tree = parser.parse()
 
@@ -74,7 +72,7 @@ def test_parse_memory_expression_with_integer():
 
 
 def test_parse_memory_expression_with_symbol():
-    parser = MiniParser(MiniLexer("M[add]"))
+    parser = MiniParser(MiniLexer("@add"))
 
     tree = parser.parse()
 

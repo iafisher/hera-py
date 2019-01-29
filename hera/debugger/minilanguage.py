@@ -19,7 +19,7 @@ class MiniParser:
       start := expr
 
       expr := mem | REGISTER | INT | MINUS expr
-      mem  := MEM expr RBRACKET
+      mem  := AT expr
     """
 
     def __init__(self, lexer):
@@ -35,9 +35,8 @@ class MiniParser:
 
     def match_expr(self):
         tkn = self.lexer.next_token()
-        if tkn[0] == TOKEN_MEM:
+        if tkn[0] == TOKEN_AT:
             address = self.match_expr()
-            self.assert_next(TOKEN_RBRACKET)
             return MemoryNode(address)
         elif tkn[0] == TOKEN_INT:
             try:
@@ -90,11 +89,7 @@ class MiniLexer:
             return TOKEN_EOF, ""
 
         ch = self.text[self.position]
-        if ch in "mM" and self.peek() == "[":
-            return self.advance_and_return(TOKEN_MEM, length=2)
-        elif ch == "]":
-            return self.advance_and_return(TOKEN_RBRACKET)
-        elif ch.isalpha() or ch == "_":
+        if ch.isalpha() or ch == "_":
             length = self.read_register()
             if length != -1:
                 return self.advance_and_return(TOKEN_REGISTER, length=length)
@@ -106,6 +101,8 @@ class MiniLexer:
             return self.advance_and_return(TOKEN_INT, length=length)
         elif ch == "-":
             return self.advance_and_return(TOKEN_MINUS)
+        elif ch == "@":
+            return self.advance_and_return(TOKEN_AT)
         else:
             return self.advance_and_return(TOKEN_UNKNOWN)
 
@@ -170,10 +167,9 @@ class MiniLexer:
 
 
 TOKEN_INT = "TOKEN_INT"
-TOKEN_MEM = "TOKEN_MEM"
 TOKEN_REGISTER = "TOKEN_REGISTER"
-TOKEN_RBRACKET = "TOKEN_RBRACKET"
 TOKEN_SYMBOL = "TOKEN_SYMBOL"
 TOKEN_MINUS = "TOKEN_MINUS"
+TOKEN_AT = "TOKEN_AT"
 TOKEN_EOF = "TOKEN_EOF"
 TOKEN_UNKNOWN = "TOKEN_UNKNOWN"

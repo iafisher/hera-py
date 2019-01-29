@@ -387,7 +387,7 @@ class Shell:
                         spec = augment_spec(spec, "l")
         elif isinstance(tree, MemoryNode):
             address = self.evaluate_node(tree.address)
-            lhs = "M[{}]".format(address)
+            lhs = "@[{} = {}]".format(expr[1:].rstrip(), address)
             rhs = vm.access_memory(address)
         elif isinstance(tree, SymbolNode):
             try:

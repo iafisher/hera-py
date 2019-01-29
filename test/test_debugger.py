@@ -616,7 +616,7 @@ def test_handle_assign_negative_number_to_register(shell):
 def test_handle_assign_to_memory_location(shell):
     shell.debugger.vm.registers[9] = 1000
 
-    shell.handle_command("m[R9] = 4000")
+    shell.handle_command("@R9 = 4000")
 
     assert shell.debugger.vm.memory[1000] == 4000
 
@@ -650,7 +650,7 @@ def test_handle_assign_register_to_symbol(shell):
 
 
 def test_handle_assign_with_invalid_syntax(shell, capsys):
-    shell.handle_command("M[1 = R5")
+    shell.handle_command("@ = R5")
 
     assert capsys.readouterr().out == "Parse error: premature end of input.\n"
 
@@ -725,9 +725,9 @@ def test_handle_print_memory_expression(shell, capsys):
     shell.debugger.vm.registers[1] = 4
     shell.debugger.vm.memory[4] = 42
 
-    shell.handle_command("print M[r1]")
+    shell.handle_command("print @r1")
 
-    assert capsys.readouterr().out == "M[4] = 0x002a = 42 = '*'\n"
+    assert capsys.readouterr().out == "@[r1 = 4] = 0x002a = 42 = '*'\n"
 
 
 def test_handle_print_PC(shell, capsys):
@@ -788,11 +788,11 @@ def test_handle_print_with_invalid_format(shell, capsys):
 
 
 def test_handle_print_undefined_symbol_in_memory_expression(shell, capsys):
-    shell.handle_command("print M[whatever]")
+    shell.handle_command("print @whatever")
 
     assert (
         capsys.readouterr().out
-        == "Eval error on `M[whatever]`: whatever is not defined.\n"
+        == "Eval error on `@whatever`: whatever is not defined.\n"
     )
 
 
@@ -812,12 +812,12 @@ def test_handle_print_with_too_few_args(shell, capsys):
 
 def test_handle_print_abbreviated(shell):
     with patch("hera.debugger.shell.Shell.handle_print") as mock_handle_print:
-        shell.handle_command("p M[R7]")
+        shell.handle_command("p @R7")
         assert mock_handle_print.call_count == 1
 
         args, kwargs = mock_handle_print.call_args
         assert len(args) == 1
-        assert args[0] == ["M[R7]"]
+        assert args[0] == ["@R7"]
         assert len(kwargs) == 0
 
 

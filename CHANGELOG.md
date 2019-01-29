@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `restart` debugging command may no longer be abbreviated.
 - The `skip` debugging command has been renamed to `jump`.
 - Debugger now prints three lines of context instead of one after commands that affect the program counter.
+- The syntax for memory locations in the debugger minilanguage is now `@<address>` instead of `M[address]`.
 
 ### Removed
 - The `+n` argument to the `jump` debugging command.
