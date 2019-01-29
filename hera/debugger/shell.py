@@ -94,7 +94,7 @@ class Shell:
         elif "next".startswith(cmd):
             self.handle_next(arglist)
         elif "print".startswith(cmd):
-            self.handle_print(argstr)
+            self.handle_print(arglist)
         # restart cannot be abbreviated, so that users don't accidentally restart.
         elif cmd == "restart":
             self.handle_restart(arglist)
@@ -106,6 +106,64 @@ class Shell:
             self.handle_assign(response.split("=", maxsplit=1))
         else:
             print("{} is not a recognized command.".format(cmd))
+
+    def handle_assign(self, args):
+        if len(args) != 2:
+            print("assign takes two arguments.")
+            return
+
+        try:
+            ltree = minilanguage.parse(args[0])
+            rtree = minilanguage.parse(args[1])
+        except SyntaxError as e:
+            msg = str(e)
+            if msg:
+                print("Parse error: " + msg + ".")
+            else:
+                print("Parse error.")
+            return
+
+        vm = self.debugger.vm
+        try:
+            rhs = self.evaluate_node(rtree)
+            if isinstance(ltree, RegisterNode):
+                if ltree.value == "pc":
+                    vm.pc = rhs
+                else:
+                    vm.store_register(ltree.value, rhs)
+            elif isinstance(ltree, MemoryNode):
+                address = self.evaluate_node(ltree.address)
+                vm.assign_memory(address, rhs)
+            elif isinstance(ltree, SymbolNode):
+                value = ltree.value.lower()
+                if value in FLAG_LITERALS:
+                    if rhs is not True and rhs is not False:
+                        print(
+                            "Eval error: cannot assign non-boolean value to flag "
+                            + "(use #t and #f instead)."
+                        )
+                        return
+
+                    if value == "f_cb":
+                        vm.flag_carry_block = rhs
+                    elif value == "f_c":
+                        vm.flag_carry = rhs
+                    elif value == "f_v":
+                        vm.flag_overflow = rhs
+                    elif value == "f_z":
+                        vm.flag_zero = rhs
+                    elif value == "f_s":
+                        vm.flag_sign = rhs
+                    else:
+                        raise RuntimeError("this should never happen!")
+                else:
+                    print("Eval error: cannot assign to symbol.")
+            else:
+                raise RuntimeError(
+                    "unknown node type {}".format(ltree.__class__.__name__)
+                )
+        except HERAError as e:
+            print("Eval error: " + str(e) + ".")
 
     @mutates
     def handle_break(self, args):
@@ -269,82 +327,82 @@ class Shell:
         self.debugger.exec_ops(n)
         self.print_current_op()
 
-    def handle_print(self, argstr):
-        try:
-            tree = minilanguage.parse(argstr)
-        except SyntaxError as e:
-            msg = str(e)
-            if msg:
-                print("Parse error: " + msg + ".")
-            else:
-                print("Parse error.")
+    def handle_print(self, args):
+        if len(args) == 0:
+            print("print takes one or more arguments.")
             return
 
-        vm = self.debugger.vm
-        try:
-            if isinstance(tree, RegisterNode):
-                if tree.value == "pc":
-                    try:
-                        label = self.debugger.get_breakpoint_name(vm.pc)
-                    except IndexError:
-                        print("PC = {}".format(format_int(vm.pc)))
-                    else:
-                        print("PC = {} [{}]".format(format_int(vm.pc), label))
-                else:
-                    value = vm.get_register(tree.value)
-                    i = register_to_index(tree.value)
-                    if i == 13:
-                        try:
-                            label = self.debugger.get_breakpoint_name(value)
-                        except IndexError:
-                            print("{} = {}".format(tree.value, format_int(value)))
-                        else:
-                            print(
-                                "{} = {} [{}]".format(
-                                    tree.value, format_int(value), label
-                                )
-                            )
-                    else:
-                        print("{} = {}".format(tree.value, format_int(value)))
-            elif isinstance(tree, MemoryNode):
-                address = self.evaluate_node(tree.address)
-                print("M[{}] = {}".format(address, vm.access_memory(address)))
-            elif isinstance(tree, SymbolNode):
-                if tree.value in FLAG_LITERALS:
-                    if tree.value == "f_cb":
-                        print("Carry-block flag = " + str(vm.flag_carry_block).lower())
-                    elif tree.value == "f_c":
-                        print("Carry flag = " + str(vm.flag_carry).lower())
-                    elif tree.value == "f_v":
-                        print("Overflow flag = " + str(vm.flag_overflow).lower())
-                    elif tree.value == "f_z":
-                        print("Zero flag = " + str(vm.flag_zero).lower())
-                    elif tree.value == "f_s":
-                        print("Sign flag = " + str(vm.flag_sign).lower())
-                    else:
-                        raise RuntimeError("this should never happen!")
+        if args[0].startswith(":"):
+            spec = args.pop(0)[1:]
+            for c in spec:
+                if c not in "dxobcsl":
+                    print("Unknown format specifier `{}`.".format(c))
+                    return
+        else:
+            spec = ""
 
-                    # If the symbol also happens to identify something in the symbol
-                    # table (as well as a flag), print that too.
-                    if tree.value in self.debugger.symbol_table:
-                        self.print_symbol(
-                            tree.value, self.debugger.symbol_table[tree.value]
-                        )
+        for arg in args:
+            try:
+                self.print_one_expr(arg, spec)
+            except SyntaxError as e:
+                msg = str(e)
+                if msg:
+                    print("Parse error on `{}`: {}.".format(arg, msg))
                 else:
-                    try:
-                        v = self.debugger.symbol_table[tree.value]
-                    except KeyError:
-                        print("{} is not defined.".format(tree.value))
-                    else:
-                        self.print_symbol(tree.value, v)
-            elif isinstance(tree, IntNode):
-                print(tree.value)
+                    print("Parse error on `{}`.".format(arg, msg))
+            except HERAError as e:
+                print("Eval error on `{}`: {}.".format(arg, e))
+
+    def print_one_expr(self, expr: str, spec: str):
+        """Print a single expression with the given format specification."""
+        tree = minilanguage.parse(expr)
+        vm = self.debugger.vm
+
+        # This if block defines two variables, `lhs` and `rhs`, which are printed
+        # afterwards.
+        if isinstance(tree, RegisterNode):
+            lhs = tree.value
+            if tree.value.lower() == "pc":
+                rhs = vm.pc
+                spec = augment_spec(spec, "l")
             else:
-                raise RuntimeError(
-                    "unknown node type {}".format(tree.__class__.__name__)
-                )
-        except HERAError as e:
-            print("Eval error: " + str(e) + ".")
+                try:
+                    rhs = vm.get_register(tree.value)
+                    i = register_to_index(tree.value)
+                except ValueError:
+                    raise HERAError("no such register")
+                else:
+                    # R13 is used to hold the return value of the PC in function calls,
+                    # so printing the location is useful.
+                    if i == 13 and not spec:
+                        spec = augment_spec(spec, "l")
+        elif isinstance(tree, MemoryNode):
+            address = self.evaluate_node(tree.address)
+            lhs = "M[{}]".format(address)
+            rhs = vm.access_memory(address)
+        elif isinstance(tree, SymbolNode):
+            try:
+                rhs = self.debugger.symbol_table[tree.value]
+            except KeyError:
+                raise HERAError("{} is not defined".format(tree.value))
+            else:
+                if isinstance(rhs, Label):
+                    suffix = " (label)"
+                    spec = augment_spec(spec, "l")
+                elif isinstance(rhs, DataLabel):
+                    suffix = " (data label)"
+                elif isinstance(rhs, Constant):
+                    suffix = " (constant)"
+                else:
+                    suffix = ""
+                lhs = tree.value + suffix
+        elif isinstance(tree, IntNode):
+            lhs = str(tree.value)
+            rhs = tree.value
+        else:
+            raise RuntimeError("unknown node type {}".format(tree.__class__.__name__))
+
+        print("{} = {}".format(lhs, self.format_int(rhs, spec)))
 
     @mutates
     def handle_restart(self, args):
@@ -418,64 +476,6 @@ class Shell:
             flagstr = flagstr[0].upper() + flagstr[1:]
             print(flagstr + ", all other flags are off.")
 
-    def handle_assign(self, args):
-        if len(args) != 2:
-            print("assign takes two arguments.")
-            return
-
-        try:
-            ltree = minilanguage.parse(args[0])
-            rtree = minilanguage.parse(args[1])
-        except SyntaxError as e:
-            msg = str(e)
-            if msg:
-                print("Parse error: " + msg + ".")
-            else:
-                print("Parse error.")
-            return
-
-        vm = self.debugger.vm
-        try:
-            rhs = self.evaluate_node(rtree)
-            if isinstance(ltree, RegisterNode):
-                if ltree.value == "pc":
-                    vm.pc = rhs
-                else:
-                    vm.store_register(ltree.value, rhs)
-            elif isinstance(ltree, MemoryNode):
-                address = self.evaluate_node(ltree.address)
-                vm.assign_memory(address, rhs)
-            elif isinstance(ltree, SymbolNode):
-                value = ltree.value.lower()
-                if value in FLAG_LITERALS:
-                    if rhs is not True and rhs is not False:
-                        print(
-                            "Eval error: cannot assign non-boolean value to flag "
-                            + "(use #t and #f instead)."
-                        )
-                        return
-
-                    if value == "f_cb":
-                        vm.flag_carry_block = rhs
-                    elif value == "f_c":
-                        vm.flag_carry = rhs
-                    elif value == "f_v":
-                        vm.flag_overflow = rhs
-                    elif value == "f_z":
-                        vm.flag_zero = rhs
-                    elif value == "f_s":
-                        vm.flag_sign = rhs
-                    else:
-                        raise RuntimeError("this should never happen!")
-                else:
-                    print("Eval error: cannot assign to symbol.")
-            else:
-                raise RuntimeError(
-                    "unknown node type {}".format(ltree.__class__.__name__)
-                )
-        except HERAError as e:
-            print("Eval error: " + str(e) + ".")
-
     def evaluate_node(self, node):
         vm = self.debugger.vm
         if isinstance(node, (IntNode, BoolNode)):
@@ -535,16 +535,36 @@ class Shell:
             else:
                 print()
 
-    def print_symbol(self, k, v):
-        if isinstance(v, Label):
-            suffix = " (label)"
-        elif isinstance(v, DataLabel):
-            suffix = " (data label)"
-        elif isinstance(v, Constant):
-            suffix = " (constant)"
+    def format_int(self, v, spec):
+        if not spec:
+            spec = DEFAULT_SPEC
+
+        if "l" in spec:
+            spec = spec.replace("l", "")
+            loc = True
         else:
-            suffix = ""
-        print("{} = {}".format(k, v) + suffix)
+            loc = False
+
+        if loc:
+            try:
+                label = self.debugger.get_breakpoint_name(v, append_label=False)
+            except IndexError:
+                return format_int(v, spec=spec)
+            else:
+                return format_int(v, spec=spec) + " [" + label + "]"
+        else:
+            return format_int(v, spec=spec)
+
+
+DEFAULT_SPEC = "xdsc"
+
+
+def augment_spec(spec, f):
+    """Augment the format specifier with the additional format character."""
+    if not spec:
+        return augment_spec(DEFAULT_SPEC, f)
+    else:
+        return spec + f if f not in spec else spec
 
 
 HELP = """\
@@ -671,15 +691,20 @@ next <n>:
   careful!""",
     # print
     "print": """\
-print <x>:
-  Print the value of x, which may be a register, a memory location, the
-  program counter, or a symbol.
+print <x> <y> <z>...:
+  Print the values of all the suppleid arguments, which may be registers,
+  memory locations, the program counter, or symbols. The first argument may
+  optionally be a format specifier, e.g. ":xds". Each character of the string
+  identifies a format in which to print the value. The following formats are
+  recognized: d for decimal, x for hexadecimal, o for octal, b for binary, c
+  for character literals, s for signed integers, and l for source code
+  locations. When not provided, the format specifier defaults to ":xdsc".
 
   Examples:
     print R7
-    print M[0xc]
+    print M[0xc] M[0xd]
     print some_label
-    print M[M[M[R1]]]""",
+    print :b M[M[M[R1]]]""",
     # restart
     "restart": """\
 restart:

@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - The `undo` debugging command.
 - The `next` debugging command now takes an optional argument.
+- The `print` debugging command now takes accepts an optional format specifier argument.
+- The `print` debugging command now takes multiple arguments.
 - Printing the program counter or `PC_ret` (`R13`) in the debugger now indicates what line of code the registers correspond to.
 
 ### Changed
@@ -18,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Removed
 - The `+n` argument to the `jump` debugging command.
+- Flags can no longer be printed with the `print` debugging command. Use the `info` command instead.
 
 ### Fixed
 - A label may no longer be the second argument to `RETURN`.
@@ -26,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The debugger now respects the `--no-color` command-line flag.
 - The printed register values after program execution now correctly print negative numbers under the signed interpretation of 16 bits.
 - The `step` command no longer stops prematurely when the number of instructions executed exceeds the length of the program.
+- Printing invalid registers in the debugger no longer crashes it.
 
 ## [0.5.0] - 2019-01-27
 ### Added

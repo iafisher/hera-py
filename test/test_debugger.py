@@ -587,21 +587,42 @@ def test_handle_print_PC_ret(shell, capsys):
     assert capsys.readouterr().out == "PC_ret = 0x0002 = 2 [<string>:5]\n"
 
 
+def test_handle_print_PC_ret_with_explicit_format(shell, capsys):
+    shell.debugger.vm.registers[13] = 2
+    shell.handle_command("print :xd PC_ret")
+
+    assert capsys.readouterr().out == "PC_ret = 0x0002 = 2\n"
+
+
+def test_handle_print_with_format_string(shell, capsys):
+    shell.debugger.vm.registers[5] = 2
+    shell.handle_command("print :bl r5")
+
+    assert capsys.readouterr().out == "r5 = 0b0000000000000010 [<string>:5]\n"
+
+
+def test_handle_print_with_restrictive_format_string(shell, capsys):
+    shell.debugger.vm.registers[13] = 2
+    shell.handle_command("print :o r13")
+
+    assert capsys.readouterr().out == "r13 = 0o00000002\n"
+
+
 def test_handle_print_memory_expression(shell, capsys):
     shell.debugger.vm.registers[1] = 4
     shell.debugger.vm.memory[4] = 42
 
     shell.handle_command("print M[r1]")
 
-    assert capsys.readouterr().out == "M[4] = 42\n"
+    assert capsys.readouterr().out == "M[4] = 0x002a = 42 = '*'\n"
 
 
 def test_handle_print_PC(shell, capsys):
     shell.debugger.vm.pc = 4
 
-    shell.handle_command("print pc")
+    shell.handle_command("print PC")
 
-    assert capsys.readouterr().out == "PC = 0x0004 = 4 [<string>:7 (add)]\n"
+    assert capsys.readouterr().out == "PC = 0x0004 = 4 [<string>:7]\n"
 
 
 def test_handle_print_PC_with_nonsense_value(shell, capsys):
@@ -609,64 +630,57 @@ def test_handle_print_PC_with_nonsense_value(shell, capsys):
 
     shell.handle_command("print pc")
 
-    assert capsys.readouterr().out == "PC = 0x012c = 300\n"
+    assert capsys.readouterr().out == "pc = 0x012c = 300\n"
 
 
 def test_handle_print_int(shell, capsys):
     shell.handle_command("print 17")
 
-    assert capsys.readouterr().out == "17\n"
+    assert capsys.readouterr().out == "17 = 0x0011 = 17\n"
 
 
-def test_handle_print_invalid_syntax(shell, capsys):
-    # TODO: It would be useful if this worked.
-    shell.handle_command("print r1 r2")
+def test_handle_print_with_multiple_arguments(shell, capsys):
+    shell.debugger.vm.registers[1] = 5
+    shell.debugger.vm.registers[2] = 7
+    shell.handle_command("print :d r1 r2")
 
-    assert capsys.readouterr().out == "Parse error: trailing input.\n"
+    assert capsys.readouterr().out == "r1 = 5\nr2 = 7\n"
 
 
 def test_handle_print_symbol(shell, capsys):
     shell.handle_command("print add")
 
-    assert capsys.readouterr().out == "add = 4 (label)\n"
+    assert capsys.readouterr().out == "add (label) = 0x0004 = 4 [<string>:7]\n"
 
 
 def test_handle_print_undefined_symbol(shell, capsys):
     shell.handle_command("print whatever")
 
-    assert capsys.readouterr().out == "whatever is not defined.\n"
+    assert (
+        capsys.readouterr().out
+        == "Eval error on `whatever`: whatever is not defined.\n"
+    )
+
+
+def test_handle_print_invalid_register(shell, capsys):
+    shell.handle_command("print R17")
+
+    assert capsys.readouterr().out == "Eval error on `R17`: no such register.\n"
+
+
+def test_handle_print_with_invalid_format(shell, capsys):
+    shell.handle_command("print :y R1")
+
+    assert capsys.readouterr().out == "Unknown format specifier `y`.\n"
 
 
 def test_handle_print_undefined_symbol_in_memory_expression(shell, capsys):
     shell.handle_command("print M[whatever]")
 
-    assert capsys.readouterr().out == "Eval error: whatever is not defined.\n"
-
-
-def test_handle_print_flag(shell, capsys):
-    shell.handle_command("print f_cb")
-    shell.handle_command("print f_c")
-    shell.handle_command("print f_v")
-    shell.handle_command("print f_s")
-    shell.handle_command("print f_z")
-
     assert (
         capsys.readouterr().out
-        == """\
-Carry-block flag = false
-Carry flag = false
-Overflow flag = false
-Sign flag = false
-Zero flag = false
-"""
+        == "Eval error on `M[whatever]`: whatever is not defined.\n"
     )
-
-
-def test_handle_print_flag_with_conflicting_symbol(shell, capsys):
-    shell.debugger.symbol_table["f_cb"] = 42
-    shell.handle_command("print f_cb")
-
-    assert capsys.readouterr().out == "Carry-block flag = false\nf_cb = 42\n"
 
 
 def test_handle_print_case_sensitive_symbol(shell, capsys):
@@ -674,17 +688,23 @@ def test_handle_print_case_sensitive_symbol(shell, capsys):
 
     shell.handle_command("print ADD")
 
-    assert capsys.readouterr().out == "ADD = 10\n"
+    assert capsys.readouterr().out == "ADD = 0x000a = 10\n"
+
+
+def test_handle_print_with_too_few_args(shell, capsys):
+    shell.handle_command("print")
+
+    assert capsys.readouterr().out == "print takes one or more arguments.\n"
 
 
 def test_handle_print_abbreviated(shell):
     with patch("hera.debugger.shell.Shell.handle_print") as mock_handle_print:
-        shell.handle_command("p M[ R7 ]")
+        shell.handle_command("p M[R7]")
         assert mock_handle_print.call_count == 1
 
         args, kwargs = mock_handle_print.call_args
         assert len(args) == 1
-        assert args[0] == "M[ R7 ]"
+        assert args[0] == ["M[R7]"]
         assert len(kwargs) == 0
 
 
