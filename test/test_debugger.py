@@ -749,7 +749,7 @@ def test_handle_print_PC_with_nonsense_value(shell, capsys):
 def test_handle_print_int(shell, capsys):
     shell.handle_command("print 17")
 
-    assert capsys.readouterr().out == "17 = 0x0011 = 17\n"
+    assert capsys.readouterr().out == "17\n"
 
 
 def test_handle_print_with_multiple_arguments(shell, capsys):

@@ -406,12 +406,17 @@ class Shell:
                     suffix = ""
                 lhs = tree.value + suffix
         elif isinstance(tree, IntNode):
-            lhs = str(tree.value)
+            lhs = ""
             rhs = tree.value
+            if not spec:
+                spec = "d"
         else:
             raise RuntimeError("unknown node type {}".format(tree.__class__.__name__))
 
-        print("{} = {}".format(lhs, self.format_int(rhs, spec)))
+        if lhs:
+            print("{} = {}".format(lhs, self.format_int(rhs, spec)))
+        else:
+            print(self.format_int(rhs, spec))
 
     @mutates
     def handle_restart(self, args):
@@ -661,8 +666,8 @@ assign <x> <y>:
 
   Examples:
     R1 = 42
-    M[R7] = R4
-    M[0xabc] = 0o123
+    @R7 = R4
+    @(0xabc) = 0o123
     R7 = some_label""",
     # break
     "break": """\
@@ -751,9 +756,9 @@ print <x> <y> <z>...:
 
   Examples:
     print R7
-    print M[0xc] M[0xd]
+    print @(0xc) @(0xd)
     print some_label
-    print :b M[M[M[R1]]]""",
+    print :b @@@R1""",
     # restart
     "restart": """\
 restart:

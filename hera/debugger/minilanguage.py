@@ -14,46 +14,84 @@ def parse(line):
 
 
 class MiniParser:
-    """A parser for the debugger's expression mini-language.
+    """A parser for the debugger's expression mini-language. Arithmetic operations have
+    the usual precedence.
 
       start := expr
 
-      expr := mem | REGISTER | INT | MINUS expr
-      mem  := AT expr
+      expr := expr op expr | LPAREN expr RPAREN | MINUS expr | AT expr | atom
+      op   := PLUS | MINUS | ASTERISK | SLASH
+      atom := REGISTER | INT | SYMBOL
+
+    Based on the Pratt parser from Thorsten Ball's "Writing an Interpreter in Go".
+    https://interpreterbook.com/
     """
 
     def __init__(self, lexer):
         self.lexer = lexer
 
     def parse(self):
-        tree = self.match_expr()
+        tree = self.match_expr(PREC_LOWEST)
         tkn = self.lexer.next_token()
         if tkn[0] == TOKEN_EOF:
             return tree
         else:
             raise SyntaxError("trailing input")
 
-    def match_expr(self):
+    def match_expr(self, precedence):
+        """Given that lexer.next_token() will return the first token of the expression,
+        parse the expression with the given expression.
+
+        The method leaves lexer.tkn on first token of the next expression.
+        """
         tkn = self.lexer.next_token()
         if tkn[0] == TOKEN_AT:
-            address = self.match_expr()
-            return MemoryNode(address)
+            address = self.match_expr(PREC_PREFIX)
+            left = MemoryNode(address)
         elif tkn[0] == TOKEN_INT:
             try:
-                return IntNode(int(tkn[1], base=0))
+                left = IntNode(int(tkn[1], base=0))
             except ValueError:
                 raise SyntaxError("invalid integer literal: {}".format(tkn[1]))
+            else:
+                self.lexer.next_token()
         elif tkn[0] == TOKEN_MINUS:
-            return MinusNode(self.match_expr())
+            left = MinusNode(self.match_expr(PREC_PREFIX))
         elif tkn[0] == TOKEN_REGISTER:
-            return RegisterNode(tkn[1])
+            left = RegisterNode(tkn[1])
+            self.lexer.next_token()
         elif tkn[0] == TOKEN_SYMBOL:
-            return SymbolNode(tkn[1])
+            left = SymbolNode(tkn[1])
+            self.lexer.next_token()
+        elif tkn[0] == TOKEN_LPAREN:
+            left = self.match_expr(PREC_LOWEST)
+            if self.lexer.tkn[0] != TOKEN_RPAREN:
+                self.raise_unexpected(self.lexer.tkn)
+            self.lexer.next_token()
         else:
             self.raise_unexpected(tkn)
 
-    def assert_next(self, typ):
-        tkn = self.lexer.next_token()
+        infix_tkn = self.lexer.tkn
+        if infix_tkn[0] not in PREC_MAP:
+            return left
+        else:
+            infix_precedence = PREC_MAP[infix_tkn[0]]
+            if precedence < infix_precedence:
+                right = self.match_expr(precedence)
+                if infix_tkn[0] == TOKEN_PLUS:
+                    return AddNode(left, right)
+                elif infix_tkn[0] == TOKEN_MINUS:
+                    return SubNode(left, right)
+                elif infix_tkn[0] == TOKEN_ASTERISK:
+                    return MulNode(left, right)
+                elif infix_tkn[0] == TOKEN_SLASH:
+                    return DivNode(left, right)
+                else:
+                    raise RuntimeError("unhandled infix operator in parser")
+            else:
+                return left
+
+    def assert_tkn(self, tkn, typ):
         if tkn[0] != typ:
             self.raise_unexpected(tkn)
 
@@ -71,6 +109,10 @@ RegisterNode = namedtuple("RegisterNode", ["value"])
 IntNode = namedtuple("IntNode", ["value"])
 SymbolNode = namedtuple("SymbolNode", ["value"])
 MinusNode = namedtuple("MinusNode", ["arg"])
+AddNode = namedtuple("AddNode", ["left", "right"])
+SubNode = namedtuple("SubNode", ["left", "right"])
+MulNode = namedtuple("MulNode", ["left", "right"])
+DivNode = namedtuple("DivNode", ["left", "right"])
 
 
 class MiniLexer:
@@ -78,9 +120,14 @@ class MiniLexer:
 
     def __init__(self, text):
         self.text = text
+        self.tkn = None
         self.position = 0
 
     def next_token(self):
+        self.tkn = self.next_token_helper()
+        return self.tkn
+
+    def next_token_helper(self):
         # Skip whitespace.
         while self.position < len(self.text) and self.text[self.position].isspace():
             self.position += 1
@@ -101,8 +148,18 @@ class MiniLexer:
             return self.advance_and_return(TOKEN_INT, length=length)
         elif ch == "-":
             return self.advance_and_return(TOKEN_MINUS)
+        elif ch == "+":
+            return self.advance_and_return(TOKEN_PLUS)
+        elif ch == "/":
+            return self.advance_and_return(TOKEN_SLASH)
+        elif ch == "*":
+            return self.advance_and_return(TOKEN_ASTERISK)
         elif ch == "@":
             return self.advance_and_return(TOKEN_AT)
+        elif ch == "(":
+            return self.advance_and_return(TOKEN_LPAREN)
+        elif ch == ")":
+            return self.advance_and_return(TOKEN_RPAREN)
         else:
             return self.advance_and_return(TOKEN_UNKNOWN)
 
@@ -171,5 +228,16 @@ TOKEN_REGISTER = "TOKEN_REGISTER"
 TOKEN_SYMBOL = "TOKEN_SYMBOL"
 TOKEN_MINUS = "TOKEN_MINUS"
 TOKEN_AT = "TOKEN_AT"
+TOKEN_ASTERISK = "TOKEN_ASTERISK"
+TOKEN_PLUS = "TOKEN_PLUS"
+TOKEN_SLASH = "TOKEN_SLASH"
+TOKEN_LPAREN = "TOKEN_LPAREN"
+TOKEN_RPAREN = "TOKEN_RPAREN"
 TOKEN_EOF = "TOKEN_EOF"
 TOKEN_UNKNOWN = "TOKEN_UNKNOWN"
+
+
+# Operator precedence
+PREC_MAP = {TOKEN_PLUS: 1, TOKEN_MINUS: 1, TOKEN_SLASH: 2, TOKEN_ASTERISK: 2}
+PREC_LOWEST = 0
+PREC_PREFIX = 3
