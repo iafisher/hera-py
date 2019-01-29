@@ -1,4 +1,5 @@
 import functools
+from typing import List
 
 from . import minilanguage
 from .debugger import Debugger
@@ -390,15 +391,13 @@ class Shell:
 
     def print_one_expr(self, tree, spec, *, with_lhs=False):
         """Print a single expression with the given format specification."""
-        vm = self.debugger.vm
 
+        # Customize the format specifier depending on the type of expression.
         if isinstance(tree, RegisterNode):
             if tree.value.lower() == "pc":
-                value = vm.pc
                 spec = augment_spec(spec, "l")
             else:
                 try:
-                    value = vm.get_register(tree.value)
                     i = register_to_index(tree.value)
                 except ValueError:
                     raise HERAError("no such register")
@@ -407,9 +406,6 @@ class Shell:
                     # so printing the location is useful.
                     if i == 13 and not spec:
                         spec = augment_spec(spec, "l")
-        elif isinstance(tree, MemoryNode):
-            address = self.evaluate_node(tree.address)
-            value = vm.access_memory(address)
         elif isinstance(tree, SymbolNode):
             try:
                 value = self.debugger.symbol_table[tree.value]
@@ -419,14 +415,10 @@ class Shell:
                 if isinstance(value, Label):
                     spec = augment_spec(spec, "l")
         elif isinstance(tree, IntNode):
-            value = tree.value
             if not spec:
                 spec = "d"
-        elif isinstance(tree, (AddNode, SubNode, MulNode, DivNode, MinusNode)):
-            value = self.evaluate_node(tree)
-        else:
-            raise RuntimeError("unknown node type {}".format(tree.__class__.__name__))
 
+        value = self.evaluate_node(tree)
         if with_lhs:
             print("{} = {}".format(tree, self.format_int(value, spec)))
         else:
@@ -507,9 +499,11 @@ class Shell:
     def evaluate_node(self, node):
         vm = self.debugger.vm
         if isinstance(node, IntNode):
+            if node.value >= 2 ** 16:
+                raise HERAError("integer literal exceeds 16 bits")
             return node.value
         elif isinstance(node, RegisterNode):
-            if node.value == "pc":
+            if node.value.lower() == "pc":
                 return vm.pc
             else:
                 return vm.get_register(node.value)
@@ -522,25 +516,25 @@ class Shell:
             except KeyError:
                 raise HERAError("{} is not defined".format(node.value))
         elif isinstance(node, MinusNode):
-            return -self.evaluate_node(node.arg)
+            return check_overflow(-self.evaluate_node(node.arg), "negation")
         elif isinstance(node, AddNode):
             left = self.evaluate_node(node.left)
             right = self.evaluate_node(node.right)
-            return left + right
+            return check_overflow(left + right, "addition")
         elif isinstance(node, SubNode):
             left = self.evaluate_node(node.left)
             right = self.evaluate_node(node.right)
-            return left - right
+            return check_overflow(left - right, "subtraction")
         elif isinstance(node, MulNode):
             left = self.evaluate_node(node.left)
             right = self.evaluate_node(node.right)
-            return left * right
+            return check_overflow(left * right, "multiplication")
         elif isinstance(node, DivNode):
             left = self.evaluate_node(node.left)
             right = self.evaluate_node(node.right)
             if right == 0:
                 raise HERAError("division by zero")
-            return left // right
+            return check_overflow(left // right, "division")
         else:
             raise RuntimeError("unknown node type {}".format(node.__class__.__name__))
 
@@ -622,7 +616,7 @@ FLAG_SHORT_TO_LONG = {
 }
 
 
-def resolve_flags(args):
+def resolve_flags(args: List[str]) -> List[str]:
     flags = []
     for arg in args:
         arg = arg.replace("-", "_")
@@ -636,6 +630,13 @@ def resolve_flags(args):
         else:
             flags.append("flag_" + arg)
     return flags
+
+
+def check_overflow(v: int, operation: str) -> int:
+    if v >= 2 ** 16 or v < -2 ** 15:
+        raise HERAError(operation + " overflow")
+    else:
+        return v
 
 
 HELP = """\

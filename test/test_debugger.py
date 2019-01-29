@@ -790,6 +790,30 @@ def test_handle_print_with_division_by_zero(shell, capsys):
     assert capsys.readouterr().out == "Eval error: division by zero.\n"
 
 
+def test_handle_print_with_nested_division_by_zero(shell, capsys):
+    shell.handle_command("print @(10 / 0)")
+
+    assert capsys.readouterr().out == "Eval error: division by zero.\n"
+
+
+def test_handle_print_with_integer_literal_too_big(shell, capsys):
+    shell.handle_command("print 100000")
+
+    assert capsys.readouterr().out == "Eval error: integer literal exceeds 16 bits.\n"
+
+
+def test_handle_print_with_overflow_from_multiplication(shell, capsys):
+    shell.handle_command("print 30000*40")
+
+    assert capsys.readouterr().out == "Eval error: multiplication overflow.\n"
+
+
+def test_handle_print_with_overflow_from_negation(shell, capsys):
+    shell.handle_command("print -65000")
+
+    assert capsys.readouterr().out == "Eval error: negation overflow.\n"
+
+
 def test_handle_print_with_invalid_format(shell, capsys):
     shell.handle_command("print :y R1")
 
