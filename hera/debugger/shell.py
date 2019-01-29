@@ -13,7 +13,7 @@ from .minilanguage import (
     SubNode,
     SymbolNode,
 )
-from hera.data import Constant, DataLabel, HERAError, Label, Program, Settings
+from hera.data import DataLabel, HERAError, Label, Program, Settings
 from hera.loader import load_program
 from hera.parser import parse
 from hera.utils import BRANCHES, DATA_STATEMENTS, format_int, pad, register_to_index
@@ -378,26 +378,27 @@ class Shell:
                 # formats.
                 spec = spec.replace("c", "C")
                 spec = spec.replace("s", "S")
-            for arg in tree.seq:
-                try:
-                    self.print_one_expr(arg, spec)
-                except HERAError as e:
-                    print("Eval error: {}.".format(e))
 
-    def print_one_expr(self, tree, spec):
+            try:
+                if len(tree.seq) > 1:
+                    for arg in tree.seq:
+                        self.print_one_expr(arg, spec, with_lhs=True)
+                else:
+                    self.print_one_expr(tree.seq[0], spec)
+            except HERAError as e:
+                print("Eval error: {}.".format(e))
+
+    def print_one_expr(self, tree, spec, *, with_lhs=False):
         """Print a single expression with the given format specification."""
         vm = self.debugger.vm
 
-        # This if block defines two variables, `lhs` and `rhs`, which are printed
-        # afterwards.
         if isinstance(tree, RegisterNode):
-            lhs = tree.value
             if tree.value.lower() == "pc":
-                rhs = vm.pc
+                value = vm.pc
                 spec = augment_spec(spec, "l")
             else:
                 try:
-                    rhs = vm.get_register(tree.value)
+                    value = vm.get_register(tree.value)
                     i = register_to_index(tree.value)
                 except ValueError:
                     raise HERAError("no such register")
@@ -408,39 +409,28 @@ class Shell:
                         spec = augment_spec(spec, "l")
         elif isinstance(tree, MemoryNode):
             address = self.evaluate_node(tree.address)
-            lhs = "@({})".format(address)
-            rhs = vm.access_memory(address)
+            value = vm.access_memory(address)
         elif isinstance(tree, SymbolNode):
             try:
-                rhs = self.debugger.symbol_table[tree.value]
+                value = self.debugger.symbol_table[tree.value]
             except KeyError:
                 raise HERAError("{} is not defined".format(tree.value))
             else:
-                if isinstance(rhs, Label):
-                    suffix = " (label)"
+                if isinstance(value, Label):
                     spec = augment_spec(spec, "l")
-                elif isinstance(rhs, DataLabel):
-                    suffix = " (data label)"
-                elif isinstance(rhs, Constant):
-                    suffix = " (constant)"
-                else:
-                    suffix = ""
-                lhs = tree.value + suffix
         elif isinstance(tree, IntNode):
-            lhs = ""
-            rhs = tree.value
+            value = tree.value
             if not spec:
                 spec = "d"
         elif isinstance(tree, (AddNode, SubNode, MulNode, DivNode, MinusNode)):
-            lhs = ""
-            rhs = self.evaluate_node(tree)
+            value = self.evaluate_node(tree)
         else:
             raise RuntimeError("unknown node type {}".format(tree.__class__.__name__))
 
-        if lhs:
-            print("{} = {}".format(lhs, self.format_int(rhs, spec)))
+        if with_lhs:
+            print("{} = {}".format(tree, self.format_int(value, spec)))
         else:
-            print(self.format_int(rhs, spec))
+            print(self.format_int(value, spec))
 
     @mutates
     def handle_restart(self, args):
@@ -612,7 +602,7 @@ class Shell:
             return format_int(v, spec=spec)
 
 
-DEFAULT_SPEC = "xdsc"
+DEFAULT_SPEC = "dsc"
 
 
 def augment_spec(spec, f):

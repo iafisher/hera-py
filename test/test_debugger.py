@@ -670,55 +670,55 @@ def test_handle_assign_with_too_many_args(shell, capsys):
 def test_handle_print_register(shell, capsys):
     shell.handle_command("print R1")
 
-    assert capsys.readouterr().out == "R1 = 0x0000 = 0\n"
+    assert capsys.readouterr().out == "0\n"
 
 
 def test_handle_print_PC_ret(shell, capsys):
     shell.debugger.vm.registers[13] = 2
     shell.handle_command("print PC_ret")
 
-    assert capsys.readouterr().out == "PC_ret = 0x0002 = 2 [<string>:5]\n"
+    assert capsys.readouterr().out == "2 [<string>:5]\n"
 
 
 def test_handle_print_PC_ret_with_explicit_format(shell, capsys):
     shell.debugger.vm.registers[13] = 2
     shell.handle_command("print :xd PC_ret")
 
-    assert capsys.readouterr().out == "PC_ret = 0x0002 = 2\n"
+    assert capsys.readouterr().out == "0x0002 = 2\n"
 
 
 def test_handle_print_with_format_string(shell, capsys):
     shell.debugger.vm.registers[5] = 2
     shell.handle_command("print :bl r5")
 
-    assert capsys.readouterr().out == "r5 = 0b0000000000000010 [<string>:5]\n"
+    assert capsys.readouterr().out == "0b0000000000000010 [<string>:5]\n"
 
 
 def test_handle_print_zero_register_with_char_format_string(shell, capsys):
     shell.handle_command("print :c R0")
 
-    assert capsys.readouterr().out == "R0 = '\\x00'\n"
+    assert capsys.readouterr().out == "'\\x00'\n"
 
 
 def test_handle_print_large_int_with_char_format_string(shell, capsys):
     shell.debugger.vm.registers[5] = 1000
     shell.handle_command("print :c R5")
 
-    assert capsys.readouterr().out == "R5 = not an ASCII character\n"
+    assert capsys.readouterr().out == "not an ASCII character\n"
 
 
 def test_handle_print_unsigned_integer_with_signed_format_string(shell, capsys):
     shell.debugger.vm.registers[5] = 42
     shell.handle_command("print :s R5")
 
-    assert capsys.readouterr().out == "R5 = not a signed integer\n"
+    assert capsys.readouterr().out == "not a signed integer\n"
 
 
 def test_handle_print_with_restrictive_format_string(shell, capsys):
     shell.debugger.vm.registers[13] = 2
     shell.handle_command("print :o r13")
 
-    assert capsys.readouterr().out == "r13 = 0o00000002\n"
+    assert capsys.readouterr().out == "0o00000002\n"
 
 
 def test_handle_print_memory_expression(shell, capsys):
@@ -727,7 +727,7 @@ def test_handle_print_memory_expression(shell, capsys):
 
     shell.handle_command("print @r1")
 
-    assert capsys.readouterr().out == "@(4) = 0x002a = 42 = '*'\n"
+    assert capsys.readouterr().out == "42 = '*'\n"
 
 
 def test_handle_print_PC(shell, capsys):
@@ -735,7 +735,7 @@ def test_handle_print_PC(shell, capsys):
 
     shell.handle_command("print PC")
 
-    assert capsys.readouterr().out == "PC = 0x0004 = 4 [<string>:7]\n"
+    assert capsys.readouterr().out == "4 [<string>:7]\n"
 
 
 def test_handle_print_PC_with_nonsense_value(shell, capsys):
@@ -743,7 +743,7 @@ def test_handle_print_PC_with_nonsense_value(shell, capsys):
 
     shell.handle_command("print pc")
 
-    assert capsys.readouterr().out == "pc = 0x012c = 300\n"
+    assert capsys.readouterr().out == "300\n"
 
 
 def test_handle_print_int(shell, capsys):
@@ -769,7 +769,7 @@ def test_handle_print_with_multiple_arguments(shell, capsys):
 def test_handle_print_symbol(shell, capsys):
     shell.handle_command("print add")
 
-    assert capsys.readouterr().out == "add (label) = 0x0004 = 4 [<string>:7]\n"
+    assert capsys.readouterr().out == "4 [<string>:7]\n"
 
 
 def test_handle_print_undefined_symbol(shell, capsys):
@@ -807,7 +807,7 @@ def test_handle_print_case_sensitive_symbol(shell, capsys):
 
     shell.handle_command("print ADD")
 
-    assert capsys.readouterr().out == "ADD = 0x000a = 10\n"
+    assert capsys.readouterr().out == "10\n"
 
 
 def test_handle_print_with_too_few_args(shell, capsys):

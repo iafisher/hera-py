@@ -131,15 +131,51 @@ class MiniParser:
 
 
 SeqNode = namedtuple("SeqNode", ["fmt", "seq"])
-MemoryNode = namedtuple("MemoryNode", ["address"])
-RegisterNode = namedtuple("RegisterNode", ["value"])
-IntNode = namedtuple("IntNode", ["value"])
-SymbolNode = namedtuple("SymbolNode", ["value"])
-MinusNode = namedtuple("MinusNode", ["arg"])
-AddNode = namedtuple("AddNode", ["left", "right"])
-SubNode = namedtuple("SubNode", ["left", "right"])
-MulNode = namedtuple("MulNode", ["left", "right"])
-DivNode = namedtuple("DivNode", ["left", "right"])
+
+
+class MemoryNode(namedtuple("MemoryNode", ["address"])):
+    def __str__(self):
+        return "@[{}]".format(self.address)
+
+
+class RegisterNode(namedtuple("RegisterNode", ["value"])):
+    def __str__(self):
+        return self.value
+
+
+class IntNode(namedtuple("IntNode", ["value"])):
+    def __str__(self):
+        return str(self.value)
+
+
+class SymbolNode(namedtuple("SymbolNode", ["value"])):
+    def __str__(self):
+        return str(self.value)
+
+
+class MinusNode(namedtuple("MinusNode", ["arg"])):
+    def __str__(self):
+        return "-({})".format(self.arg)
+
+
+class AddNode(namedtuple("AddNode", ["left", "right"])):
+    def __str__(self):
+        return "({}) + ({})".format(self.left, self.right)
+
+
+class SubNode(namedtuple("SubNode", ["left", "right"])):
+    def __str__(self):
+        return "({}) - ({})".format(self.left, self.right)
+
+
+class MulNode(namedtuple("MulNode", ["left", "right"])):
+    def __str__(self):
+        return "({}) * ({})".format(self.left, self.right)
+
+
+class DivNode(namedtuple("DivNode", ["left", "right"])):
+    def __str__(self):
+        return "({}) / ({})".format(self.left, self.right)
 
 
 class MiniLexer:
