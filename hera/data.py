@@ -32,7 +32,16 @@ class Settings:
         self.volume = volume
 
 
-Location = namedtuple("Location", ["line", "column", "path", "file_lines"])
+class Location(namedtuple("Location", ["line", "column", "path", "file_lines"])):
+    def __repr__(self):
+        if self.file_lines:
+            return "Location(line={}, column={}, path={!r}, file_lines=[...])".format(
+                self.line, self.column, self.path
+            )
+        else:
+            return "Location(line={}, column={}, path={!r}, file_lines=[])".format(
+                self.line, self.column, self.path
+            )
 
 
 class Op(namedtuple("Op", ["name", "args", "original"])):
@@ -69,6 +78,11 @@ class Token(str):
         self.type = type_
         self.location = loc
         return self
+
+    def __repr__(self):
+        return "Token({}, {}, loc={})".format(
+            self.type, super().__repr__(), self.location
+        )
 
 
 class Messages:

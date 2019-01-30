@@ -4,7 +4,7 @@ from hera.debugger.miniparser import (
     InfixNode,
     IntNode,
     MemoryNode,
-    MiniLexer,
+    Lexer,
     MiniParser,
     PrefixNode,
     RegisterNode,
@@ -14,7 +14,7 @@ from hera.debugger.miniparser import (
 
 
 def parse_helper(text, keep_seq=False):
-    tree = MiniParser(MiniLexer(text)).parse()
+    tree = MiniParser(Lexer(text)).parse()
     if not keep_seq and isinstance(tree, SeqNode):
         assert len(tree.seq) == 1
         return tree.seq[0]

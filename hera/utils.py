@@ -168,7 +168,7 @@ def pad(s, n):
     return (" " * (n - len(s))) + s
 
 
-def handle_messages(state, ret_messages_pair):
+def handle_messages(settings, ret_messages_pair):
     if (
         isinstance(ret_messages_pair, tuple)
         and len(ret_messages_pair) == 2
@@ -180,17 +180,17 @@ def handle_messages(state, ret_messages_pair):
         messages = ret_messages_pair
 
     for msg, loc in messages.warnings:
-        if state.color:
+        if settings.color:
             msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
         else:
             msg = "Warning: " + msg
         print_message_with_location(msg, loc=loc)
 
-    state.warning_count += len(messages.warnings)
+    settings.warning_count += len(messages.warnings)
     messages.warnings.clear()
 
     for msg, loc in messages.errors:
-        if state.color:
+        if settings.color:
             msg = ANSI_RED_BOLD + "Error" + ANSI_RESET + ": " + msg
         else:
             msg = "Error: " + msg

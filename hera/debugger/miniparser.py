@@ -5,14 +5,14 @@ Version: January 2019
 """
 from collections import namedtuple
 
-from ..lexer import MiniLexer, Token
+from ..lexer import Lexer, TOKEN
 
 
 def parse(line):
     """Return a parse tree for the line of code. Raise a SyntaxError if it is not
     well-formatted.
     """
-    return MiniParser(MiniLexer(line)).parse()
+    return MiniParser(Lexer(line)).parse()
 
 
 class MiniParser:
@@ -39,9 +39,8 @@ class MiniParser:
         self.lexer = lexer
 
     def parse(self):
-        self.lexer.next_token()
         tree = self.match_exprlist()
-        if self.lexer.tkn[0] == Token.EOF:
+        if self.lexer.tkn.type == TOKEN.EOF:
             return tree
         else:
             raise SyntaxError("trailing input")
@@ -50,8 +49,8 @@ class MiniParser:
         """Match a sequence of comma-separated expressions."""
         seq = []
 
-        if self.lexer.tkn[0] == Token.FMT:
-            fmt = self.lexer.tkn[1]
+        if self.lexer.tkn.type == TOKEN.FMT:
+            fmt = self.lexer.tkn
             self.lexer.next_token()
         else:
             fmt = ""
@@ -59,7 +58,7 @@ class MiniParser:
         while True:
             expr = self.match_expr(PREC_LOWEST)
             seq.append(expr)
-            if self.lexer.tkn[0] == Token.COMMA:
+            if self.lexer.tkn.type == TOKEN.COMMA:
                 self.lexer.next_token()
             else:
                 break
@@ -69,51 +68,51 @@ class MiniParser:
     def match_expr(self, precedence):
         """Parse the expression with the given precedence."""
         tkn = self.lexer.tkn
-        if tkn[0] == Token.AT:
+        if tkn.type == TOKEN.AT:
             self.lexer.next_token()
             address = self.match_expr(PREC_PREFIX)
             left = MemoryNode(address)
-        elif tkn[0] == Token.INT:
+        elif tkn.type == TOKEN.INT:
             try:
-                left = IntNode(int(tkn[1], base=0))
+                left = IntNode(int(tkn, base=0))
             except ValueError:
-                raise SyntaxError("invalid integer literal: {}".format(tkn[1]))
+                raise SyntaxError("invalid integer literal: {}".format(tkn))
             else:
                 self.lexer.next_token()
-        elif tkn[0] == Token.MINUS:
+        elif tkn.type == TOKEN.MINUS:
             self.lexer.next_token()
             left = PrefixNode("-", self.match_expr(PREC_PREFIX))
-        elif tkn[0] == Token.REGISTER:
-            left = RegisterNode(tkn[1])
+        elif tkn.type == TOKEN.REGISTER:
+            left = RegisterNode(tkn)
             self.lexer.next_token()
-        elif tkn[0] == Token.SYMBOL:
-            left = SymbolNode(tkn[1])
+        elif tkn.type == TOKEN.SYMBOL:
+            left = SymbolNode(tkn)
             self.lexer.next_token()
-        elif tkn[0] == Token.LPAREN:
+        elif tkn.type == TOKEN.LPAREN:
             self.lexer.next_token()
             left = self.match_expr(PREC_LOWEST)
-            if self.lexer.tkn[0] != Token.RPAREN:
+            if self.lexer.tkn.type != TOKEN.RPAREN:
                 self.unexpected(self.lexer.tkn)
             self.lexer.next_token()
         else:
             self.unexpected(tkn)
 
         infix_tkn = self.lexer.tkn
-        while infix_tkn[0] in PREC_MAP and precedence < PREC_MAP[infix_tkn[0]]:
-            infix_precedence = PREC_MAP[infix_tkn[0]]
+        while infix_tkn.type in PREC_MAP and precedence < PREC_MAP[infix_tkn.type]:
+            infix_precedence = PREC_MAP[infix_tkn.type]
             self.lexer.next_token()
             right = self.match_expr(infix_precedence)
-            left = InfixNode(infix_tkn[1], left, right)
+            left = InfixNode(infix_tkn, left, right)
             infix_tkn = self.lexer.tkn
         return left
 
     def unexpected(self, tkn):
-        if tkn[0] == Token.EOF:
+        if tkn.type == TOKEN.EOF:
             raise SyntaxError("premature end of input")
-        elif tkn[0] == Token.UNKNOWN:
-            raise SyntaxError("unrecognized input `{}`".format(tkn[1]))
+        elif tkn.type == TOKEN.UNKNOWN:
+            raise SyntaxError("unrecognized input `{}`".format(tkn))
         else:
-            raise SyntaxError("did not expect `{}` in this position".format(tkn[1]))
+            raise SyntaxError("did not expect `{}` in this position".format(tkn))
 
 
 class SeqNode(namedtuple("SeqNode", ["fmt", "seq"])):
@@ -164,6 +163,6 @@ def wrap(node):
 
 
 # Operator precedence
-PREC_MAP = {Token.PLUS: 1, Token.MINUS: 1, Token.SLASH: 2, Token.ASTERISK: 2}
+PREC_MAP = {TOKEN.PLUS: 1, TOKEN.MINUS: 1, TOKEN.SLASH: 2, TOKEN.ASTERISK: 2}
 PREC_LOWEST = 0
 PREC_PREFIX = 3
