@@ -13,7 +13,7 @@ from .miniparser import (
 )
 from hera.data import DataLabel, HERAError, Label, Program, Settings
 from hera.loader import load_program
-from hera.parser_bespoke import parse
+from hera.parser import parse
 from hera.utils import BRANCHES, DATA_STATEMENTS, format_int, pad, register_to_index
 
 

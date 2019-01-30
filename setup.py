@@ -27,7 +27,6 @@ setup(
     packages=find_packages(exclude=['tests']),
     install_requires=[
         'docopt==0.6.2',
-        'lark-parser==0.6.5',
     ],
     project_urls={
         'Source': 'https://github.com/iafisher/hera-py',

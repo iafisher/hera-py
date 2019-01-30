@@ -9,7 +9,7 @@ from typing import Dict, List, Tuple
 
 from .checker import check
 from .data import HERAError, Messages, Op, Settings
-from .parser_bespoke import parse
+from .parser import parse
 from .utils import handle_messages, read_file
 
 

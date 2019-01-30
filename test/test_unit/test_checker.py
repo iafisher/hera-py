@@ -9,7 +9,7 @@ from hera.checker import (
 )
 from hera.data import Op, Settings, Token, TOKEN
 from hera.op import ADD, BRR, CALL, INC, INTEGER, resolve_ops, SET, SETHI, SETLO
-from hera.parser_bespoke import parse
+from hera.parser import parse
 
 
 def R(s):

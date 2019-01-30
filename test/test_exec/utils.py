@@ -1,6 +1,6 @@
 from hera.checker import check
 from hera.data import Settings
-from hera.parser_bespoke import parse
+from hera.parser import parse
 
 
 def helper(vm, opstr):
