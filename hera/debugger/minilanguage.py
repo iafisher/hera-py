@@ -114,12 +114,18 @@ class MiniParser:
             raise SyntaxError("did not expect `{}` in this position".format(tkn[1]))
 
 
-SeqNode = namedtuple("SeqNode", ["fmt", "seq"])
+class SeqNode(namedtuple("SeqNode", ["fmt", "seq"])):
+    def __str__(self):
+        seqstr = ", ".join(map(str, self.seq))
+        if self.fmt:
+            return ":{} {}".format(self.fmt, seqstr)
+        else:
+            return seqstr
 
 
 class MemoryNode(namedtuple("MemoryNode", ["address"])):
     def __str__(self):
-        return "@[{}]".format(self.address)
+        return "@{}".format(wrap(self.address))
 
 
 class RegisterNode(namedtuple("RegisterNode", ["value"])):
@@ -139,12 +145,20 @@ class SymbolNode(namedtuple("SymbolNode", ["value"])):
 
 class PrefixNode(namedtuple("PrefixNode", ["op", "arg"])):
     def __str__(self):
-        return "{}({})".format(self.op, self.arg)
+        return "{}{}".format(self.op, wrap(self.arg))
 
 
 class InfixNode(namedtuple("InfixNode", ["op", "left", "right"])):
     def __str__(self):
-        return "({}) {} ({})".format(self.left, self.op, self.right)
+        return "{} {} {}".format(wrap(self.left), self.op, wrap(self.right))
+
+
+def wrap(node):
+    """Stringify the node and wrap it in parentheses if necessary."""
+    if isinstance(node, InfixNode):
+        return "(" + str(node) + ")"
+    else:
+        return str(node)
 
 
 class MiniLexer:

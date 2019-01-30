@@ -83,6 +83,7 @@ def test_lex_mini_language_with_symbols_starting_with_M():
 
 def test_parse_memory_expression():
     tree = parse_helper("@@rt")
+    assert str(tree) == "@@rt"
 
     assert isinstance(tree, MemoryNode)
     assert isinstance(tree.address, MemoryNode)
@@ -92,6 +93,7 @@ def test_parse_memory_expression():
 
 def test_parse_memory_expression_with_integer():
     tree = parse_helper("@-0o12")
+    assert str(tree) == "@-10"
 
     assert isinstance(tree, MemoryNode)
     assert isinstance(tree.address, PrefixNode)
@@ -102,6 +104,7 @@ def test_parse_memory_expression_with_integer():
 
 def test_parse_memory_expression_with_symbol():
     tree = parse_helper("@add")
+    assert str(tree) == "@add"
 
     assert isinstance(tree, MemoryNode)
     assert isinstance(tree.address, SymbolNode)
@@ -110,6 +113,7 @@ def test_parse_memory_expression_with_symbol():
 
 def test_parse_simple_arithmetic():
     tree = parse_helper("1 + 2 * 3")
+    assert str(tree) == "1 + (2 * 3)"
 
     assert isinstance(tree, InfixNode)
     assert tree.op == "+"
@@ -127,6 +131,7 @@ def test_parse_simple_arithmetic():
 
 def test_parse_grouped_arithmetic():
     tree = parse_helper("(1 + 2) * (3 + 4)")
+    assert str(tree) == "(1 + 2) * (3 + 4)"
 
     assert isinstance(tree, InfixNode)
     assert tree.op == "*"
@@ -148,6 +153,7 @@ def test_parse_grouped_arithmetic():
 
 def test_parse_complicated_arithmetic():
     tree = parse_helper("@((1+2) /-0o123) + @@5 - r1")
+    assert str(tree) == "(@((1 + 2) / -83) + @@5) - r1"
 
     assert isinstance(tree, InfixNode)
     assert tree.op == "-"
@@ -174,6 +180,7 @@ def test_parse_complicated_arithmetic():
 
 def test_parse_tricky_precedence():
     tree = parse_helper("1*2+3")
+    assert str(tree) == "(1 * 2) + 3"
 
     assert isinstance(tree, InfixNode)
     assert tree.op == "+"
@@ -191,6 +198,7 @@ def test_parse_tricky_precedence():
 
 def test_parse_expression_with_format_spec():
     tree = parse_helper(":y R1", keep_seq=True)
+    assert str(tree) == ":y R1"
 
     assert isinstance(tree, SeqNode)
     assert tree.fmt == "y"
@@ -202,6 +210,7 @@ def test_parse_expression_with_format_spec():
 
 def test_parse_sequence_of_expressions():
     tree = parse_helper("r1, @r2, 1 + 3", keep_seq=True)
+    assert str(tree) == "r1, @r2, 1 + 3"
 
     assert isinstance(tree, SeqNode)
     assert tree.fmt == ""
@@ -224,6 +233,7 @@ def test_parse_sequence_of_expressions():
 
 def test_parse_sequence_of_expressions_with_format_spec():
     tree = parse_helper(":xdc fp, sp", keep_seq=True)
+    assert str(tree) == ":xdc fp, sp"
 
     assert isinstance(tree, SeqNode)
     assert tree.fmt == "xdc"
