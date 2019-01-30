@@ -1,5 +1,0 @@
-#include "lib/add.hera"
-
-SET(R1, 20)
-SET(R2, 22)
-CALL(R12, add)

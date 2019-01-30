@@ -3,7 +3,6 @@ import pytest
 
 from hera.data import HERAError, Op
 from hera.parser import parse, replace_escapes
-from hera.utils import read_file
 
 
 def helper(text, *, warnings=False, **kwargs):
@@ -172,6 +171,13 @@ def test_parse_include_hera_dot_h_gives_warning():
     assert messages.warnings[0][1] is not None
 
 
+def test_parse_multiple_includes():
+    program, messages = parse("#include <HERA.h>\n#include <HERA.h>")
+
+    assert len(messages.errors) == 0
+    assert len(program) == 0
+
+
 def test_parse_another_single_line_comments():
     text = """\
 // Single-line comment
@@ -232,8 +238,7 @@ def test_parse_error_has_line_number():
 
 
 def test_parse_expands_include():
-    path = "test/assets/include/simple.hera"
-    program = helper(read_file(path), path=path)
+    program = helper('#include "test/assets/include/lib/add.hera"')
 
     assert program == [
         Op("BR", ["end_of_add"]),
@@ -241,9 +246,6 @@ def test_parse_expands_include():
         Op("ADD", ["R3", "R1", "R2"]),
         Op("RETURN", ["R12", "R13"]),
         Op("LABEL", ["end_of_add"]),
-        Op("SET", ["R1", 20]),
-        Op("SET", ["R2", 22]),
-        Op("CALL", ["R12", "add"]),
     ]
 
 

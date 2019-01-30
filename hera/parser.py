@@ -58,6 +58,9 @@ def parse(text: str, *, path=None, visited=None) -> Tuple[List[Op], Messages]:
         loc = base_location._replace(line=e.line, column=e.column)
         return ([], Messages("invalid syntax", base_location))
 
+    if isinstance(ops, Op):
+        ops = [ops]
+
     conversion_messages = convert_tokens(ops, base_location)
     # Don't need to check errors immediately, as none of them could be fatal.
     messages.extend(conversion_messages)
