@@ -1,5 +1,3 @@
-import pytest
-
 from .utils import execute_program_helper
 
 
@@ -70,7 +68,6 @@ Virtual machine state after execution:
     )
 
 
-@pytest.mark.skip("not ready")
 def test_warning_for_zero_prefixed_octal(capsys):
     execute_program_helper("SET(R1, 016)\nSET(R2, 017)")
 
@@ -97,6 +94,54 @@ Virtual machine state after execution:
     All flags are OFF
 
 2 warnings emitted.
+"""
+    )
+
+
+def test_warning_for_invalid_backslash_escape_in_character(capsys):
+    execute_program_helper("SET(R1, '\\u')")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Warning: unrecognized backslash escape, line 1 col 11 of <stdin>
+
+  SET(R1, '\\u')
+            ^
+
+
+Virtual machine state after execution:
+    R1  = 0x0075 = 117 = 'u'
+
+    All flags are OFF
+
+1 warning emitted.
+"""
+    )
+
+
+def test_warning_for_invalid_backslash_escape_in_string(capsys):
+    execute_program_helper('LP_STRING("bad: \\o")')
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Warning: unrecognized backslash escape, line 1 col 18 of <stdin>
+
+  LP_STRING("bad: \\o")
+                   ^
+
+
+Virtual machine state after execution:
+    R1 through R10 are all zero.
+
+    All flags are OFF
+
+1 warning emitted.
 """
     )
 

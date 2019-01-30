@@ -1,4 +1,4 @@
-from hera.data import Location, Token, TOKEN
+from hera.data import Location, Messages, Token, TOKEN
 from hera.utils import is_register
 
 
@@ -12,6 +12,7 @@ class Lexer:
         self.line = 1
         self.column = 1
         self.path = path or "<string>"
+        self.messages = Messages()
         # Set the current token.
         self.next_token()
 
@@ -50,6 +51,7 @@ class Lexer:
                         self.next_char()  # end quote
                         if len(escape) == 2:
                             self.tkn = Token(TOKEN.CHAR, escape[1], loc)
+                            self.warn("unrecognized backslash escape", loc)
                         else:
                             self.tkn = Token(TOKEN.CHAR, escape, loc)
                 else:
@@ -143,6 +145,8 @@ class Lexer:
                 escape = escape_char(self.text[self.position + 1])
                 sbuilder.append(escape)
                 self.next_char()
+                if len(escape) == 2:
+                    self.warn("unrecognized backslash escape", self.get_location())
                 self.next_char()
             else:
                 sbuilder.append(self.text[self.position])
@@ -199,6 +203,12 @@ class Lexer:
         for _ in range(length):
             self.next_char()
         self.tkn = Token(typ, value, loc)
+
+    def err(self, msg, loc):
+        self.messages.err(msg, loc)
+
+    def warn(self, msg, loc):
+        self.messages.warn(msg, loc)
 
 
 def escape_char(c):

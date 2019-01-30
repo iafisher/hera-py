@@ -50,7 +50,7 @@ class Parser:
                 name = lexer.tkn
                 lexer.next_token()
                 # Many legacy HERA program are enclosed with void HERA_main() { ... },
-                # which we have to handle unfortunately.
+                # which is handled here.
                 if lexer.tkn.type == TOKEN.SYMBOL and name == "void":
                     if lexer.next_token().type != TOKEN.LPAREN:
                         self.err(lexer.tkn, "expected left parenthesis")
@@ -66,7 +66,7 @@ class Parser:
                     continue
                 elif lexer.tkn.type == TOKEN.LPAREN:
                     ops.append(self.match_op(lexer, name))
-                    # Ops may optionally be separated by semicolons.
+                    # Operations may optionally be separated by semicolons.
                     if lexer.tkn.type == TOKEN.SEMICOLON:
                         lexer.next_token()
                 else:
@@ -77,6 +77,9 @@ class Parser:
             else:
                 self.err(lexer.tkn, "expected HERA operation or #include")
                 break
+
+        # Make sure to capture any errors or warnings from the lexer.
+        self.messages.extend(lexer.messages)
         return ops
 
     def match_op(self, lexer, name):
@@ -98,10 +101,20 @@ class Parser:
         args = []
         while lexer.tkn.type != TOKEN.RPAREN:
             if lexer.tkn.type == TOKEN.INT:
+                if (
+                    len(lexer.tkn) >= 2
+                    and lexer.tkn[0] == "0"
+                    and lexer.tkn[1].isdigit()
+                ):
+                    base = 8
+                    self.warn(lexer.tkn, 'consider using "0o" prefix for octal numbers')
+                else:
+                    base = 0
                 try:
-                    args.append(IntToken(lexer.tkn, loc=lexer.tkn.location, base=0))
+                    args.append(IntToken(lexer.tkn, loc=lexer.tkn.location, base=base))
                 except ValueError:
                     self.err(lexer.tkn, "invalid integer literal")
+                    lexer.next_token()
                     break
             elif lexer.tkn.type == TOKEN.CHAR:
                 args.append(ord(lexer.tkn))
