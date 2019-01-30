@@ -46,10 +46,65 @@ def test_lexer_with_big_example():
     assert lexer.next_token() == Token(TOKEN.EOF, "")
 
 
-def test_lex_mini_language_with_symbols_starting_with_M():
+def test_lexer_with_symbols_starting_with_M():
     lexer = lex_helper("more m")
 
     assert lexer.tkn == Token(TOKEN.SYMBOL, "more")
     assert lexer.next_token() == Token(TOKEN.SYMBOL, "m")
     assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_single_line_comment():
+    lexer = lex_helper("1 // a comment\n 2")
+
+    assert lexer.tkn == Token(TOKEN.INT, "1")
+    assert lexer.next_token() == Token(TOKEN.INT, "2")
     assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_empty_single_line_comment():
+    lexer = lex_helper("//")
+
+    assert lexer.tkn == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_multiple_single_line_comments():
+    lexer = lex_helper(
+        """\
+1 // one
+2 // two
+// no three
+4 // four"""
+    )
+
+    assert lexer.tkn == Token(TOKEN.INT, "1")
+    assert lexer.next_token() == Token(TOKEN.INT, "2")
+    assert lexer.next_token() == Token(TOKEN.INT, "4")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_multiline_comment():
+    lexer = lex_helper(
+        """\
+1 /*
+a multiline comment
+*/ 2"""
+    )
+
+    assert lexer.tkn == Token(TOKEN.INT, "1")
+    assert lexer.next_token() == Token(TOKEN.INT, "2")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_multiline_comment_abutting_value():
+    lexer = lex_helper("1/*\n\n*/2")
+
+    assert lexer.tkn == Token(TOKEN.INT, "1")
+    assert lexer.next_token() == Token(TOKEN.INT, "2")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_tricky_multiline_comment():
+    lexer = lex_helper("/*/*** 123/ */")
+
+    assert lexer.tkn == Token(TOKEN.EOF, "")

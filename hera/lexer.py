@@ -112,8 +112,34 @@ class Lexer:
         return length
 
     def skip(self):
-        while self.position < len(self.text) and self.text[self.position].isspace():
-            self.next_char()
+        """Skip past whitespace and comments."""
+        while True:
+            # Skip whitespace.
+            while self.position < len(self.text) and self.text[self.position].isspace():
+                self.next_char()
+
+            # Skip comments.
+            if self.position < len(self.text) and self.text[self.position] == "/":
+                if self.peek_char() == "/":
+                    while self.position < len(self.text):
+                        if self.text[self.position] == "\n":
+                            break
+                        self.next_char()
+                elif self.peek_char() == "*":
+                    # Move past the "/*" at the start of the comment.
+                    self.next_char()
+                    self.next_char()
+                    while self.position < len(self.text):
+                        if self.text[self.position] == "*" and self.peek_char() == "/":
+                            break
+                        self.next_char()
+                    # Skip the "*/" at the end of the comment.
+                    self.next_char()
+                    self.next_char()
+                else:
+                    break
+            else:
+                break
 
     def next_char(self):
         if self.text[self.position] == "\n":
@@ -129,10 +155,11 @@ class Lexer:
         )
 
     def set_token(self, typ, *, length=1):
+        loc = self.get_location()
         value = self.text[self.position : self.position + length]
         for _ in range(length):
             self.next_char()
-        self.tkn = Token(typ, value, self.get_location())
+        self.tkn = Token(typ, value, loc)
 
 
 class TOKEN(Enum):

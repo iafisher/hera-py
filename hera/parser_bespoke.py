@@ -9,9 +9,9 @@ arglist := (value COMMA)* value
 import os.path
 from typing import List, Tuple
 
-from hera.data import HERAError, Messages, Op
+from hera.data import HERAError, IntToken, Messages, Op
 from hera.lexer import Lexer, TOKEN
-from hera.utils import get_canonical_path, read_file
+from hera.utils import read_file
 
 
 def parse(text: str, *, path=None) -> Tuple[List[Op], Messages]:
@@ -74,7 +74,11 @@ class Parser:
         args = []
         while lexer.tkn.type != TOKEN.RPAREN:
             if lexer.tkn.type == TOKEN.INT:
-                args.append(int(lexer.tkn, base=0))
+                try:
+                    args.append(IntToken(lexer.tkn, loc=lexer.tkn.location, base=0))
+                except ValueError:
+                    self.err(lexer, "invalid integer literal")
+                    break
             elif lexer.tkn.type in self.VALUE_TOKENS:
                 args.append(lexer.tkn)
             else:
@@ -119,3 +123,10 @@ class Parser:
 
     def err(self, lexer, msg):
         self.messages.err(msg, lexer.get_location())
+
+
+def get_canonical_path(fpath):
+    if fpath == "-" or fpath == "<string>":
+        return fpath
+    else:
+        return os.path.realpath(fpath)
