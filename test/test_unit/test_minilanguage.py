@@ -263,7 +263,7 @@ def test_parse_with_unclosed_parenthesis():
 
 def test_parse_with_unrecognized_character():
     with pytest.raises(SyntaxError):
-        parse_helper("1 ? 2")
+        parse_helper("?1")
 
 
 def test_parse_with_unexpected_token():

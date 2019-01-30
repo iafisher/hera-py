@@ -461,7 +461,7 @@ def test_typecheck_single_error():
 
 
 def test_typecheck_multiple_errors():
-    program = [ADD(R("R1"), 10), INC(R("R3"))]
+    program = [ADD(R("R1"), 10), INC(R("R3"), 1, 2)]
     symbol_table, messages = typecheck(program)
 
     assert len(messages.errors) == 3
@@ -472,7 +472,7 @@ def test_typecheck_multiple_errors():
     assert "expected register" in messages.errors[1][0]
 
     assert "INC" in messages.errors[2][0]
-    assert "too few" in messages.errors[2][0]
+    assert "too many" in messages.errors[2][0]
 
 
 def test_operation_length_of_register_branch_with_label():

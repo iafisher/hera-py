@@ -136,19 +136,10 @@ def print_message_with_location(msg, *, loc=None):
         loc = loc.location
 
     if isinstance(loc, Location):
-        if loc.path == "-":
-            loc = loc._replace(path="<stdin>")
-
-        if loc.line is not None:
-            if loc.column is not None:
-                caret = align_caret(loc.file_lines[loc.line - 1], loc.column) + "^"
-                msg += ", line {} col {} of {}\n\n  {}\n  {}\n".format(
-                    loc.line, loc.column, loc.path, loc.file_lines[loc.line - 1], caret
-                )
-            else:
-                msg += ", line {} of {}\n\n  {}\n".format(
-                    loc.line, loc.path, loc.file_lines[loc.line - 1]
-                )
+        caret = align_caret(loc.file_lines[loc.line - 1], loc.column) + "^"
+        msg += ", line {} col {} of {}\n\n  {}\n  {}\n".format(
+            loc.line, loc.column, loc.path, loc.file_lines[loc.line - 1], caret
+        )
 
     sys.stderr.write(msg + "\n")
 

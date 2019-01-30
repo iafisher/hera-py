@@ -354,3 +354,72 @@ SET(R2, s2)
     for i in range(5):
         assert vm.access_memory(s1_addr + i + 1) == ord("hello"[i])
         assert vm.access_memory(s2_addr + i + 1) == ord("world"[i])
+
+
+def test_some_neglected_flag_ops():
+    program = """\
+CMP(R0, R0)
+BLER(after_bler)
+SET(R1, 666)
+LABEL(after_bler)
+
+SET(Rt, 1)
+CMP(Rt, R0)
+BGR(after_bgr)
+SET(R2, 666)
+LABEL(after_bgr)
+
+CMP(R0, R0)
+BULER(after_buler)
+SET(R3, 666)
+LABEL(after_buler)
+
+SET(Rt, 1)
+CMP(Rt, R0)
+BUGR(after_bugr)
+SET(R4, 666)
+LABEL(after_bugr)
+
+SET(Rt, 1)
+FLAGS(Rt)
+BNZR(after_bnzr)
+SET(R5, 666)
+LABEL(after_bnzr)
+
+FLAGS(R0)
+BNS(after_bns)
+SET(R6, 666)
+LABEL(after_bns)
+
+FLAGS(R0)
+BNSR(after_bnsr)
+SET(R7, 666)
+LABEL(after_bnsr)
+
+FON(0b100)
+BVR(after_bvr)
+SET(R8, 666)
+LABEL(after_bvr)
+
+FOFF(0b100)
+BNV(after_bnv)
+SET(R9, 666)
+LABEL(after_bnv)
+
+FOFF(0b100)
+BNVR(after_bnvr)
+SET(R10, 666)
+LABEL(after_bnvr)
+    """
+    vm = execute_program_helper(program)
+
+    assert vm.registers[1] == 0
+    assert vm.registers[2] == 0
+    assert vm.registers[3] == 0
+    assert vm.registers[4] == 0
+    assert vm.registers[5] == 0
+    assert vm.registers[6] == 0
+    assert vm.registers[7] == 0
+    assert vm.registers[8] == 0
+    assert vm.registers[9] == 0
+    assert vm.registers[10] == 0
