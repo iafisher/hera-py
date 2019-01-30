@@ -1,9 +1,9 @@
 import functools
 from typing import List
 
-from . import minilanguage
+from . import miniparser
 from .debugger import Debugger
-from .minilanguage import (
+from .miniparser import (
     InfixNode,
     IntNode,
     MemoryNode,
@@ -119,8 +119,8 @@ class Shell:
             return
 
         try:
-            ltree = minilanguage.parse(args[0])
-            rtree = minilanguage.parse(args[1])
+            ltree = miniparser.parse(args[0])
+            rtree = miniparser.parse(args[1])
         except SyntaxError as e:
             msg = str(e)
             if msg:
@@ -360,7 +360,7 @@ class Shell:
             return
 
         try:
-            tree = minilanguage.parse(argstr)
+            tree = miniparser.parse(argstr)
         except SyntaxError as e:
             msg = str(e)
             if msg:

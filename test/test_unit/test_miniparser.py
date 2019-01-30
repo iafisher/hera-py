@@ -1,6 +1,6 @@
 import pytest
 
-from hera.debugger.minilanguage import (
+from hera.debugger.miniparser import (
     InfixNode,
     IntNode,
     MemoryNode,
@@ -10,25 +10,7 @@ from hera.debugger.minilanguage import (
     RegisterNode,
     SeqNode,
     SymbolNode,
-    TOKEN_ASTERISK,
-    TOKEN_AT,
-    TOKEN_COMMA,
-    TOKEN_EOF,
-    TOKEN_FMT,
-    TOKEN_INT,
-    TOKEN_LPAREN,
-    TOKEN_MINUS,
-    TOKEN_PLUS,
-    TOKEN_REGISTER,
-    TOKEN_RPAREN,
-    TOKEN_SLASH,
-    TOKEN_SYMBOL,
-    TOKEN_UNKNOWN,
 )
-
-
-def lex_helper(text):
-    return MiniLexer(text)
 
 
 def parse_helper(text, keep_seq=False):
@@ -38,47 +20,6 @@ def parse_helper(text, keep_seq=False):
         return tree.seq[0]
     else:
         return tree
-
-
-def test_lex_mini_language_with_small_example():
-    lexer = lex_helper("r1")
-
-    assert lexer.next_token() == (TOKEN_REGISTER, "r1")
-    assert lexer.next_token() == (TOKEN_EOF, "")
-    assert lexer.next_token() == (TOKEN_EOF, "")
-
-
-def test_lex_mini_language_with_big_example():
-    # This isn't a syntactically valid expression, but it doesn't matter to the lexer.
-    lexer = lex_helper("@FP_alt R15 0xabc some_symbol :xdc -10 ,, ()+*/?")
-
-    assert lexer.next_token() == (TOKEN_AT, "@")
-    assert lexer.next_token() == (TOKEN_REGISTER, "FP_alt")
-    assert lexer.next_token() == (TOKEN_REGISTER, "R15")
-    assert lexer.next_token() == (TOKEN_INT, "0xabc")
-    assert lexer.next_token() == (TOKEN_SYMBOL, "some_symbol")
-    assert lexer.next_token() == (TOKEN_FMT, "xdc")
-    assert lexer.next_token() == (TOKEN_MINUS, "-")
-    assert lexer.next_token() == (TOKEN_INT, "10")
-    assert lexer.next_token() == (TOKEN_COMMA, ",")
-    assert lexer.next_token() == (TOKEN_COMMA, ",")
-    assert lexer.next_token() == (TOKEN_LPAREN, "(")
-    assert lexer.next_token() == (TOKEN_RPAREN, ")")
-    assert lexer.next_token() == (TOKEN_PLUS, "+")
-    assert lexer.next_token() == (TOKEN_ASTERISK, "*")
-    assert lexer.next_token() == (TOKEN_SLASH, "/")
-    assert lexer.next_token() == (TOKEN_UNKNOWN, "?")
-    assert lexer.next_token() == (TOKEN_EOF, "")
-    assert lexer.next_token() == (TOKEN_EOF, "")
-
-
-def test_lex_mini_language_with_symbols_starting_with_M():
-    lexer = lex_helper("more m")
-
-    assert lexer.next_token() == (TOKEN_SYMBOL, "more")
-    assert lexer.next_token() == (TOKEN_SYMBOL, "m")
-    assert lexer.next_token() == (TOKEN_EOF, "")
-    assert lexer.next_token() == (TOKEN_EOF, "")
 
 
 def test_parse_memory_expression():
