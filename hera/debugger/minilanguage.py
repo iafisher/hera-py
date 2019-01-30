@@ -117,10 +117,6 @@ class MiniParser:
             else:
                 return left
 
-    def assert_tkn(self, tkn, typ):
-        if tkn[0] != typ:
-            self.raise_unexpected(tkn)
-
     def raise_unexpected(self, tkn):
         if tkn[0] == TOKEN_EOF:
             raise SyntaxError("premature end of input")

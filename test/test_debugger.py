@@ -1017,29 +1017,35 @@ def test_handle_step_abbreviated(shell):
         assert mock_handle_step.call_count == 1
 
 
-def test_handle_undo_after_next(shell):
+def test_handle_undo_after_next(shell, capsys):
     shell.handle_command("n")
+    capsys.readouterr()
     shell.handle_command("undo")
 
+    assert capsys.readouterr().out == "Undid next.\n"
     assert shell.debugger.vm.pc == 0
     assert shell.debugger.vm.registers[1] == 0
 
 
-def test_handle_undo_after_next_and_print(shell):
+def test_handle_undo_after_next_and_print(shell, capsys):
     shell.handle_command("n")
     shell.handle_command("p r1")
+    capsys.readouterr()
     shell.handle_command("undo")
 
+    assert capsys.readouterr().out == "Undid next.\n"
     assert shell.debugger.vm.pc == 0
     assert shell.debugger.vm.registers[1] == 0
 
 
-def test_handle_undo_after_break_and_continue(shell):
+def test_handle_undo_after_break_and_continue(shell, capsys):
     shell.handle_command("b add")
     shell.handle_command("continue")
+    capsys.readouterr()
     shell.handle_command("undo")
     shell.handle_command("undo")
 
+    assert capsys.readouterr().out == "Undid continue.\nUndid break.\n"
     assert shell.debugger.vm.pc == 0
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0
@@ -1067,6 +1073,7 @@ def test_handle_undo_twice(shell, capsys):
     shell.handle_command("undo")
     shell.handle_command("undo")
 
+    assert capsys.readouterr().out == "Undid next.\nUndid next.\n"
     assert shell.debugger.vm.pc == 0
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.registers[2] == 0

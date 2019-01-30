@@ -33,6 +33,7 @@ def mutates(f):
     @functools.wraps(f)
     def inner(self, *args, **kwargs):
         self.debugger.save()
+        self.command_history.append(f.__name__[len("handle_") :])
         return f(self, *args, **kwargs)
 
     return inner
@@ -42,6 +43,7 @@ class Shell:
     def __init__(self, debugger, settings=Settings()):
         self.debugger = debugger
         self.settings = settings
+        self.command_history = []
 
     def loop(self):
         if not self.debugger.program:
@@ -457,6 +459,8 @@ class Shell:
         if self.debugger.old is None:
             print("Nothing to undo.")
             return
+        else:
+            print("Undid {}.".format(self.command_history.pop()))
 
         self.debugger = self.debugger.old
 
