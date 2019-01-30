@@ -41,31 +41,51 @@ class Parser:
         if lexer.path:
             self.visited.add(get_canonical_path(lexer.path))
 
+        expecting_brace = False
         ops = []
         while lexer.tkn.type != TOKEN.EOF:
             if lexer.tkn.type == TOKEN.INCLUDE:
                 ops.extend(self.match_include(lexer))
             elif lexer.tkn.type == TOKEN.SYMBOL:
-                ops.append(self.match_op(lexer))
+                name = lexer.tkn
+                lexer.next_token()
+                # Many legacy HERA program are enclosed with void HERA_main() { ... },
+                # which we have to handle unfortunately.
+                if lexer.tkn.type == TOKEN.SYMBOL and name == "void":
+                    if lexer.next_token().type != TOKEN.LPAREN:
+                        self.err(lexer.tkn, "expected left parenthesis")
+
+                    if lexer.next_token().type != TOKEN.RPAREN:
+                        self.err(lexer.tkn, "expected right parenthesis")
+
+                    if lexer.next_token().type != TOKEN.LBRACE:
+                        self.err(lexer.tkn, "expected left curly brace")
+
+                    lexer.next_token()
+                    expecting_brace = True
+                    continue
+                elif lexer.tkn.type == TOKEN.LPAREN:
+                    ops.append(self.match_op(lexer, name))
+                    # Ops may optionally be separated by semicolons.
+                    if lexer.tkn.type == TOKEN.SEMICOLON:
+                        lexer.next_token()
+                else:
+                    self.err(lexer.tkn, "expected left parenthesis")
+            elif expecting_brace and lexer.tkn.type == TOKEN.RBRACE:
+                lexer.next_token()
+                expecting_brace = False
             else:
                 self.err(lexer.tkn, "expected HERA operation or #include")
                 break
         return ops
 
-    def match_op(self, lexer):
-        name = lexer.tkn
+    def match_op(self, lexer, name):
+        """Match an operation, assuming that lexer.tkn is on the right parenthesis."""
         lexer.next_token()
-
-        if lexer.tkn.type != TOKEN.LPAREN:
-            self.err(lexer.tkn, "expected left parenthesis")
-            return Op(name, [])
-        else:
-            lexer.next_token()
-
         args = self.match_optional_arglist(lexer)
 
         if lexer.tkn.type != TOKEN.RPAREN:
-            self.err(lexer.tkn, "expected left parenthesis")
+            self.err(lexer.tkn, "expected right parenthesis")
             return Op(name, args)
         else:
             lexer.next_token()

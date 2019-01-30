@@ -1,5 +1,5 @@
 from hera.op import ADD, BR, BRR, CALL, FOFF, FON, resolve_ops, SETHI, SETLO, SUB
-from hera.parser import parse
+from hera.parser_bespoke import parse
 
 
 def helper(argstr):

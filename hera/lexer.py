@@ -93,8 +93,14 @@ class Lexer:
                 self.set_token(TOKEN.LPAREN)
             elif ch == ")":
                 self.set_token(TOKEN.RPAREN)
+            elif ch == "{":
+                self.set_token(TOKEN.LBRACE)
+            elif ch == "}":
+                self.set_token(TOKEN.RBRACE)
             elif ch == ",":
                 self.set_token(TOKEN.COMMA)
+            elif ch == ";":
+                self.set_token(TOKEN.SEMICOLON)
             else:
                 self.set_token(TOKEN.UNKNOWN)
 

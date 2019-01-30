@@ -1012,7 +1012,7 @@ def resolve_ops(program: List[Op]) -> Tuple[List[Operation], Messages]:
     ret = []
     for op in program:
         try:
-            cls = name_to_class[op.name]
+            cls = name_to_class[str(op.name)]
         except KeyError:
             messages.err("unknown instruction `{}`".format(op.name), loc=op.name)
         else:

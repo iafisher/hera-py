@@ -1,3 +1,5 @@
+# TODO: The equality checks here don't check type because of the way that Token.__eq__
+# is defined.
 from hera.data import Token
 from hera.lexer import Lexer, TOKEN
 
@@ -80,9 +82,17 @@ def test_lexer_with_include():
     assert lexer.next_token() == Token(TOKEN.EOF, "")
 
 
+def test_lexer_with_braces():
+    lexer = lex_helper("{}")
+
+    assert lexer.tkn == Token(TOKEN.LBRACE, "{")
+    assert lexer.next_token() == Token(TOKEN.RBRACE, "}")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
 def test_lexer_with_big_example():
     # This isn't a syntactically valid expression, but it doesn't matter to the lexer.
-    lexer = lex_helper("@FP_alt R15 0xabc some_symbol :xdc -10 ,, ()+*/?")
+    lexer = lex_helper("@FP_alt R15 0xabc some_symbol :xdc -10; ,, ()+*/?")
 
     assert lexer.tkn == Token(TOKEN.AT, "@")
     assert lexer.next_token() == Token(TOKEN.REGISTER, "FP_alt")
@@ -91,6 +101,7 @@ def test_lexer_with_big_example():
     assert lexer.next_token() == Token(TOKEN.SYMBOL, "some_symbol")
     assert lexer.next_token() == Token(TOKEN.FMT, "xdc")
     assert lexer.next_token() == Token(TOKEN.INT, "-10")
+    assert lexer.next_token() == Token(TOKEN.SEMICOLON, ";")
     assert lexer.next_token() == Token(TOKEN.COMMA, ",")
     assert lexer.next_token() == Token(TOKEN.COMMA, ",")
     assert lexer.next_token() == Token(TOKEN.LPAREN, "(")

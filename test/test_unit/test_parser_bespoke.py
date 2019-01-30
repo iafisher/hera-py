@@ -100,3 +100,41 @@ def test_parse_single_line_comment_with_ops():
     assert len(program) == 2
     assert program[0].name == "SETLO"
     assert program[1].name == "SETHI"
+
+
+def test_parse_cpp_boilerplate():
+    program = valid(
+        """\
+#include <HERA.h>
+
+void HERA_main() {
+    SET(R1, 42)
+}
+    """,
+        warnings=True,
+    )
+
+    assert len(program) == 1
+    assert program[0].name == "SET"
+
+
+def test_parse_empty_cpp_boilerplate():
+    program = valid(
+        """\
+#include <HERA.h>
+
+void HERA_main() {
+}
+    """,
+        warnings=True,
+    )
+
+    assert len(program) == 0
+
+
+def test_parse_ops_with_semicolons():
+    program = valid("SET(R1, 1); SET(R2, 2)")
+
+    assert len(program) == 2
+    assert program[0].name == "SET"
+    assert program[1].name == "SET"
