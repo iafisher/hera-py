@@ -80,7 +80,7 @@ class MiniParser:
                 self.lexer.next_token()
         elif tkn[0] == TOKEN_MINUS:
             self.lexer.next_token()
-            left = MinusNode(self.match_expr(PREC_PREFIX))
+            left = PrefixNode("-", self.match_expr(PREC_PREFIX))
         elif tkn[0] == TOKEN_REGISTER:
             left = RegisterNode(tkn[1])
             self.lexer.next_token()
@@ -101,16 +101,7 @@ class MiniParser:
             infix_precedence = PREC_MAP[infix_tkn[0]]
             self.lexer.next_token()
             right = self.match_expr(infix_precedence)
-            if infix_tkn[0] == TOKEN_PLUS:
-                left = AddNode(left, right)
-            elif infix_tkn[0] == TOKEN_MINUS:
-                left = SubNode(left, right)
-            elif infix_tkn[0] == TOKEN_ASTERISK:
-                left = MulNode(left, right)
-            elif infix_tkn[0] == TOKEN_SLASH:
-                left = DivNode(left, right)
-            else:
-                raise RuntimeError("unhandled infix operator in parser")
+            left = InfixNode(infix_tkn[1], left, right)
             infix_tkn = self.lexer.tkn
         return left
 
@@ -146,29 +137,14 @@ class SymbolNode(namedtuple("SymbolNode", ["value"])):
         return str(self.value)
 
 
-class MinusNode(namedtuple("MinusNode", ["arg"])):
+class PrefixNode(namedtuple("PrefixNode", ["op", "arg"])):
     def __str__(self):
-        return "-({})".format(self.arg)
+        return "{}({})".format(self.op, self.arg)
 
 
-class AddNode(namedtuple("AddNode", ["left", "right"])):
+class InfixNode(namedtuple("InfixNode", ["op", "left", "right"])):
     def __str__(self):
-        return "({}) + ({})".format(self.left, self.right)
-
-
-class SubNode(namedtuple("SubNode", ["left", "right"])):
-    def __str__(self):
-        return "({}) - ({})".format(self.left, self.right)
-
-
-class MulNode(namedtuple("MulNode", ["left", "right"])):
-    def __str__(self):
-        return "({}) * ({})".format(self.left, self.right)
-
-
-class DivNode(namedtuple("DivNode", ["left", "right"])):
-    def __str__(self):
-        return "({}) / ({})".format(self.left, self.right)
+        return "({}) {} ({})".format(self.left, self.op, self.right)
 
 
 class MiniLexer:

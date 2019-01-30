@@ -4,14 +4,11 @@ from typing import List
 from . import minilanguage
 from .debugger import Debugger
 from .minilanguage import (
-    AddNode,
-    DivNode,
+    InfixNode,
     IntNode,
     MemoryNode,
-    MinusNode,
-    MulNode,
+    PrefixNode,
     RegisterNode,
-    SubNode,
     SymbolNode,
 )
 from hera.data import DataLabel, HERAError, Label, Program, Settings
@@ -156,7 +153,7 @@ class Shell:
                 vm.assign_memory(address, rhs)
             elif isinstance(ltree, SymbolNode):
                 print("Eval error: cannot assign to symbol.")
-            elif isinstance(ltree, (AddNode, SubNode, DivNode, MulNode, MinusNode)):
+            elif isinstance(ltree, (InfixNode, PrefixNode)):
                 print("Eval error: cannot assign to arithmetic expression.")
             else:
                 raise RuntimeError(
@@ -521,26 +518,37 @@ class Shell:
                 return self.debugger.symbol_table[node.value]
             except KeyError:
                 raise HERAError("{} is not defined".format(node.value))
-        elif isinstance(node, MinusNode):
-            return check_overflow(-self.evaluate_node(node.arg), "negation")
-        elif isinstance(node, AddNode):
+        elif isinstance(node, PrefixNode):
+            arg = self.evaluate_node(node.arg)
+            if node.op == "-":
+                result = -arg
+            else:
+                raise RuntimeError("unhandled prefix operator: " + node.op)
+
+            if overflow(result):
+                raise HERAError("overflow from unary " + node.op)
+
+            return result
+        elif isinstance(node, InfixNode):
             left = self.evaluate_node(node.left)
             right = self.evaluate_node(node.right)
-            return check_overflow(left + right, "addition")
-        elif isinstance(node, SubNode):
-            left = self.evaluate_node(node.left)
-            right = self.evaluate_node(node.right)
-            return check_overflow(left - right, "subtraction")
-        elif isinstance(node, MulNode):
-            left = self.evaluate_node(node.left)
-            right = self.evaluate_node(node.right)
-            return check_overflow(left * right, "multiplication")
-        elif isinstance(node, DivNode):
-            left = self.evaluate_node(node.left)
-            right = self.evaluate_node(node.right)
-            if right == 0:
-                raise HERAError("division by zero")
-            return check_overflow(left // right, "division")
+            if node.op == "+":
+                result = left + right
+            elif node.op == "-":
+                result = left - right
+            elif node.op == "*":
+                result = left * right
+            elif node.op == "/":
+                if right == 0:
+                    raise HERAError("division by zero")
+                result = left // right
+            else:
+                raise RuntimeError("unhandled infix operator: " + node.op)
+
+            if overflow(result):
+                raise HERAError("overflow from " + node.op)
+
+            return result
         else:
             raise RuntimeError("unknown node type {}".format(node.__class__.__name__))
 
@@ -638,11 +646,8 @@ def resolve_flags(args: List[str]) -> List[str]:
     return flags
 
 
-def check_overflow(v: int, operation: str) -> int:
-    if v >= 2 ** 16 or v < -2 ** 15:
-        raise HERAError(operation + " overflow")
-    else:
-        return v
+def overflow(v: int) -> bool:
+    return v >= 2 ** 16 or v < -2 ** 15
 
 
 HELP = """\

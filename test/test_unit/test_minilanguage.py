@@ -1,17 +1,14 @@
 import pytest
 
 from hera.debugger.minilanguage import (
-    AddNode,
-    DivNode,
+    InfixNode,
     IntNode,
     MemoryNode,
     MiniLexer,
     MiniParser,
-    MinusNode,
-    MulNode,
+    PrefixNode,
     RegisterNode,
     SeqNode,
-    SubNode,
     SymbolNode,
     TOKEN_ASTERISK,
     TOKEN_AT,
@@ -97,7 +94,8 @@ def test_parse_memory_expression_with_integer():
     tree = parse_helper("@-0o12")
 
     assert isinstance(tree, MemoryNode)
-    assert isinstance(tree.address, MinusNode)
+    assert isinstance(tree.address, PrefixNode)
+    assert tree.address.op == "-"
     assert isinstance(tree.address.arg, IntNode)
     assert tree.address.arg.value == 0o12
 
@@ -113,12 +111,14 @@ def test_parse_memory_expression_with_symbol():
 def test_parse_simple_arithmetic():
     tree = parse_helper("1 + 2 * 3")
 
-    assert isinstance(tree, AddNode)
+    assert isinstance(tree, InfixNode)
+    assert tree.op == "+"
 
     assert isinstance(tree.left, IntNode)
     assert tree.left.value == 1
 
-    assert isinstance(tree.right, MulNode)
+    assert isinstance(tree.right, InfixNode)
+    assert tree.right.op == "*"
     assert isinstance(tree.right.left, IntNode)
     assert isinstance(tree.right.right, IntNode)
     assert tree.right.left.value == 2
@@ -128,15 +128,18 @@ def test_parse_simple_arithmetic():
 def test_parse_grouped_arithmetic():
     tree = parse_helper("(1 + 2) * (3 + 4)")
 
-    assert isinstance(tree, MulNode)
+    assert isinstance(tree, InfixNode)
+    assert tree.op == "*"
 
-    assert isinstance(tree.left, AddNode)
+    assert isinstance(tree.left, InfixNode)
+    assert tree.left.op == "+"
     assert isinstance(tree.left.left, IntNode)
     assert tree.left.left.value == 1
     assert isinstance(tree.left.right, IntNode)
     assert tree.left.right.value == 2
 
-    assert isinstance(tree.right, AddNode)
+    assert isinstance(tree.right, InfixNode)
+    assert tree.right.op == "+"
     assert isinstance(tree.right.left, IntNode)
     assert tree.right.left.value == 3
     assert isinstance(tree.right.right, IntNode)
@@ -146,12 +149,16 @@ def test_parse_grouped_arithmetic():
 def test_parse_complicated_arithmetic():
     tree = parse_helper("@((1+2) /-0o123) + @@5 - r1")
 
-    assert isinstance(tree, SubNode)
+    assert isinstance(tree, InfixNode)
+    assert tree.op == "-"
 
-    assert isinstance(tree.left, AddNode)
+    assert isinstance(tree.left, InfixNode)
+    assert tree.left.op == "+"
     assert isinstance(tree.left.left, MemoryNode)
-    assert isinstance(tree.left.left.address, DivNode)
-    assert isinstance(tree.left.left.address.left, AddNode)
+    assert isinstance(tree.left.left.address, InfixNode)
+    assert tree.left.left.address.op == "/"
+    assert isinstance(tree.left.left.address.left, InfixNode)
+    assert tree.left.left.address.left.op == "+"
     assert isinstance(tree.left.left.address.left.left, IntNode)
     assert isinstance(tree.left.left.address.left.right, IntNode)
     assert tree.left.left.address.left.left.value == 1
@@ -168,9 +175,11 @@ def test_parse_complicated_arithmetic():
 def test_parse_tricky_precedence():
     tree = parse_helper("1*2+3")
 
-    assert isinstance(tree, AddNode)
+    assert isinstance(tree, InfixNode)
+    assert tree.op == "+"
 
-    assert isinstance(tree.left, MulNode)
+    assert isinstance(tree.left, InfixNode)
+    assert tree.left.op == "*"
     assert isinstance(tree.left.left, IntNode)
     assert tree.left.left.value == 1
     assert isinstance(tree.left.right, IntNode)
@@ -205,7 +214,8 @@ def test_parse_sequence_of_expressions():
     assert isinstance(tree.seq[1].address, RegisterNode)
     assert tree.seq[1].address.value == "r2"
 
-    assert isinstance(tree.seq[2], AddNode)
+    assert isinstance(tree.seq[2], InfixNode)
+    assert tree.seq[2].op == "+"
     assert isinstance(tree.seq[2].left, IntNode)
     assert isinstance(tree.seq[2].right, IntNode)
     assert tree.seq[2].left.value == 1

@@ -814,13 +814,13 @@ def test_handle_print_with_integer_literal_too_big(shell, capsys):
 def test_handle_print_with_overflow_from_multiplication(shell, capsys):
     shell.handle_command("print 30000*40")
 
-    assert capsys.readouterr().out == "Eval error: multiplication overflow.\n"
+    assert capsys.readouterr().out == "Eval error: overflow from *.\n"
 
 
 def test_handle_print_with_overflow_from_negation(shell, capsys):
     shell.handle_command("print -65000")
 
-    assert capsys.readouterr().out == "Eval error: negation overflow.\n"
+    assert capsys.readouterr().out == "Eval error: overflow from unary -.\n"
 
 
 def test_handle_print_with_invalid_format(shell, capsys):
