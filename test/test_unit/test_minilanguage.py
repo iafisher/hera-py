@@ -1,3 +1,5 @@
+import pytest
+
 from hera.debugger.minilanguage import (
     AddNode,
     DivNode,
@@ -144,23 +146,38 @@ def test_parse_grouped_arithmetic():
 def test_parse_complicated_arithmetic():
     tree = parse_helper("@((1+2) /-0o123) + @@5 - r1")
 
+    assert isinstance(tree, SubNode)
+
+    assert isinstance(tree.left, AddNode)
+    assert isinstance(tree.left.left, MemoryNode)
+    assert isinstance(tree.left.left.address, DivNode)
+    assert isinstance(tree.left.left.address.left, AddNode)
+    assert isinstance(tree.left.left.address.left.left, IntNode)
+    assert isinstance(tree.left.left.address.left.right, IntNode)
+    assert tree.left.left.address.left.left.value == 1
+    assert tree.left.left.address.left.right.value == 2
+    assert isinstance(tree.left.right, MemoryNode)
+    assert isinstance(tree.left.right.address, MemoryNode)
+    assert isinstance(tree.left.right.address.address, IntNode)
+    assert tree.left.right.address.address.value == 5
+
+    assert isinstance(tree.right, RegisterNode)
+    assert tree.right.value == "r1"
+
+
+def test_parse_tricky_precedence():
+    tree = parse_helper("1*2+3")
+
     assert isinstance(tree, AddNode)
 
-    assert isinstance(tree.left, MemoryNode)
-    assert isinstance(tree.left.address, DivNode)
-    assert isinstance(tree.left.address.left, AddNode)
-    assert isinstance(tree.left.address.left.left, IntNode)
-    assert isinstance(tree.left.address.left.right, IntNode)
-    assert tree.left.address.left.left.value == 1
-    assert tree.left.address.left.right.value == 2
+    assert isinstance(tree.left, MulNode)
+    assert isinstance(tree.left.left, IntNode)
+    assert tree.left.left.value == 1
+    assert isinstance(tree.left.right, IntNode)
+    assert tree.left.right.value == 2
 
-    assert isinstance(tree.right, SubNode)
-    assert isinstance(tree.right.left, MemoryNode)
-    assert isinstance(tree.right.left.address, MemoryNode)
-    assert isinstance(tree.right.left.address.address, IntNode)
-    assert tree.right.left.address.address.value == 5
-    assert isinstance(tree.right.right, RegisterNode)
-    assert tree.right.right.value == "r1"
+    assert isinstance(tree.right, IntNode)
+    assert tree.right.value == 3
 
 
 def test_parse_expression_with_format_spec():
@@ -196,14 +213,39 @@ def test_parse_sequence_of_expressions():
 
 
 def test_parse_sequence_of_expressions_with_format_spec():
-    tree = parse_helper(":xdc r1, r2", keep_seq=True)
+    tree = parse_helper(":xdc fp, sp", keep_seq=True)
 
     assert isinstance(tree, SeqNode)
     assert tree.fmt == "xdc"
     assert len(tree.seq) == 2
 
     assert isinstance(tree.seq[0], RegisterNode)
-    assert tree.seq[0].value == "r1"
+    assert tree.seq[0].value == "fp"
 
     assert isinstance(tree.seq[1], RegisterNode)
-    assert tree.seq[1].value == "r2"
+    assert tree.seq[1].value == "sp"
+
+
+def test_parse_with_trailing_input():
+    with pytest.raises(SyntaxError):
+        parse_helper("1+2 3")
+
+
+def test_parse_with_invalid_octal_literal():
+    with pytest.raises(SyntaxError):
+        parse_helper("0o9")
+
+
+def test_parse_with_unclosed_parenthesis():
+    with pytest.raises(SyntaxError):
+        parse_helper("(1 + 2")
+
+
+def test_parse_with_unrecognized_character():
+    with pytest.raises(SyntaxError):
+        parse_helper("1 ? 2")
+
+
+def test_parse_with_unexpected_token():
+    with pytest.raises(SyntaxError):
+        parse_helper(")1+2)")

@@ -91,33 +91,30 @@ class MiniParser:
             self.lexer.next_token()
             left = self.match_expr(PREC_LOWEST)
             if self.lexer.tkn[0] != TOKEN_RPAREN:
-                self.raise_unexpected(self.lexer.tkn)
+                self.unexpected(self.lexer.tkn)
             self.lexer.next_token()
         else:
-            self.raise_unexpected(tkn)
+            self.unexpected(tkn)
 
         infix_tkn = self.lexer.tkn
-        if infix_tkn[0] not in PREC_MAP:
-            return left
-        else:
+        while infix_tkn[0] in PREC_MAP and precedence < PREC_MAP[infix_tkn[0]]:
             infix_precedence = PREC_MAP[infix_tkn[0]]
-            if precedence < infix_precedence:
-                self.lexer.next_token()
-                right = self.match_expr(precedence)
-                if infix_tkn[0] == TOKEN_PLUS:
-                    return AddNode(left, right)
-                elif infix_tkn[0] == TOKEN_MINUS:
-                    return SubNode(left, right)
-                elif infix_tkn[0] == TOKEN_ASTERISK:
-                    return MulNode(left, right)
-                elif infix_tkn[0] == TOKEN_SLASH:
-                    return DivNode(left, right)
-                else:
-                    raise RuntimeError("unhandled infix operator in parser")
+            self.lexer.next_token()
+            right = self.match_expr(infix_precedence)
+            if infix_tkn[0] == TOKEN_PLUS:
+                left = AddNode(left, right)
+            elif infix_tkn[0] == TOKEN_MINUS:
+                left = SubNode(left, right)
+            elif infix_tkn[0] == TOKEN_ASTERISK:
+                left = MulNode(left, right)
+            elif infix_tkn[0] == TOKEN_SLASH:
+                left = DivNode(left, right)
             else:
-                return left
+                raise RuntimeError("unhandled infix operator in parser")
+            infix_tkn = self.lexer.tkn
+        return left
 
-    def raise_unexpected(self, tkn):
+    def unexpected(self, tkn):
         if tkn[0] == TOKEN_EOF:
             raise SyntaxError("premature end of input")
         elif tkn[0] == TOKEN_UNKNOWN:
