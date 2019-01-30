@@ -159,7 +159,7 @@ def test_no_ANSI_color_when_stderr_is_not_tty():
         buf.getvalue()
         == """\
 
-Error: unexpected character, line 1 col 1 of <stdin>
+Error: expected HERA operation or #include, line 1 col 1 of <stdin>
 
   )
   ^

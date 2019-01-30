@@ -10,6 +10,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: December 2018
 """
 from collections import namedtuple
+from enum import Enum
 from typing import Optional, Tuple
 
 
@@ -80,9 +81,37 @@ class Token(str):
         return self
 
     def __repr__(self):
-        return "Token({}, {}, loc={})".format(
+        return "Token({!r}, {}, loc={})".format(
             self.type, super().__repr__(), self.location
         )
+
+
+class TOKEN(Enum):
+    """Enumeration for the type field of Token objects."""
+
+    # Values
+    INT = "TOKEN_INT"
+    REGISTER = "TOKEN_REGISTER"
+    SYMBOL = "TOKEN_SYMBOL"
+    STRING = "TOKEN_STRING"
+    BRACKETED = "TOKEN_BRACKETED"
+    CHAR = "TOKEN_CHAR"
+
+    # Operators
+    MINUS = "TOKEN_MINUS"
+    AT = "TOKEN_AT"
+    ASTERISK = "TOKEN_ASTERISK"
+    PLUS = "TOKEN_PLUS"
+    SLASH = "TOKEN_SLASH"
+
+    LPAREN = "TOKEN_LPAREN"
+    RPAREN = "TOKEN_RPAREN"
+    COMMA = "TOKEN_COMMA"
+
+    FMT = "TOKEN_FMT"
+    INCLUDE = "TOKEN_INCLUDE"
+    EOF = "TOKEN_EOF"
+    UNKNOWN = "TOKEN_UNKNOWN"
 
 
 class Messages:

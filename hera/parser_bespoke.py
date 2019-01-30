@@ -11,6 +11,7 @@ from typing import List, Tuple
 
 from hera.data import HERAError, IntToken, Messages, Op
 from hera.lexer import Lexer, TOKEN
+from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
 from hera.utils import read_file
 
 
@@ -37,6 +38,9 @@ class Parser:
         self.messages = Messages()
 
     def parse(self, lexer):
+        if lexer.path:
+            self.visited.add(get_canonical_path(lexer.path))
+
         ops = []
         while lexer.tkn.type != TOKEN.EOF:
             if lexer.tkn.type == TOKEN.INCLUDE:
@@ -44,7 +48,7 @@ class Parser:
             elif lexer.tkn.type == TOKEN.SYMBOL:
                 ops.append(self.match_op(lexer))
             else:
-                self.err(lexer, "expected operation or include")
+                self.err(lexer.tkn, "expected HERA operation or #include")
                 break
         return ops
 
@@ -53,7 +57,7 @@ class Parser:
         lexer.next_token()
 
         if lexer.tkn.type != TOKEN.LPAREN:
-            self.err(lexer, "expected left parenthesis")
+            self.err(lexer.tkn, "expected left parenthesis")
             return Op(name, [])
         else:
             lexer.next_token()
@@ -61,7 +65,7 @@ class Parser:
         args = self.match_optional_arglist(lexer)
 
         if lexer.tkn.type != TOKEN.RPAREN:
-            self.err(lexer, "expected left parenthesis")
+            self.err(lexer.tkn, "expected left parenthesis")
             return Op(name, args)
         else:
             lexer.next_token()
@@ -77,19 +81,21 @@ class Parser:
                 try:
                     args.append(IntToken(lexer.tkn, loc=lexer.tkn.location, base=0))
                 except ValueError:
-                    self.err(lexer, "invalid integer literal")
+                    self.err(lexer.tkn, "invalid integer literal")
                     break
+            elif lexer.tkn.type == TOKEN.CHAR:
+                args.append(ord(lexer.tkn))
             elif lexer.tkn.type in self.VALUE_TOKENS:
                 args.append(lexer.tkn)
             else:
-                self.err(lexer, "expected value")
+                self.err(lexer.tkn, "expected value")
                 break
 
             lexer.next_token()
             if lexer.tkn.type == TOKEN.RPAREN:
                 break
             elif lexer.tkn.type != TOKEN.COMMA:
-                self.err(lexer, "expected comma or right-parenthesis")
+                self.err(lexer.tkn, "expected comma or right-parenthesis")
                 lexer.next_token()
                 break
             else:
@@ -97,32 +103,56 @@ class Parser:
         return args
 
     def match_include(self, lexer):
-        self.lexer.next_token()
-        if lexer.tkn.type == TOKEN.STRING:
-            include_path = lexer.tkn[1:-1]
-            root_path = lexer.path
-            include_path = os.path.join(os.path.dirname(root_path), include_path)
+        root_path = lexer.path
+        tkn = lexer.next_token()
+        lexer.next_token()
+        if tkn.type == TOKEN.STRING:
+            include_path = os.path.join(os.path.dirname(root_path), tkn)
 
             if get_canonical_path(include_path) in self.visited:
-                self.messages.err("recursive include")
+                self.err(tkn, "recursive include")
                 return []
 
             try:
                 included_text = read_file(include_path)
             except HERAError as e:
-                self.messages.err(str(e))
+                self.err(tkn, str(e))
                 return []
             else:
                 sublexer = Lexer(included_text, path=include_path)
                 return self.parse(sublexer)
-        elif lexer.tkn.type == TOKEN.BRACKETED:
-            raise NotImplementedError
+        elif tkn.type == TOKEN.BRACKETED:
+            return self.expand_angle_include(lexer, tkn)
         else:
-            self.err(lexer, "expected quote or angle-bracket delimited string")
+            self.err(tkn, "expected quote or angle-bracket delimited string")
             return []
 
-    def err(self, lexer, msg):
-        self.messages.err(msg, lexer.get_location())
+    def expand_angle_include(self, lexer, include_path):
+        # There is no check for recursive includes in this function, under the
+        # assumption that system libraries do not have recursive includes.
+        if include_path == "HERA.h":
+            self.warn(include_path, "#include <HERA.h> is not necessary for hera-py")
+            return []
+        elif include_path == "Tiger-stdlib-stack-data.hera":
+            included_text = TIGER_STDLIB_STACK_DATA
+        elif include_path == "Tiger-stdlib-stack.hera":
+            included_text = TIGER_STDLIB_STACK
+        else:
+            root_path = os.environ.get("HERA_C_DIR", "/home/courses/lib/HERA-lib")
+            try:
+                included_text = read_file(os.path.join(root_path, include_path))
+            except HERAError as e:
+                self.err(include_path, str(e))
+                return []
+
+        sublexer = Lexer(included_text, path=include_path)
+        return self.parse(sublexer)
+
+    def err(self, tkn, msg):
+        self.messages.err(msg, tkn.location)
+
+    def warn(self, tkn, msg):
+        self.messages.warn(msg, tkn.location)
 
 
 def get_canonical_path(fpath):

@@ -22,6 +22,64 @@ def test_lexer_with_integer():
     assert lexer.next_token() == Token(TOKEN.EOF, "")
 
 
+def test_lexer_with_negative_integer():
+    lexer = lex_helper("-1")
+
+    assert lexer.tkn == Token(TOKEN.INT, "-1")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_character_literal():
+    lexer = lex_helper("'a'")
+
+    assert lexer.tkn == Token(TOKEN.CHAR, "a")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_character_literal_backslash_escape():
+    lexer = lex_helper("'\\n'")
+
+    assert lexer.tkn == Token(TOKEN.CHAR, "\n")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_over_long_character_literal():
+    lexer = lex_helper("'abc'")
+
+    assert lexer.tkn.type == TOKEN.UNKNOWN
+
+
+def test_lexer_with_string():
+    lexer = lex_helper(
+        """\
+"a double quote: \\", a backslash: \\\\"
+    """
+    )
+
+    assert lexer.tkn == Token(TOKEN.STRING, 'a double quote: ", a backslash: \\')
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_empty_string():
+    lexer = lex_helper('""')
+
+    assert lexer.tkn == Token(TOKEN.STRING, "")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
+def test_lexer_with_include():
+    lexer = lex_helper('#include <HERA.h> #include "lib.hera"')
+
+    assert lexer.tkn == Token(TOKEN.INCLUDE, "#include")
+    assert lexer.next_token() == Token(TOKEN.BRACKETED, "HERA.h")
+    assert lexer.next_token() == Token(TOKEN.INCLUDE, "#include")
+    assert lexer.next_token() == Token(TOKEN.STRING, "lib.hera")
+    assert lexer.next_token() == Token(TOKEN.EOF, "")
+
+
 def test_lexer_with_big_example():
     # This isn't a syntactically valid expression, but it doesn't matter to the lexer.
     lexer = lex_helper("@FP_alt R15 0xabc some_symbol :xdc -10 ,, ()+*/?")
@@ -32,8 +90,7 @@ def test_lexer_with_big_example():
     assert lexer.next_token() == Token(TOKEN.INT, "0xabc")
     assert lexer.next_token() == Token(TOKEN.SYMBOL, "some_symbol")
     assert lexer.next_token() == Token(TOKEN.FMT, "xdc")
-    assert lexer.next_token() == Token(TOKEN.MINUS, "-")
-    assert lexer.next_token() == Token(TOKEN.INT, "10")
+    assert lexer.next_token() == Token(TOKEN.INT, "-10")
     assert lexer.next_token() == Token(TOKEN.COMMA, ",")
     assert lexer.next_token() == Token(TOKEN.COMMA, ",")
     assert lexer.next_token() == Token(TOKEN.LPAREN, "(")

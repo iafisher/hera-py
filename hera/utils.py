@@ -5,7 +5,7 @@ Version: January 2019
 """
 import sys
 
-from .data import HERAError, IntToken, Location, Messages, Token
+from .data import HERAError, IntToken, Location, Messages, Token, TOKEN
 
 
 def to_u16(n):
@@ -69,7 +69,7 @@ def is_register(s):
 
 
 def is_symbol(s):
-    return isinstance(s, Token) and s.type == "SYMBOL"
+    return isinstance(s, Token) and s.type == TOKEN.SYMBOL
 
 
 def format_int(v, *, spec="xdsc"):
@@ -122,9 +122,6 @@ BRANCHES = REGISTER_BRANCHES | RELATIVE_BRANCHES
 DATA_STATEMENTS = set(
     ["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "TIGER_STRING", "DSKIP"]
 )
-BINARY_OPS = set(["ADD", "SUB", "MUL", "AND", "OR", "XOR"])
-UNARY_OPS = set(["LSL", "LSR", "LSL8", "LSR8", "ASL", "ASR"])
-ALSU_OPS = BINARY_OPS | UNARY_OPS
 
 
 def print_message_with_location(msg, *, loc=None):

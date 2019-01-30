@@ -1,7 +1,17 @@
 from contextlib import suppress
 from typing import Dict, List, Optional, Tuple
 
-from .data import Constant, DataLabel, Label, Op, Messages, Program, Settings, Token
+from .data import (
+    Constant,
+    DataLabel,
+    Label,
+    Op,
+    Messages,
+    Program,
+    Settings,
+    Token,
+    TOKEN,
+)
 from .op import Operation, resolve_ops
 from .utils import (
     DATA_STATEMENTS,
@@ -214,6 +224,6 @@ def convert_ops(
 def substitute_label(op: Operation, symbol_table: Dict[str, int]) -> Operation:
     """Substitute any label in the instruction with its concrete value."""
     for i, arg in enumerate(op.args):
-        if isinstance(arg, Token) and arg.type == "SYMBOL":
+        if isinstance(arg, Token) and arg.type == TOKEN.SYMBOL:
             op.args[i] = symbol_table[arg]
     return op

@@ -1,3 +1,5 @@
+import pytest
+
 from .utils import execute_program_helper
 
 
@@ -68,6 +70,7 @@ Virtual machine state after execution:
     )
 
 
+@pytest.mark.skip("not ready")
 def test_warning_for_zero_prefixed_octal(capsys):
     execute_program_helper("SET(R1, 016)\nSET(R2, 017)")
 
@@ -186,6 +189,30 @@ Warning: second argument to RETURN should be R13, line 1 col 13 of <stdin>
 
   RETURN(R12, R11)
               ^
+
+
+Virtual machine state after execution:
+    R1 through R10 are all zero.
+
+    All flags are OFF
+
+1 warning emitted.
+"""
+    )
+
+
+def test_warning_for_unnecessary_include(capsys):
+    execute_program_helper("#include <HERA.h>")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Warning: #include <HERA.h> is not necessary for hera-py, line 1 col 11 of <stdin>
+
+  #include <HERA.h>
+            ^
 
 
 Virtual machine state after execution:

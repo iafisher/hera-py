@@ -817,10 +817,10 @@ def test_handle_print_with_overflow_from_multiplication(shell, capsys):
     assert capsys.readouterr().out == "Eval error: overflow from *.\n"
 
 
-def test_handle_print_with_overflow_from_negation(shell, capsys):
+def test_handle_print_with_integer_literal_too_small(shell, capsys):
     shell.handle_command("print -65000")
 
-    assert capsys.readouterr().out == "Eval error: overflow from unary -.\n"
+    assert capsys.readouterr().out == "Eval error: integer literal exceeds 16 bits.\n"
 
 
 def test_handle_print_with_invalid_format(shell, capsys):

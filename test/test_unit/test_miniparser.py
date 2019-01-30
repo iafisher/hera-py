@@ -6,7 +6,6 @@ from hera.debugger.miniparser import (
     MemoryNode,
     Lexer,
     MiniParser,
-    PrefixNode,
     RegisterNode,
     SeqNode,
     SymbolNode,
@@ -37,10 +36,8 @@ def test_parse_memory_expression_with_integer():
     assert str(tree) == "@-10"
 
     assert isinstance(tree, MemoryNode)
-    assert isinstance(tree.address, PrefixNode)
-    assert tree.address.op == "-"
-    assert isinstance(tree.address.arg, IntNode)
-    assert tree.address.arg.value == 0o12
+    assert isinstance(tree.address, IntNode)
+    assert tree.address.value == -0o12
 
 
 def test_parse_memory_expression_with_symbol():

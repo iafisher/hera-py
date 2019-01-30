@@ -2,7 +2,7 @@ import json
 from contextlib import suppress
 from typing import Dict, List, Optional, Tuple
 
-from hera.data import Constant, DataLabel, Location, Messages, Op, Token
+from hera.data import Constant, DataLabel, Location, Messages, Op, Token, TOKEN
 from hera.utils import (
     format_int,
     from_u16,
@@ -70,7 +70,7 @@ class Operation:
 
 
 def arg_to_string(arg):
-    if isinstance(arg, Token) and arg.type == "STRING":
+    if isinstance(arg, Token) and arg.type == TOKEN.STRING:
         return json.dumps(arg)
     else:
         return str(arg)
@@ -937,7 +937,7 @@ def check_arglist(argtypes, args, symbol_table):
 
 
 def check_register(arg) -> Optional[str]:
-    if not isinstance(arg, Token) or arg.type != "REGISTER":
+    if not isinstance(arg, Token) or arg.type != TOKEN.REGISTER:
         return "expected register"
 
     if arg.lower() == "pc":
@@ -952,10 +952,10 @@ def check_register(arg) -> Optional[str]:
 
 
 def check_register_or_label(arg, symbol_table: Dict[str, int]) -> Optional[str]:
-    if not isinstance(arg, Token) or arg.type not in ("REGISTER", "SYMBOL"):
+    if not isinstance(arg, Token) or arg.type not in (TOKEN.REGISTER, TOKEN.SYMBOL):
         return "expected register or label"
 
-    if arg.type == "REGISTER":
+    if arg.type == TOKEN.REGISTER:
         return check_register(arg)
     else:
         try:
@@ -979,7 +979,7 @@ def check_label(arg) -> Optional[str]:
 
 
 def check_string(arg):
-    if not isinstance(arg, Token) or arg.type != "STRING":
+    if not isinstance(arg, Token) or arg.type != TOKEN.STRING:
         return "expected string literal"
     else:
         return None

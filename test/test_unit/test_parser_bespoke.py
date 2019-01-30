@@ -5,9 +5,9 @@ from hera.parser_bespoke import parse
 
 def valid(text, *, warnings=False):
     program, messages = parse(text)
-    assert len(messages.errors) == 0
+    assert not messages.errors, messages.errors[0]
     if not warnings:
-        assert len(messages.warnings) == 0
+        assert not messages.warnings, messages.warnings[0]
     return program
 
 
@@ -40,6 +40,14 @@ def test_parse_has_locations():
 
     assert op.args[1].location.line == 2
     assert op.args[1].location.column == 1
+
+
+def test_parse_op_with_no_args():
+    program = valid("RTI()")
+
+    assert len(program) == 1
+    assert program[0].name == "RTI"
+    assert len(program[0].args) == 0
 
 
 def test_parse_multiple_ops():

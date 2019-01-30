@@ -502,7 +502,7 @@ class Shell:
     def evaluate_node(self, node):
         vm = self.debugger.vm
         if isinstance(node, IntNode):
-            if node.value >= 2 ** 16:
+            if node.value >= 2 ** 16 or node.value < -2 ** 15:
                 raise HERAError("integer literal exceeds 16 bits")
             return node.value
         elif isinstance(node, RegisterNode):

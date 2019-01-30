@@ -7,21 +7,21 @@ from hera.checker import (
     substitute_label,
     typecheck,
 )
-from hera.data import Op, Settings, Token
+from hera.data import Op, Settings, Token, TOKEN
 from hera.op import ADD, BRR, CALL, INC, INTEGER, resolve_ops, SET, SETHI, SETLO
-from hera.parser import parse
+from hera.parser_bespoke import parse
 
 
 def R(s):
-    return Token("REGISTER", s)
+    return Token(TOKEN.REGISTER, s)
 
 
 def SYM(s=""):
-    return Token("SYMBOL", s)
+    return Token(TOKEN.SYMBOL, s)
 
 
 def STR(s):
-    return Token("STRING", s)
+    return Token(TOKEN.STRING, s)
 
 
 @pytest.fixture
@@ -548,7 +548,7 @@ def test_substitute_label_with_other_op():
 
 
 def test_convert_ops_with_constant():
-    oplist, messages = convert_ops([SET(R("R1"), Token("SYMBOL", "n"))], {"n": 100})
+    oplist, messages = convert_ops([SET(R("R1"), SYM("n"))], {"n": 100})
 
     assert len(messages.errors) == 0
     assert oplist == [SETLO("R1", 100), SETHI("R1", 0)]

@@ -28,7 +28,6 @@ CALL(R12, add)
     assert not vm.flag_carry_block
 
 
-@pytest.mark.skip("not ready")
 def test_multiple_includes():
     program = """\
 #include "test/assets/include/lib/r1_to_42.hera"

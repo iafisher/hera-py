@@ -1,4 +1,4 @@
-from hera.data import Constant, DataLabel, IntToken, Label, Token
+from hera.data import Constant, DataLabel, IntToken, Label, Token, TOKEN
 from hera.op import (
     check_in_range,
     check_label,
@@ -10,15 +10,15 @@ from hera.op import (
 
 
 def R(s):
-    return Token("REGISTER", s)
+    return Token(TOKEN.REGISTER, s)
 
 
 def SYM(s):
-    return Token("SYMBOL", s)
+    return Token(TOKEN.SYMBOL, s)
 
 
 def STR(s):
-    return Token("STRING", s)
+    return Token(TOKEN.STRING, s)
 
 
 def test_op_to_string():
