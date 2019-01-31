@@ -1,3 +1,5 @@
+import string
+
 from hera.data import HERAError, Location, Messages, Token, TOKEN
 from hera.utils import is_register
 
@@ -113,12 +115,12 @@ class Lexer:
 
     def read_int(self):
         length = 1
-        digits = set([str(i) for i in range(10)])
+        digits = {str(i) for i in range(10)}
         peek = self.peek_char()
         if self.text[self.position] == "0" and peek and peek in "boxBOX":
             length = 2
             if self.peek_char() in "xX":
-                digits |= set("abcdefABCDEF")
+                digits |= set(string.ascii_letters)
 
         while self.peek_char(length) in digits:
             length += 1

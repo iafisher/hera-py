@@ -105,44 +105,37 @@ class Parser:
         args = []
         while True:
             if lexer.tkn.type == TOKEN.INT:
-                if (
-                    len(lexer.tkn) >= 2
-                    and lexer.tkn[0] == "0"
-                    and lexer.tkn[1].isdigit()
-                ):
+                # Detect zero-prefixed octal numbers.
+                if lexer.tkn[0] == "0" and lexer.tkn[:2].isdigit():
                     base = 8
                     self.warn('consider using "0o" prefix for octal numbers', lexer.tkn)
                 else:
                     base = 0
+
                 try:
                     args.append(IntToken(lexer.tkn, loc=lexer.tkn.location, base=base))
                 except ValueError:
                     self.err("invalid integer literal", lexer.tkn)
-                    lexer.next_token()
-                    break
+                lexer.next_token()
             elif lexer.tkn.type == TOKEN.CHAR:
                 args.append(ord(lexer.tkn))
+                lexer.next_token()
             elif lexer.tkn.type in self.VALUE_TOKENS:
                 args.append(lexer.tkn)
+                lexer.next_token()
             else:
                 self.err("expected value", lexer.tkn)
-                while lexer.tkn.type not in (TOKEN.COMMA, TOKEN.RPAREN, TOKEN.EOF):
-                    lexer.next_token()
-
-                if lexer.tkn.type == TOKEN.COMMA:
-                    lexer.next_token()
-                    continue
-                else:
-                    # TODO: Will this miss an error for EOF?
+                self.skip_until(lexer, (TOKEN.COMMA, TOKEN.RPAREN))
+                if lexer.tkn.type == TOKEN.EOF:
                     break
 
-            lexer.next_token()
             if lexer.tkn.type == TOKEN.RPAREN:
                 break
             elif lexer.tkn.type != TOKEN.COMMA:
                 self.err("expected comma or right parenthesis", lexer.tkn)
-                lexer.next_token()
-                break
+                self.skip_until(lexer, (TOKEN.COMMA, TOKEN.RPAREN))
+                if lexer.tkn.type == TOKEN.EOF or lexer.tkn.type == TOKEN.RPAREN:
+                    break
             else:
                 lexer.next_token()
         return args
@@ -192,6 +185,12 @@ class Parser:
 
         sublexer = Lexer(included_text, path=include_path)
         return self.parse(sublexer)
+
+    def skip_until(self, lexer, tkns):
+        tkns = set(tkns)
+        tkns.add(TOKEN.EOF)
+        while lexer.tkn.type not in tkns:
+            lexer.next_token()
 
     def err(self, msg, tkn):
         self.messages.err(msg, tkn.location)

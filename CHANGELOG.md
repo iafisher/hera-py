@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 ### Added
 - Arithmetic operations are supported in printing and assigning values in the debugger.
+- Much more informative messages for parse errors.
 - The `undo` debugging command.
 - The `on` and `off` debugging commands for flag manipulation.
 - The `next` debugging command now takes an optional argument.

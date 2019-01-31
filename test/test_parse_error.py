@@ -220,3 +220,39 @@ Error: expected quote or angle-bracket delimited string, line 1 col 10 of <stdin
 
 """
     )
+
+
+def test_parse_error_for_arithmetic_expression(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper("SET(R1, 4*4)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Error: expected comma or right parenthesis, line 1 col 10 of <stdin>
+
+  SET(R1, 4*4)
+           ^
+
+"""
+    )
+
+
+def test_parse_error_for_invalid_integer_literal(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper("SET(R1, 0xg)")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Error: invalid integer literal, line 1 col 9 of <stdin>
+
+  SET(R1, 0xg)
+          ^
+
+"""
+    )

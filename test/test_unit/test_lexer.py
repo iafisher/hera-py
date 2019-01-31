@@ -34,6 +34,24 @@ def test_lexer_with_negative_integer():
     assert eq(lexer.next_token(), Token(TOKEN.EOF, ""))
 
 
+def test_lexer_with_negative_hex_number():
+    lexer = lex_helper("-0xabc")
+
+    assert eq(lexer.tkn, Token(TOKEN.INT, "-0xabc"))
+
+
+def test_lexer_with_invalid_hex_number():
+    lexer = lex_helper("0xghi")
+
+    assert eq(lexer.tkn, Token(TOKEN.INT, "0xghi"))
+
+
+def test_lexer_with_invalid_octal_number():
+    lexer = lex_helper("0o999")
+
+    assert eq(lexer.tkn, Token(TOKEN.INT, "0o999"))
+
+
 def test_lexer_with_character_literal():
     lexer = lex_helper("'a'")
 
