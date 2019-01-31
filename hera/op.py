@@ -97,7 +97,7 @@ class UnaryOp(Operation):
     P = (REGISTER, REGISTER)
 
     def execute(self, vm):
-        arg = vm.get_register(self.args[1])
+        arg = vm.load_register(self.args[1])
         result = self.calculate(vm, arg)
         vm.set_zero_and_sign(result)
         vm.store_register(self.args[0], result)
@@ -121,8 +121,8 @@ class BinaryOp(Operation):
     P = (REGISTER, REGISTER, REGISTER)
 
     def execute(self, vm):
-        left = vm.get_register(self.args[1])
-        right = vm.get_register(self.args[2])
+        left = vm.load_register(self.args[1])
+        right = vm.load_register(self.args[2])
         result = self.calculate(vm, left, right)
         vm.set_zero_and_sign(result)
         vm.store_register(self.args[0], result)
@@ -148,7 +148,7 @@ class RegisterBranch(Operation):
 
     def execute(self, vm):
         if self.should(vm):
-            vm.pc = vm.get_register(self.args[0])
+            vm.pc = vm.load_register(self.args[0])
         else:
             vm.pc += 1
 
@@ -210,7 +210,7 @@ class SETHI(Operation):
 
     def execute(self, vm):
         target, value = self.args
-        vm.store_register(target, (value << 8) + (vm.get_register(target) & 0x00FF))
+        vm.store_register(target, (value << 8) + (vm.load_register(target) & 0x00FF))
         vm.pc += 1
 
 
@@ -295,7 +295,7 @@ class INC(Operation):
     def execute(self, vm):
         target, value = self.args
 
-        original = vm.get_register(target)
+        original = vm.load_register(target)
         result = (value + original) & 0xFFFF
         vm.store_register(target, result)
 
@@ -311,7 +311,7 @@ class DEC(Operation):
     def execute(self, vm):
         target, value = self.args
 
-        original = vm.get_register(target)
+        original = vm.load_register(target)
         result = to_u16((original - value) & 0xFFFF)
         vm.store_register(target, result)
 
@@ -405,7 +405,7 @@ class RSTRF(Operation):
     P = (REGISTER,)
 
     def execute(self, vm):
-        value = vm.get_register(self.args[0])
+        value = vm.load_register(self.args[0])
         vm.flag_sign = bool(value & 1)
         vm.flag_zero = bool(value & 0b10)
         vm.flag_overflow = bool(value & 0b100)
@@ -471,7 +471,7 @@ class LOAD(Operation):
     def execute(self, vm):
         target, offset, address = self.args
 
-        result = vm.access_memory(vm.get_register(address) + offset)
+        result = vm.load_memory(vm.load_register(address) + offset)
         vm.set_zero_and_sign(result)
         vm.store_register(target, result)
         vm.pc += 1
@@ -483,7 +483,7 @@ class STORE(Operation):
     def execute(self, vm):
         source, offset, address = self.args
 
-        vm.assign_memory(vm.get_register(address) + offset, vm.get_register(source))
+        vm.store_memory(vm.load_register(address) + offset, vm.load_register(source))
         vm.pc += 1
 
 
@@ -674,10 +674,10 @@ class CALL_AND_RETURN(Operation):
         ra, rb = self.args
 
         old_pc = vm.pc
-        vm.pc = vm.get_register(rb)
+        vm.pc = vm.load_register(rb)
         vm.store_register(rb, old_pc + 1)
-        old_fp = vm.get_register("FP")
-        vm.store_register("FP", vm.get_register(ra))
+        old_fp = vm.load_register("FP")
+        vm.store_register("FP", vm.load_register(ra))
         vm.store_register(ra, old_fp)
 
     def typecheck(self, *args, **kwargs):
@@ -827,7 +827,7 @@ class INTEGER(Operation):
     P = (I16,)
 
     def execute(self, vm):
-        vm.assign_memory(vm.dc, to_u16(self.args[0]))
+        vm.store_memory(vm.dc, to_u16(self.args[0]))
         vm.dc += 1
 
 
@@ -842,10 +842,10 @@ class LP_STRING(Operation):
     P = (STRING,)
 
     def execute(self, vm):
-        vm.assign_memory(vm.dc, len(self.args[0]))
+        vm.store_memory(vm.dc, len(self.args[0]))
         vm.dc += 1
         for c in self.args[0]:
-            vm.assign_memory(vm.dc, ord(c))
+            vm.store_memory(vm.dc, ord(c))
             vm.dc += 1
 
 
@@ -874,7 +874,7 @@ class PRINT_REG(Operation):
     P = (REGISTER,)
 
     def execute(self, vm):
-        v = vm.get_register(self.args[0])
+        v = vm.load_register(self.args[0])
         print("{} = {}".format(self.args[0], format_int(v)))
         vm.pc += 1
 

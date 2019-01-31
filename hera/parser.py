@@ -106,7 +106,8 @@ class Parser:
         while True:
             if lexer.tkn.type == TOKEN.INT:
                 # Detect zero-prefixed octal numbers.
-                if lexer.tkn[0] == "0" and lexer.tkn[:2].isdigit():
+                prefix = lexer.tkn[:2]
+                if len(prefix) == 2 and prefix[0] == "0" and prefix[1].isdigit():
                     base = 8
                     self.warn('consider using "0o" prefix for octal numbers', lexer.tkn)
                 else:

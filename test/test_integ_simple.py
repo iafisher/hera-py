@@ -348,12 +348,12 @@ SET(R2, s2)
 
     s1_addr = vm.registers[1]
     s2_addr = vm.registers[2]
-    assert vm.access_memory(s1_addr) == 5
-    assert vm.access_memory(s2_addr) == 5
+    assert vm.load_memory(s1_addr) == 5
+    assert vm.load_memory(s2_addr) == 5
 
     for i in range(5):
-        assert vm.access_memory(s1_addr + i + 1) == ord("hello"[i])
-        assert vm.access_memory(s2_addr + i + 1) == ord("world"[i])
+        assert vm.load_memory(s1_addr + i + 1) == ord("hello"[i])
+        assert vm.load_memory(s2_addr + i + 1) == ord("world"[i])
 
 
 def test_some_neglected_flag_ops():

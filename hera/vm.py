@@ -102,9 +102,8 @@ class VirtualMachine:
         else:
             raise RuntimeError("unsupported operation {}".format(name))
 
-    def get_register(self, name):
+    def load_register(self, name):
         """Get the contents of the register with the given name."""
-        # TODO: get_register but access_memory, store_register but assign_memory
         index = register_to_index(name)
         return self.registers[index]
 
@@ -125,19 +124,19 @@ class VirtualMachine:
         self.flag_zero = value == 0
         self.flag_sign = value & 0x8000
 
-    def assign_memory(self, address, value):
-        """Assign a value to a location in memory."""
-        # Extend the size of the memory array if necessary.
-        if address >= len(self.memory):
-            self.memory.extend([0] * (address - len(self.memory) + 1))
-        self.memory[address] = value
-
-    def access_memory(self, address):
-        """Access a value in memory."""
+    def load_memory(self, address):
+        """Get the value at the given memory address."""
         if address >= len(self.memory):
             return 0
         else:
             return self.memory[address]
+
+    def store_memory(self, address, value):
+        """Store a value to a location in memory."""
+        # Extend the size of the memory array if necessary.
+        if address >= len(self.memory):
+            self.memory.extend([0] * (address - len(self.memory) + 1))
+        self.memory[address] = value
 
     def print_warning(self, msg, loc):
         if self.settings.color:

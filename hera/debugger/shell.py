@@ -150,7 +150,7 @@ class Shell:
                     vm.store_register(ltree.value, rhs)
             elif isinstance(ltree, MemoryNode):
                 address = self.evaluate_node(ltree.address)
-                vm.assign_memory(address, rhs)
+                vm.store_memory(address, rhs)
             elif isinstance(ltree, SymbolNode):
                 print("Eval error: cannot assign to symbol.")
             elif isinstance(ltree, (InfixNode, PrefixNode)):
@@ -509,10 +509,10 @@ class Shell:
             if node.value.lower() == "pc":
                 return vm.pc
             else:
-                return vm.get_register(node.value)
+                return vm.load_register(node.value)
         elif isinstance(node, MemoryNode):
             address = self.evaluate_node(node.address)
-            return vm.access_memory(address)
+            return vm.load_memory(address)
         elif isinstance(node, SymbolNode):
             try:
                 return self.debugger.symbol_table[node.value]

@@ -3,17 +3,17 @@
 
 TIGER_STDLIB_STACK = """
 LABEL(printint)
-  __eval("print(vm.access_memory(vm.registers[14]+3), end='')")
+  __eval("print(vm.load_memory(vm.registers[14]+3), end='')")
   RETURN(FP_alt, PC_ret)
 
 
 LABEL(print)
-  __eval("addr = vm.access_memory(vm.registers[14]+3); n = vm.access_memory(addr)\\nfor i in range(n):\\n  print(chr(vm.access_memory(addr+i+1)), end='')")
+  __eval("addr = vm.load_memory(vm.registers[14]+3); n = vm.load_memory(addr)\\nfor i in range(n):\\n  print(chr(vm.load_memory(addr+i+1)), end='')")
   RETURN(FP_alt, PC_ret)
 
 
 LABEL(println)
-  __eval("addr = vm.access_memory(vm.registers[14]+3); n = vm.access_memory(addr)\\nfor i in range(n):\\n  print(chr(vm.access_memory(addr+i+1)), end='')\\nprint()")
+  __eval("addr = vm.load_memory(vm.registers[14]+3); n = vm.load_memory(addr)\\nfor i in range(n):\\n  print(chr(vm.load_memory(addr+i+1)), end='')\\nprint()")
   RETURN(FP_alt, PC_ret)
 
 
@@ -23,7 +23,7 @@ LABEL(exit)
 
 
 LABEL(div)
-  __eval("left = vm.access_memory(vm.registers[14]+3); right = vm.access_memory(vm.registers[14]+4); vm.assign_memory(vm.registers[14]+3, left // right)")
+  __eval("left = vm.load_memory(vm.registers[14]+3); right = vm.load_memory(vm.registers[14]+4); vm.store_memory(vm.registers[14]+3, left // right)")
   RETURN(FP_alt, PC_ret)
 
 
