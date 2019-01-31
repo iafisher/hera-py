@@ -8,6 +8,8 @@ class Lexer:
     def __init__(self, text, *, path=None):
         self.text = text
         self.file_lines = text.splitlines()
+        if self.text.endswith("\n"):
+            self.file_lines.append("")
         self.position = 0
         self.line = 1
         self.column = 1

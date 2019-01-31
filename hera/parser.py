@@ -57,13 +57,17 @@ class Parser:
                 # Many legacy HERA program are enclosed with void HERA_main() { ... },
                 # which is handled here.
                 if lexer.tkn.type == TOKEN.SYMBOL and name == "void":
-                    if lexer.next_token().type != TOKEN.LPAREN:
+                    if lexer.next_token().type == TOKEN.LPAREN:
+                        lexer.next_token()
+                    else:
                         self.err("expected left parenthesis", lexer.tkn)
 
-                    if lexer.next_token().type != TOKEN.RPAREN:
+                    if lexer.tkn.type == TOKEN.RPAREN:
+                        lexer.next_token()
+                    else:
                         self.err("expected right parenthesis", lexer.tkn)
 
-                    if lexer.next_token().type != TOKEN.LBRACE:
+                    if lexer.tkn.type != TOKEN.LBRACE:
                         self.err("expected left curly brace", lexer.tkn)
 
                     lexer.next_token()
@@ -86,23 +90,20 @@ class Parser:
         return ops
 
     def match_op(self, lexer, name):
-        """Match an operation, assuming that lexer.tkn is on the right parenthesis."""
+        """Match an operation, assuming that lexer.tkn is on the left parenthesis."""
         lexer.next_token()
         args = self.match_optional_arglist(lexer)
-
-        if lexer.tkn.type != TOKEN.RPAREN:
-            self.err("expected right parenthesis", lexer.tkn)
-            return Op(name, args)
-        else:
-            lexer.next_token()
-
+        lexer.next_token()
         return Op(name, args)
 
     VALUE_TOKENS = (TOKEN.INT, TOKEN.REGISTER, TOKEN.SYMBOL, TOKEN.STRING, TOKEN.CHAR)
 
     def match_optional_arglist(self, lexer):
+        if lexer.tkn.type == TOKEN.RPAREN:
+            return []
+
         args = []
-        while lexer.tkn.type != TOKEN.RPAREN:
+        while True:
             if lexer.tkn.type == TOKEN.INT:
                 if (
                     len(lexer.tkn) >= 2
@@ -125,13 +126,21 @@ class Parser:
                 args.append(lexer.tkn)
             else:
                 self.err("expected value", lexer.tkn)
-                break
+                while lexer.tkn.type not in (TOKEN.COMMA, TOKEN.RPAREN, TOKEN.EOF):
+                    lexer.next_token()
+
+                if lexer.tkn.type == TOKEN.COMMA:
+                    lexer.next_token()
+                    continue
+                else:
+                    # TODO: Will this miss an error for EOF?
+                    break
 
             lexer.next_token()
             if lexer.tkn.type == TOKEN.RPAREN:
                 break
             elif lexer.tkn.type != TOKEN.COMMA:
-                self.err("expected comma or right-parenthesis", lexer.tkn)
+                self.err("expected comma or right parenthesis", lexer.tkn)
                 lexer.next_token()
                 break
             else:

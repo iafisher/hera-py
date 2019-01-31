@@ -441,6 +441,7 @@ def test_handle_ll(shell, capsys):
     6  LABEL(add)
     7  ADD(R3, R1, R2)
     8  HALT()
+    9
 """
     )
 
