@@ -19,13 +19,7 @@ def parse(text: str, *, path=None) -> Tuple[List[Op], Messages]:
     """Parse a HERA program.
 
     `path` is the path of the file being parsed, as it will appear in error and
-    debugging messages. It defaults to "<string>".
-
-    `includes` determines what happens when an #include statement is encountered. If
-    `includes` is True, then the #include statement is interpreted as it is by the C
-    preprocessor, i.e. the file identified by #include's argument is read, parsed, and
-    pasted in with the rest of the operations. If it is False, then the #include
-    statement is retained as an Op object.
+    warning messages. It defaults to "<string>".
     """
     parser = Parser()
     program = parser.parse(Lexer(text, path=path))
@@ -53,13 +47,13 @@ class Parser:
                 # which is handled here.
                 if lexer.tkn.type == TOKEN.SYMBOL and name == "void":
                     if lexer.next_token().type != TOKEN.LPAREN:
-                        self.err(lexer.tkn, "expected left parenthesis")
+                        self.err("expected left parenthesis", lexer.tkn)
 
                     if lexer.next_token().type != TOKEN.RPAREN:
-                        self.err(lexer.tkn, "expected right parenthesis")
+                        self.err("expected right parenthesis", lexer.tkn)
 
                     if lexer.next_token().type != TOKEN.LBRACE:
-                        self.err(lexer.tkn, "expected left curly brace")
+                        self.err("expected left curly brace", lexer.tkn)
 
                     lexer.next_token()
                     expecting_brace = True
@@ -70,12 +64,12 @@ class Parser:
                     if lexer.tkn.type == TOKEN.SEMICOLON:
                         lexer.next_token()
                 else:
-                    self.err(lexer.tkn, "expected left parenthesis")
+                    self.err("expected left parenthesis", lexer.tkn)
             elif expecting_brace and lexer.tkn.type == TOKEN.RBRACE:
                 lexer.next_token()
                 expecting_brace = False
             else:
-                self.err(lexer.tkn, "expected HERA operation or #include")
+                self.err("expected HERA operation or #include", lexer.tkn)
                 break
 
         # Make sure to capture any errors or warnings from the lexer.
@@ -88,7 +82,7 @@ class Parser:
         args = self.match_optional_arglist(lexer)
 
         if lexer.tkn.type != TOKEN.RPAREN:
-            self.err(lexer.tkn, "expected right parenthesis")
+            self.err("expected right parenthesis", lexer.tkn)
             return Op(name, args)
         else:
             lexer.next_token()
@@ -107,13 +101,13 @@ class Parser:
                     and lexer.tkn[1].isdigit()
                 ):
                     base = 8
-                    self.warn(lexer.tkn, 'consider using "0o" prefix for octal numbers')
+                    self.warn('consider using "0o" prefix for octal numbers', lexer.tkn)
                 else:
                     base = 0
                 try:
                     args.append(IntToken(lexer.tkn, loc=lexer.tkn.location, base=base))
                 except ValueError:
-                    self.err(lexer.tkn, "invalid integer literal")
+                    self.err("invalid integer literal", lexer.tkn)
                     lexer.next_token()
                     break
             elif lexer.tkn.type == TOKEN.CHAR:
@@ -121,14 +115,14 @@ class Parser:
             elif lexer.tkn.type in self.VALUE_TOKENS:
                 args.append(lexer.tkn)
             else:
-                self.err(lexer.tkn, "expected value")
+                self.err("expected value", lexer.tkn)
                 break
 
             lexer.next_token()
             if lexer.tkn.type == TOKEN.RPAREN:
                 break
             elif lexer.tkn.type != TOKEN.COMMA:
-                self.err(lexer.tkn, "expected comma or right-parenthesis")
+                self.err("expected comma or right-parenthesis", lexer.tkn)
                 lexer.next_token()
                 break
             else:
@@ -143,13 +137,13 @@ class Parser:
             include_path = os.path.join(os.path.dirname(root_path), tkn)
 
             if get_canonical_path(include_path) in self.visited:
-                self.err(tkn, "recursive include")
+                self.err("recursive include", tkn)
                 return []
 
             try:
                 included_text = read_file(include_path)
             except HERAError as e:
-                self.err(tkn, str(e))
+                self.err(str(e), tkn)
                 return []
             else:
                 sublexer = Lexer(included_text, path=include_path)
@@ -157,14 +151,14 @@ class Parser:
         elif tkn.type == TOKEN.BRACKETED:
             return self.expand_angle_include(lexer, tkn)
         else:
-            self.err(tkn, "expected quote or angle-bracket delimited string")
+            self.err("expected quote or angle-bracket delimited string", tkn)
             return []
 
     def expand_angle_include(self, lexer, include_path):
         # There is no check for recursive includes in this function, under the
         # assumption that system libraries do not have recursive includes.
         if include_path == "HERA.h":
-            self.warn(include_path, "#include <HERA.h> is not necessary for hera-py")
+            self.warn("#include <HERA.h> is not necessary for hera-py", include_path)
             return []
         elif include_path == "Tiger-stdlib-stack-data.hera":
             included_text = TIGER_STDLIB_STACK_DATA
@@ -175,16 +169,16 @@ class Parser:
             try:
                 included_text = read_file(os.path.join(root_path, include_path))
             except HERAError as e:
-                self.err(include_path, str(e))
+                self.err(str(e), include_path)
                 return []
 
         sublexer = Lexer(included_text, path=include_path)
         return self.parse(sublexer)
 
-    def err(self, tkn, msg):
+    def err(self, msg, tkn):
         self.messages.err(msg, tkn.location)
 
-    def warn(self, tkn, msg):
+    def warn(self, msg, tkn):
         self.messages.warn(msg, tkn.location)
 
 

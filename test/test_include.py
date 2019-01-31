@@ -72,12 +72,14 @@ def test_nonexistent_path_program(capsys):
     assert 'file "test/assets/include/whatever.hera" does not exist' in captured.err
 
 
-@pytest.mark.skip("not ready")
+@pytest.mark.skip("not yet")
 def test_include_stdin_program(capsys):
     program = '#include "-"\n#include "<stdin>"'
     with pytest.raises(SystemExit):
         execute_program_helper(program)
 
     captured = capsys.readouterr()
-    assert 'file "test/assets/include/-" does not exist' in captured.err
-    assert 'file "test/assets/include/<stdin>" does not exist' in captured.err
+    assert 'file "-" does not exist' in captured.err
+    # We want this error and not a recursive include error, i.e. we need to distinguish
+    # between actual standard input and a file called "<stdin>".
+    assert 'file "<stdin>" does not exist' in captured.err
