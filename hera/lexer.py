@@ -1,4 +1,4 @@
-from hera.data import Location, Messages, Token, TOKEN
+from hera.data import HERAError, Location, Messages, Token, TOKEN
 from hera.utils import is_register
 
 
@@ -70,7 +70,8 @@ class Lexer:
                 self.next_char()
                 length = self.read_bracketed()
                 self.set_token(TOKEN.BRACKETED, length=length)
-                self.next_char()
+                if self.position < len(self.text):
+                    self.next_char()
             elif ch == ":":
                 self.position += 1
                 length = self.read_symbol()
@@ -135,13 +136,19 @@ class Lexer:
         length = 1
         while self.position + length < len(self.text) and self.peek_char(length) != ">":
             length += 1
+        if self.position + length == len(self.text):
+            raise HERAError("unclosed bracketed expression", self.get_location())
         return length
 
     def consume_str(self):
         sbuilder = []
+        loc = self.get_location()
         self.next_char()
-        while self.text[self.position] != '"':
+        while self.position < len(self.text) and self.text[self.position] != '"':
             if self.text[self.position] == "\\":
+                if self.position == len(self.text) - 1:
+                    raise HERAError("unclosed string literal", loc)
+
                 escape = escape_char(self.text[self.position + 1])
                 sbuilder.append(escape)
                 self.next_char()
@@ -151,7 +158,10 @@ class Lexer:
             else:
                 sbuilder.append(self.text[self.position])
                 self.next_char()
-        self.next_char()
+        if self.position < len(self.text):
+            self.next_char()
+        else:
+            raise HERAError("unclosed string literal", loc)
         return "".join(sbuilder)
 
     def skip(self):

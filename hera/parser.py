@@ -35,6 +35,17 @@ class Parser:
         if lexer.path:
             self.visited.add(get_canonical_path(lexer.path))
 
+        try:
+            ops = self.match_program(lexer)
+        except HERAError as e:
+            self.messages.err(*e.args)
+            return []
+
+        # Make sure to capture any warnings from the lexer.
+        self.messages.extend(lexer.messages)
+        return ops
+
+    def match_program(self, lexer):
         expecting_brace = False
         ops = []
         while lexer.tkn.type != TOKEN.EOF:
@@ -72,8 +83,6 @@ class Parser:
                 self.err("expected HERA operation or #include", lexer.tkn)
                 break
 
-        # Make sure to capture any errors or warnings from the lexer.
-        self.messages.extend(lexer.messages)
         return ops
 
     def match_op(self, lexer, name):
