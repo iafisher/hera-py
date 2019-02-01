@@ -9,12 +9,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Arithmetic operations are supported in printing and assigning values in the debugger.
 - Much more informative messages for parse errors.
+- Detection of invalid return addresses, and accompanying `--no-ret-warn` flag.
 - The `undo` debugging command.
 - The `on` and `off` debugging commands for flag manipulation.
 - The `next` debugging command now takes an optional argument.
 - The `print` debugging command now takes accepts an optional format specifier argument.
 - The `print` debugging command now takes multiple comma-separated arguments.
 - Printing the program counter or `PC_ret` (`R13`) in the debugger now indicates what line of code the registers correspond to.
+- The `--no-debug` command-line flag.
 
 ### Changed
 - The `restart` debugging command may no longer be abbreviated.

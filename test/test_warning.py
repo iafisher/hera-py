@@ -199,7 +199,7 @@ Virtual machine state after execution:
 
 
 def test_warning_for_improper_first_register_with_RETURN(capsys):
-    execute_program_helper("RETURN(R11, R13)")
+    execute_program_helper("RETURN(R11, R13)", flags=["--no-ret-warn"])
 
     captured = capsys.readouterr().err
     assert (
@@ -223,7 +223,7 @@ Virtual machine state after execution:
 
 
 def test_warning_for_improper_second_register_with_RETURN(capsys):
-    execute_program_helper("RETURN(R12, R11)")
+    execute_program_helper("RETURN(R12, R11)", flags=["--no-ret-warn"])
 
     captured = capsys.readouterr().err
     assert (
@@ -258,6 +258,38 @@ Warning: #include <HERA.h> is not necessary for hera-py, line 1 col 11 of <stdin
 
   #include <HERA.h>
             ^
+
+
+Virtual machine state after execution:
+    R1 through R10 are all zero.
+
+    All flags are OFF
+
+1 warning emitted.
+"""
+    )
+
+
+def test_warning_for_bad_RETURN_value(capsys):
+    program = """\
+CALL(FP_alt, do_nothing)
+HALT()
+
+LABEL(do_nothing)
+  SET(PC_ret, 100)
+  RETURN(FP_alt, PC_ret)
+    """
+    execute_program_helper(program)
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Warning: incorrect return address (got 100, expected 3), line 6 col 3 of <stdin>
+
+    RETURN(FP_alt, PC_ret)
+    ^
 
 
 Virtual machine state after execution:

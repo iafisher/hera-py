@@ -8,13 +8,7 @@ from typing import List
 
 from .data import Settings
 from .op import Operation
-from .utils import (
-    ANSI_MAGENTA_BOLD,
-    ANSI_RESET,
-    DATA_STATEMENTS,
-    print_message_with_location,
-    register_to_index,
-)
+from .utils import DATA_STATEMENTS, print_warning, register_to_index
 
 
 class VirtualMachine:
@@ -45,6 +39,8 @@ class VirtualMachine:
         # to be addressable, but we start off with a considerably smaller array and
         # expand it as necessary, to keep the start-up time fast.
         self.memory = [0] * (2 ** 4)
+        # Stack of expected return addresses for RETURN instructions.
+        self.expected_returns = []
         self.halted = False
         # Location object for the current operation
         self.location = None
@@ -87,16 +83,12 @@ class VirtualMachine:
     def handle_not_implemented(self, name):
         if name == "SWI":
             if not self.warned_for_SWI:
-                self.print_warning(
-                    "SWI is a no-op in this simulator", loc=self.location
-                )
+                self.warn("SWI is a no-op in this simulator", loc=self.location)
                 self.warned_for_SWI = True
             self.pc += 1
         elif name == "RTI":
             if not self.warned_for_RTI:
-                self.print_warning(
-                    "RTI is a no-op in this simulator", loc=self.location
-                )
+                self.warn("RTI is a no-op in this simulator", loc=self.location)
                 self.warned_for_RTI = True
             self.pc += 1
         else:
@@ -114,7 +106,7 @@ class VirtualMachine:
             self.registers[index] = value
             if index == 15 and value >= self.settings.data_start:
                 if not self.warned_for_overflow:
-                    self.print_warning(
+                    self.warn(
                         "stack has overflowed into data segment", loc=self.location
                     )
                     self.warned_for_overflow = True
@@ -138,10 +130,6 @@ class VirtualMachine:
             self.memory.extend([0] * (address - len(self.memory) + 1))
         self.memory[address] = value
 
-    def print_warning(self, msg, loc):
-        if self.settings.color:
-            msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
-        else:
-            msg = "Warning: " + msg
-        print_message_with_location(msg, loc=loc)
+    def warn(self, msg, loc):
+        print_warning(self.settings, msg, loc=loc)
         self.warning_count += 1

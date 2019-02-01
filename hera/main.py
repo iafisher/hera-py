@@ -31,6 +31,9 @@ def main(argv=None):
     if arguments["--no-debug"]:
         settings.no_debug = True
 
+    if arguments["--no-ret-warn"]:
+        settings.no_ret_warn = True
+
     if arguments["--verbose"]:
         settings.volume = VOLUME_VERBOSE
     elif arguments["--quiet"]:
@@ -81,7 +84,7 @@ def main_preprocess(path, settings):
 
 def parse_args(argv):
     if argv is None:
-        argv = sys.argv
+        argv = sys.argv[1:]
 
     flags = {}
     posargs = []
@@ -153,6 +156,7 @@ FLAGS = {
     "--help",
     "--no-color",
     "--no-debug",
+    "--no-ret-warn",
     "--quiet",
     "--verbose",
     "--version",
@@ -176,6 +180,7 @@ Common options:
 Execution options:
     --big-stack      Reserve more space for the stack.
     --no-debug       Disallow debugging instructions.
+    --no-ret-warn    Do not print warnings for invalid RETURN addresses.
     -q --quiet       Set output level to quiet.
     --verbose        Set output level to verbose.
 """

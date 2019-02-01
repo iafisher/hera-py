@@ -63,13 +63,13 @@ LABEL(bottom)
 def test_function_call_program(capsys):
     program = """\
 SET(R1, 8)
-CALL(R12, times_two)
+CALL(FP_alt, times_two)
 HALT()
 
 // Multiply R1 by two, in-place
 LABEL(times_two)
   LSL(R1, R1)
-  RETURN(R12, R13)
+  RETURN(FP_alt, PC_ret)
     """
     vm = execute_program_helper(program)
 

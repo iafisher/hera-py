@@ -8,6 +8,7 @@ from hera.utils import (
     from_u16,
     is_register,
     is_symbol,
+    print_warning,
     register_to_index,
     to_u16,
     to_u32,
@@ -706,6 +707,10 @@ class CALL(CALL_AND_RETURN):
         else:
             return super().convert()
 
+    def execute(self, vm):
+        vm.expected_returns.append(vm.pc + 1)
+        super().execute(vm)
+
 
 class RETURN(CALL_AND_RETURN):
     P = (REGISTER, REGISTER)
@@ -720,6 +725,25 @@ class RETURN(CALL_AND_RETURN):
                         "second argument to RETURN should be R13", self.args[1]
                     )
         return messages
+
+    def execute(self, vm):
+        got = vm.load_register(self.args[1])
+        if not vm.settings.no_ret_warn:
+            if vm.expected_returns:
+                expected = vm.expected_returns.pop()
+                if expected != got:
+                    msg = "incorrect return address (got {}, expected {})".format(
+                        got, expected
+                    )
+                    print_warning(vm.settings, msg, loc=vm.location)
+                    vm.settings.warning_count += 1
+            else:
+                msg = "incorrect return address (got {}, expected <nothing>)".format(
+                    got
+                )
+                print_warning(vm.settings, msg, loc=vm.location)
+                vm.settings.warning_count += 1
+        super().execute(vm)
 
 
 class SWI(Operation):

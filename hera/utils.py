@@ -124,7 +124,23 @@ DATA_STATEMENTS = set(
 )
 
 
-def print_message_with_location(msg, *, loc=None):
+def print_warning(settings, msg, *, loc=None):
+    if settings.color:
+        msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
+    else:
+        msg = "Warning: " + msg
+    print_message(msg, loc=loc)
+
+
+def print_error(settings, msg, *, loc=None):
+    if settings.color:
+        msg = ANSI_RED_BOLD + "Error" + ANSI_RESET + ": " + msg
+    else:
+        msg = "Error: " + msg
+    print_message(msg, loc=loc)
+
+
+def print_message(msg, *, loc=None):
     """Print a message to stderr. If `loc` is provided as either a Location object, or
     a Token object with a `location` field, then the line of code that the location
     indicates will be printed with the message.
@@ -181,21 +197,13 @@ def handle_messages(settings, ret_messages_pair):
         messages = ret_messages_pair
 
     for msg, loc in messages.warnings:
-        if settings.color:
-            msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
-        else:
-            msg = "Warning: " + msg
-        print_message_with_location(msg, loc=loc)
+        print_warning(settings, msg, loc=loc)
 
     settings.warning_count += len(messages.warnings)
     messages.warnings.clear()
 
     for msg, loc in messages.errors:
-        if settings.color:
-            msg = ANSI_RED_BOLD + "Error" + ANSI_RESET + ": " + msg
-        else:
-            msg = "Error: " + msg
-        print_message_with_location(msg, loc=loc)
+        print_error(settings, msg, loc=loc)
 
     if messages.errors:
         sys.exit(3)
