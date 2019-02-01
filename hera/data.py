@@ -30,13 +30,13 @@ class Settings:
         color=True,
         data_start=DEFAULT_DATA_START,
         no_debug=False,
-        no_ret_warn=False,
-        volume=VOLUME_NORMAL
+        volume=VOLUME_NORMAL,
+        warn_return_on=True,
     ):
         self.color = color
         self.data_start = data_start
         self.no_debug = no_debug
-        self.no_ret_warn = no_ret_warn
+        self.warn_return_on = warn_return_on
         self.volume = volume
         self.warning_count = 0
 

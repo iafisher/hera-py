@@ -119,6 +119,26 @@ def test_main_with_quiet_and_verbose_flags(capsys):
     assert captured.err == "--quiet and --verbose are incompatible.\n"
 
 
+def test_main_preprocess_and_debug_with_big_stack_flag(capsys):
+    with pytest.raises(SystemExit):
+        main(["--big-stack", "preprocess", "main.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "--big-stack cannot be used with preprocess subcommand.\n"
+
+
+def test_main_preprocess_with_warn_return_off_flag(capsys):
+    with pytest.raises(SystemExit):
+        main(["--warn-return-off", "preprocess", "main.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert (
+        captured.err == "--warn-return-off cannot be used with preprocess subcommand.\n"
+    )
+
+
 def test_main_with_verbose_flag(capsys):
     with patch("sys.stdin", StringIO("SET(R1, 42)")):
         main(["--verbose", "-"])

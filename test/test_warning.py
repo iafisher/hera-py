@@ -199,7 +199,7 @@ Virtual machine state after execution:
 
 
 def test_warning_for_improper_first_register_with_RETURN(capsys):
-    execute_program_helper("RETURN(R11, R13)", flags=["--no-ret-warn"])
+    execute_program_helper("RETURN(R11, R13)", flags=["--warn-return-off"])
 
     captured = capsys.readouterr().err
     assert (
@@ -223,7 +223,7 @@ Virtual machine state after execution:
 
 
 def test_warning_for_improper_second_register_with_RETURN(capsys):
-    execute_program_helper("RETURN(R12, R11)", flags=["--no-ret-warn"])
+    execute_program_helper("RETURN(R12, R11)", flags=["--warn-return-off"])
 
     captured = capsys.readouterr().err
     assert (

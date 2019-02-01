@@ -736,7 +736,7 @@ class RETURN(CALL_AND_RETURN):
 
     def execute(self, vm):
         got = vm.load_register(self.args[1])
-        if not vm.settings.no_ret_warn:
+        if vm.settings.warn_return_on:
             if vm.expected_returns:
                 expected = vm.expected_returns.pop()
                 if expected != got:

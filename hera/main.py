@@ -28,11 +28,8 @@ def main(argv=None):
         # Arbitrary value copied over from HERA-C.
         settings.data_start = 0xC167
 
-    if arguments["--no-debug"]:
-        settings.no_debug = True
-
-    if arguments["--no-ret-warn"]:
-        settings.no_ret_warn = True
+    settings.no_debug = arguments["--no-debug"]
+    settings.warn_return_on = not arguments["--warn-return-off"]
 
     if arguments["--verbose"]:
         settings.volume = VOLUME_VERBOSE
@@ -128,6 +125,18 @@ def parse_args(argv):
         sys.stderr.write("Too many file paths supplied.\n")
         sys.exit(1)
 
+    if "--big-stack" in flags:
+        if "preprocess" in flags:
+            sys.stderr.write("--big-stack cannot be used with preprocess subcommand.\n")
+            sys.exit(1)
+
+    if "--warn-return-off" in flags:
+        if "preprocess" in flags:
+            sys.stderr.write(
+                "--warn-return-off cannot be used with preprocess subcommand.\n"
+            )
+            sys.exit(1)
+
     if "--quiet" in flags and "--verbose" in flags:
         sys.stderr.write("--quiet and --verbose are incompatible.\n")
         sys.exit(1)
@@ -156,10 +165,10 @@ FLAGS = {
     "--help",
     "--no-color",
     "--no-debug",
-    "--no-ret-warn",
     "--quiet",
     "--verbose",
     "--version",
+    "--warn-return-off",
     "preprocess",
     "debug",
 }
@@ -173,16 +182,17 @@ Usage:
     hera debug <path>
 
 Common options:
-    -h, --help       Show this message and exit.
-    --no-color       Do not print colored output.
-    -v, --version    Show the version and exit.
+    -h, --help         Show this message and exit.
+    -v, --version      Show the version and exit.
 
-Execution options:
-    --big-stack      Reserve more space for the stack.
-    --no-debug       Disallow debugging instructions.
-    --no-ret-warn    Do not print warnings for invalid RETURN addresses.
-    -q --quiet       Set output level to quiet.
-    --verbose        Set output level to verbose.
+    --no-color         Do not print colored output.
+    --no-debug         Disallow debugging instructions.
+    -q --quiet         Set output level to quiet.
+    --verbose          Set output level to verbose.
+
+Interpreter and debugger options:
+    --big-stack        Reserve more space for the stack.
+    --warn-return-off  Do not print warnings for invalid RETURN addresses.
 """
 
 
