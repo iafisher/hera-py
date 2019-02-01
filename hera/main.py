@@ -1,24 +1,5 @@
-"""hera: an interpreter for the Haverford Educational RISC Architecture.
-
-Usage:
-    hera [-q | --verbose] [--no-color] [--big-stack] <path>
-    hera [--no-color] preprocess <path>
-    hera [--no-color] debug <path>
-    hera (-h | --help)
-    hera (-v | --version)
-
-Options:
-    --big-stack      Reserve more space for the stack.
-    --verbose        Set output level to verbose.
-    -q --quiet       Set output level to quiet.
-    --no-color       Do not print colored output.
-    -h, --help       Show this message.
-    -v, --version    Show the version.
-"""
 import sys
 import functools
-
-from docopt import docopt
 
 from .data import Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
@@ -35,12 +16,8 @@ def external_main(argv=None):
 
 
 def main(argv=None):
-    """The main entry point into hera-py.
-
-    This function consists mostly of argument parsing. The heavy-lifting begins
-    with main_execute later in this module.
-    """
-    arguments = docopt(__doc__, argv=argv, version="hera-py 0.5.0 for HERA version 2.4")
+    """The main entry point into hera-py."""
+    arguments = parse_args(argv)
     path = arguments["<path>"]
 
     settings = Settings()
@@ -97,6 +74,102 @@ def main_preprocess(path, settings):
 
     for i, op in enumerate(program.code):
         sys.stderr.write("  {:0>4}  {}\n".format(i, op))
+
+
+def parse_args(argv):
+    if argv is None:
+        argv = sys.argv
+
+    flags = {}
+    posargs = []
+    after_flags = False
+    for arg in argv:
+        longarg = short_to_long(arg)
+        if longarg == "--":
+            after_flags = True
+        elif longarg in FLAGS:
+            flags[longarg] = True
+        elif not after_flags and longarg.startswith("-") and len(longarg) > 1:
+            sys.stderr.write("Unrecognized flag: " + arg + "\n")
+            sys.exit(1)
+        else:
+            posargs.append(longarg)
+
+    if "--help" in flags:
+        if len(flags) == 1 and not posargs:
+            print(HELP)
+            sys.exit(0)
+        else:
+            sys.stderr.write(
+                "--help may not be combined with other flags or commands.\n"
+            )
+            sys.exit(1)
+
+    if "--version" in flags:
+        if len(flags) == 1 and not posargs:
+            print(VERSION)
+            sys.exit(0)
+        else:
+            sys.stderr.write(
+                "--version may not be combined with other flags or commands.\n"
+            )
+            sys.exit(1)
+
+    if len(posargs) == 0:
+        sys.stderr.write("No file path supplied.\n")
+        sys.exit(1)
+    elif len(posargs) > 1:
+        sys.stderr.write("Too many file paths supplied.\n")
+        sys.exit(1)
+
+    flags["<path>"] = posargs[0]
+    for f in FLAGS:
+        if f not in flags:
+            flags[f] = False
+
+    return flags
+
+
+def short_to_long(arg):
+    if arg == "-h":
+        return "--help"
+    elif arg == "-v":
+        return "--version"
+    elif arg == "-q":
+        return "--quiet"
+    else:
+        return arg
+
+
+FLAGS = {
+    "--help",
+    "--no-color",
+    "--version",
+    "--big-stack",
+    "--verbose",
+    "--quiet",
+    "preprocess",
+    "debug",
+}
+VERSION = "hera-py 0.5.0 for HERA version 2.4"
+HELP = """\
+hera: an interpreter for the Haverford Educational RISC Architecture.
+
+Usage:
+    hera <path>
+    hera preprocess <path>
+    hera debug <path>
+
+Common options:
+    -h, --help       Show this message and exit.
+    --no-color       Do not print colored output.
+    -v, --version    Show the version and exit.
+
+Execution options:
+    --big-stack      Reserve more space for the stack.
+    --verbose        Set output level to verbose.
+    -q --quiet       Set output level to quiet.
+"""
 
 
 def dump_state(vm, settings):

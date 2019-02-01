@@ -43,16 +43,20 @@ Virtual machine state after execution:
 
 def test_main_non_existent_file(capsys):
     with pytest.raises(SystemExit):
-        main("unicorn.hera")
+        main(["unicorn.hera"])
 
-    assert capsys.readouterr().err == 'Error: file "unicorn.hera" does not exist\n'
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == 'Error: file "unicorn.hera" does not exist\n'
 
 
 def test_main_preprocess_non_existent_file(capsys):
     with pytest.raises(SystemExit):
         main(["preprocess", "unicorn.hera"])
 
-    assert capsys.readouterr().err == 'Error: file "unicorn.hera" does not exist\n'
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == 'Error: file "unicorn.hera" does not exist\n'
 
 
 def test_main_debug(capsys):
@@ -61,28 +65,64 @@ def test_main_debug(capsys):
     with patch("sys.stdin", StringIO("quit")):
         main(["debug", "test/assets/cs240/factorial.hera"])
 
-
-def test_execute_from_stdin():
-    with patch("sys.stdin", StringIO("SET(R1, 42)")):
-        vm = main(["-"])
-
-    assert vm.registers[1] == 42
+    captured = capsys.readouterr()
+    assert captured.err == ""
 
 
 def test_main_with_short_version_flag(capsys):
     with pytest.raises(SystemExit):
         main(["-v"])
 
-    captured = capsys.readouterr().out
-    assert re.match(r"^hera-py [0-9.]+ for HERA version [0-9.]+$", captured)
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert re.match(r"^hera-py [0-9.]+ for HERA version [0-9.]+$", captured.out)
 
 
 def test_main_with_long_version_flag(capsys):
     with pytest.raises(SystemExit):
         main(["--version"])
 
-    captured = capsys.readouterr().out
-    assert re.match(r"^hera-py [0-9.]+ for HERA version [0-9.]+$", captured)
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert re.match(r"^hera-py [0-9.]+ for HERA version [0-9.]+$", captured.out)
+
+
+def test_main_with_version_flag_and_other_flags(capsys):
+    with pytest.raises(SystemExit):
+        main(["--version", "main.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert (
+        captured.err == "--version may not be combined with other flags or commands.\n"
+    )
+
+
+def test_main_with_help_flag_and_other_flags(capsys):
+    with pytest.raises(SystemExit):
+        main(["--help", "main.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "--help may not be combined with other flags or commands.\n"
+
+
+def test_main_with_multiple_positional_args(capsys):
+    with pytest.raises(SystemExit):
+        main(["a.hera", "b.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "Too many file paths supplied.\n"
+
+
+def test_main_with_no_positional_args(capsys):
+    with pytest.raises(SystemExit):
+        main([])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "No file path supplied.\n"
 
 
 def test_main_with_short_quiet_flag(capsys):
@@ -107,9 +147,10 @@ def test_main_with_verbose_flag(capsys):
     with patch("sys.stdin", StringIO("SET(R1, 42)")):
         main(["--verbose", "-"])
 
-    captured = capsys.readouterr().err
+    captured = capsys.readouterr()
+    assert captured.out == ""
     assert (
-        captured
+        captured.err
         == """\
 
 
@@ -144,8 +185,9 @@ def test_main_with_big_stack_flag(capsys):
     with patch("sys.stdin", StringIO(program)):
         main(["--big-stack", "-"])
 
-    captured = capsys.readouterr().err
-    assert "R1  = 0xc167" in captured
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "R1  = 0xc167" in captured.err
 
 
 def test_no_ANSI_color_when_stderr_is_not_tty():
