@@ -13,8 +13,9 @@ from .miniparser import (
 )
 from hera.data import DataLabel, HERAError, Label, Program, Settings
 from hera.loader import load_program
+from hera.op import Branch, DataOperation, resolve_ops
 from hera.parser import parse
-from hera.utils import BRANCHES, DATA_STATEMENTS, format_int, pad, register_to_index
+from hera.utils import format_int, pad, register_to_index
 
 
 def debug(program: Program, settings=Settings()) -> None:
@@ -199,11 +200,11 @@ class Shell:
     @mutates
     def handle_execute(self, argstr):
         # Make sure there are no disallowed ops.
-        for op in parse(argstr)[0]:
-            if op.name in BRANCHES or op.name in ("CALL", "RETURN"):
+        for op in resolve_ops(parse(argstr)[0])[0]:
+            if isinstance(op, Branch):
                 print("execute cannot take branching operations.")
                 return
-            elif op.name in DATA_STATEMENTS:
+            elif isinstance(op, DataOperation):
                 print("execute cannot take data statements.")
                 return
             elif op.name == "LABEL":

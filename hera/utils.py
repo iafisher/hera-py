@@ -112,18 +112,6 @@ def format_int(v, *, spec="xdsc"):
     return " = ".join(ret)
 
 
-REGISTER_BRANCHES = set(
-    # Two concatenated lists so that the code formatter doesn't make this into 15 lines.
-    ["BR", "BL", "BGE", "BLE", "BG", "BULE", "BUG", "BZ", "BNZ", "BC", "BNC", "BS"]
-    + ["BNS", "BV", "BNV"]
-)
-RELATIVE_BRANCHES = set(b + "R" for b in REGISTER_BRANCHES)
-BRANCHES = REGISTER_BRANCHES | RELATIVE_BRANCHES
-DATA_STATEMENTS = set(
-    ["CONSTANT", "DLABEL", "INTEGER", "LP_STRING", "TIGER_STRING", "DSKIP"]
-)
-
-
 def print_warning(settings, msg, *, loc=None):
     if settings.color:
         msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg

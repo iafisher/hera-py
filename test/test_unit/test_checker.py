@@ -8,7 +8,24 @@ from hera.checker import (
     typecheck,
 )
 from hera.data import Op, Settings, Token, TOKEN
-from hera.op import ADD, BRR, CALL, INC, INTEGER, resolve_ops, SET, SETHI, SETLO
+from hera.op import (
+    ADD,
+    BNZ,
+    BRR,
+    CALL,
+    CMP,
+    FLAGS,
+    INC,
+    INTEGER,
+    MOVE,
+    NEG,
+    NOT,
+    resolve_ops,
+    SET,
+    SETHI,
+    SETLO,
+    SETRF,
+)
 from hera.parser import parse
 
 
@@ -476,47 +493,47 @@ def test_typecheck_multiple_errors():
 
 
 def test_operation_length_of_register_branch_with_label():
-    assert operation_length(Op("BNZ", [SYM("l")])) == 3
+    assert operation_length(BNZ(SYM("l"))) == 3
 
 
 def test_operation_length_of_register_branch_with_register():
-    assert operation_length(Op("BNZ", [R("R1")])) == 1
+    assert operation_length(BNZ(R("R1"))) == 1
 
 
 def test_operation_length_of_SET():
-    assert operation_length(Op("SET", [R("R1"), 10])) == 2
+    assert operation_length(SET("R1", 10)) == 2
 
 
 def test_operation_length_of_SETRF():
-    assert operation_length(Op("SETRF", [R("R1"), 10])) == 4
+    assert operation_length(SETRF(R("R1"), 10)) == 4
 
 
 def test_operation_length_of_MOVE():
-    assert operation_length(Op("MOVE", [R("R1"), R("R2")])) == 1
+    assert operation_length(MOVE(R("R1"), R("R2"))) == 1
 
 
 def test_operation_length_of_CMP():
-    assert operation_length(Op("CMP", [R("R1"), R("R0")])) == 2
+    assert operation_length(CMP(R("R1"), R("R0"))) == 2
 
 
 def test_operation_length_of_NEG():
-    assert operation_length(Op("NEG", [R("R7"), R("R15")])) == 2
+    assert operation_length(NEG(R("R7"), R("R15"))) == 2
 
 
 def test_operation_length_of_NOT():
-    assert operation_length(Op("NOT", [R("R5"), R("R7")])) == 3
+    assert operation_length(NOT(R("R5"), R("R7"))) == 3
 
 
 def test_operation_lentgh_of_FLAGS():
-    assert operation_length(Op("FLAGS", [R("R3")])) == 2
+    assert operation_length(FLAGS(R("R3"))) == 2
 
 
 def test_operation_length_of_CALL_with_label():
-    assert operation_length(Op("CALL", [R("R12"), SYM("l")])) == 3
+    assert operation_length(CALL(R("R12"), SYM("l"))) == 3
 
 
 def test_operation_length_of_CALL_with_register():
-    assert operation_length(Op("CALL", [R("R12"), R("R13")])) == 1
+    assert operation_length(CALL(R("R12"), R("R13"))) == 1
 
 
 def test_get_labels_with_invalid_code(settings):

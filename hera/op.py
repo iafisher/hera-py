@@ -140,7 +140,11 @@ class BinaryOp(Operation):
         raise NotImplementedError
 
 
-class RegisterBranch(Operation):
+class Branch(Operation):
+    pass
+
+
+class RegisterBranch(Branch):
     """Abstract class to simplify implementation of register branches. Child classes
     only need to implement the should method.
     """
@@ -174,7 +178,7 @@ class RegisterBranch(Operation):
             return super().convert()
 
 
-class RelativeBranch(Operation):
+class RelativeBranch(Branch):
     """Abstract class to simplify implementation of relative branches. Child classes
     only need to implement the should method.
     """
@@ -195,6 +199,10 @@ class RelativeBranch(Operation):
 
 
 class DebuggingOperation(Operation):
+    pass
+
+
+class DataOperation(Operation):
     pass
 
 
@@ -672,7 +680,7 @@ class BNVR(RelativeBranch):
         return not vm.flag_overflow
 
 
-class CALL_AND_RETURN(Operation):
+class CALL_AND_RETURN(Branch):
     P = (REGISTER, REGISTER_OR_LABEL)
 
     def execute(self, vm):
@@ -851,7 +859,7 @@ class NOT(Operation):
         ]
 
 
-class INTEGER(Operation):
+class INTEGER(DataOperation):
     P = (I16,)
 
     def execute(self, vm):
@@ -859,14 +867,14 @@ class INTEGER(Operation):
         vm.dc += 1
 
 
-class DSKIP(Operation):
+class DSKIP(DataOperation):
     P = (U16,)
 
     def execute(self, vm):
         vm.dc += self.args[0]
 
 
-class LP_STRING(Operation):
+class LP_STRING(DataOperation):
     P = (STRING,)
 
     def execute(self, vm):
@@ -877,7 +885,7 @@ class LP_STRING(Operation):
             vm.dc += 1
 
 
-class CONSTANT(Operation):
+class CONSTANT(DataOperation):
     P = (LABEL_TYPE, I16)
 
     def convert(self):
@@ -891,7 +899,7 @@ class LABEL(Operation):
         return []
 
 
-class DLABEL(Operation):
+class DLABEL(DataOperation):
     P = (LABEL_TYPE,)
 
     def convert(self):

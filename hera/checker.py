@@ -12,14 +12,15 @@ from .data import (
     Token,
     TOKEN,
 )
-from .op import DebuggingOperation, Operation, resolve_ops
-from .utils import (
-    DATA_STATEMENTS,
-    is_register,
-    is_symbol,
-    REGISTER_BRANCHES,
-    RELATIVE_BRANCHES,
+from .op import (
+    DataOperation,
+    DebuggingOperation,
+    Operation,
+    RegisterBranch,
+    RelativeBranch,
+    resolve_ops,
 )
+from .utils import is_symbol
 
 
 def check(oplist: List[Op], settings: Settings) -> Tuple[Optional[Program], Messages]:
@@ -35,7 +36,7 @@ def check(oplist: List[Op], settings: Settings) -> Tuple[Optional[Program], Mess
     data = []
     code = []
     for op in oplist:
-        if op.name in DATA_STATEMENTS:
+        if isinstance(op, DataOperation):
             data.append(op)
         else:
             code.append(op)
@@ -59,7 +60,7 @@ def typecheck(
         op_messages = op.typecheck(symbol_table)
         messages.extend(op_messages)
 
-        if op.name in DATA_STATEMENTS:
+        if isinstance(op, DataOperation):
             if seen_code:
                 messages.err("data statement after code", loc=op.loc)
         else:
@@ -152,11 +153,11 @@ def get_labels(
 
 
 def operation_length(op):
-    if op.name in REGISTER_BRANCHES:
-        if len(op.args) == 1 and is_register(op.args[0]):
-            return 1
-        else:
+    if isinstance(op, RegisterBranch):
+        if len(op.args) == 1 and is_symbol(op.args[0]):
             return 3
+        else:
+            return 1
     elif op.name == "SET":
         return 2
     elif op.name == "CMP":
@@ -203,7 +204,7 @@ def convert_ops(
     retlist = []
     pc = 0
     for op in oplist:
-        if op.name in RELATIVE_BRANCHES and is_symbol(op.args[0]):
+        if isinstance(op, RelativeBranch) and is_symbol(op.args[0]):
             target = symbol_table[op.args[0]]
             jump = target - pc
             # TODO: Will this work? I think pc takes data statements into account here
@@ -221,7 +222,7 @@ def convert_ops(
             new_op.original = op
             retlist.append(new_op)
 
-        if op.name not in DATA_STATEMENTS:
+        if not isinstance(op, DataOperation):
             pc += len(new_ops)
     return (retlist, messages)
 

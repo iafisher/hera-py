@@ -7,8 +7,8 @@ import copy
 from typing import List
 
 from .data import Settings
-from .op import Operation
-from .utils import DATA_STATEMENTS, print_warning, register_to_index
+from .op import DataOperation, Operation
+from .utils import print_warning, register_to_index
 
 
 class VirtualMachine:
@@ -77,7 +77,8 @@ class VirtualMachine:
             op.execute(self)
         except NotImplementedError:
             self.handle_not_implemented(op.name)
-        if self.pc == opc and op.name not in DATA_STATEMENTS:
+
+        if self.pc == opc and not isinstance(op, DataOperation):
             self.halted = True
 
     def handle_not_implemented(self, name):
