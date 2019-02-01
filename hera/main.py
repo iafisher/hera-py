@@ -30,6 +30,7 @@ def main(argv=None):
 
     settings.no_debug = arguments["--no-debug"]
     settings.warn_return_on = not arguments["--warn-return-off"]
+    settings.warn_octal_on = not arguments["--warn-octal-off"]
 
     if arguments["--verbose"]:
         settings.volume = VOLUME_VERBOSE
@@ -168,6 +169,7 @@ FLAGS = {
     "--quiet",
     "--verbose",
     "--version",
+    "--warn-octal-off",
     "--warn-return-off",
     "preprocess",
     "debug",
@@ -189,6 +191,7 @@ Common options:
     --no-debug         Disallow debugging instructions.
     -q --quiet         Set output level to quiet.
     --verbose          Set output level to verbose.
+    --warn-octal-off   Do not print warnings for zero-prefixed integer literals.
 
 Interpreter and debugger options:
     --big-stack        Reserve more space for the stack.

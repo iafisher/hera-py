@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 **NOTE**: As permitted by semantic versioning, backward compatibility is NOT maintained for initial development, i.e. releases before 1.0.0.
 
 ## Unreleased
+### Added
+- The `warn-octal-off` flag.
+
 ### Changed
 - The `--no-ret-warn` flag has been renamed to `--warn-return-off`.
 - The `--big-stack` and `--warn-return-off` flags can no longer be used with the `preprocess` subcommand.

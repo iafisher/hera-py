@@ -98,6 +98,13 @@ Virtual machine state after execution:
     )
 
 
+def test_no_warning_for_zero_prefixed_octal_with_flag(capsys):
+    execute_program_helper("SET(R1, 016)\nSET(R2, 017)", flags=["--warn-octal-off"])
+
+    captured = capsys.readouterr().err
+    assert "Warning" not in captured
+
+
 def test_warning_for_invalid_backslash_escape_in_character(capsys):
     execute_program_helper("SET(R1, '\\u')")
 

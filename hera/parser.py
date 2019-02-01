@@ -9,26 +9,27 @@ arglist := (value COMMA)* value
 import os.path
 from typing import List, Tuple
 
-from hera.data import HERAError, IntToken, Messages, Op
+from hera.data import HERAError, IntToken, Messages, Op, Settings
 from hera.lexer import Lexer, TOKEN
 from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
 from hera.utils import read_file
 
 
-def parse(text: str, *, path=None) -> Tuple[List[Op], Messages]:
+def parse(text: str, *, path=None, settings=Settings()) -> Tuple[List[Op], Messages]:
     """Parse a HERA program.
 
     `path` is the path of the file being parsed, as it will appear in error and
     warning messages. It defaults to "<string>".
     """
-    parser = Parser()
+    parser = Parser(settings)
     program = parser.parse(Lexer(text, path=path))
     return (program, parser.messages)
 
 
 class Parser:
-    def __init__(self):
+    def __init__(self, settings):
         self.visited = set()
+        self.settings = settings
         self.messages = Messages()
 
     def parse(self, lexer):
@@ -109,7 +110,10 @@ class Parser:
                 prefix = lexer.tkn[:2]
                 if len(prefix) == 2 and prefix[0] == "0" and prefix[1].isdigit():
                     base = 8
-                    self.warn('consider using "0o" prefix for octal numbers', lexer.tkn)
+                    if self.settings.warn_octal_on:
+                        self.warn(
+                            'consider using "0o" prefix for octal numbers', lexer.tkn
+                        )
                 else:
                     base = 0
 

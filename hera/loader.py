@@ -20,7 +20,7 @@ def load_program(text: str, settings=Settings()) -> Tuple[List[Op], Dict[str, in
     The return value of this function is valid input to the VirtualMachine.exec_many
     method.
     """
-    oplist = handle_messages(settings, parse(text))
+    oplist = handle_messages(settings, parse(text, settings=settings))
     return handle_messages(settings, check(oplist, settings))
 
 
@@ -47,5 +47,5 @@ def load_program_from_file(
         except HERAError as e:
             handle_messages(settings, Messages(str(e)))
 
-    oplist = handle_messages(settings, parse(text, path=path))
+    oplist = handle_messages(settings, parse(text, path=path, settings=settings))
     return handle_messages(settings, check(oplist, settings))
