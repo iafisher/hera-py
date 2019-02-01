@@ -166,6 +166,26 @@ def test_main_with_big_stack_flag(capsys):
     assert "R1  = 0xc167" in captured.err
 
 
+def test_main_with_no_debug_flag(capsys):
+    with pytest.raises(SystemExit):
+        program = "print_reg(R1)"
+        with patch("sys.stdin", StringIO(program)):
+            main(["--no-debug", "-"])
+
+    captured = capsys.readouterr()
+    assert (
+        captured.err
+        == """\
+
+Error: debugging instructions disallowed with --no-debug flag, line 1 col 1 of <stdin>
+
+  print_reg(R1)
+  ^
+
+"""
+    )
+
+
 def test_no_ANSI_color_when_stderr_is_not_tty():
     buf = StringIO()
     with patch("sys.stderr", buf):

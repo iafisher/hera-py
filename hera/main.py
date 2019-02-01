@@ -28,6 +28,9 @@ def main(argv=None):
         # Arbitrary value copied over from HERA-C.
         settings.data_start = 0xC167
 
+    if arguments["--no-debug"]:
+        settings.no_debug = True
+
     if arguments["--verbose"]:
         settings.volume = VOLUME_VERBOSE
     elif arguments["--quiet"]:
@@ -146,12 +149,13 @@ def short_to_long(arg):
 
 
 FLAGS = {
+    "--big-stack",
     "--help",
     "--no-color",
-    "--version",
-    "--big-stack",
-    "--verbose",
+    "--no-debug",
     "--quiet",
+    "--verbose",
+    "--version",
     "preprocess",
     "debug",
 }
@@ -171,8 +175,9 @@ Common options:
 
 Execution options:
     --big-stack      Reserve more space for the stack.
-    --verbose        Set output level to verbose.
+    --no-debug       Disallow debugging instructions.
     -q --quiet       Set output level to quiet.
+    --verbose        Set output level to verbose.
 """
 
 

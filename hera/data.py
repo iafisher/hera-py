@@ -25,12 +25,18 @@ class Settings:
     """Global settings of the interpreter."""
 
     def __init__(
-        self, *, color=True, data_start=DEFAULT_DATA_START, volume=VOLUME_NORMAL
+        self,
+        *,
+        color=True,
+        data_start=DEFAULT_DATA_START,
+        no_debug=False,
+        volume=VOLUME_NORMAL
     ):
         self.color = color
         self.data_start = data_start
-        self.warning_count = 0
+        self.no_debug = no_debug
         self.volume = volume
+        self.warning_count = 0
 
 
 class Location(namedtuple("Location", ["line", "column", "path", "file_lines"])):

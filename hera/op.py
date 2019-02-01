@@ -193,6 +193,10 @@ class RelativeBranch(Operation):
         raise NotImplementedError
 
 
+class DebuggingOperation(Operation):
+    pass
+
+
 class SETLO(Operation):
     P = (REGISTER, I8)
 
@@ -870,7 +874,7 @@ class DLABEL(Operation):
         return []
 
 
-class PRINT_REG(Operation):
+class PRINT_REG(DebuggingOperation):
     P = (REGISTER,)
 
     def execute(self, vm):
@@ -879,7 +883,7 @@ class PRINT_REG(Operation):
         vm.pc += 1
 
 
-class PRINT(Operation):
+class PRINT(DebuggingOperation):
     P = (STRING,)
 
     def execute(self, vm):
@@ -887,7 +891,7 @@ class PRINT(Operation):
         vm.pc += 1
 
 
-class PRINTLN(Operation):
+class PRINTLN(DebuggingOperation):
     P = (STRING,)
 
     def execute(self, vm):
@@ -895,7 +899,7 @@ class PRINTLN(Operation):
         vm.pc += 1
 
 
-class __EVAL(Operation):
+class __EVAL(DebuggingOperation):
     P = (STRING,)
 
     def execute(self, vm):

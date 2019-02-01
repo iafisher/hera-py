@@ -12,7 +12,7 @@ from .data import (
     Token,
     TOKEN,
 )
-from .op import Operation, resolve_ops
+from .op import DebuggingOperation, Operation, resolve_ops
 from .utils import (
     DATA_STATEMENTS,
     is_register,
@@ -64,6 +64,11 @@ def typecheck(
                 messages.err("data statement after code", loc=op.loc)
         else:
             seen_code = True
+
+        if settings.no_debug and isinstance(op, DebuggingOperation):
+            messages.err(
+                "debugging instructions disallowed with --no-debug flag", loc=op.loc
+            )
 
         # Add constants to the symbol table as they are encountered, so that a given
         # constant is not in scope until after its declaration.
