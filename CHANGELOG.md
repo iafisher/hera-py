@@ -5,7 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 **NOTE**: As permitted by semantic versioning, backward compatibility is NOT maintained for initial development, i.e. releases before 1.0.0.
 
-## [Unreleased]
+## Unreleased
+Nothing yet.
+
+## [0.5.1] - 2019-01-31
 ### Added
 - Arithmetic operations are supported in printing and assigning values in the debugger.
 - Much more informative messages for parse errors.
