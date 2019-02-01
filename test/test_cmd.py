@@ -8,39 +8,6 @@ from hera.main import dump_state, main
 from hera.vm import VirtualMachine
 
 
-def test_dump_state(capsys):
-    dump_state(VirtualMachine(), Settings(volume=VOLUME_VERBOSE))
-
-    assert (
-        capsys.readouterr().err
-        == """\
-
-Virtual machine state after execution:
-    R1  = 0x0000 = 0
-    R2  = 0x0000 = 0
-    R3  = 0x0000 = 0
-    R4  = 0x0000 = 0
-    R5  = 0x0000 = 0
-    R6  = 0x0000 = 0
-    R7  = 0x0000 = 0
-    R8  = 0x0000 = 0
-    R9  = 0x0000 = 0
-    R10 = 0x0000 = 0
-    R11 = 0x0000 = 0
-    R12 = 0x0000 = 0
-    R13 = 0x0000 = 0
-    R14 = 0x0000 = 0
-    R15 = 0x0000 = 0
-
-    Carry-block flag is OFF
-    Carry flag is OFF
-    Overflow flag is OFF
-    Zero flag is OFF
-    Sign flag is OFF
-"""
-    )
-
-
 def test_main_non_existent_file(capsys):
     with pytest.raises(SystemExit):
         main(["unicorn.hera"])
@@ -143,6 +110,15 @@ def test_main_with_long_quiet_flag(capsys):
     assert captured.err == "\n"
 
 
+def test_main_with_quiet_and_verbose_flags(capsys):
+    with pytest.raises(SystemExit):
+        main(["--quiet", "--verbose", "main.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "--quiet and --verbose are incompatible.\n"
+
+
 def test_main_with_verbose_flag(capsys):
     with patch("sys.stdin", StringIO("SET(R1, 42)")):
         main(["--verbose", "-"])
@@ -206,5 +182,38 @@ Error: expected HERA operation or #include, line 1 col 1 of <stdin>
   )
   ^
 
+"""
+    )
+
+
+def test_dump_state(capsys):
+    dump_state(VirtualMachine(), Settings(volume=VOLUME_VERBOSE))
+
+    assert (
+        capsys.readouterr().err
+        == """\
+
+Virtual machine state after execution:
+    R1  = 0x0000 = 0
+    R2  = 0x0000 = 0
+    R3  = 0x0000 = 0
+    R4  = 0x0000 = 0
+    R5  = 0x0000 = 0
+    R6  = 0x0000 = 0
+    R7  = 0x0000 = 0
+    R8  = 0x0000 = 0
+    R9  = 0x0000 = 0
+    R10 = 0x0000 = 0
+    R11 = 0x0000 = 0
+    R12 = 0x0000 = 0
+    R13 = 0x0000 = 0
+    R14 = 0x0000 = 0
+    R15 = 0x0000 = 0
+
+    Carry-block flag is OFF
+    Carry flag is OFF
+    Overflow flag is OFF
+    Zero flag is OFF
+    Sign flag is OFF
 """
     )

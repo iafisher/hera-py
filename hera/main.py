@@ -122,6 +122,10 @@ def parse_args(argv):
         sys.stderr.write("Too many file paths supplied.\n")
         sys.exit(1)
 
+    if "--quiet" in flags and "--verbose" in flags:
+        sys.stderr.write("--quiet and --verbose are incompatible.\n")
+        sys.exit(1)
+
     flags["<path>"] = posargs[0]
     for f in FLAGS:
         if f not in flags:
