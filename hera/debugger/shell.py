@@ -24,15 +24,17 @@ def debug(program: Program, settings=Settings()) -> None:
     Shell(debugger, settings).loop()
 
 
-def mutates(f):
+def mutates(handler):
     """Decorator for command handlers in the Shell class that mutate the state of the
-    debugger."""
+    debugger.
+    """
 
-    @functools.wraps(f)
+    @functools.wraps(handler)
     def inner(self, *args, **kwargs):
         self.debugger.save()
-        self.command_history.append(f.__name__[len("handle_") :])
-        return f(self, *args, **kwargs)
+        name = handler.__name__[len("handle_") :]
+        self.command_history.append(name)
+        return handler(self, *args, **kwargs)
 
     return inner
 
@@ -74,45 +76,45 @@ class Shell:
             cmd = response
             argstr = ""
 
-        arglist = argstr.split()
-        cmd = cmd.lower()
-        if "assign".startswith(cmd):
-            self.handle_assign(arglist)
-        elif "break".startswith(cmd):
-            self.handle_break(arglist)
-        elif "continue".startswith(cmd):
-            self.handle_continue(arglist)
-        elif "execute".startswith(cmd):
-            self.handle_execute(argstr)
-        elif "help".startswith(cmd):
-            self.handle_help(arglist)
-        elif "info".startswith(cmd):
-            self.handle_info(arglist)
-        elif "jump".startswith(cmd):
-            self.handle_jump(arglist)
-        elif "list".startswith(cmd):
-            self.handle_list(arglist)
-        elif cmd == "ll":
-            self.handle_ll(arglist)
-        elif "next".startswith(cmd):
-            self.handle_next(arglist)
-        elif cmd == "off":
-            self.handle_off(arglist)
-        elif cmd == "on":
-            self.handle_on(arglist)
-        elif "print".startswith(cmd):
-            self.handle_print(argstr)
-        # restart cannot be abbreviated, so that users don't accidentally restart.
-        elif cmd == "restart":
-            self.handle_restart(arglist)
-        elif "step".startswith(cmd):
-            self.handle_step(arglist)
-        elif "undo".startswith(cmd):
-            self.handle_undo(arglist)
-        elif "=" in response:
-            self.handle_assign(response.split("=", maxsplit=1))
+        try:
+            fullcmd = self.expand_command(cmd)
+        except HERAError:
+            if "=" in response:
+                self.handle_assign(response.split("=", maxsplit=1))
+            else:
+                print("{} is not a recognized command.".format(cmd))
         else:
-            print("{} is not a recognized command.".format(cmd))
+            handler = getattr(self, "handle_" + fullcmd)
+            if fullcmd in self.TAKES_ARGSTR:
+                handler(argstr)
+            else:
+                handler(argstr.split())
+
+    # Commands which may be abbreviated with a prefix. Order determines precedence when
+    # multiple commands share a prefix.
+    CAN_BE_ABBREVIATED = (
+        # Multiple lists to prevent reformatting.
+        ["assign", "break", "continue", "execute", "help"]
+        + ["info", "jump", "list", "next", "print", "step", "undo"]
+    )
+
+    # Commands that require the whole command to be spelled out.
+    CANNOT_BE_ABBREVIATED = ["ll", "off", "on", "restart"]
+
+    # Commands that do not take a whitespace-separated list of argument.
+    TAKES_ARGSTR = ["execute", "print"]
+
+    def expand_command(self, cmd):
+        cmd = cmd.lower()
+        for full in self.CAN_BE_ABBREVIATED:
+            if full.startswith(cmd):
+                return full
+
+        for full in self.CANNOT_BE_ABBREVIATED:
+            if full == cmd:
+                return full
+
+        raise HERAError
 
     def handle_assign(self, args):
         if len(args) != 2:
@@ -242,7 +244,7 @@ class Shell:
     def handle_info(self, args):
         if args:
             try:
-                fullargs = [self.info_arg(arg) for arg in args]
+                fullargs = [self.expand_info_arg(arg) for arg in args]
             except HERAError as e:
                 print("Error: " + str(e) + ".")
                 return
@@ -264,7 +266,7 @@ class Shell:
             if i != len(fullargs) - 1:
                 print()
 
-    def info_arg(self, arg):
+    def expand_info_arg(self, arg):
         arg = arg.lower()
         if "stack".startswith(arg):
             # "stack" comes before "symbols" because "s" should resolve to "stack".
