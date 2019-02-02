@@ -61,10 +61,10 @@ class Shell:
 
             if not response:
                 continue
-            elif "quit".startswith(response.lower()):
-                break
             else:
-                self.handle_command(response)
+                should_continue = self.handle_command(response)
+                if not should_continue:
+                    break
 
     def handle_command(self, response):
         """Parse the command and execute it. Return False if the loop should exit, and
@@ -84,18 +84,23 @@ class Shell:
             else:
                 print("{} is not a recognized command.".format(cmd))
         else:
+            if fullcmd == "quit":
+                return False
+
             handler = getattr(self, "handle_" + fullcmd)
             if fullcmd in self.TAKES_ARGSTR:
                 handler(argstr)
             else:
                 handler(argstr.split())
 
+            return True
+
     # Commands which may be abbreviated with a prefix. Order determines precedence when
     # multiple commands share a prefix.
     CAN_BE_ABBREVIATED = (
         # Multiple lists to prevent reformatting.
         ["assign", "break", "continue", "execute", "help"]
-        + ["info", "jump", "list", "next", "print", "step", "undo"]
+        + ["info", "jump", "list", "next", "print", "quit", "step", "undo"]
     )
 
     # Commands that require the whole command to be spelled out.
@@ -234,9 +239,11 @@ class Shell:
         else:
             for i, arg in enumerate(args):
                 try:
-                    print(HELP_MAP[arg])
-                except KeyError:
+                    fullarg = self.expand_command(arg)
+                except HERAError:
                     print("{} is not a recognized command.".format(arg))
+                else:
+                    print(HELP_MAP[fullarg])
 
                 if i != len(args) - 1:
                     print()

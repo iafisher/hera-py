@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `warn-octal-off` flag.
 - The `info` command now accepts one or more argument for specific aspects of the program state.
 - The `info` command can now print information about the program's call stack.
+- The `help` command now accepts abbreviated command names.
 
 ### Changed
 - The `--no-ret-warn` flag has been renamed to `--warn-return-off`.

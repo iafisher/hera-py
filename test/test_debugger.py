@@ -937,6 +937,16 @@ def test_handle_help_with_one_arg(shell, capsys):
     assert "Execute the current line" in out
 
 
+def test_handle_help_with_abbreviated_command_name(shell, capsys):
+    shell.handle_command("help n")
+
+    out = capsys.readouterr().out
+    # Make sure it's not just printing the regular help message.
+    assert "Available commands" not in out
+    assert "next" in out
+    assert "Execute the current line" in out
+
+
 def test_handle_help_with_multiple_args(shell, capsys):
     shell.handle_command("help break next")
 
