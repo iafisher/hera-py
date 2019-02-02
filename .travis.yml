@@ -4,7 +4,7 @@ python:
   - "3.5"
   - "3.6"
 install:
-  - pip3 install tox-travis coveralls
+  - pip3 install -r requirement-dev.txt
 script:
   - tox
 after_success:
