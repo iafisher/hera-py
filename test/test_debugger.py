@@ -231,6 +231,12 @@ Error: too few args to ADD (expected 3), line 1 col 1 of <string>
     )
 
 
+def test_handle_execute_with_no_args(shell, capsys):
+    shell.handle_command("execute")
+
+    assert capsys.readouterr().out == "execute takes one argument.\n"
+
+
 def test_handle_jump_with_no_arg(shell):
     shell.handle_command("jump")
 

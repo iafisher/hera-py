@@ -199,6 +199,10 @@ class Shell:
 
     @mutates
     def handle_execute(self, argstr):
+        if not argstr.strip():
+            print("execute takes one argument.")
+            return
+
         # Make sure there are no disallowed ops.
         for op in resolve_ops(parse(argstr)[0])[0]:
             if isinstance(op, Branch):

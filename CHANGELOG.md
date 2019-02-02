@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 - The debugger now executes data statements on start-up.
+- The `execute` debugging command now prints an error message when invoked with no arguments.
 
 ## [0.5.1] - 2019-01-31
 ### Added
