@@ -174,7 +174,7 @@ FLAGS = {
     "preprocess",
     "debug",
 }
-VERSION = "hera-py 0.5.1 for HERA version 2.4"
+VERSION = "hera-py 0.5.2 for HERA version 2.4"
 HELP = """\
 hera: an interpreter for the Haverford Educational RISC Architecture.
 
