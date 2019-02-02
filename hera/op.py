@@ -716,7 +716,8 @@ class CALL(CALL_AND_RETURN):
             return super().convert()
 
     def execute(self, vm):
-        vm.expected_returns.append(vm.pc + 1)
+        # Push a (call_address, return_address) pair onto the debugging call stack.
+        vm.expected_returns.append((vm.load_register(self.args[1]), vm.pc + 1))
         super().execute(vm)
 
 
@@ -738,7 +739,7 @@ class RETURN(CALL_AND_RETURN):
         got = vm.load_register(self.args[1])
         if vm.settings.warn_return_on:
             if vm.expected_returns:
-                expected = vm.expected_returns.pop()
+                _, expected = vm.expected_returns.pop()
                 if expected != got:
                     msg = "incorrect return address (got {}, expected {})".format(
                         got, expected

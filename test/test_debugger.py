@@ -296,10 +296,10 @@ def test_handle_info(shell, capsys):
         captured
         == """\
 All registers set to zero.
+
 All flags are off.
 
-Constants: N (3)
-Labels: add (<string>:7)
+The call stack is empty.
 """
     )
 
@@ -314,10 +314,10 @@ def test_handle_info_with_registers_and_flags(shell, capsys):
         captured
         == """\
 R7 = 42, all other registers set to zero.
+
 Carry-block flag is on, all other flags are off.
 
-Constants: N (3)
-Labels: add (<string>:7)
+The call stack is empty.
 """
     )
 
@@ -332,25 +332,22 @@ def test_handle_info_with_all_registers_set(shell, capsys):
         == """\
 R1 = 1, R2 = 1, R3 = 1, R4 = 1, R5 = 1, R6 = 1, R7 = 1, R8 = 1, R9 = 1, R10 = 1, \
 R11 = 1, R12 = 1, R13 = 1, R14 = 1, R15 = 1
+
 All flags are off.
 
-Constants: N (3)
-Labels: add (<string>:7)
+The call stack is empty.
 """
     )
 
 
-def test_handle_info_with_data_label(shell, capsys):
+def test_handle_info_with_symbols_arg(shell, capsys):
     shell.debugger.symbol_table["array"] = DataLabel(0xC001)
-    shell.handle_command("info")
+    shell.handle_command("info symbols")
 
     captured = capsys.readouterr().out
     assert (
         captured
         == """\
-All registers set to zero.
-All flags are off.
-
 Constants: N (3)
 Labels: add (<string>:7)
 Data labels: array (0xc001)
@@ -358,10 +355,65 @@ Data labels: array (0xc001)
     )
 
 
-def test_handle_info_with_too_many_args(shell, capsys):
-    shell.handle_command("info 1")
+def test_handle_info_with_registers_arg(shell, capsys):
+    shell.handle_command("info registers")
 
-    assert capsys.readouterr().out == "info takes no arguments.\n"
+    assert capsys.readouterr().out == "All registers set to zero.\n"
+
+
+def test_handle_info_with_flags_arg(shell, capsys):
+    shell.handle_command("info flags")
+
+    assert capsys.readouterr().out == "All flags are off.\n"
+
+
+def test_handle_info_with_multiple_args(shell, capsys):
+    shell.handle_command("info symbols flags")
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+Constants: N (3)
+Labels: add (<string>:7)
+Data labels: array (0xc001)
+
+All flags are off.
+"""
+    )
+
+
+def test_handle_info_with_stack_arg(capsys):
+    shell = load_shell(
+        """\
+CALL(FP_alt, do_nothing)
+HALT()
+
+LABEL(do_nothing)
+  RETURN(FP_alt, PC_ret)
+"""
+    )
+
+    shell.handle_command("break do_nothing")
+    shell.handle_command("continue")
+    capsys.readouterr()
+    shell.handle_command("info stack")
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+Call stack (last call at bottom)
+  do_nothing (<string>:5, called from <string>:1)
+"""
+    )
+
+
+def test_handle_info_with_unrecognized_arg(shell, capsys):
+    shell.handle_command("info symbols machine")
+
+    captured = capsys.readouterr().out
+    assert captured == "Error: unrecognized argument `machine`.\n"
 
 
 def test_handle_info_abbreviated(shell):

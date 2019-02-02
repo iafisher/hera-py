@@ -122,11 +122,18 @@ class Debugger:
 
         if append_label:
             # Look for a label corresponding to the breakpoint.
-            for symbol, value in self.symbol_table.items():
-                if value == b and isinstance(value, Label):
-                    return "{} ({})".format(loc, symbol)
+            label = self.find_label(b)
+            if label is not None:
+                return "{} ({})".format(loc, label)
 
         return loc
+
+    def find_label(self, ino):
+        """Find a label, if one exists, corresponding to the instruction number."""
+        for symbol, value in self.symbol_table.items():
+            if value == ino and isinstance(value, Label):
+                return symbol
+        return None
 
     def is_finished(self):
         return self.vm.halted or self.vm.pc >= len(self.program)

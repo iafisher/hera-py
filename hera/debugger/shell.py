@@ -236,34 +236,43 @@ class Shell:
                     print()
 
     def handle_info(self, args):
-        if len(args) != 0:
-            print("info takes no arguments.")
-            return
+        if args:
+            try:
+                fullargs = [self.info_arg(arg) for arg in args]
+            except HERAError as e:
+                print("Error: " + str(e) + ".")
+                return
+        else:
+            fullargs = ["registers", "flags", "stack"]
 
-        self.print_registers()
-        self.print_flags()
-        print()
-
-        constants = []
-        labels = []
-        dlabels = []
-        for key, val in self.debugger.symbol_table.items():
-            if isinstance(val, Label):
-                lineno = self.debugger.get_breakpoint_name(val, append_label=False)
-                labels.append("{} ({})".format(key, lineno))
-            elif isinstance(val, DataLabel):
-                dlabels.append("{} (0x{:x})".format(key, val))
+        for i, fullarg in enumerate(fullargs):
+            if fullarg == "stack":
+                self.info_stack()
+            elif fullarg == "symbols":
+                self.info_symbols()
+            elif fullarg == "registers":
+                self.info_registers()
+            elif fullarg == "flags":
+                self.info_flags()
             else:
-                constants.append("{} ({})".format(key, val))
+                raise RuntimeError("this should never happen!")
 
-        if constants:
-            print("Constants: " + ", ".join(constants))
+            if i != len(fullargs) - 1:
+                print()
 
-        if labels:
-            print("Labels: " + ", ".join(labels))
-
-        if dlabels:
-            print("Data labels: " + ", ".join(dlabels))
+    def info_arg(self, arg):
+        arg = arg.lower()
+        if "stack".startswith(arg):
+            # "stack" comes before "symbols" because "s" should resolve to "stack".
+            return "stack"
+        elif "symbols".startswith(arg):
+            return "symbols"
+        elif "registers".startswith(arg):
+            return "registers"
+        elif "flags".startswith(arg):
+            return "flags"
+        else:
+            raise HERAError("unrecognized argument `{}`".format(arg))
 
     @mutates
     def handle_jump(self, args):
@@ -462,7 +471,7 @@ class Shell:
 
         self.debugger = self.debugger.old
 
-    def print_registers(self):
+    def info_registers(self):
         nonzero = 0
         for i, r in enumerate(self.debugger.vm.registers[1:], start=1):
             if r != 0:
@@ -477,7 +486,7 @@ class Shell:
         else:
             print()
 
-    def print_flags(self):
+    def info_flags(self):
         vm = self.debugger.vm
         flags = []
         if vm.flag_carry_block:
@@ -499,6 +508,47 @@ class Shell:
             flagstr = ", ".join(flags)
             flagstr = flagstr[0].upper() + flagstr[1:]
             print(flagstr + ", all other flags are off.")
+
+    def info_stack(self):
+        vm = self.debugger.vm
+        if vm.expected_returns:
+            print("Call stack (last call at bottom)")
+            for call_address, return_address in vm.expected_returns:
+                fname = self.debugger.find_label(call_address)
+                floc = self.debugger.get_breakpoint_name(
+                    call_address, append_label=False
+                )
+                rloc = self.debugger.get_breakpoint_name(
+                    return_address - 1, append_label=False
+                )
+                if fname is not None:
+                    print("  {} ({}, called from {})".format(fname, floc, rloc))
+                else:
+                    print("  {} (called from {})".format(floc, rloc))
+        else:
+            print("The call stack is empty.")
+
+    def info_symbols(self):
+        constants = []
+        labels = []
+        dlabels = []
+        for key, val in self.debugger.symbol_table.items():
+            if isinstance(val, Label):
+                lineno = self.debugger.get_breakpoint_name(val, append_label=False)
+                labels.append("{} ({})".format(key, lineno))
+            elif isinstance(val, DataLabel):
+                dlabels.append("{} (0x{:x})".format(key, val))
+            else:
+                constants.append("{} ({})".format(key, val))
+
+        if constants:
+            print("Constants: " + ", ".join(constants))
+
+        if labels:
+            print("Labels: " + ", ".join(labels))
+
+        if dlabels:
+            print("Data labels: " + ", ".join(dlabels))
 
     def evaluate_node(self, node):
         vm = self.debugger.vm
@@ -746,8 +796,11 @@ help <cmd>...:
   Print a detailed help message for each command list.""",
     # info
     "info": """\
-info:
-  Print information about the current state of the program.""",
+info <arg>...:
+  Print information about the current state of the program. Valid arguments to
+  info are "registers", "stack", "flags" and "symbols". Arguments may be
+  abbreviated with a unique prefix. The argument list defaults to "registers",
+  "flags", and "stack" if not provided.""",
     # jump
     "jump": """\
 jump:

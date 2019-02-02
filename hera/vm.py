@@ -39,7 +39,8 @@ class VirtualMachine:
         # to be addressable, but we start off with a considerably smaller array and
         # expand it as necessary, to keep the start-up time fast.
         self.memory = [0] * (2 ** 4)
-        # Stack of expected return addresses for RETURN instructions.
+        # Stack of (call_address, return_address) pairs for CALL/RETURN instructions.
+        # Used for warning messages and debugging.
         self.expected_returns = []
         self.halted = False
         # Location object for the current operation
