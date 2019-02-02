@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-from hera.data import Constant, DataLabel, Label, Program, Settings
+from hera.data import Constant, DataLabel, DEFAULT_DATA_START, Label, Program, Settings
 from hera.debugger import debug, Debugger, Shell
 from hera.debugger.debugger import reverse_lookup_label
 from hera.loader import load_program
@@ -1108,6 +1108,12 @@ def test_handle_attempt_to_print_register(shell, capsys):
     shell.handle_command("r1")
 
     assert capsys.readouterr().out == "r1 is not a recognized command.\n"
+
+
+def test_data_statements(capsys):
+    shell = load_shell("DLABEL(X)\nINTEGER(42)\nSET(R1, X)")
+
+    assert shell.debugger.vm.load_memory(DEFAULT_DATA_START) == 42
 
 
 def test_resolve_location_with_line_number(debugger):

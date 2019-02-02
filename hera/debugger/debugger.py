@@ -40,6 +40,9 @@ class Debugger:
         # "undo" has just been executed.
         self.old = None
 
+        for op in program.data:
+            self.vm.exec_one(op)
+
     def save(self):
         self.old = copy.copy(self)
         self.old.symbol_table = self.symbol_table.copy()

@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `--no-ret-warn` flag has been renamed to `--warn-return-off`.
 - The `--big-stack` and `--warn-return-off` flags can no longer be used with the `preprocess` subcommand.
 
+### Fixed
+- The debugger now executes data statements on start-up.
+
 ## [0.5.1] - 2019-01-31
 ### Added
 - Arithmetic operations are supported in printing and assigning values in the debugger.
