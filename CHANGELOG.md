@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `--big-stack` and `--warn-return-off` flags can no longer be used with the `preprocess` subcommand.
 
 ### Fixed
+- `hera-py` now installs with Python 3.4 without errors. I believe this was broken in version 0.5.1.
 - The debugger now executes data statements on start-up.
 - The `execute` debugging command now prints an error message when invoked with no arguments.
 
