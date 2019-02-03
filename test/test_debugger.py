@@ -831,7 +831,7 @@ def test_handle_print_with_multiple_arguments(shell, capsys):
     shell.debugger.vm.registers[2] = 7
     shell.handle_command("print :d r1, r2")
 
-    assert capsys.readouterr().out == "r1 = 5\nr2 = 7\n"
+    assert capsys.readouterr().out == "R1 = 5\nR2 = 7\n"
 
 
 def test_handle_print_symbol(shell, capsys):
@@ -849,7 +849,7 @@ def test_handle_print_undefined_symbol(shell, capsys):
 def test_handle_print_invalid_register(shell, capsys):
     shell.handle_command("print R17")
 
-    assert capsys.readouterr().out == "Eval error: R17 is not a valid register.\n"
+    assert capsys.readouterr().out == "Parse error: R17 is not a valid register.\n"
 
 
 def test_handle_print_with_division_by_zero(shell, capsys):

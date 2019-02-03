@@ -6,6 +6,8 @@ Version: January 2019
 from collections import namedtuple
 
 from ..lexer import Lexer, TOKEN
+from ..data import HERAError
+from ..utils import register_to_index
 
 
 def parse(line):
@@ -50,7 +52,7 @@ class MiniParser:
         seq = []
 
         if self.lexer.tkn.type == TOKEN.FMT:
-            fmt = self.lexer.tkn
+            fmt = self.lexer.tkn.value
             self.lexer.next_token()
         else:
             fmt = ""
@@ -74,7 +76,7 @@ class MiniParser:
             left = MemoryNode(address)
         elif tkn.type == TOKEN.INT:
             try:
-                left = IntNode(int(tkn, base=0))
+                left = IntNode(int(tkn.value, base=0))
             except ValueError:
                 raise SyntaxError("invalid integer literal: {}".format(tkn))
             else:
@@ -83,10 +85,13 @@ class MiniParser:
             self.lexer.next_token()
             left = PrefixNode("-", self.match_expr(PREC_PREFIX))
         elif tkn.type == TOKEN.REGISTER:
-            left = RegisterNode(tkn)
+            try:
+                left = RegisterNode(register_to_index(tkn.value))
+            except HERAError:
+                raise SyntaxError("{} is not a valid register".format(tkn.value))
             self.lexer.next_token()
         elif tkn.type == TOKEN.SYMBOL:
-            left = SymbolNode(tkn)
+            left = SymbolNode(tkn.value)
             self.lexer.next_token()
         elif tkn.type == TOKEN.LPAREN:
             self.lexer.next_token()
@@ -102,7 +107,7 @@ class MiniParser:
             infix_precedence = PREC_MAP[infix_tkn.type]
             self.lexer.next_token()
             right = self.match_expr(infix_precedence)
-            left = InfixNode(infix_tkn, left, right)
+            left = InfixNode(infix_tkn.value, left, right)
             infix_tkn = self.lexer.tkn
         return left
 
@@ -131,7 +136,7 @@ class MemoryNode(namedtuple("MemoryNode", ["address"])):
 
 class RegisterNode(namedtuple("RegisterNode", ["value"])):
     def __str__(self):
-        return self.value
+        return "R" + str(self.value)
 
 
 class IntNode(namedtuple("IntNode", ["value"])):
@@ -141,7 +146,7 @@ class IntNode(namedtuple("IntNode", ["value"])):
 
 class SymbolNode(namedtuple("SymbolNode", ["value"])):
     def __str__(self):
-        return str(self.value)
+        return self.value
 
 
 class PrefixNode(namedtuple("PrefixNode", ["op", "arg"])):

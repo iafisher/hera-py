@@ -2,24 +2,16 @@ import json
 from contextlib import suppress
 from typing import Dict, List, Optional, Tuple
 
-from hera.data import (
-    Constant,
-    DataLabel,
-    Location,
-    Messages,
-    Op,
-    RegisterToken,
-    Token,
-    TOKEN,
-)
-from hera.utils import format_int, from_u16, is_symbol, print_warning, to_u16, to_u32
+from hera.data import Constant, DataLabel, Location, Messages, Op, Token, TOKEN
+from hera.utils import format_int, from_u16, print_warning, to_u16, to_u32
 
 
 class Operation:
     # TODO: Name of this class is confusingly similar to hera.data.Op
 
     def __init__(self, *args, loc=None):
-        self.args = list(args)
+        self.args = [a.value for a in args]
+        self.tokens = list(args)
         if isinstance(loc, Location):
             self.loc = loc
         elif hasattr(loc, "location"):
@@ -30,14 +22,14 @@ class Operation:
 
     def typecheck(self, symbol_table: Dict[str, int]) -> Messages:
         messages = Messages()
-        if len(self.P) < len(self.args):
+        if len(self.P) < len(self.tokens):
             msg = "too many args to {} (expected {})".format(self.name, len(self.P))
             messages.err(msg, self.loc)
-        elif len(self.P) > len(self.args):
+        elif len(self.P) > len(self.tokens):
             msg = "too few args to {} (expected {})".format(self.name, len(self.P))
             messages.err(msg, self.loc)
 
-        return messages.extend(check_arglist(self.P, self.args, symbol_table))
+        return messages.extend(check_arglist(self.P, self.tokens, symbol_table))
 
     def convert(self) -> List["Operation"]:
         return [self]
@@ -57,26 +49,26 @@ class Operation:
     def __eq__(self, other):
         return (
             isinstance(other, self.__class__)
-            and len(self.args) == len(other.args)
-            and all(a1 == a2 for a1, a2 in zip(self.args, other.args))
+            and len(self.tokens) == len(other.tokens)
+            and all(a1 == a2 for a1, a2 in zip(self.tokens, other.tokens))
         )
 
     def __repr__(self):
-        return "{}({})".format(self.name, ", ".join(repr(a) for a in self.args))
+        return "{}({})".format(self.name, ", ".join(repr(a) for a in self.tokens))
 
     def __str__(self):
         return "{}({})".format(
-            self.name, ", ".join(arg_to_string(a) for a in self.args)
+            self.name, ", ".join(arg_to_string(a) for a in self.tokens)
         )
 
 
 def arg_to_string(arg):
-    if isinstance(arg, Token) and arg.type == TOKEN.STRING:
-        return json.dumps(arg)
-    elif isinstance(arg, RegisterToken):
-        return "R" + str(arg)
+    if arg.type == TOKEN.STRING:
+        return json.dumps(arg.value)
+    elif arg.type == TOKEN.REGISTER:
+        return "R" + str(arg.value)
     else:
-        return str(arg)
+        return str(arg.value)
 
 
 REGISTER = "REGISTER"
@@ -166,7 +158,7 @@ class RegisterBranch(Branch):
         raise NotImplementedError
 
     def convert(self):
-        if isinstance(self.args[0], RegisterToken):
+        if self.tokens[0].type == TOKEN.REGISTER:
             # When the argument to the branch is a concrete register.
             return super().convert()
         else:
@@ -174,9 +166,9 @@ class RegisterBranch(Branch):
             # substituted for its value.
             lbl = self.args[0]
             return [
-                SETLO(RegisterToken("R11"), lbl & 0xFF),
-                SETHI(RegisterToken("R11"), lbl >> 8),
-                self.__class__(RegisterToken("R11")),
+                SETLO(Token.R(11), Token.INT(lbl & 0xFF)),
+                SETHI(Token.R(11), Token.INT(lbl >> 8)),
+                self.__class__(Token.R(11)),
             ]
 
 
@@ -233,11 +225,14 @@ class SET(Operation):
     P = (REGISTER, I16_OR_LABEL)
 
     def convert(self):
-        dest = self.args[0]
+        dest = self.tokens[0]
         value = to_u16(self.args[1])
         lo = value & 0xFF
         hi = value >> 8
-        return [SETLO(dest, lo, loc=self.loc), SETHI(dest, hi, loc=self.loc)]
+        return [
+            SETLO(dest, Token.INT(lo), loc=self.loc),
+            SETHI(dest, Token.INT(hi), loc=self.loc),
+        ]
 
 
 class ADD(BinaryOp):
@@ -698,11 +693,11 @@ class CALL_AND_RETURN(Branch):
 
     def typecheck(self, *args, **kwargs):
         messages = super().typecheck(*args, **kwargs)
-        if len(self.args) >= 1 and isinstance(self.args[0], RegisterToken):
+        if len(self.tokens) >= 1 and self.tokens[0].type == TOKEN.REGISTER:
             with suppress(ValueError):
-                if self.args[0] != 12:
+                if self.tokens[0].value != 12:
                     msg = "first argument to {} should be R12".format(self.name)
-                    messages.warn(msg, self.args[0])
+                    messages.warn(msg, self.tokens[0])
         return messages
 
 
@@ -710,11 +705,11 @@ class CALL(CALL_AND_RETURN):
     P = (REGISTER, REGISTER_OR_LABEL)
 
     def convert(self):
-        if isinstance(self.args[1], RegisterToken):
+        if self.tokens[1].type == TOKEN.REGISTER:
             return super().convert()
         else:
-            return SET(RegisterToken("R13"), self.args[1]).convert() + [
-                self.__class__(self.args[0], RegisterToken("R13"))
+            return SET(Token.R(13), self.tokens[1]).convert() + [
+                self.__class__(self.tokens[0], Token.R(13))
             ]
 
     def execute(self, vm):
@@ -728,11 +723,11 @@ class RETURN(CALL_AND_RETURN):
 
     def typecheck(self, *args, **kwargs):
         messages = super().typecheck(*args, **kwargs)
-        if len(self.args) >= 2 and isinstance(self.args[1], RegisterToken):
+        if len(self.tokens) >= 2 and self.tokens[1].type == TOKEN.REGISTER:
             with suppress(ValueError):
-                if self.args[1] != 13:
+                if self.tokens[1].value != 13:
                     messages.warn(
-                        "second argument to RETURN should be R13", self.args[1]
+                        "second argument to RETURN should be R13", self.tokens[1]
                     )
         return messages
 
@@ -768,77 +763,77 @@ class CMP(Operation):
     P = (REGISTER, REGISTER)
 
     def convert(self):
-        return [FON(8), SUB(RegisterToken("R0"), self.args[0], self.args[1])]
+        return [FON(Token.INT(8)), SUB(Token.R(0), self.tokens[0], self.tokens[1])]
 
 
 class CON(Operation):
     P = ()
 
     def convert(self):
-        return [FON(8)]
+        return [FON(Token.INT(8))]
 
 
 class COFF(Operation):
     P = ()
 
     def convert(self):
-        return [FOFF(8)]
+        return [FOFF(Token.INT(8))]
 
 
 class CBON(Operation):
     P = ()
 
     def convert(self):
-        return [FON(16)]
+        return [FON(Token.INT(16))]
 
 
 class CCBOFF(Operation):
     P = ()
 
     def convert(self):
-        return [FOFF(24)]
+        return [FOFF(Token.INT(24))]
 
 
 class MOVE(Operation):
     P = (REGISTER, REGISTER)
 
     def convert(self):
-        return [OR(self.args[0], self.args[1], RegisterToken("R0"))]
+        return [OR(self.tokens[0], self.tokens[1], Token.R(0))]
 
 
 class SETRF(Operation):
     P = (REGISTER, I16_OR_LABEL)
 
     def convert(self):
-        return SET(*self.args).convert() + FLAGS(self.args[0]).convert()
+        return SET(*self.args).convert() + FLAGS(self.tokens[0]).convert()
 
 
 class FLAGS(Operation):
     P = (REGISTER,)
 
     def convert(self):
-        return [FOFF(8), ADD(RegisterToken("R0"), self.args[0], RegisterToken("R0"))]
+        return [FOFF(Token.INT(8)), ADD(Token.R(0), self.tokens[0], Token.R(0))]
 
 
 class HALT(Operation):
     P = ()
 
     def convert(self):
-        return [BRR(0)]
+        return [BRR(Token.INT(0))]
 
 
 class NOP(Operation):
     P = ()
 
     def convert(self):
-        return [BRR(1)]
+        return [BRR(Token.INT(1))]
 
 
 class NEG(Operation):
     P = (REGISTER, REGISTER)
 
     def convert(self):
-        return [FON(8), SUB(self.args[0], RegisterToken("R0"), self.args[1])]
+        return [FON(Token.INT(8)), SUB(self.tokens[0], Token.R(0), self.tokens[1])]
 
 
 class NOT(Operation):
@@ -846,17 +841,17 @@ class NOT(Operation):
 
     def typecheck(self, *args, **kwargs):
         messages = super().typecheck(*args, **kwargs)
-        if len(self.args) == 2 and isinstance(self.args[1], RegisterToken):
+        if len(self.tokens) == 2 and self.tokens[1].type == TOKEN.REGISTER:
             with suppress(ValueError):
-                if self.args[1] == 11:
-                    messages.warn("don't use R11 with NOT", self.args[1])
+                if self.tokens[1].value == 11:
+                    messages.warn("don't use R11 with NOT", self.tokens[1])
         return messages
 
     def convert(self):
         return [
-            SETLO(RegisterToken("R11"), 0xFF),
-            SETHI(RegisterToken("R11"), 0xFF),
-            XOR(self.args[0], RegisterToken("R11"), self.args[1]),
+            SETLO(Token.R(11), Token.INT(0xFF)),
+            SETHI(Token.R(11), Token.INT(0xFF)),
+            XOR(self.tokens[0], Token.R(11), self.tokens[1]),
         ]
 
 
@@ -974,27 +969,21 @@ def check_arglist(argtypes, args, symbol_table):
 
 
 def check_register(arg) -> Optional[str]:
-    if not isinstance(arg, RegisterToken):
-        if isinstance(arg, str) and arg.lower() == "pc":
+    if arg.type == TOKEN.REGISTER:
+        return None
+    else:
+        if isinstance(arg.value, str) and arg.value.lower() == "pc":
             return "program counter cannot be accessed or changed directly"
         else:
             return "expected register"
-    else:
-        return None
 
 
 def check_register_or_label(arg, symbol_table: Dict[str, int]) -> Optional[str]:
-    if not (
-        (isinstance(arg, Token) and arg.type == TOKEN.SYMBOL)
-        or isinstance(arg, RegisterToken)
-    ):
-        return "expected register or label"
-
-    if isinstance(arg, RegisterToken):
+    if arg.type == TOKEN.REGISTER:
         return None
-    else:
+    elif arg.type == TOKEN.SYMBOL:
         try:
-            val = symbol_table[arg]
+            val = symbol_table[arg.value]
         except KeyError:
             return "undefined symbol"
         else:
@@ -1004,13 +993,15 @@ def check_register_or_label(arg, symbol_table: Dict[str, int]) -> Optional[str]:
                 return "data label cannot be used as branch label"
             else:
                 return None
+    else:
+        return "expected register or label"
 
 
 def check_label(arg) -> Optional[str]:
-    if not is_symbol(arg):
-        return "expected label"
-    else:
+    if arg.type == TOKEN.SYMBOL:
         return None
+    else:
+        return "expected label"
 
 
 def check_string(arg):
@@ -1021,19 +1012,19 @@ def check_string(arg):
 
 
 def check_in_range(arg, symbol_table, *, lo, hi, labels=False):
-    if is_symbol(arg):
+    if arg.type == TOKEN.SYMBOL:
         try:
-            arg = symbol_table[arg]
+            arg = Token.INT(symbol_table[arg.value])
         except KeyError:
             return "undefined constant"
         else:
-            if not labels and not isinstance(arg, Constant):
+            if not labels and not isinstance(arg.value, Constant):
                 return "cannot use label as constant"
 
-    if not isinstance(arg, int) or isinstance(arg, RegisterToken):
+    if arg.type != TOKEN.INT:
         return "expected integer"
 
-    if arg < lo or arg >= hi:
+    if arg.value < lo or arg.value >= hi:
         return "integer must be in range [{}, {})".format(lo, hi)
     else:
         return None
@@ -1047,7 +1038,7 @@ def resolve_ops(program: List[Op]) -> Tuple[List[Operation], Messages]:
     ret = []
     for op in program:
         try:
-            cls = name_to_class[str(op.name)]
+            cls = name_to_class[op.name.value]
         except KeyError:
             messages.err("unknown instruction `{}`".format(op.name), loc=op.name)
         else:

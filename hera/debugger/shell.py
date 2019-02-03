@@ -11,7 +11,7 @@ from .miniparser import (
     RegisterNode,
     SymbolNode,
 )
-from hera.data import DataLabel, HERAError, Label, Program, RegisterToken, Settings
+from hera.data import DataLabel, HERAError, Label, Program, Settings
 from hera.loader import load_program
 from hera.op import Branch, DataOperation, resolve_ops
 from hera.parser import parse
@@ -152,7 +152,7 @@ class Shell:
         try:
             rhs = self.evaluate_node(rtree)
             if isinstance(ltree, RegisterNode):
-                vm.store_register(RegisterToken(ltree.value), rhs)
+                vm.store_register(ltree.value, rhs)
             elif isinstance(ltree, MemoryNode):
                 address = self.evaluate_node(ltree.address)
                 vm.store_memory(address, rhs)
@@ -418,15 +418,10 @@ class Shell:
 
         # Customize the format specifier depending on the type of expression.
         if isinstance(tree, RegisterNode):
-            try:
-                i = RegisterToken(tree.value)
-            except ValueError:
-                raise HERAError("no such register")
-            else:
-                # R13 is used to hold the return value of the PC in function calls,
-                # so printing the location is useful.
-                if i == 13 and not spec:
-                    spec = augment_spec(spec, "l")
+            # R13 is used to hold the return value of the PC in function calls,
+            # so printing the location is useful.
+            if tree.value == 13 and not spec:
+                spec = augment_spec(spec, "l")
         elif isinstance(tree, SymbolNode):
             if tree.value.lower() == "pc":
                 spec = augment_spec(spec, "l")
@@ -570,7 +565,7 @@ class Shell:
                 raise HERAError("integer literal exceeds 16 bits")
             return node.value
         elif isinstance(node, RegisterNode):
-            return vm.load_register(RegisterToken(node.value))
+            return vm.load_register(node.value)
         elif isinstance(node, MemoryNode):
             address = self.evaluate_node(node.address)
             return vm.load_memory(address)

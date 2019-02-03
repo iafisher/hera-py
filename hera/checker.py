@@ -8,7 +8,6 @@ from .data import (
     Op,
     Messages,
     Program,
-    RegisterToken,
     Settings,
     Token,
     TOKEN,
@@ -21,7 +20,6 @@ from .op import (
     RelativeBranch,
     resolve_ops,
 )
-from .utils import is_symbol
 
 
 def check(oplist: List[Op], settings: Settings) -> Tuple[Optional[Program], Messages]:
@@ -155,7 +153,7 @@ def get_labels(
 
 def operation_length(op):
     if isinstance(op, RegisterBranch):
-        if len(op.args) == 1 and is_symbol(op.args[0]):
+        if len(op.tokens) == 1 and op.tokens[0].type == TOKEN.SYMBOL:
             return 3
         else:
             return 1
@@ -168,7 +166,7 @@ def operation_length(op):
     elif op.name == "FLAGS":
         return 2
     elif op.name == "CALL":
-        if len(op.args) == 2 and not isinstance(op.args[1], RegisterToken):
+        if len(op.tokens) == 2 and op.tokens[1].type != TOKEN.REGISTER:
             return 3
         else:
             return 1
@@ -205,14 +203,15 @@ def convert_ops(
     retlist = []
     pc = 0
     for op in oplist:
-        if isinstance(op, RelativeBranch) and is_symbol(op.args[0]):
+        if isinstance(op, RelativeBranch) and op.tokens[0].type == TOKEN.SYMBOL:
             target = symbol_table[op.args[0]]
             jump = target - pc
             # TODO: Will this work? I think pc takes data statements into account here
             # erroneously.
             if jump < -128 or jump >= 128:
-                messages.err("label is too far for a relative branch", loc=op.args[0])
+                messages.err("label is too far for a relative branch", loc=op.tokens[0])
             else:
+                op.tokens[0] = Token.INT(jump, location=op.tokens[0].location)
                 op.args[0] = jump
         else:
             op = substitute_label(op, symbol_table)
@@ -230,7 +229,8 @@ def convert_ops(
 
 def substitute_label(op: Operation, symbol_table: Dict[str, int]) -> Operation:
     """Substitute any label in the instruction with its concrete value."""
-    for i, arg in enumerate(op.args):
-        if isinstance(arg, Token) and arg.type == TOKEN.SYMBOL:
-            op.args[i] = symbol_table[arg]
+    for i, tkn in enumerate(op.tokens):
+        if tkn.type == TOKEN.SYMBOL:
+            op.tokens[i] = Token.INT(symbol_table[tkn.value], location=tkn.location)
+            op.args[i] = symbol_table[tkn.value]
     return op

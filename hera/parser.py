@@ -9,10 +9,10 @@ arglist := (value COMMA)* value
 import os.path
 from typing import List, Tuple
 
-from hera.data import HERAError, IntToken, Messages, Op, RegisterToken, Settings
-from hera.lexer import Lexer, TOKEN
+from hera.data import HERAError, Messages, Op, Settings
+from hera.lexer import Lexer, Token, TOKEN
 from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
-from hera.utils import read_file
+from hera.utils import read_file, register_to_index
 
 
 def parse(text: str, *, path=None, settings=Settings()) -> Tuple[List[Op], Messages]:
@@ -107,7 +107,7 @@ class Parser:
         while True:
             if lexer.tkn.type == TOKEN.INT:
                 # Detect zero-prefixed octal numbers.
-                prefix = lexer.tkn[:2]
+                prefix = lexer.tkn.value[:2]
                 if len(prefix) == 2 and prefix[0] == "0" and prefix[1].isdigit():
                     base = 8
                     if self.settings.warn_octal_on:
@@ -118,18 +118,28 @@ class Parser:
                     base = 0
 
                 try:
-                    args.append(IntToken(lexer.tkn, loc=lexer.tkn.location, base=base))
+                    arg_as_int = int(lexer.tkn.value, base=base)
                 except ValueError:
                     self.err("invalid integer literal", lexer.tkn)
+                else:
+                    lexer.tkn.value = arg_as_int
+                    args.append(lexer.tkn)
                 lexer.next_token()
             elif lexer.tkn.type == TOKEN.CHAR:
-                args.append(ord(lexer.tkn))
+                args.append(
+                    Token(TOKEN.INT, ord(lexer.tkn.value), location=lexer.tkn.location)
+                )
                 lexer.next_token()
             elif lexer.tkn.type == TOKEN.REGISTER:
                 try:
-                    args.append(RegisterToken(lexer.tkn, loc=lexer.tkn.location))
+                    i = register_to_index(lexer.tkn.value)
                 except HERAError:
-                    self.err("{} is not a valid register".format(lexer.tkn), lexer.tkn)
+                    self.err(
+                        "{} is not a valid register".format(lexer.tkn.value), lexer.tkn
+                    )
+                else:
+                    lexer.tkn.value = i
+                    args.append(lexer.tkn)
                 lexer.next_token()
             elif lexer.tkn.type in self.VALUE_TOKENS:
                 args.append(lexer.tkn)
@@ -156,7 +166,7 @@ class Parser:
         tkn = lexer.next_token()
         lexer.next_token()
         if tkn.type == TOKEN.STRING:
-            include_path = os.path.join(os.path.dirname(root_path), tkn)
+            include_path = os.path.join(os.path.dirname(root_path), tkn.value)
 
             if get_canonical_path(include_path) in self.visited:
                 self.err("recursive include", tkn)
@@ -179,22 +189,22 @@ class Parser:
     def expand_angle_include(self, lexer, include_path):
         # There is no check for recursive includes in this function, under the
         # assumption that system libraries do not have recursive includes.
-        if include_path == "HERA.h":
+        if include_path.value == "HERA.h":
             self.warn("#include <HERA.h> is not necessary for hera-py", include_path)
             return []
-        elif include_path == "Tiger-stdlib-stack-data.hera":
+        elif include_path.value == "Tiger-stdlib-stack-data.hera":
             included_text = TIGER_STDLIB_STACK_DATA
-        elif include_path == "Tiger-stdlib-stack.hera":
+        elif include_path.value == "Tiger-stdlib-stack.hera":
             included_text = TIGER_STDLIB_STACK
         else:
             root_path = os.environ.get("HERA_C_DIR", "/home/courses/lib/HERA-lib")
             try:
-                included_text = read_file(os.path.join(root_path, include_path))
+                included_text = read_file(os.path.join(root_path, include_path.value))
             except HERAError as e:
                 self.err(str(e), include_path)
                 return []
 
-        sublexer = Lexer(included_text, path=include_path)
+        sublexer = Lexer(included_text, path=include_path.value)
         return self.parse(sublexer)
 
     def skip_until(self, lexer, tkns):

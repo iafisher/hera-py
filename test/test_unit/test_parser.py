@@ -1,4 +1,4 @@
-from hera.data import IntToken, Op, RegisterToken
+from hera.data import Op, Token, TOKEN
 from hera.parser import parse
 
 
@@ -18,9 +18,7 @@ def invalid(text):
 def test_parse_single_op():
     program = valid("SET(R1, 42)")
 
-    assert program == [Op("SET", [1, 42])]
-    assert isinstance(program[0].args[0], RegisterToken)
-    assert isinstance(program[0].args[1], IntToken)
+    assert program == [Op(SYM("SET"), [R(1), INT(42)])]
 
 
 def test_parse_has_locations():
@@ -135,3 +133,15 @@ def test_parse_ops_with_semicolons():
     assert len(program) == 2
     assert program[0].name == "SET"
     assert program[1].name == "SET"
+
+
+def SYM(s):
+    return Token(TOKEN.SYMBOL, s)
+
+
+def INT(x):
+    return Token(TOKEN.INT, x)
+
+
+def R(i):
+    return Token(TOKEN.REGISTER, i)

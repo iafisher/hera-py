@@ -1,7 +1,15 @@
 import pytest
 
-from hera.data import HERAError, register_to_index
-from hera.utils import format_int, from_u16, make_ansi, to_u16, to_u32, align_caret
+from hera.data import HERAError
+from hera.utils import (
+    align_caret,
+    format_int,
+    from_u16,
+    make_ansi,
+    register_to_index,
+    to_u16,
+    to_u32,
+)
 
 
 def test_to_u16_with_max_negative():

@@ -1,7 +1,7 @@
 import pytest
 
 from hera.checker import get_labels, operation_length, substitute_label, typecheck
-from hera.data import Op, RegisterToken, Settings, Token, TOKEN
+from hera.data import Settings, Token
 from hera.op import (
     ADD,
     BNZ,
@@ -19,18 +19,6 @@ from hera.op import (
     SETRF,
 )
 from hera.parser import parse
-
-
-def R(s):
-    return RegisterToken(s)
-
-
-def SYM(s=""):
-    return Token(TOKEN.SYMBOL, s)
-
-
-def STR(s):
-    return Token(TOKEN.STRING, s)
 
 
 @pytest.fixture
@@ -462,7 +450,7 @@ def test_typecheck_unknown_branch_instruction():
 
 def test_typecheck_single_error():
     # Second argument to SETHI is out of range.
-    program = [SETLO(R("R1"), 10), SETHI(R("R1"), 1000)]
+    program = [SETLO(Token.R(1), Token.INT(10)), SETHI(Token.R(1), Token.INT(1000))]
     symbol_table, messages = typecheck(program)
 
     assert len(messages.errors) == 1
@@ -470,7 +458,10 @@ def test_typecheck_single_error():
 
 
 def test_typecheck_multiple_errors():
-    program = [ADD(R("R1"), 10), INC(R("R3"), 1, 2)]
+    program = [
+        ADD(Token.R(1), Token.INT(10)),
+        INC(Token.R(3), Token.INT(1), Token.INT(2)),
+    ]
     symbol_table, messages = typecheck(program)
 
     assert len(messages.errors) == 3
@@ -485,72 +476,69 @@ def test_typecheck_multiple_errors():
 
 
 def test_operation_length_of_register_branch_with_label():
-    assert operation_length(BNZ(SYM("l"))) == 3
+    assert operation_length(BNZ(Token.SYM("l"))) == 3
 
 
 def test_operation_length_of_register_branch_with_register():
-    assert operation_length(BNZ(R("R1"))) == 1
+    assert operation_length(BNZ(Token.R(1))) == 1
 
 
 def test_operation_length_of_SET():
-    assert operation_length(SET("R1", 10)) == 2
+    assert operation_length(SET(Token.R(1), Token.INT(10))) == 2
 
 
 def test_operation_length_of_SETRF():
-    assert operation_length(SETRF(R("R1"), 10)) == 4
+    assert operation_length(SETRF(Token.R(1), Token.INT(10))) == 4
 
 
 def test_operation_length_of_MOVE():
-    assert operation_length(MOVE(R("R1"), R("R2"))) == 1
+    assert operation_length(MOVE(Token.R(1), Token.R(2))) == 1
 
 
 def test_operation_length_of_CMP():
-    assert operation_length(CMP(R("R1"), R("R0"))) == 2
+    assert operation_length(CMP(Token.R(1), Token.R(0))) == 2
 
 
 def test_operation_length_of_NEG():
-    assert operation_length(NEG(R("R7"), R("R15"))) == 2
+    assert operation_length(NEG(Token.R(7), Token.R(15))) == 2
 
 
 def test_operation_length_of_NOT():
-    assert operation_length(NOT(R("R5"), R("R7"))) == 3
+    assert operation_length(NOT(Token.R(5), Token.R(7))) == 3
 
 
 def test_operation_lentgh_of_FLAGS():
-    assert operation_length(FLAGS(R("R3"))) == 2
+    assert operation_length(FLAGS(Token.R(3))) == 2
 
 
 def test_operation_length_of_CALL_with_label():
-    assert operation_length(CALL(R("R12"), SYM("l"))) == 3
+    assert operation_length(CALL(Token.R(12), Token.SYM("l"))) == 3
 
 
 def test_operation_length_of_CALL_with_register():
-    assert operation_length(CALL(R("R12"), R("R13"))) == 1
+    assert operation_length(CALL(Token.R(12), Token.R(13))) == 1
 
 
 def test_get_labels_with_invalid_code(settings):
-    labels, messages = get_labels([CALL(SYM("l"))], settings)
+    labels, messages = get_labels([CALL(Token.SYM("l"))], settings)
 
     assert len(labels) == 0
     assert len(messages.errors) == 0
 
 
 def test_substitute_label_with_SETLO():
+    program = SETLO(Token.R(1), Token.SYM("N"))
     labels = {"N": 10}
-    assert substitute_label(Op(SYM("SETLO"), [R("R1"), SYM("N")]), labels) == Op(
-        "SETLO", [1, 10]
-    )
+    assert substitute_label(program, labels) == SETLO(Token.R(1), Token.INT(10))
 
 
 def test_substitute_label_with_SETHI():
+    program = SETHI(Token.R(1), Token.SYM("N"))
     labels = {"N": 10}
-    assert substitute_label(Op(SYM("SETHI"), [R("R1"), SYM("N")]), labels) == Op(
-        "SETHI", [1, 10]
-    )
+    assert substitute_label(program, labels) == SETHI(Token.R(1), Token.INT(10))
 
 
 def test_substitute_label_with_other_op():
+    program = INC(Token.R(1), Token.SYM("N"))
     labels = {"N": 10}
-    assert substitute_label(Op(SYM("INC"), [R("R1"), SYM("N")]), labels) == Op(
-        "INC", [1, 10]
-    )
+    assert substitute_label(program, labels) == INC(Token.R(1), Token.INT(10))

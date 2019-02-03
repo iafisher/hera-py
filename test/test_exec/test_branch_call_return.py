@@ -1,6 +1,7 @@
 import pytest
 from .utils import helper
 
+from hera.data import Token
 from hera.op import name_to_class
 from hera.vm import VirtualMachine
 
@@ -11,7 +12,7 @@ def vm():
 
 
 def branch_helper(vm, branchname):
-    op = name_to_class[branchname]("l")
+    op = name_to_class[branchname](Token.SYM("l"))
     return op.should(vm)
 
 

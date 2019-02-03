@@ -5,16 +5,7 @@ Version: January 2019
 """
 import sys
 
-from .data import (
-    HERAError,
-    IntToken,
-    Location,
-    Messages,
-    NAMED_REGISTERS,
-    RegisterToken,
-    Token,
-    TOKEN,
-)
+from .data import HERAError, Location, Messages, Token
 
 
 def to_u16(n):
@@ -57,12 +48,20 @@ def to_u32(n):
         return n
 
 
-def is_register(s):
-    return (s[0] in "rR" and s[1:].isdigit()) or s.lower() in NAMED_REGISTERS
+NAMED_REGISTERS = {"rt": 11, "fp": 14, "sp": 15, "pc_ret": 13, "fp_alt": 12}
 
 
-def is_symbol(s):
-    return isinstance(s, Token) and s.type == TOKEN.SYMBOL
+def register_to_index(rname):
+    """Return the index of the register with the given name in the register array."""
+    original = rname
+    rname = rname.lower()
+    if rname in NAMED_REGISTERS:
+        return NAMED_REGISTERS[rname]
+    elif rname.startswith("r"):
+        v = int(rname[1:])
+        if 0 <= v < 16:
+            return v
+    raise HERAError("{} is not a valid register".format(original))
 
 
 def format_int(v, *, spec="xdsc"):
@@ -126,7 +125,7 @@ def print_message(msg, *, loc=None):
     a Token object with a `location` field, then the line of code that the location
     indicates will be printed with the message.
     """
-    if isinstance(loc, (Token, IntToken, RegisterToken)):
+    if isinstance(loc, Token):
         loc = loc.location
 
     if isinstance(loc, Location):

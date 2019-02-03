@@ -1,7 +1,7 @@
 import string
 
 from hera.data import HERAError, Location, Messages, Token, TOKEN
-from hera.utils import is_register
+from hera.utils import NAMED_REGISTERS
 
 
 class Lexer:
@@ -241,3 +241,7 @@ def escape_char(c):
         return '"'
     else:
         return "\\" + c
+
+
+def is_register(s):
+    return (s[0] in "rR" and s[1:].isdigit()) or s.lower() in NAMED_REGISTERS
