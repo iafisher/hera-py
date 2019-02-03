@@ -2,7 +2,7 @@
 file.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: January 2019
+Version: February 2019
 """
 import sys
 from typing import Dict, List, Tuple

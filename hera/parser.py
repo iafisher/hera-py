@@ -1,10 +1,16 @@
-"""
-start := (op | include)*
+"""The parser for the HERA language.
 
-op      := SYMBOL LPAREN arglist? RPAREN
-include := INCLUDE (STRING | BRACKETED)
+Abstract grammar:
+  start := (op | include)*
 
-arglist := (value COMMA)* value
+  op      := SYMBOL LPAREN arglist? RPAREN
+  include := INCLUDE (STRING | BRACKETED)
+
+  arglist := (value COMMA)* value
+
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: February 2019
 """
 import os.path
 from typing import List, Tuple

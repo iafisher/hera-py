@@ -1,3 +1,8 @@
+"""The command-line entry point into the hera-py system.
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: February 2019
+"""
 import sys
 import functools
 

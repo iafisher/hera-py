@@ -1,3 +1,10 @@
+"""The lexer for HERA and the debugging mini-language.
+
+Consumed by hera/parser.py and hera/debugger/miniparser.py.
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: February 2019
+"""
 import string
 
 from hera.data import HERAError, Location, Messages, Token, TOKEN

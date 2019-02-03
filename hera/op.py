@@ -1,3 +1,8 @@
+"""The definition of all the operations in the HERA language.
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: February 2019
+"""
 import json
 from contextlib import suppress
 from typing import Dict, List, Optional, Tuple

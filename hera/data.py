@@ -7,7 +7,7 @@ the actual line can be printed in the message.
 Op objects represent HERA operations.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: December 2018
+Version: February 2019
 """
 from collections import namedtuple
 from enum import Enum

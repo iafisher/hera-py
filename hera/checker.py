@@ -1,3 +1,11 @@
+"""Type-checking and pseudo-op conversion.
+
+Note that the code for type-checking individual operations lives in hera/op.py. This
+module contains the code for program-wide type-checking.
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: Feburary 2019
+"""
 from contextlib import suppress
 from typing import Dict, List, Optional, Tuple
 
