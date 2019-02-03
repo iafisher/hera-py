@@ -449,7 +449,7 @@ def test_typecheck_unknown_branch_instruction():
 
 def test_typecheck_single_error():
     # Second argument to SETHI is out of range.
-    program = [SETLO(Token.R(1), Token.INT(10)), SETHI(Token.R(1), Token.INT(1000))]
+    program = [SETLO(Token.R(1), Token.Int(10)), SETHI(Token.R(1), Token.Int(1000))]
     symbol_table, messages = typecheck(program)
 
     assert len(messages.errors) == 1
@@ -458,8 +458,8 @@ def test_typecheck_single_error():
 
 def test_typecheck_multiple_errors():
     program = [
-        ADD(Token.R(1), Token.INT(10)),
-        INC(Token.R(3), Token.INT(1), Token.INT(2)),
+        ADD(Token.R(1), Token.Int(10)),
+        INC(Token.R(3), Token.Int(1), Token.Int(2)),
     ]
     symbol_table, messages = typecheck(program)
 
@@ -475,7 +475,7 @@ def test_typecheck_multiple_errors():
 
 
 def test_operation_length_of_register_branch_with_label():
-    assert operation_length(BNZ(Token.SYM("l"))) == 3
+    assert operation_length(BNZ(Token.Sym("l"))) == 3
 
 
 def test_operation_length_of_register_branch_with_register():
@@ -483,11 +483,11 @@ def test_operation_length_of_register_branch_with_register():
 
 
 def test_operation_length_of_SET():
-    assert operation_length(SET(Token.R(1), Token.INT(10))) == 2
+    assert operation_length(SET(Token.R(1), Token.Int(10))) == 2
 
 
 def test_operation_length_of_SETRF():
-    assert operation_length(SETRF(Token.R(1), Token.INT(10))) == 4
+    assert operation_length(SETRF(Token.R(1), Token.Int(10))) == 4
 
 
 def test_operation_length_of_MOVE():
@@ -511,7 +511,7 @@ def test_operation_lentgh_of_FLAGS():
 
 
 def test_operation_length_of_CALL_with_label():
-    assert operation_length(CALL(Token.R(12), Token.SYM("l"))) == 3
+    assert operation_length(CALL(Token.R(12), Token.Sym("l"))) == 3
 
 
 def test_operation_length_of_CALL_with_register():
@@ -519,25 +519,25 @@ def test_operation_length_of_CALL_with_register():
 
 
 def test_get_labels_with_invalid_code(settings):
-    labels, messages = get_labels([CALL(Token.SYM("l"))], settings)
+    labels, messages = get_labels([CALL(Token.Sym("l"))], settings)
 
     assert len(labels) == 0
     assert len(messages.errors) == 0
 
 
 def test_substitute_label_with_SETLO():
-    program = SETLO(Token.R(1), Token.SYM("N"))
+    program = SETLO(Token.R(1), Token.Sym("N"))
     labels = {"N": 10}
-    assert substitute_label(program, labels) == SETLO(Token.R(1), Token.INT(10))
+    assert substitute_label(program, labels) == SETLO(Token.R(1), Token.Int(10))
 
 
 def test_substitute_label_with_SETHI():
-    program = SETHI(Token.R(1), Token.SYM("N"))
+    program = SETHI(Token.R(1), Token.Sym("N"))
     labels = {"N": 10}
-    assert substitute_label(program, labels) == SETHI(Token.R(1), Token.INT(10))
+    assert substitute_label(program, labels) == SETHI(Token.R(1), Token.Int(10))
 
 
 def test_substitute_label_with_other_op():
-    program = INC(Token.R(1), Token.SYM("N"))
+    program = INC(Token.R(1), Token.Sym("N"))
     labels = {"N": 10}
-    assert substitute_label(program, labels) == INC(Token.R(1), Token.INT(10))
+    assert substitute_label(program, labels) == INC(Token.R(1), Token.Int(10))

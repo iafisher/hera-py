@@ -9,7 +9,7 @@ Version: Feburary 2019
 from contextlib import suppress
 from typing import Dict, List, Optional, Tuple
 
-from .data import Constant, DataLabel, Label, Messages, Program, Settings, Token, TOKEN
+from .data import Constant, DataLabel, Label, Messages, Program, Settings, Token
 from .op import (
     DataOperation,
     DebuggingOperation,
@@ -150,7 +150,7 @@ def get_labels(
 
 def operation_length(op):
     if isinstance(op, RegisterBranch):
-        if len(op.tokens) == 1 and op.tokens[0].type == TOKEN.SYMBOL:
+        if len(op.tokens) == 1 and op.tokens[0].type == Token.SYMBOL:
             return 3
         else:
             return 1
@@ -163,7 +163,7 @@ def operation_length(op):
     elif op.name == "FLAGS":
         return 2
     elif op.name == "CALL":
-        if len(op.tokens) == 2 and op.tokens[1].type != TOKEN.REGISTER:
+        if len(op.tokens) == 2 and op.tokens[1].type != Token.REGISTER:
             return 3
         else:
             return 1
@@ -200,7 +200,7 @@ def convert_ops(
     retlist = []
     pc = 0
     for op in oplist:
-        if isinstance(op, RelativeBranch) and op.tokens[0].type == TOKEN.SYMBOL:
+        if isinstance(op, RelativeBranch) and op.tokens[0].type == Token.SYMBOL:
             target = symbol_table[op.args[0]]
             jump = target - pc
             # TODO: Will this work? I think pc takes data statements into account here
@@ -208,7 +208,7 @@ def convert_ops(
             if jump < -128 or jump >= 128:
                 messages.err("label is too far for a relative branch", loc=op.tokens[0])
             else:
-                op.tokens[0] = Token.INT(jump, location=op.tokens[0].location)
+                op.tokens[0] = Token.Int(jump, location=op.tokens[0].location)
                 op.args[0] = jump
         else:
             op = substitute_label(op, symbol_table)
@@ -229,7 +229,7 @@ def substitute_label(
 ) -> AbstractOperation:
     """Substitute any label in the instruction with its concrete value."""
     for i, tkn in enumerate(op.tokens):
-        if tkn.type == TOKEN.SYMBOL:
-            op.tokens[i] = Token.INT(symbol_table[tkn.value], location=tkn.location)
+        if tkn.type == Token.SYMBOL:
+            op.tokens[i] = Token.Int(symbol_table[tkn.value], location=tkn.location)
             op.args[i] = symbol_table[tkn.value]
     return op

@@ -1,4 +1,4 @@
-from hera.data import Constant, DataLabel, Label, Token, TOKEN
+from hera.data import Constant, DataLabel, Label, Token
 from hera.op import (
     check_in_range,
     check_label,
@@ -115,16 +115,16 @@ def test_check_in_range_with_valid_integers():
 
 
 def R(i):
-    return Token(TOKEN.REGISTER, i)
+    return Token(Token.REGISTER, i)
 
 
 def SYM(s):
-    return Token(TOKEN.SYMBOL, s)
+    return Token(Token.SYMBOL, s)
 
 
 def STR(s):
-    return Token(TOKEN.STRING, s)
+    return Token(Token.STRING, s)
 
 
 def INT(x):
-    return Token(TOKEN.INT, x)
+    return Token(Token.INT, x)

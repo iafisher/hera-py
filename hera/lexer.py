@@ -7,7 +7,7 @@ Version: February 2019
 """
 import string
 
-from hera.data import HERAError, Location, Messages, Token, TOKEN
+from hera.data import HERAError, Location, Messages, Token
 from hera.utils import NAMED_REGISTERS
 
 
@@ -34,22 +34,22 @@ class Lexer:
         self.skip()
 
         if self.position >= len(self.text):
-            self.set_token(TOKEN.EOF, length=0)
+            self.set_token(Token.EOF, length=0)
         else:
             ch = self.text[self.position]
             if ch.isalpha() or ch == "_":
                 length = self.read_symbol()
                 if is_register(self.text[self.position : self.position + length]):
-                    self.set_token(TOKEN.REGISTER, length=length)
+                    self.set_token(Token.REGISTER, length=length)
                 else:
-                    self.set_token(TOKEN.SYMBOL, length=length)
+                    self.set_token(Token.SYMBOL, length=length)
             elif ch.isdigit():
                 length = self.read_int()
-                self.set_token(TOKEN.INT, length=length)
+                self.set_token(Token.INT, length=length)
             elif ch == '"':
                 loc = self.get_location()
                 s = self.consume_str()
-                self.tkn = Token(TOKEN.STRING, s, loc)
+                self.tkn = Token(Token.STRING, s, loc)
             elif ch == "'":
                 if self.peek_char() == "\\":
                     if self.peek_char(3) == "'":
@@ -61,10 +61,10 @@ class Lexer:
                         self.next_char()  # character
                         self.next_char()  # end quote
                         if len(escape) == 2:
-                            self.tkn = Token(TOKEN.CHAR, escape[1], loc)
+                            self.tkn = Token(Token.CHAR, escape[1], loc)
                             self.warn("unrecognized backslash escape", loc)
                         else:
-                            self.tkn = Token(TOKEN.CHAR, escape, loc)
+                            self.tkn = Token(Token.CHAR, escape, loc)
                 else:
                     if self.peek_char(2) == "'":
                         ch = self.peek_char()
@@ -72,51 +72,51 @@ class Lexer:
                         loc = self.get_location()
                         self.next_char()  # character
                         self.next_char()  # end quote
-                        self.tkn = Token(TOKEN.CHAR, ch, loc)
+                        self.tkn = Token(Token.CHAR, ch, loc)
                     else:
-                        self.set_token(TOKEN.UNKNOWN)
+                        self.set_token(Token.UNKNOWN)
             elif self.text[self.position :].startswith("#include"):
-                self.set_token(TOKEN.INCLUDE, length=len("#include"))
+                self.set_token(Token.INCLUDE, length=len("#include"))
             elif ch == "<":
                 self.next_char()
                 length = self.read_bracketed()
-                self.set_token(TOKEN.BRACKETED, length=length)
+                self.set_token(Token.BRACKETED, length=length)
                 if self.position < len(self.text):
                     self.next_char()
             elif ch == ":":
                 self.position += 1
                 length = self.read_symbol()
-                self.set_token(TOKEN.FMT, length=length)
+                self.set_token(Token.FMT, length=length)
             elif ch == "-":
                 if self.peek_char().isdigit():
                     self.position += 1
                     length = self.read_int()
                     self.position -= 1
-                    self.set_token(TOKEN.INT, length=length + 1)
+                    self.set_token(Token.INT, length=length + 1)
                 else:
-                    self.set_token(TOKEN.MINUS)
+                    self.set_token(Token.MINUS)
             elif ch == "+":
-                self.set_token(TOKEN.PLUS)
+                self.set_token(Token.PLUS)
             elif ch == "/":
-                self.set_token(TOKEN.SLASH)
+                self.set_token(Token.SLASH)
             elif ch == "*":
-                self.set_token(TOKEN.ASTERISK)
+                self.set_token(Token.ASTERISK)
             elif ch == "@":
-                self.set_token(TOKEN.AT)
+                self.set_token(Token.AT)
             elif ch == "(":
-                self.set_token(TOKEN.LPAREN)
+                self.set_token(Token.LPAREN)
             elif ch == ")":
-                self.set_token(TOKEN.RPAREN)
+                self.set_token(Token.RPAREN)
             elif ch == "{":
-                self.set_token(TOKEN.LBRACE)
+                self.set_token(Token.LBRACE)
             elif ch == "}":
-                self.set_token(TOKEN.RBRACE)
+                self.set_token(Token.RBRACE)
             elif ch == ",":
-                self.set_token(TOKEN.COMMA)
+                self.set_token(Token.COMMA)
             elif ch == ";":
-                self.set_token(TOKEN.SEMICOLON)
+                self.set_token(Token.SEMICOLON)
             else:
-                self.set_token(TOKEN.UNKNOWN)
+                self.set_token(Token.UNKNOWN)
 
         return self.tkn
 

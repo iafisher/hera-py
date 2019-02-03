@@ -15,8 +15,8 @@ Version: February 2019
 import os.path
 from typing import List, Tuple
 
-from .data import HERAError, Messages, Settings
-from .lexer import Lexer, Token, TOKEN
+from .data import HERAError, Messages, Settings, Token
+from .lexer import Lexer
 from .op import AbstractOperation, name_to_class
 from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
 from .utils import read_file, register_to_index
@@ -58,41 +58,41 @@ class Parser:
     def match_program(self, lexer):
         expecting_brace = False
         ops = []
-        while lexer.tkn.type != TOKEN.EOF:
-            if lexer.tkn.type == TOKEN.INCLUDE:
+        while lexer.tkn.type != Token.EOF:
+            if lexer.tkn.type == Token.INCLUDE:
                 ops.extend(self.match_include(lexer))
-            elif lexer.tkn.type == TOKEN.SYMBOL:
+            elif lexer.tkn.type == Token.SYMBOL:
                 name = lexer.tkn
                 lexer.next_token()
                 # Many legacy HERA program are enclosed with void HERA_main() { ... },
                 # which is handled here.
-                if lexer.tkn.type == TOKEN.SYMBOL and name == "void":
-                    if lexer.next_token().type == TOKEN.LPAREN:
+                if lexer.tkn.type == Token.SYMBOL and name == "void":
+                    if lexer.next_token().type == Token.LPAREN:
                         lexer.next_token()
                     else:
                         self.err("expected left parenthesis", lexer.tkn)
 
-                    if lexer.tkn.type == TOKEN.RPAREN:
+                    if lexer.tkn.type == Token.RPAREN:
                         lexer.next_token()
                     else:
                         self.err("expected right parenthesis", lexer.tkn)
 
-                    if lexer.tkn.type != TOKEN.LBRACE:
+                    if lexer.tkn.type != Token.LBRACE:
                         self.err("expected left curly brace", lexer.tkn)
 
                     lexer.next_token()
                     expecting_brace = True
                     continue
-                elif lexer.tkn.type == TOKEN.LPAREN:
+                elif lexer.tkn.type == Token.LPAREN:
                     op = self.match_op(lexer, name)
                     if op:
                         ops.append(op)
                     # Operations may optionally be separated by semicolons.
-                    if lexer.tkn.type == TOKEN.SEMICOLON:
+                    if lexer.tkn.type == Token.SEMICOLON:
                         lexer.next_token()
                 else:
                     self.err("expected left parenthesis", lexer.tkn)
-            elif expecting_brace and lexer.tkn.type == TOKEN.RBRACE:
+            elif expecting_brace and lexer.tkn.type == Token.RBRACE:
                 lexer.next_token()
                 expecting_brace = False
             else:
@@ -114,15 +114,15 @@ class Parser:
         else:
             return cls(*args, loc=name_tkn)
 
-    VALUE_TOKENS = (TOKEN.INT, TOKEN.REGISTER, TOKEN.SYMBOL, TOKEN.STRING, TOKEN.CHAR)
+    VALUE_TOKENS = (Token.INT, Token.REGISTER, Token.SYMBOL, Token.STRING, Token.CHAR)
 
     def match_optional_arglist(self, lexer):
-        if lexer.tkn.type == TOKEN.RPAREN:
+        if lexer.tkn.type == Token.RPAREN:
             return []
 
         args = []
         while True:
-            if lexer.tkn.type == TOKEN.INT:
+            if lexer.tkn.type == Token.INT:
                 # Detect zero-prefixed octal numbers.
                 prefix = lexer.tkn.value[:2]
                 if len(prefix) == 2 and prefix[0] == "0" and prefix[1].isdigit():
@@ -142,12 +142,12 @@ class Parser:
                     lexer.tkn.value = arg_as_int
                     args.append(lexer.tkn)
                 lexer.next_token()
-            elif lexer.tkn.type == TOKEN.CHAR:
+            elif lexer.tkn.type == Token.CHAR:
                 args.append(
-                    Token(TOKEN.INT, ord(lexer.tkn.value), location=lexer.tkn.location)
+                    Token(Token.INT, ord(lexer.tkn.value), location=lexer.tkn.location)
                 )
                 lexer.next_token()
-            elif lexer.tkn.type == TOKEN.REGISTER:
+            elif lexer.tkn.type == Token.REGISTER:
                 try:
                     i = register_to_index(lexer.tkn.value)
                 except HERAError:
@@ -163,16 +163,16 @@ class Parser:
                 lexer.next_token()
             else:
                 self.err("expected value", lexer.tkn)
-                self.skip_until(lexer, (TOKEN.COMMA, TOKEN.RPAREN))
-                if lexer.tkn.type == TOKEN.EOF:
+                self.skip_until(lexer, (Token.COMMA, Token.RPAREN))
+                if lexer.tkn.type == Token.EOF:
                     break
 
-            if lexer.tkn.type == TOKEN.RPAREN:
+            if lexer.tkn.type == Token.RPAREN:
                 break
-            elif lexer.tkn.type != TOKEN.COMMA:
+            elif lexer.tkn.type != Token.COMMA:
                 self.err("expected comma or right parenthesis", lexer.tkn)
-                self.skip_until(lexer, (TOKEN.COMMA, TOKEN.RPAREN))
-                if lexer.tkn.type == TOKEN.EOF or lexer.tkn.type == TOKEN.RPAREN:
+                self.skip_until(lexer, (Token.COMMA, Token.RPAREN))
+                if lexer.tkn.type == Token.EOF or lexer.tkn.type == Token.RPAREN:
                     break
             else:
                 lexer.next_token()
@@ -182,7 +182,7 @@ class Parser:
         root_path = lexer.path
         tkn = lexer.next_token()
         lexer.next_token()
-        if tkn.type == TOKEN.STRING:
+        if tkn.type == Token.STRING:
             include_path = os.path.join(os.path.dirname(root_path), tkn.value)
 
             if get_canonical_path(include_path) in self.visited:
@@ -197,7 +197,7 @@ class Parser:
             else:
                 sublexer = Lexer(included_text, path=include_path)
                 return self.parse(sublexer)
-        elif tkn.type == TOKEN.BRACKETED:
+        elif tkn.type == Token.BRACKETED:
             return self.expand_angle_include(lexer, tkn)
         else:
             self.err("expected quote or angle-bracket delimited string", tkn)
@@ -226,7 +226,7 @@ class Parser:
 
     def skip_until(self, lexer, tkns):
         tkns = set(tkns)
-        tkns.add(TOKEN.EOF)
+        tkns.add(Token.EOF)
         while lexer.tkn.type not in tkns:
             lexer.next_token()
 

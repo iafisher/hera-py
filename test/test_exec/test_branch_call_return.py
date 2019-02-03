@@ -12,7 +12,7 @@ def vm():
 
 
 def branch_helper(vm, branchname):
-    op = name_to_class[branchname](Token.SYM("l"))
+    op = name_to_class[branchname](Token.Sym("l"))
     return op.should(vm)
 
 

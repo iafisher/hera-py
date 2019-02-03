@@ -1,4 +1,4 @@
-from hera.data import Token, TOKEN
+from hera.data import Token
 from hera.op import ADD, INC, LABEL, RTI, SET
 from hera.parser import parse
 
@@ -52,7 +52,7 @@ def test_parse_multiple_ops():
 def test_parse_label_starting_with_register_name():
     program = valid("LABEL(R1_INIT)")
 
-    assert program == [LABEL(Token.SYM("R1_INIT"))]
+    assert program == [LABEL(Token.Sym("R1_INIT"))]
 
 
 def test_parse_octal_number():
@@ -138,12 +138,12 @@ def test_parse_ops_with_semicolons():
 
 
 def SYM(s):
-    return Token(TOKEN.SYMBOL, s)
+    return Token(Token.SYMBOL, s)
 
 
 def INT(x):
-    return Token(TOKEN.INT, x)
+    return Token(Token.INT, x)
 
 
 def R(i):
-    return Token(TOKEN.REGISTER, i)
+    return Token(Token.REGISTER, i)

@@ -1,11 +1,9 @@
 """Some important data structures for the HERA interpreter.
 
-
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 from collections import namedtuple
-from enum import Enum
 from typing import Optional, Tuple
 
 
@@ -59,6 +57,29 @@ Program = namedtuple("Program", ["data", "code", "symbol_table"])
 
 
 class Token:
+    # Possible values for the `type` field.
+    INT = "TOKEN_INT"
+    REGISTER = "TOKEN_REGISTER"
+    SYMBOL = "TOKEN_SYMBOL"
+    STRING = "TOKEN_STRING"
+    BRACKETED = "TOKEN_BRACKETED"
+    CHAR = "TOKEN_CHAR"
+    MINUS = "TOKEN_MINUS"
+    AT = "TOKEN_AT"
+    ASTERISK = "TOKEN_ASTERISK"
+    PLUS = "TOKEN_PLUS"
+    SLASH = "TOKEN_SLASH"
+    LPAREN = "TOKEN_LPAREN"
+    RPAREN = "TOKEN_RPAREN"
+    LBRACE = "TOKEN_LBRACE"
+    RBRACE = "TOKEN_RBRACE"
+    COMMA = "TOKEN_COMMA"
+    SEMICOLON = "TOKEN_SEMICOLON"
+    FMT = "TOKEN_FMT"
+    INCLUDE = "TOKEN_INCLUDE"
+    EOF = "TOKEN_EOF"
+    UNKNOWN = "TOKEN_UNKNOWN"
+
     def __init__(self, type_, value, location=None):
         self.type = type_
         self.value = value
@@ -66,19 +87,15 @@ class Token:
 
     @classmethod
     def R(cls, i, location=None):
-        return cls(TOKEN.REGISTER, i, location)
+        return cls(cls.REGISTER, i, location)
 
     @classmethod
-    def INT(cls, x, location=None):
-        return cls(TOKEN.INT, x, location)
+    def Int(cls, x, location=None):
+        return cls(cls.INT, x, location)
 
     @classmethod
-    def SYM(cls, s, location=None):
-        return cls(TOKEN.SYMBOL, s, location)
-
-    @classmethod
-    def STR(cls, s, location=None):
-        return cls(TOKEN.STRING, s, location)
+    def Sym(cls, s, location=None):
+        return cls(cls.SYMBOL, s, location)
 
     def __eq__(self, other):
         if isinstance(other, Token):
@@ -88,37 +105,6 @@ class Token:
 
     def __repr__(self):
         return "Token({0.type!r}, {0.value!r}, loc={0.location!r})".format(self)
-
-
-class TOKEN(Enum):
-    """Enumeration for the type field of Token objects."""
-
-    # Values
-    INT = "TOKEN_INT"
-    REGISTER = "TOKEN_REGISTER"
-    SYMBOL = "TOKEN_SYMBOL"
-    STRING = "TOKEN_STRING"
-    BRACKETED = "TOKEN_BRACKETED"
-    CHAR = "TOKEN_CHAR"
-
-    # Operators
-    MINUS = "TOKEN_MINUS"
-    AT = "TOKEN_AT"
-    ASTERISK = "TOKEN_ASTERISK"
-    PLUS = "TOKEN_PLUS"
-    SLASH = "TOKEN_SLASH"
-
-    LPAREN = "TOKEN_LPAREN"
-    RPAREN = "TOKEN_RPAREN"
-    LBRACE = "TOKEN_LBRACE"
-    RBRACE = "TOKEN_RBRACE"
-    COMMA = "TOKEN_COMMA"
-    SEMICOLON = "TOKEN_SEMICOLON"
-
-    FMT = "TOKEN_FMT"
-    INCLUDE = "TOKEN_INCLUDE"
-    EOF = "TOKEN_EOF"
-    UNKNOWN = "TOKEN_UNKNOWN"
 
 
 class Messages:

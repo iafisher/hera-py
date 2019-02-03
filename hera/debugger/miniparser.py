@@ -5,8 +5,8 @@ Version: January 2019
 """
 from collections import namedtuple
 
-from ..lexer import Lexer, TOKEN
-from ..data import HERAError
+from ..lexer import Lexer
+from ..data import HERAError, Token
 from ..utils import register_to_index
 
 
@@ -42,7 +42,7 @@ class MiniParser:
 
     def parse(self):
         tree = self.match_exprlist()
-        if self.lexer.tkn.type == TOKEN.EOF:
+        if self.lexer.tkn.type == Token.EOF:
             return tree
         else:
             raise SyntaxError("trailing input")
@@ -51,7 +51,7 @@ class MiniParser:
         """Match a sequence of comma-separated expressions."""
         seq = []
 
-        if self.lexer.tkn.type == TOKEN.FMT:
+        if self.lexer.tkn.type == Token.FMT:
             fmt = self.lexer.tkn.value
             self.lexer.next_token()
         else:
@@ -60,7 +60,7 @@ class MiniParser:
         while True:
             expr = self.match_expr(PREC_LOWEST)
             seq.append(expr)
-            if self.lexer.tkn.type == TOKEN.COMMA:
+            if self.lexer.tkn.type == Token.COMMA:
                 self.lexer.next_token()
             else:
                 break
@@ -70,33 +70,33 @@ class MiniParser:
     def match_expr(self, precedence):
         """Parse the expression with the given precedence."""
         tkn = self.lexer.tkn
-        if tkn.type == TOKEN.AT:
+        if tkn.type == Token.AT:
             self.lexer.next_token()
             address = self.match_expr(PREC_PREFIX)
             left = MemoryNode(address)
-        elif tkn.type == TOKEN.INT:
+        elif tkn.type == Token.INT:
             try:
                 left = IntNode(int(tkn.value, base=0))
             except ValueError:
                 raise SyntaxError("invalid integer literal: {}".format(tkn))
             else:
                 self.lexer.next_token()
-        elif tkn.type == TOKEN.MINUS:
+        elif tkn.type == Token.MINUS:
             self.lexer.next_token()
             left = PrefixNode("-", self.match_expr(PREC_PREFIX))
-        elif tkn.type == TOKEN.REGISTER:
+        elif tkn.type == Token.REGISTER:
             try:
                 left = RegisterNode(register_to_index(tkn.value))
             except HERAError:
                 raise SyntaxError("{} is not a valid register".format(tkn.value))
             self.lexer.next_token()
-        elif tkn.type == TOKEN.SYMBOL:
+        elif tkn.type == Token.SYMBOL:
             left = SymbolNode(tkn.value)
             self.lexer.next_token()
-        elif tkn.type == TOKEN.LPAREN:
+        elif tkn.type == Token.LPAREN:
             self.lexer.next_token()
             left = self.match_expr(PREC_LOWEST)
-            if self.lexer.tkn.type != TOKEN.RPAREN:
+            if self.lexer.tkn.type != Token.RPAREN:
                 self.unexpected(self.lexer.tkn)
             self.lexer.next_token()
         else:
@@ -112,9 +112,9 @@ class MiniParser:
         return left
 
     def unexpected(self, tkn):
-        if tkn.type == TOKEN.EOF:
+        if tkn.type == Token.EOF:
             raise SyntaxError("premature end of input")
-        elif tkn.type == TOKEN.UNKNOWN:
+        elif tkn.type == Token.UNKNOWN:
             raise SyntaxError("unrecognized input `{}`".format(tkn))
         else:
             raise SyntaxError("did not expect `{}` in this position".format(tkn))
@@ -168,6 +168,6 @@ def wrap(node):
 
 
 # Operator precedence
-PREC_MAP = {TOKEN.PLUS: 1, TOKEN.MINUS: 1, TOKEN.SLASH: 2, TOKEN.ASTERISK: 2}
+PREC_MAP = {Token.PLUS: 1, Token.MINUS: 1, Token.SLASH: 2, Token.ASTERISK: 2}
 PREC_LOWEST = 0
 PREC_PREFIX = 3
