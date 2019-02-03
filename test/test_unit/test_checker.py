@@ -12,7 +12,6 @@ from hera.op import (
     MOVE,
     NEG,
     NOT,
-    resolve_ops,
     SET,
     SETHI,
     SETLO,
@@ -27,7 +26,7 @@ def settings():
 
 
 def helper(opstr, symbol_table={}):
-    ops, messages = resolve_ops(parse(opstr)[0])
+    ops, messages = parse(opstr)
     if not ops or messages.errors:
         return messages.errors
     else:

@@ -1,10 +1,5 @@
 """Some important data structures for the HERA interpreter.
 
-Location objects represent a location in a file, for the use of warnings and error
-messages. The `file_lines` field is a pointer to a list of lines in the file, so that
-the actual line can be printed in the message.
-
-Op objects represent HERA operations.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
@@ -44,6 +39,11 @@ class Settings:
 
 
 class Location(namedtuple("Location", ["line", "column", "path", "file_lines"])):
+    """A class to represent a location in a file, for the use of warnings and error
+    messages. The `file_lines` field is a pointer to a list of lines in the file, so
+    that the actual line can be printed in the message.
+    """
+
     def __repr__(self):
         if self.file_lines:
             return "Location(line={}, column={}, path={!r}, file_lines=[...])".format(
@@ -53,24 +53,6 @@ class Location(namedtuple("Location", ["line", "column", "path", "file_lines"]))
             return "Location(line={}, column={}, path={!r}, file_lines=[])".format(
                 self.line, self.column, self.path
             )
-
-
-class Op(namedtuple("Op", ["name", "args", "original"])):
-    def __new__(cls, name, args, original=None):
-        return tuple.__new__(cls, (name, args, original))
-
-    def __eq__(self, other):
-        return (
-            isinstance(other, Op)
-            and self.name == other.name
-            and self.args == other.args
-        )
-
-    def __repr__(self):
-        orepr = "None" if self.original is None else "Op(...)"
-        return "Op(name={!r}, args={!r}, original={})".format(
-            self.name, self.args, orepr
-        )
 
 
 Program = namedtuple("Program", ["data", "code", "symbol_table"])

@@ -13,7 +13,7 @@ from .miniparser import (
 )
 from hera.data import DataLabel, HERAError, Label, Program, Settings
 from hera.loader import load_program
-from hera.op import Branch, DataOperation, resolve_ops
+from hera.op import Branch, DataOperation, LABEL
 from hera.parser import parse
 from hera.utils import format_int, pad
 
@@ -211,14 +211,14 @@ class Shell:
             return
 
         # Make sure there are no disallowed ops.
-        for op in resolve_ops(parse(argstr)[0])[0]:
+        for op in parse(argstr)[0]:
             if isinstance(op, Branch):
                 print("execute cannot take branching operations.")
                 return
             elif isinstance(op, DataOperation):
                 print("execute cannot take data statements.")
                 return
-            elif op.name == "LABEL":
+            elif isinstance(op, LABEL):
                 print("execute cannot take labels.")
                 return
 

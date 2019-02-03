@@ -7,7 +7,7 @@ import copy
 from typing import List
 
 from .data import Settings
-from .op import BaseOperation, DataOperation
+from .op import AbstractOperation, DataOperation
 from .utils import print_warning
 
 
@@ -57,7 +57,7 @@ class VirtualMachine:
         ret.memory = self.memory.copy()
         return ret
 
-    def exec_many(self, program: List[BaseOperation]) -> None:
+    def exec_many(self, program: List[AbstractOperation]) -> None:
         """Execute a program (i.e., a list of operations), resetting the machine's
         state beforehand.
         """

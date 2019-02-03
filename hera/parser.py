@@ -15,13 +15,16 @@ Version: February 2019
 import os.path
 from typing import List, Tuple
 
-from hera.data import HERAError, Messages, Op, Settings
-from hera.lexer import Lexer, Token, TOKEN
+from .data import HERAError, Messages, Settings
+from .lexer import Lexer, Token, TOKEN
+from .op import AbstractOperation, name_to_class
 from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
-from hera.utils import read_file, register_to_index
+from .utils import read_file, register_to_index
 
 
-def parse(text: str, *, path=None, settings=Settings()) -> Tuple[List[Op], Messages]:
+def parse(
+    text: str, *, path=None, settings=Settings()
+) -> Tuple[List[AbstractOperation], Messages]:
     """Parse a HERA program.
 
     `path` is the path of the file being parsed, as it will appear in error and
@@ -33,12 +36,12 @@ def parse(text: str, *, path=None, settings=Settings()) -> Tuple[List[Op], Messa
 
 
 class Parser:
-    def __init__(self, settings):
+    def __init__(self, settings: Settings) -> None:
         self.visited = set()
         self.settings = settings
         self.messages = Messages()
 
-    def parse(self, lexer):
+    def parse(self, lexer: Lexer) -> List[AbstractOperation]:
         if lexer.path:
             self.visited.add(get_canonical_path(lexer.path))
 
@@ -81,7 +84,9 @@ class Parser:
                     expecting_brace = True
                     continue
                 elif lexer.tkn.type == TOKEN.LPAREN:
-                    ops.append(self.match_op(lexer, name))
+                    op = self.match_op(lexer, name)
+                    if op:
+                        ops.append(op)
                     # Operations may optionally be separated by semicolons.
                     if lexer.tkn.type == TOKEN.SEMICOLON:
                         lexer.next_token()
@@ -96,12 +101,18 @@ class Parser:
 
         return ops
 
-    def match_op(self, lexer, name):
+    def match_op(self, lexer, name_tkn):
         """Match an operation, assuming that lexer.tkn is on the left parenthesis."""
         lexer.next_token()
         args = self.match_optional_arglist(lexer)
         lexer.next_token()
-        return Op(name, args)
+        try:
+            cls = name_to_class[name_tkn.value]
+        except KeyError:
+            self.err("unknown instruction `{}`".format(name_tkn.value), name_tkn)
+            return None
+        else:
+            return cls(*args, loc=name_tkn)
 
     VALUE_TOKENS = (TOKEN.INT, TOKEN.REGISTER, TOKEN.SYMBOL, TOKEN.STRING, TOKEN.CHAR)
 

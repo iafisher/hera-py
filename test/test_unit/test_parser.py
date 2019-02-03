@@ -1,4 +1,5 @@
-from hera.data import Op, Token, TOKEN
+from hera.data import Token, TOKEN
+from hera.op import ADD, INC, LABEL, RTI, SET
 from hera.parser import parse
 
 
@@ -18,39 +19,40 @@ def invalid(text):
 def test_parse_single_op():
     program = valid("SET(R1, 42)")
 
-    assert program == [Op(SYM("SET"), [R(1), INT(42)])]
+    assert program == [SET(R(1), INT(42))]
 
 
 def test_parse_has_locations():
     program = valid("SET(  R1,\n42)")
 
     op = program[0]
-    assert op.name.location.line == 1
-    assert op.name.location.column == 1
+    assert isinstance(op, SET)
+    assert op.loc.line == 1
+    assert op.loc.column == 1
 
-    assert op.args[0].location.line == 1
-    assert op.args[0].location.column == 7
+    assert op.tokens[0].location.line == 1
+    assert op.tokens[0].location.column == 7
 
-    assert op.args[1].location.line == 2
-    assert op.args[1].location.column == 1
+    assert op.tokens[1].location.line == 2
+    assert op.tokens[1].location.column == 1
 
 
 def test_parse_op_with_no_args():
     program = valid("RTI()")
 
-    assert program == [Op("RTI", [])]
+    assert program == [RTI()]
 
 
 def test_parse_multiple_ops():
     program = valid("INC(R4, 5)\nADD(R1, R2, R3)")
 
-    assert program == [Op("INC", [4, 5]), Op("ADD", [1, 2, 3])]
+    assert program == [INC(R(4), INT(5)), ADD(R(1), R(2), R(3))]
 
 
 def test_parse_label_starting_with_register_name():
     program = valid("LABEL(R1_INIT)")
 
-    assert program == [Op("LABEL", ["R1_INIT"])]
+    assert program == [LABEL(Token.SYM("R1_INIT"))]
 
 
 def test_parse_octal_number():

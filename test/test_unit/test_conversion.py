@@ -1,26 +1,11 @@
 from hera.checker import convert_ops
 from hera.data import Token
-from hera.op import (
-    ADD,
-    BR,
-    BRR,
-    CALL,
-    FOFF,
-    FON,
-    INTEGER,
-    resolve_ops,
-    SET,
-    SETHI,
-    SETLO,
-    SUB,
-)
+from hera.op import ADD, BR, BRR, CALL, FOFF, FON, INTEGER, SET, SETHI, SETLO, SUB
 from hera.parser import parse
 
 
 def helper(argstr):
     oplist, messages = parse(argstr)
-    assert not messages.errors
-    oplist, messages = resolve_ops(oplist)
     assert not messages.errors
     return oplist[0].convert()
 

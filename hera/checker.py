@@ -9,31 +9,20 @@ Version: Feburary 2019
 from contextlib import suppress
 from typing import Dict, List, Optional, Tuple
 
-from .data import (
-    Constant,
-    DataLabel,
-    Label,
-    Op,
-    Messages,
-    Program,
-    Settings,
-    Token,
-    TOKEN,
-)
+from .data import Constant, DataLabel, Label, Messages, Program, Settings, Token, TOKEN
 from .op import (
     DataOperation,
     DebuggingOperation,
-    BaseOperation,
+    AbstractOperation,
     RegisterBranch,
     RelativeBranch,
-    resolve_ops,
 )
 
 
-def check(oplist: List[Op], settings: Settings) -> Tuple[Optional[Program], Messages]:
-    oplist, messages = resolve_ops(oplist)
-    symbol_table, typecheck_messages = typecheck(oplist, settings=settings)
-    messages.extend(typecheck_messages)
+def check(
+    oplist: List[AbstractOperation], settings: Settings
+) -> Tuple[Optional[Program], Messages]:
+    symbol_table, messages = typecheck(oplist, settings=settings)
     if messages.errors:
         return (None, messages)
 
@@ -52,7 +41,7 @@ def check(oplist: List[Op], settings: Settings) -> Tuple[Optional[Program], Mess
 
 
 def typecheck(
-    program: List[BaseOperation], settings=Settings()
+    program: List[AbstractOperation], settings=Settings()
 ) -> Tuple[Dict[str, int], Messages]:
     """Type-check the program and emit error messages as appropriate. Return the
     program's symbol table.
@@ -89,7 +78,7 @@ def typecheck(
     return (symbol_table, messages)
 
 
-def check_symbol_redeclaration(program: List[BaseOperation]) -> Messages:
+def check_symbol_redeclaration(program: List[AbstractOperation]) -> Messages:
     """Check if any symbols are redeclared in the program and return the error
     messages.
     """
@@ -108,7 +97,7 @@ def check_symbol_redeclaration(program: List[BaseOperation]) -> Messages:
 
 
 def get_labels(
-    program: List[BaseOperation], settings: Settings
+    program: List[AbstractOperation], settings: Settings
 ) -> Tuple[Dict[str, int], Messages]:
     """Return a dictionary mapping the labels and data labels (but not the constants) of
     the program to their concrete values.
@@ -200,8 +189,8 @@ def out_of_range(n):
 
 
 def convert_ops(
-    oplist: List[BaseOperation], symbol_table: Dict[str, int]
-) -> Tuple[List[BaseOperation], Messages]:
+    oplist: List[AbstractOperation], symbol_table: Dict[str, int]
+) -> Tuple[List[AbstractOperation], Messages]:
     """Convert the operations from pseudo-ops to real ops, and substitute values for
     labels and constants.
 
@@ -235,7 +224,9 @@ def convert_ops(
     return (retlist, messages)
 
 
-def substitute_label(op: BaseOperation, symbol_table: Dict[str, int]) -> BaseOperation:
+def substitute_label(
+    op: AbstractOperation, symbol_table: Dict[str, int]
+) -> AbstractOperation:
     """Substitute any label in the instruction with its concrete value."""
     for i, tkn in enumerate(op.tokens):
         if tkn.type == TOKEN.SYMBOL:

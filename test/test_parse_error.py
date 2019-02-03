@@ -148,6 +148,11 @@ Error: expected left parenthesis, line 1 col 5 of <stdin>
   SET LO(R1, 1)
       ^
 
+Error: unknown instruction `LO`, line 1 col 5 of <stdin>
+
+  SET LO(R1, 1)
+      ^
+
 """
     )
 
