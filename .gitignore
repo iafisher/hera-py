@@ -16,4 +16,4 @@ __pycache__
 /*.txt
 !/requirements-dev.txt
 
-/profile
+/profile/profile-*

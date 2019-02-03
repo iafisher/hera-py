@@ -1,0 +1,10 @@
+e530e69 (02-02) refactoring register_to_index
+  benchmark31.hera
+
+  before (02-02-18:20): 25.887 seconds
+  after  (02-02-19:11): 13.694 seconds
+
+<in-progress>
+  benchmark31.hera
+
+  before (02-02:19:36): 15.747 seconds
