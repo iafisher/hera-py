@@ -11,7 +11,7 @@ from hera.data import Constant, DataLabel, Location, Messages, Op, Token, TOKEN
 from hera.utils import format_int, from_u16, print_warning, to_u16, to_u32
 
 
-class Operation:
+class BaseOperation:
     # TODO: Name of this class is confusingly similar to hera.data.Op
 
     def __init__(self, *args, loc=None):
@@ -36,7 +36,7 @@ class Operation:
 
         return messages.extend(check_arglist(self.P, self.tokens, symbol_table))
 
-    def convert(self) -> List["Operation"]:
+    def convert(self) -> List["BaseOperation"]:
         return [self]
 
     def assemble(self):
@@ -89,7 +89,7 @@ U5 = range(2 ** 5)
 U4 = range(2 ** 4)
 
 
-class UnaryOp(Operation):
+class UnaryOp(BaseOperation):
     """Abstract class to simplify implementation of unary operations. Child classes
     only need to implement the calculate method.
     """
@@ -113,7 +113,7 @@ class UnaryOp(Operation):
         raise NotImplementedError
 
 
-class BinaryOp(Operation):
+class BinaryOp(BaseOperation):
     """Abstract class to simplify implementation of binary operations. Child classes
     only need to implement the calculate method.
     """
@@ -139,7 +139,7 @@ class BinaryOp(Operation):
         raise NotImplementedError
 
 
-class Branch(Operation):
+class Branch(BaseOperation):
     pass
 
 
@@ -197,15 +197,15 @@ class RelativeBranch(Branch):
         raise NotImplementedError
 
 
-class DebuggingOperation(Operation):
+class DebuggingOperation(BaseOperation):
     pass
 
 
-class DataOperation(Operation):
+class DataOperation(BaseOperation):
     pass
 
 
-class SETLO(Operation):
+class SETLO(BaseOperation):
     P = (REGISTER, I8)
 
     def execute(self, vm):
@@ -217,7 +217,7 @@ class SETLO(Operation):
         vm.pc += 1
 
 
-class SETHI(Operation):
+class SETHI(BaseOperation):
     P = (REGISTER, I8)
 
     def execute(self, vm):
@@ -226,7 +226,7 @@ class SETHI(Operation):
         vm.pc += 1
 
 
-class SET(Operation):
+class SET(BaseOperation):
     P = (REGISTER, I16_OR_LABEL)
 
     def convert(self):
@@ -304,7 +304,7 @@ class XOR(BinaryOp):
         return left ^ right
 
 
-class INC(Operation):
+class INC(BaseOperation):
     P = (REGISTER, range(1, 65))
 
     def execute(self, vm):
@@ -320,7 +320,7 @@ class INC(Operation):
         vm.pc += 1
 
 
-class DEC(Operation):
+class DEC(BaseOperation):
     P = (REGISTER, range(1, 65))
 
     def execute(self, vm):
@@ -401,7 +401,7 @@ class ASR(UnaryOp):
         return result
 
 
-class SAVEF(Operation):
+class SAVEF(BaseOperation):
     P = (REGISTER,)
 
     def execute(self, vm):
@@ -416,7 +416,7 @@ class SAVEF(Operation):
         vm.pc += 1
 
 
-class RSTRF(Operation):
+class RSTRF(BaseOperation):
     P = (REGISTER,)
 
     def execute(self, vm):
@@ -429,7 +429,7 @@ class RSTRF(Operation):
         vm.pc += 1
 
 
-class FON(Operation):
+class FON(BaseOperation):
     P = (U5,)
 
     def execute(self, vm):
@@ -442,7 +442,7 @@ class FON(Operation):
         vm.pc += 1
 
 
-class FOFF(Operation):
+class FOFF(BaseOperation):
     P = (U5,)
 
     def execute(self, vm):
@@ -455,7 +455,7 @@ class FOFF(Operation):
         vm.pc += 1
 
 
-class FSET5(Operation):
+class FSET5(BaseOperation):
     P = (U5,)
 
     def execute(self, vm):
@@ -468,7 +468,7 @@ class FSET5(Operation):
         vm.pc += 1
 
 
-class FSET4(Operation):
+class FSET4(BaseOperation):
     P = (U4,)
 
     def execute(self, vm):
@@ -480,7 +480,7 @@ class FSET4(Operation):
         vm.pc += 1
 
 
-class LOAD(Operation):
+class LOAD(BaseOperation):
     P = (REGISTER, U5, REGISTER)
 
     def execute(self, vm):
@@ -492,7 +492,7 @@ class LOAD(Operation):
         vm.pc += 1
 
 
-class STORE(Operation):
+class STORE(BaseOperation):
     P = (REGISTER, U5, REGISTER)
 
     def execute(self, vm):
@@ -756,92 +756,92 @@ class RETURN(CALL_AND_RETURN):
         super().execute(vm)
 
 
-class SWI(Operation):
+class SWI(BaseOperation):
     P = (U4,)
 
 
-class RTI(Operation):
+class RTI(BaseOperation):
     P = ()
 
 
-class CMP(Operation):
+class CMP(BaseOperation):
     P = (REGISTER, REGISTER)
 
     def convert(self):
         return [FON(Token.INT(8)), SUB(Token.R(0), self.tokens[0], self.tokens[1])]
 
 
-class CON(Operation):
+class CON(BaseOperation):
     P = ()
 
     def convert(self):
         return [FON(Token.INT(8))]
 
 
-class COFF(Operation):
+class COFF(BaseOperation):
     P = ()
 
     def convert(self):
         return [FOFF(Token.INT(8))]
 
 
-class CBON(Operation):
+class CBON(BaseOperation):
     P = ()
 
     def convert(self):
         return [FON(Token.INT(16))]
 
 
-class CCBOFF(Operation):
+class CCBOFF(BaseOperation):
     P = ()
 
     def convert(self):
         return [FOFF(Token.INT(24))]
 
 
-class MOVE(Operation):
+class MOVE(BaseOperation):
     P = (REGISTER, REGISTER)
 
     def convert(self):
         return [OR(self.tokens[0], self.tokens[1], Token.R(0))]
 
 
-class SETRF(Operation):
+class SETRF(BaseOperation):
     P = (REGISTER, I16_OR_LABEL)
 
     def convert(self):
         return SET(*self.args).convert() + FLAGS(self.tokens[0]).convert()
 
 
-class FLAGS(Operation):
+class FLAGS(BaseOperation):
     P = (REGISTER,)
 
     def convert(self):
         return [FOFF(Token.INT(8)), ADD(Token.R(0), self.tokens[0], Token.R(0))]
 
 
-class HALT(Operation):
+class HALT(BaseOperation):
     P = ()
 
     def convert(self):
         return [BRR(Token.INT(0))]
 
 
-class NOP(Operation):
+class NOP(BaseOperation):
     P = ()
 
     def convert(self):
         return [BRR(Token.INT(1))]
 
 
-class NEG(Operation):
+class NEG(BaseOperation):
     P = (REGISTER, REGISTER)
 
     def convert(self):
         return [FON(Token.INT(8)), SUB(self.tokens[0], Token.R(0), self.tokens[1])]
 
 
-class NOT(Operation):
+class NOT(BaseOperation):
     P = (REGISTER, REGISTER)
 
     def typecheck(self, *args, **kwargs):
@@ -893,7 +893,7 @@ class CONSTANT(DataOperation):
         return []
 
 
-class LABEL(Operation):
+class LABEL(BaseOperation):
     P = (LABEL_TYPE,)
 
     def convert(self):
@@ -1035,7 +1035,7 @@ def check_in_range(arg, symbol_table, *, lo, hi, labels=False):
         return None
 
 
-def resolve_ops(program: List[Op]) -> Tuple[List[Operation], Messages]:
+def resolve_ops(program: List[Op]) -> Tuple[List[BaseOperation], Messages]:
     """Replace all Op objects with their corresponding class from hera/op.py. Operations
     with unrecognized names are not included in the return value.
     """

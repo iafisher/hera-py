@@ -23,7 +23,7 @@ from .data import (
 from .op import (
     DataOperation,
     DebuggingOperation,
-    Operation,
+    BaseOperation,
     RegisterBranch,
     RelativeBranch,
     resolve_ops,
@@ -52,7 +52,7 @@ def check(oplist: List[Op], settings: Settings) -> Tuple[Optional[Program], Mess
 
 
 def typecheck(
-    program: List[Operation], settings=Settings()
+    program: List[BaseOperation], settings=Settings()
 ) -> Tuple[Dict[str, int], Messages]:
     """Type-check the program and emit error messages as appropriate. Return the
     program's symbol table.
@@ -89,7 +89,7 @@ def typecheck(
     return (symbol_table, messages)
 
 
-def check_symbol_redeclaration(program: List[Operation]) -> Messages:
+def check_symbol_redeclaration(program: List[BaseOperation]) -> Messages:
     """Check if any symbols are redeclared in the program and return the error
     messages.
     """
@@ -108,7 +108,7 @@ def check_symbol_redeclaration(program: List[Operation]) -> Messages:
 
 
 def get_labels(
-    program: List[Operation], settings: Settings
+    program: List[BaseOperation], settings: Settings
 ) -> Tuple[Dict[str, int], Messages]:
     """Return a dictionary mapping the labels and data labels (but not the constants) of
     the program to their concrete values.
@@ -200,8 +200,8 @@ def out_of_range(n):
 
 
 def convert_ops(
-    oplist: List[Operation], symbol_table: Dict[str, int]
-) -> Tuple[List[Operation], Messages]:
+    oplist: List[BaseOperation], symbol_table: Dict[str, int]
+) -> Tuple[List[BaseOperation], Messages]:
     """Convert the operations from pseudo-ops to real ops, and substitute values for
     labels and constants.
 
@@ -235,7 +235,7 @@ def convert_ops(
     return (retlist, messages)
 
 
-def substitute_label(op: Operation, symbol_table: Dict[str, int]) -> Operation:
+def substitute_label(op: BaseOperation, symbol_table: Dict[str, int]) -> BaseOperation:
     """Substitute any label in the instruction with its concrete value."""
     for i, tkn in enumerate(op.tokens):
         if tkn.type == TOKEN.SYMBOL:
