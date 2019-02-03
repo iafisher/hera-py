@@ -8,7 +8,7 @@ from typing import List
 
 from .data import Settings
 from .op import DataOperation, Operation
-from .utils import print_warning, register_to_index
+from .utils import print_warning
 
 
 class VirtualMachine:
@@ -96,14 +96,12 @@ class VirtualMachine:
         else:
             raise RuntimeError("unsupported operation {}".format(name))
 
-    def load_register(self, name):
-        """Get the contents of the register with the given name."""
-        index = register_to_index(name)
+    def load_register(self, index):
+        """Get the contents of the register with the given index."""
         return self.registers[index]
 
-    def store_register(self, target, value):
-        """Store the value in the target register (a string)."""
-        index = register_to_index(target)
+    def store_register(self, index, value):
+        """Store the value in the target register."""
         if index != 0:
             self.registers[index] = value
             if index == 15 and value >= self.settings.data_start:

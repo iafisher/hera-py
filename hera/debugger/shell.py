@@ -11,11 +11,11 @@ from .miniparser import (
     RegisterNode,
     SymbolNode,
 )
-from hera.data import DataLabel, HERAError, Label, Program, Settings
+from hera.data import DataLabel, HERAError, Label, Program, RegisterToken, Settings
 from hera.loader import load_program
 from hera.op import Branch, DataOperation, resolve_ops
 from hera.parser import parse
-from hera.utils import format_int, pad, register_to_index
+from hera.utils import format_int, pad
 
 
 def debug(program: Program, settings=Settings()) -> None:
@@ -152,15 +152,15 @@ class Shell:
         try:
             rhs = self.evaluate_node(rtree)
             if isinstance(ltree, RegisterNode):
-                if ltree.value == "pc":
-                    vm.pc = rhs
-                else:
-                    vm.store_register(ltree.value, rhs)
+                vm.store_register(RegisterToken(ltree.value), rhs)
             elif isinstance(ltree, MemoryNode):
                 address = self.evaluate_node(ltree.address)
                 vm.store_memory(address, rhs)
             elif isinstance(ltree, SymbolNode):
-                print("Eval error: cannot assign to symbol.")
+                if ltree.value == "pc":
+                    vm.pc = rhs
+                else:
+                    print("Eval error: cannot assign to symbol.")
             elif isinstance(ltree, (InfixNode, PrefixNode)):
                 print("Eval error: cannot assign to arithmetic expression.")
             else:
@@ -418,26 +418,26 @@ class Shell:
 
         # Customize the format specifier depending on the type of expression.
         if isinstance(tree, RegisterNode):
+            try:
+                i = RegisterToken(tree.value)
+            except ValueError:
+                raise HERAError("no such register")
+            else:
+                # R13 is used to hold the return value of the PC in function calls,
+                # so printing the location is useful.
+                if i == 13 and not spec:
+                    spec = augment_spec(spec, "l")
+        elif isinstance(tree, SymbolNode):
             if tree.value.lower() == "pc":
                 spec = augment_spec(spec, "l")
             else:
                 try:
-                    i = register_to_index(tree.value)
-                except ValueError:
-                    raise HERAError("no such register")
+                    value = self.debugger.symbol_table[tree.value]
+                except KeyError:
+                    raise HERAError("{} is not defined".format(tree.value))
                 else:
-                    # R13 is used to hold the return value of the PC in function calls,
-                    # so printing the location is useful.
-                    if i == 13 and not spec:
+                    if isinstance(value, Label):
                         spec = augment_spec(spec, "l")
-        elif isinstance(tree, SymbolNode):
-            try:
-                value = self.debugger.symbol_table[tree.value]
-            except KeyError:
-                raise HERAError("{} is not defined".format(tree.value))
-            else:
-                if isinstance(value, Label):
-                    spec = augment_spec(spec, "l")
         elif isinstance(tree, IntNode):
             if not spec:
                 spec = "d"
@@ -570,18 +570,18 @@ class Shell:
                 raise HERAError("integer literal exceeds 16 bits")
             return node.value
         elif isinstance(node, RegisterNode):
-            if node.value.lower() == "pc":
-                return vm.pc
-            else:
-                return vm.load_register(node.value)
+            return vm.load_register(RegisterToken(node.value))
         elif isinstance(node, MemoryNode):
             address = self.evaluate_node(node.address)
             return vm.load_memory(address)
         elif isinstance(node, SymbolNode):
-            try:
-                return self.debugger.symbol_table[node.value]
-            except KeyError:
-                raise HERAError("{} is not defined".format(node.value))
+            if node.value.lower() == "pc":
+                return vm.pc
+            else:
+                try:
+                    return self.debugger.symbol_table[node.value]
+                except KeyError:
+                    raise HERAError("{} is not defined".format(node.value))
         elif isinstance(node, PrefixNode):
             arg = self.evaluate_node(node.arg)
             if node.op == "-":

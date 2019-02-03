@@ -849,7 +849,7 @@ def test_handle_print_undefined_symbol(shell, capsys):
 def test_handle_print_invalid_register(shell, capsys):
     shell.handle_command("print R17")
 
-    assert capsys.readouterr().out == "Eval error: no such register.\n"
+    assert capsys.readouterr().out == "Eval error: R17 is not a valid register.\n"
 
 
 def test_handle_print_with_division_by_zero(shell, capsys):

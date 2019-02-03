@@ -15,3 +15,5 @@ __pycache__
 /*.hera
 /*.txt
 !/requirements-dev.txt
+
+/profile

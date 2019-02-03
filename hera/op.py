@@ -2,17 +2,17 @@ import json
 from contextlib import suppress
 from typing import Dict, List, Optional, Tuple
 
-from hera.data import Constant, DataLabel, Location, Messages, Op, Token, TOKEN
-from hera.utils import (
-    format_int,
-    from_u16,
-    is_register,
-    is_symbol,
-    print_warning,
-    register_to_index,
-    to_u16,
-    to_u32,
+from hera.data import (
+    Constant,
+    DataLabel,
+    Location,
+    Messages,
+    Op,
+    RegisterToken,
+    Token,
+    TOKEN,
 )
+from hera.utils import format_int, from_u16, is_symbol, print_warning, to_u16, to_u32
 
 
 class Operation:
@@ -73,6 +73,8 @@ class Operation:
 def arg_to_string(arg):
     if isinstance(arg, Token) and arg.type == TOKEN.STRING:
         return json.dumps(arg)
+    elif isinstance(arg, RegisterToken):
+        return "R" + str(arg)
     else:
         return str(arg)
 
@@ -164,18 +166,18 @@ class RegisterBranch(Branch):
         raise NotImplementedError
 
     def convert(self):
-        if isinstance(self.args[0], int):
+        if isinstance(self.args[0], RegisterToken):
+            # When the argument to the branch is a concrete register.
+            return super().convert()
+        else:
             # When the argument to the branch is a label, which has already been
             # substituted for its value.
             lbl = self.args[0]
             return [
-                SETLO("R11", lbl & 0xFF),
-                SETHI("R11", lbl >> 8),
-                self.__class__("R11"),
+                SETLO(RegisterToken("R11"), lbl & 0xFF),
+                SETHI(RegisterToken("R11"), lbl >> 8),
+                self.__class__(RegisterToken("R11")),
             ]
-        else:
-            # When the argument to the branch is a concrete register.
-            return super().convert()
 
 
 class RelativeBranch(Branch):
@@ -689,16 +691,16 @@ class CALL_AND_RETURN(Branch):
         old_pc = vm.pc
         vm.pc = vm.load_register(rb)
         vm.store_register(rb, old_pc + 1)
-        old_fp = vm.load_register("FP")
-        vm.store_register("FP", vm.load_register(ra))
+        # FP = R14
+        old_fp = vm.load_register(14)
+        vm.store_register(14, vm.load_register(ra))
         vm.store_register(ra, old_fp)
 
     def typecheck(self, *args, **kwargs):
         messages = super().typecheck(*args, **kwargs)
-        if len(self.args) >= 1 and is_register(self.args[0]):
+        if len(self.args) >= 1 and isinstance(self.args[0], RegisterToken):
             with suppress(ValueError):
-                i = register_to_index(self.args[0])
-                if i != 12:
+                if self.args[0] != 12:
                     msg = "first argument to {} should be R12".format(self.name)
                     messages.warn(msg, self.args[0])
         return messages
@@ -708,12 +710,12 @@ class CALL(CALL_AND_RETURN):
     P = (REGISTER, REGISTER_OR_LABEL)
 
     def convert(self):
-        if isinstance(self.args[1], int):
-            return SET("R13", self.args[1]).convert() + [
-                self.__class__(self.args[0], "R13")
-            ]
-        else:
+        if isinstance(self.args[1], RegisterToken):
             return super().convert()
+        else:
+            return SET(RegisterToken("R13"), self.args[1]).convert() + [
+                self.__class__(self.args[0], RegisterToken("R13"))
+            ]
 
     def execute(self, vm):
         # Push a (call_address, return_address) pair onto the debugging call stack.
@@ -726,10 +728,9 @@ class RETURN(CALL_AND_RETURN):
 
     def typecheck(self, *args, **kwargs):
         messages = super().typecheck(*args, **kwargs)
-        if len(self.args) >= 2 and is_register(self.args[1]):
+        if len(self.args) >= 2 and isinstance(self.args[1], RegisterToken):
             with suppress(ValueError):
-                i = register_to_index(self.args[1])
-                if i != 13:
+                if self.args[1] != 13:
                     messages.warn(
                         "second argument to RETURN should be R13", self.args[1]
                     )
@@ -767,7 +768,7 @@ class CMP(Operation):
     P = (REGISTER, REGISTER)
 
     def convert(self):
-        return [FON(8), SUB("R0", self.args[0], self.args[1])]
+        return [FON(8), SUB(RegisterToken("R0"), self.args[0], self.args[1])]
 
 
 class CON(Operation):
@@ -802,7 +803,7 @@ class MOVE(Operation):
     P = (REGISTER, REGISTER)
 
     def convert(self):
-        return [OR(self.args[0], self.args[1], "R0")]
+        return [OR(self.args[0], self.args[1], RegisterToken("R0"))]
 
 
 class SETRF(Operation):
@@ -816,7 +817,7 @@ class FLAGS(Operation):
     P = (REGISTER,)
 
     def convert(self):
-        return [FOFF(8), ADD("R0", self.args[0], "R0")]
+        return [FOFF(8), ADD(RegisterToken("R0"), self.args[0], RegisterToken("R0"))]
 
 
 class HALT(Operation):
@@ -837,7 +838,7 @@ class NEG(Operation):
     P = (REGISTER, REGISTER)
 
     def convert(self):
-        return [FON(8), SUB(self.args[0], "R0", self.args[1])]
+        return [FON(8), SUB(self.args[0], RegisterToken("R0"), self.args[1])]
 
 
 class NOT(Operation):
@@ -845,18 +846,17 @@ class NOT(Operation):
 
     def typecheck(self, *args, **kwargs):
         messages = super().typecheck(*args, **kwargs)
-        if len(self.args) == 2 and is_register(self.args[1]):
+        if len(self.args) == 2 and isinstance(self.args[1], RegisterToken):
             with suppress(ValueError):
-                i = register_to_index(self.args[1])
-                if i == 11:
+                if self.args[1] == 11:
                     messages.warn("don't use R11 with NOT", self.args[1])
         return messages
 
     def convert(self):
         return [
-            SETLO("R11", 0xFF),
-            SETHI("R11", 0xFF),
-            XOR(self.args[0], "R11", self.args[1]),
+            SETLO(RegisterToken("R11"), 0xFF),
+            SETHI(RegisterToken("R11"), 0xFF),
+            XOR(self.args[0], RegisterToken("R11"), self.args[1]),
         ]
 
 
@@ -912,7 +912,7 @@ class PRINT_REG(DebuggingOperation):
 
     def execute(self, vm):
         v = vm.load_register(self.args[0])
-        print("{} = {}".format(self.args[0], format_int(v)))
+        print("R{} = {}".format(self.args[0], format_int(v)))
         vm.pc += 1
 
 
@@ -974,26 +974,24 @@ def check_arglist(argtypes, args, symbol_table):
 
 
 def check_register(arg) -> Optional[str]:
-    if not isinstance(arg, Token) or arg.type != TOKEN.REGISTER:
-        return "expected register"
-
-    if arg.lower() == "pc":
-        return "program counter cannot be accessed or changed directly"
-
-    try:
-        register_to_index(arg)
-    except ValueError:
-        return "{} is not a valid register".format(arg)
+    if not isinstance(arg, RegisterToken):
+        if isinstance(arg, str) and arg.lower() == "pc":
+            return "program counter cannot be accessed or changed directly"
+        else:
+            return "expected register"
     else:
         return None
 
 
 def check_register_or_label(arg, symbol_table: Dict[str, int]) -> Optional[str]:
-    if not isinstance(arg, Token) or arg.type not in (TOKEN.REGISTER, TOKEN.SYMBOL):
+    if not (
+        (isinstance(arg, Token) and arg.type == TOKEN.SYMBOL)
+        or isinstance(arg, RegisterToken)
+    ):
         return "expected register or label"
 
-    if arg.type == TOKEN.REGISTER:
-        return check_register(arg)
+    if isinstance(arg, RegisterToken):
+        return None
     else:
         try:
             val = symbol_table[arg]
@@ -1032,7 +1030,7 @@ def check_in_range(arg, symbol_table, *, lo, hi, labels=False):
             if not labels and not isinstance(arg, Constant):
                 return "cannot use label as constant"
 
-    if not isinstance(arg, int):
+    if not isinstance(arg, int) or isinstance(arg, RegisterToken):
         return "expected integer"
 
     if arg < lo or arg >= hi:

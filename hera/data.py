@@ -96,6 +96,29 @@ class Token(str):
         )
 
 
+class RegisterToken(int):
+    def __new__(cls, value, loc=None):
+        self = super(RegisterToken, cls).__new__(cls, register_to_index(value))
+        self.location = loc
+        return self
+
+
+NAMED_REGISTERS = {"rt": 11, "fp": 14, "sp": 15, "pc_ret": 13, "fp_alt": 12}
+
+
+def register_to_index(rname):
+    """Return the index of the register with the given name in the register array."""
+    original = rname
+    rname = rname.lower()
+    if rname in NAMED_REGISTERS:
+        return NAMED_REGISTERS[rname]
+    elif rname.startswith("r"):
+        v = int(rname[1:])
+        if 0 <= v < 16:
+            return v
+    raise HERAError("{} is not a valid register".format(original))
+
+
 class TOKEN(Enum):
     """Enumeration for the type field of Token objects."""
 

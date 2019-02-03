@@ -1,4 +1,4 @@
-from hera.data import Constant, DataLabel, IntToken, Label, Token, TOKEN
+from hera.data import Constant, DataLabel, IntToken, Label, RegisterToken, Token, TOKEN
 from hera.op import (
     check_in_range,
     check_label,
@@ -10,7 +10,7 @@ from hera.op import (
 
 
 def R(s):
-    return Token(TOKEN.REGISTER, s)
+    return RegisterToken(s)
 
 
 def SYM(s):
@@ -35,13 +35,9 @@ def test_check_register_with_non_register():
 
 def test_check_register_with_program_counter():
     assert (
-        check_register(R("PC"))
+        check_register(SYM("PC"))
         == "program counter cannot be accessed or changed directly"
     )
-
-
-def test_check_register_with_invalid_register():
-    assert check_register(R("R17")) == "R17 is not a valid register"
 
 
 def test_check_register_with_valid_registers():

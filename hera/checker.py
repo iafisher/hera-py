@@ -8,6 +8,7 @@ from .data import (
     Op,
     Messages,
     Program,
+    RegisterToken,
     Settings,
     Token,
     TOKEN,
@@ -167,7 +168,7 @@ def operation_length(op):
     elif op.name == "FLAGS":
         return 2
     elif op.name == "CALL":
-        if len(op.args) == 2 and (isinstance(op.args[1], int) or is_symbol(op.args[1])):
+        if len(op.args) == 2 and not isinstance(op.args[1], RegisterToken):
             return 3
         else:
             return 1

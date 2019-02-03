@@ -5,18 +5,27 @@ Version: January 2019
 """
 import sys
 
-from .data import HERAError, IntToken, Location, Messages, Token, TOKEN
+from .data import (
+    HERAError,
+    IntToken,
+    Location,
+    Messages,
+    NAMED_REGISTERS,
+    RegisterToken,
+    Token,
+    TOKEN,
+)
 
 
 def to_u16(n):
     """Reinterpret the signed integer `n` as a 16-bit unsigned integer.
 
-    If `n` is too large for 16 bits, OverflowError is raised.
+    If `n` is too large for 16 bits, a HERAError is raised.
     """
     # Note that we allow positive values up to 2**16, but negative values only
     # down to -2**15.
     if n >= 2 ** 16 or n < -2 ** 15:
-        raise OverflowError("signed integer too large for 16 bits")
+        raise HERAError("signed integer too large for 16 bits")
 
     if n < 0:
         return 2 ** 16 + n
@@ -35,33 +44,17 @@ def from_u16(n):
 def to_u32(n):
     """Reinterpret the signed integer `n` as an unsigned 32-bit integer.
 
-    If `n` is too large for 32 bits, OverflowError is raised.
+    If `n` is too large for 32 bits, a HERAError is raised.
     """
     # Note that we allow positive values up to 2**32, but negative values only
     # down to -2**31.
     if n >= 2 ** 32 or n < -2 ** 31:
-        raise OverflowError("signed integer too large for 16 bits")
+        raise HERAError("signed integer too large for 16 bits")
 
     if n < 0:
         return 2 ** 32 + n
     else:
         return n
-
-
-NAMED_REGISTERS = {"rt": 11, "fp": 14, "sp": 15, "pc_ret": 13, "fp_alt": 12, "pc": -1}
-
-
-def register_to_index(rname):
-    """Return the index of the register with the given name in the register array."""
-    original = rname
-    rname = rname.lower()
-    if rname in NAMED_REGISTERS:
-        return NAMED_REGISTERS[rname]
-    elif rname.startswith("r"):
-        v = int(rname[1:])
-        if 0 <= v < 16:
-            return v
-    raise ValueError("{} is not a valid register".format(original))
 
 
 def is_register(s):
@@ -133,7 +126,7 @@ def print_message(msg, *, loc=None):
     a Token object with a `location` field, then the line of code that the location
     indicates will be printed with the message.
     """
-    if isinstance(loc, (Token, IntToken)):
+    if isinstance(loc, (Token, IntToken, RegisterToken)):
         loc = loc.location
 
     if isinstance(loc, Location):

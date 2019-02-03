@@ -9,7 +9,7 @@ arglist := (value COMMA)* value
 import os.path
 from typing import List, Tuple
 
-from hera.data import HERAError, IntToken, Messages, Op, Settings
+from hera.data import HERAError, IntToken, Messages, Op, RegisterToken, Settings
 from hera.lexer import Lexer, TOKEN
 from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
 from hera.utils import read_file
@@ -124,6 +124,12 @@ class Parser:
                 lexer.next_token()
             elif lexer.tkn.type == TOKEN.CHAR:
                 args.append(ord(lexer.tkn))
+                lexer.next_token()
+            elif lexer.tkn.type == TOKEN.REGISTER:
+                try:
+                    args.append(RegisterToken(lexer.tkn, loc=lexer.tkn.location))
+                except HERAError:
+                    self.err("{} is not a valid register".format(lexer.tkn), lexer.tkn)
                 lexer.next_token()
             elif lexer.tkn.type in self.VALUE_TOKENS:
                 args.append(lexer.tkn)

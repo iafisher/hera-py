@@ -1,5 +1,4 @@
-from hera.data import IntToken, Op
-from hera.lexer import TOKEN
+from hera.data import IntToken, Op, RegisterToken
 from hera.parser import parse
 
 
@@ -19,8 +18,8 @@ def invalid(text):
 def test_parse_single_op():
     program = valid("SET(R1, 42)")
 
-    assert program == [Op("SET", ["R1", 42])]
-    assert program[0].args[0].type == TOKEN.REGISTER
+    assert program == [Op("SET", [1, 42])]
+    assert isinstance(program[0].args[0], RegisterToken)
     assert isinstance(program[0].args[1], IntToken)
 
 
@@ -47,7 +46,7 @@ def test_parse_op_with_no_args():
 def test_parse_multiple_ops():
     program = valid("INC(R4, 5)\nADD(R1, R2, R3)")
 
-    assert program == [Op("INC", ["R4", 5]), Op("ADD", ["R1", "R2", "R3"])]
+    assert program == [Op("INC", [4, 5]), Op("ADD", [1, 2, 3])]
 
 
 def test_parse_label_starting_with_register_name():

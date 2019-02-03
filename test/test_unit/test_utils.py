@@ -1,14 +1,7 @@
 import pytest
 
-from hera.utils import (
-    format_int,
-    from_u16,
-    make_ansi,
-    register_to_index,
-    to_u16,
-    to_u32,
-    align_caret,
-)
+from hera.data import HERAError, register_to_index
+from hera.utils import format_int, from_u16, make_ansi, to_u16, to_u32, align_caret
 
 
 def test_to_u16_with_max_negative():
@@ -40,22 +33,22 @@ def test_to_u16_with_zero():
 
 
 def test_to_u16_with_overflow():
-    with pytest.raises(OverflowError):
+    with pytest.raises(HERAError):
         to_u16(-32769)
 
 
 def test_to_u16_with_another_overflow():
-    with pytest.raises(OverflowError):
+    with pytest.raises(HERAError):
         to_u16(-45000)
 
 
 def test_to_u16_with_positive_overflow():
-    with pytest.raises(OverflowError):
+    with pytest.raises(HERAError):
         to_u16(65536)
 
 
 def test_to_u16_with_another_positive_overflow():
-    with pytest.raises(OverflowError):
+    with pytest.raises(HERAError):
         to_u16(70000)
 
 
@@ -116,22 +109,22 @@ def test_to_u32_with_zero():
 
 
 def test_to_u32_with_overflow():
-    with pytest.raises(OverflowError):
+    with pytest.raises(HERAError):
         to_u32(-2147483649)
 
 
 def test_to_u32_with_another_overflow():
-    with pytest.raises(OverflowError):
+    with pytest.raises(HERAError):
         to_u32(-3000000000)
 
 
 def test_to_u32_with_positive_overflow():
-    with pytest.raises(OverflowError):
+    with pytest.raises(HERAError):
         to_u32(4294967296)
 
 
 def test_to_u32_with_another_positive_overflow():
-    with pytest.raises(OverflowError):
+    with pytest.raises(HERAError):
         to_u32(5000000000)
 
 
@@ -152,12 +145,10 @@ def test_register_to_index_with_named_registers():
     assert register_to_index("pc_ret") == 13
     assert register_to_index("FP_alt") == 12
     assert register_to_index("fp_alt") == 12
-    # Make sure program counter does not correspond to actual register.
-    assert not (0 <= register_to_index("pc") <= 15)
 
 
 def test_register_to_index_with_invalid_register():
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(HERAError) as e:
         register_to_index("R16")
     assert "R16" in str(e)
 
