@@ -13,4 +13,4 @@ def helper(vm, opstr):
 
     # Take first op, or first data statement if there are no ops.
     op = (program.code + program.data)[0]
-    vm.exec_one(op)
+    op.execute(vm)

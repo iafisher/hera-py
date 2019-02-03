@@ -17,8 +17,7 @@ def load_program(text: str, settings=Settings()) -> Tuple[Program, Dict[str, int
     """Parse the string into a program, type-check it, and preprocess it. A tuple
     (ops, symbol_table) is returned.
 
-    The return value of this function is valid input to the VirtualMachine.exec_many
-    method.
+    The return value of this function is valid input to the VirtualMachine.run method.
     """
     oplist = handle_messages(settings, parse(text, settings=settings))
     return handle_messages(settings, check(oplist, settings))

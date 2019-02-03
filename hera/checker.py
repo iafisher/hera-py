@@ -16,6 +16,8 @@ from .op import (
     AbstractOperation,
     RegisterBranch,
     RelativeBranch,
+    RTI,
+    SWI,
 )
 
 
@@ -61,6 +63,9 @@ def typecheck(
                 messages.err("data statement after code", loc=op.loc)
         else:
             seen_code = True
+
+        if not settings.allow_interrupts and isinstance(op, (RTI, SWI)):
+            messages.err("hera-py does not support {}".format(op.name), loc=op.loc)
 
         if settings.no_debug and isinstance(op, DebuggingOperation):
             messages.err(

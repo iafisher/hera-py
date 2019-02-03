@@ -507,9 +507,11 @@ class BR(RegisterBranch):
 
 
 class BRR(RelativeBranch):
-    @staticmethod
-    def should(vm):
-        return True
+    def execute(self, vm):
+        if self.args[0] != 0:
+            vm.pc += self.args[0]
+        else:
+            vm.halted = True
 
 
 class BL(RegisterBranch):

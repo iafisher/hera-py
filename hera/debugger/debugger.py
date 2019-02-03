@@ -40,8 +40,8 @@ class Debugger:
         # "undo" has just been executed.
         self.old = None
 
-        for op in program.data:
-            self.vm.exec_one(op)
+        for data_op in program.data:
+            data_op.execute(self.vm)
 
     def save(self):
         self.old = copy.copy(self)
@@ -72,7 +72,7 @@ class Debugger:
                 elif real_op.name == "RETURN":
                     self.calls -= 1
 
-                self.vm.exec_one(real_op)
+                real_op.execute(self.vm)
 
             if self.is_finished() or until(self):
                 break

@@ -230,7 +230,7 @@ class Shell:
         vm = self.debugger.vm
         opc = vm.pc
         for op in program.code:
-            vm.exec_one(op)
+            op.execute(vm)
         vm.pc = opc
 
     def handle_help(self, args):

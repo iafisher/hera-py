@@ -392,3 +392,26 @@ Error: data statement after code, line 4 col 1 of <stdin>
 
 """
     )
+
+
+def test_error_for_interrupt_instructions(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper("SWI(10)\nRTI()")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Error: hera-py does not support SWI, line 1 col 1 of <stdin>
+
+  SWI(10)
+  ^
+
+Error: hera-py does not support RTI, line 2 col 1 of <stdin>
+
+  RTI()
+  ^
+
+"""
+    )

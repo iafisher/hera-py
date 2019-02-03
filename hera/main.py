@@ -43,6 +43,7 @@ def main(argv=None):
         settings.volume = VOLUME_QUIET
 
     if arguments["preprocess"]:
+        settings.allow_interrupts = True
         main_preprocess(path, settings)
     elif arguments["debug"]:
         main_debug(path, settings)
@@ -61,7 +62,7 @@ def main_execute(path, settings):
     program = load_program_from_file(path, settings)
 
     vm = VirtualMachine(settings)
-    vm.exec_many(program)
+    vm.run(program)
     settings.warning_count += vm.warning_count
 
     if settings.volume != VOLUME_QUIET:

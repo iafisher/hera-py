@@ -7,7 +7,7 @@ import copy
 from typing import List
 
 from .data import Settings
-from .op import AbstractOperation, DataOperation
+from .op import AbstractOperation
 from .utils import print_warning
 
 
@@ -42,6 +42,7 @@ class VirtualMachine:
         # Stack of (call_address, return_address) pairs for CALL/RETURN instructions.
         # Used for warning messages and debugging.
         self.expected_returns = []
+        # Special flag set by the HALT operation.
         self.halted = False
         # Location object for the current operation
         self.location = None
@@ -57,44 +58,19 @@ class VirtualMachine:
         ret.memory = self.memory.copy()
         return ret
 
-    def exec_many(self, program: List[AbstractOperation]) -> None:
+    def run(self, program: List[AbstractOperation]) -> None:
         """Execute a program (i.e., a list of operations), resetting the machine's
         state beforehand.
         """
         self.reset()
 
         for data_op in program.data:
-            self.exec_one(data_op)
+            data_op.execute(self)
 
         while not self.halted and self.pc < len(program.code):
-            self.exec_one(program.code[self.pc])
-
-    def exec_one(self, op):
-        """Execute a single operation."""
-        self.location = op.loc
-
-        opc = self.pc
-        try:
+            op = program.code[self.pc]
+            self.location = op.loc
             op.execute(self)
-        except NotImplementedError:
-            self.handle_not_implemented(op.name)
-
-        if self.pc == opc and not isinstance(op, DataOperation):
-            self.halted = True
-
-    def handle_not_implemented(self, name):
-        if name == "SWI":
-            if not self.warned_for_SWI:
-                self.warn("SWI is a no-op in this simulator", loc=self.location)
-                self.warned_for_SWI = True
-            self.pc += 1
-        elif name == "RTI":
-            if not self.warned_for_RTI:
-                self.warn("RTI is a no-op in this simulator", loc=self.location)
-                self.warned_for_RTI = True
-            self.pc += 1
-        else:
-            raise RuntimeError("unsupported operation {}".format(name))
 
     def load_register(self, index):
         """Get the contents of the register with the given index."""

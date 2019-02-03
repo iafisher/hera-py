@@ -20,6 +20,7 @@ class Settings:
     def __init__(
         self,
         *,
+        allow_interrupts=False,
         color=True,
         data_start=DEFAULT_DATA_START,
         no_debug=False,
@@ -27,6 +28,7 @@ class Settings:
         warn_octal_on=True,
         warn_return_on=True
     ):
+        self.allow_interrupts = allow_interrupts
         self.color = color
         self.data_start = data_start
         self.no_debug = no_debug
