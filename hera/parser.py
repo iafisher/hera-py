@@ -124,46 +124,10 @@ class Parser:
                 else:
                     break
 
-            if self.lexer.tkn.type == Token.INT:
-                # Detect zero-prefixed octal numbers.
-                prefix = self.lexer.tkn.value[:2]
-                if len(prefix) == 2 and prefix[0] == "0" and prefix[1].isdigit():
-                    base = 8
-                    if self.settings.warn_octal_on:
-                        self.warn('consider using "0o" prefix for octal numbers')
-                else:
-                    base = 0
+            val = self.match_value()
+            args.append(val)
 
-                try:
-                    arg_as_int = int(self.lexer.tkn.value, base=base)
-                except ValueError:
-                    self.err("invalid integer literal")
-                else:
-                    self.lexer.tkn.value = arg_as_int
-                    args.append(self.lexer.tkn)
-                self.lexer.next_token()
-            elif self.lexer.tkn.type == Token.CHAR:
-                args.append(
-                    Token(
-                        Token.INT,
-                        ord(self.lexer.tkn.value),
-                        location=self.lexer.tkn.location,
-                    )
-                )
-                self.lexer.next_token()
-            elif self.lexer.tkn.type == Token.REGISTER:
-                try:
-                    i = register_to_index(self.lexer.tkn.value)
-                except HERAError:
-                    self.err("{} is not a valid register".format(self.lexer.tkn.value))
-                else:
-                    self.lexer.tkn.value = i
-                    args.append(self.lexer.tkn)
-                self.lexer.next_token()
-            else:
-                args.append(self.lexer.tkn)
-                self.lexer.next_token()
-
+            self.lexer.next_token()
             if self.lexer.tkn.type == Token.RPAREN:
                 break
             elif self.lexer.tkn.type != Token.COMMA:
@@ -177,6 +141,40 @@ class Parser:
             else:
                 self.lexer.next_token()
         return args
+
+    def match_value(self):
+        if self.lexer.tkn.type == Token.INT:
+            # Detect zero-prefixed octal numbers.
+            prefix = self.lexer.tkn.value[:2]
+            if len(prefix) == 2 and prefix[0] == "0" and prefix[1].isdigit():
+                base = 8
+                if self.settings.warn_octal_on:
+                    self.warn('consider using "0o" prefix for octal numbers')
+            else:
+                base = 0
+
+            try:
+                arg_as_int = int(self.lexer.tkn.value, base=base)
+            except ValueError:
+                self.err("invalid integer literal")
+                # 1 is a neutral value that is valid anywhere an integer is.
+                arg_as_int = 1
+            self.lexer.tkn.value = arg_as_int
+            return self.lexer.tkn
+        elif self.lexer.tkn.type == Token.CHAR:
+            return Token(
+                Token.INT, ord(self.lexer.tkn.value), location=self.lexer.tkn.location
+            )
+        elif self.lexer.tkn.type == Token.REGISTER:
+            try:
+                i = register_to_index(self.lexer.tkn.value)
+            except HERAError:
+                self.err("{} is not a valid register".format(self.lexer.tkn.value))
+                i = 0
+            self.lexer.tkn.value = i
+            return self.lexer.tkn
+        else:
+            return self.lexer.tkn
 
     def match_include(self):
         root_path = self.lexer.path
