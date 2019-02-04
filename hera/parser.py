@@ -62,29 +62,15 @@ class Parser:
             if lexer.tkn.type == Token.INCLUDE:
                 ops.extend(self.match_include(lexer))
             elif lexer.tkn.type == Token.SYMBOL:
-                name = lexer.tkn
+                name_tkn = lexer.tkn
                 lexer.next_token()
                 # Many legacy HERA program are enclosed with void HERA_main() { ... },
                 # which is handled here.
-                if lexer.tkn.type == Token.SYMBOL and name == "void":
-                    if lexer.next_token().type == Token.LPAREN:
-                        lexer.next_token()
-                    else:
-                        self.err("expected left parenthesis", lexer.tkn)
-
-                    if lexer.tkn.type == Token.RPAREN:
-                        lexer.next_token()
-                    else:
-                        self.err("expected right parenthesis", lexer.tkn)
-
-                    if lexer.tkn.type != Token.LBRACE:
-                        self.err("expected left curly brace", lexer.tkn)
-
-                    lexer.next_token()
+                if lexer.tkn.type == Token.SYMBOL and name_tkn.value == "void":
                     expecting_brace = True
-                    continue
+                    self.handle_cpp_boilerplate(lexer)
                 elif lexer.tkn.type == Token.LPAREN:
-                    op = self.match_op(lexer, name)
+                    op = self.match_op(lexer, name_tkn)
                     if op:
                         ops.append(op)
                     # Operations may optionally be separated by semicolons.
@@ -202,6 +188,22 @@ class Parser:
         else:
             self.err("expected quote or angle-bracket delimited string", tkn)
             return []
+
+    def handle_cpp_boilerplate(self, lexer):
+        if lexer.next_token().type == Token.LPAREN:
+            lexer.next_token()
+        else:
+            self.err("expected left parenthesis", lexer.tkn)
+
+        if lexer.tkn.type == Token.RPAREN:
+            lexer.next_token()
+        else:
+            self.err("expected right parenthesis", lexer.tkn)
+
+        if lexer.tkn.type != Token.LBRACE:
+            self.err("expected left curly brace", lexer.tkn)
+
+        lexer.next_token()
 
     def expand_angle_include(self, lexer, include_path):
         # There is no check for recursive includes in this function, under the
