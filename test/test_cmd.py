@@ -14,7 +14,7 @@ def test_main_non_existent_file(capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert captured.err == 'Error: file "unicorn.hera" does not exist\n'
+    assert captured.err == 'Error: file "unicorn.hera" does not exist.\n'
 
 
 def test_main_preprocess_non_existent_file(capsys):
@@ -23,7 +23,7 @@ def test_main_preprocess_non_existent_file(capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert captured.err == 'Error: file "unicorn.hera" does not exist\n'
+    assert captured.err == 'Error: file "unicorn.hera" does not exist.\n'
 
 
 def test_main_debug(capsys):
