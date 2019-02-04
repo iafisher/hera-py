@@ -261,3 +261,29 @@ Error: invalid integer literal, line 1 col 9 of <stdin>
 
 """
     )
+
+
+def test_parse_error_for_non_ASCII_byte(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper('LP_STRING("привет")')
+
+    captured = capsys.readouterr().err
+    assert captured == "\nError: non-ASCII byte in file.\n"
+
+
+def test_parse_error_for_non_ASCII_byte_in_file(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper('#include "test/assets/error/non_ascii_byte.hera"')
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Error: non-ASCII byte in file, line 1 col 10 of <stdin>
+
+  #include "test/assets/error/non_ascii_byte.hera"
+           ^
+
+"""
+    )

@@ -151,7 +151,7 @@ def align_caret(line, col):
 def read_file(path) -> str:
     """Read a file and return its contents."""
     try:
-        with open(path) as f:
+        with open(path, encoding="ascii") as f:
             return f.read()
     except FileNotFoundError:
         raise HERAError('file "{}" does not exist'.format(path))
@@ -159,6 +159,8 @@ def read_file(path) -> str:
         raise HERAError('permission denied to open file "{}"'.format(path))
     except OSError:
         raise HERAError('could not open file "{}"'.format(path))
+    except UnicodeDecodeError:
+        raise HERAError("non-ASCII byte in file")
 
 
 def pad(s, n):

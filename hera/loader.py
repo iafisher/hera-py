@@ -39,12 +39,17 @@ def load_program_from_file(
             # So that the program and its output are visually separate.
             print(file=sys.stderr)
 
+        try:
+            text.encode("ascii")
+        except UnicodeEncodeError:
+            handle_messages(settings, Messages("non-ASCII byte in file."))
+
         path = "<stdin>"
     else:
         try:
             text = read_file(path)
         except HERAError as e:
-            handle_messages(settings, Messages(str(e)))
+            handle_messages(settings, Messages(str(e) + "."))
 
     oplist = handle_messages(settings, parse(text, path=path, settings=settings))
     return handle_messages(settings, check(oplist, settings))
