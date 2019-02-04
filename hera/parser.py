@@ -30,73 +30,76 @@ def parse(
     `path` is the path of the file being parsed, as it will appear in error and
     warning messages. It defaults to "<string>".
     """
-    parser = Parser(settings)
-    program = parser.parse(Lexer(text, path=path))
+    lexer = Lexer(text, path=path)
+    parser = Parser(lexer, settings)
+    program = parser.parse()
     return (program, parser.messages)
 
 
 class Parser:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, lexer: Lexer, settings: Settings) -> None:
+        self.lexer = lexer
         self.visited = set()
         self.settings = settings
         self.messages = Messages()
 
-    def parse(self, lexer: Lexer) -> List[AbstractOperation]:
-        if lexer.path:
-            self.visited.add(get_canonical_path(lexer.path))
+    def parse(self) -> List[AbstractOperation]:
+        if self.lexer.path:
+            self.visited.add(get_canonical_path(self.lexer.path))
 
         try:
-            ops = self.match_program(lexer)
+            ops = self.match_program()
         except HERAError as e:
             self.messages.err(*e.args)
             return []
 
         # Make sure to capture any warnings from the lexer.
-        self.messages.extend(lexer.messages)
+        self.messages.extend(self.lexer.messages)
         return ops
 
-    def match_program(self, lexer):
+    def match_program(self):
         expecting_brace = False
         ops = []
-        while lexer.tkn.type != Token.EOF:
+        while self.lexer.tkn.type != Token.EOF:
             msg = "expected HERA operation or #include"
-            if not self.expect(lexer, (Token.INCLUDE, Token.SYMBOL, Token.RBRACE), msg):
-                self.skip_until(lexer, {Token.INCLUDE, Token.SYMBOL})
+            if not self.expect({Token.INCLUDE, Token.SYMBOL, Token.RBRACE}, msg):
+                self.skip_until({Token.INCLUDE, Token.SYMBOL})
                 continue
 
-            if lexer.tkn.type == Token.INCLUDE:
-                ops.extend(self.match_include(lexer))
-            elif lexer.tkn.type == Token.SYMBOL:
-                name_tkn = lexer.tkn
-                lexer.next_token()
+            if self.lexer.tkn.type == Token.INCLUDE:
+                ops.extend(self.match_include())
+            elif self.lexer.tkn.type == Token.SYMBOL:
+                name_tkn = self.lexer.tkn
+                self.lexer.next_token()
                 # Many legacy HERA program are enclosed with void HERA_main() { ... },
                 # which is handled here.
-                if lexer.tkn.type == Token.SYMBOL and name_tkn.value == "void":
+                if self.lexer.tkn.type == Token.SYMBOL and name_tkn.value == "void":
                     expecting_brace = True
-                    self.handle_cpp_boilerplate(lexer)
-                elif lexer.tkn.type == Token.LPAREN:
-                    op = self.match_op(lexer, name_tkn)
+                    self.handle_cpp_boilerplate()
+                elif self.lexer.tkn.type == Token.LPAREN:
+                    op = self.match_op(name_tkn)
                     if op:
                         ops.append(op)
                     # Operations may optionally be separated by semicolons.
-                    if lexer.tkn.type == Token.SEMICOLON:
-                        lexer.next_token()
+                    if self.lexer.tkn.type == Token.SEMICOLON:
+                        self.lexer.next_token()
                 else:
-                    self.err("expected left parenthesis", lexer.tkn)
+                    self.err("expected left parenthesis")
             else:
                 if expecting_brace:
                     expecting_brace = False
                 else:
-                    self.err("unexpected right brace", lexer.tkn)
-                lexer.next_token()
+                    self.err("unexpected right brace")
+                self.lexer.next_token()
 
         return ops
 
-    def match_op(self, lexer, name_tkn):
-        """Match an operation, assuming that lexer.tkn is on the left parenthesis."""
-        lexer.next_token()
-        args = self.match_optional_arglist(lexer)
-        lexer.next_token()
+    def match_op(self, name_tkn):
+        """Match an operation, assuming that self.lexer.tkn is on the left parenthesis.
+        """
+        self.lexer.next_token()
+        args = self.match_optional_arglist()
+        self.lexer.next_token()
         try:
             cls = name_to_class[name_tkn.value]
         except KeyError:
@@ -105,82 +108,85 @@ class Parser:
         else:
             return cls(*args, loc=name_tkn)
 
-    VALUE_TOKENS = (Token.INT, Token.REGISTER, Token.SYMBOL, Token.STRING, Token.CHAR)
+    VALUE_TOKENS = {Token.INT, Token.REGISTER, Token.SYMBOL, Token.STRING, Token.CHAR}
 
-    def match_optional_arglist(self, lexer):
-        if lexer.tkn.type == Token.RPAREN:
+    def match_optional_arglist(self):
+        if self.lexer.tkn.type == Token.RPAREN:
             return []
 
         args = []
         while True:
-            if not self.expect(lexer, self.VALUE_TOKENS, "expected value"):
-                self.skip_until(lexer, (Token.COMMA, Token.RPAREN))
-                if lexer.tkn.type == Token.COMMA:
-                    lexer.next_token()
+            if not self.expect(self.VALUE_TOKENS, "expected value"):
+                self.skip_until({Token.COMMA, Token.RPAREN})
+                if self.lexer.tkn.type == Token.COMMA:
+                    self.lexer.next_token()
                     continue
                 else:
                     break
 
-            if lexer.tkn.type == Token.INT:
+            if self.lexer.tkn.type == Token.INT:
                 # Detect zero-prefixed octal numbers.
-                prefix = lexer.tkn.value[:2]
+                prefix = self.lexer.tkn.value[:2]
                 if len(prefix) == 2 and prefix[0] == "0" and prefix[1].isdigit():
                     base = 8
                     if self.settings.warn_octal_on:
-                        self.warn(
-                            'consider using "0o" prefix for octal numbers', lexer.tkn
-                        )
+                        self.warn('consider using "0o" prefix for octal numbers')
                 else:
                     base = 0
 
                 try:
-                    arg_as_int = int(lexer.tkn.value, base=base)
+                    arg_as_int = int(self.lexer.tkn.value, base=base)
                 except ValueError:
-                    self.err("invalid integer literal", lexer.tkn)
+                    self.err("invalid integer literal")
                 else:
-                    lexer.tkn.value = arg_as_int
-                    args.append(lexer.tkn)
-                lexer.next_token()
-            elif lexer.tkn.type == Token.CHAR:
+                    self.lexer.tkn.value = arg_as_int
+                    args.append(self.lexer.tkn)
+                self.lexer.next_token()
+            elif self.lexer.tkn.type == Token.CHAR:
                 args.append(
-                    Token(Token.INT, ord(lexer.tkn.value), location=lexer.tkn.location)
-                )
-                lexer.next_token()
-            elif lexer.tkn.type == Token.REGISTER:
-                try:
-                    i = register_to_index(lexer.tkn.value)
-                except HERAError:
-                    self.err(
-                        "{} is not a valid register".format(lexer.tkn.value), lexer.tkn
+                    Token(
+                        Token.INT,
+                        ord(self.lexer.tkn.value),
+                        location=self.lexer.tkn.location,
                     )
+                )
+                self.lexer.next_token()
+            elif self.lexer.tkn.type == Token.REGISTER:
+                try:
+                    i = register_to_index(self.lexer.tkn.value)
+                except HERAError:
+                    self.err("{} is not a valid register".format(self.lexer.tkn.value))
                 else:
-                    lexer.tkn.value = i
-                    args.append(lexer.tkn)
-                lexer.next_token()
+                    self.lexer.tkn.value = i
+                    args.append(self.lexer.tkn)
+                self.lexer.next_token()
             else:
-                args.append(lexer.tkn)
-                lexer.next_token()
+                args.append(self.lexer.tkn)
+                self.lexer.next_token()
 
-            if lexer.tkn.type == Token.RPAREN:
+            if self.lexer.tkn.type == Token.RPAREN:
                 break
-            elif lexer.tkn.type != Token.COMMA:
-                self.err("expected comma or right parenthesis", lexer.tkn)
-                self.skip_until(lexer, (Token.COMMA, Token.RPAREN))
-                if lexer.tkn.type == Token.EOF or lexer.tkn.type == Token.RPAREN:
+            elif self.lexer.tkn.type != Token.COMMA:
+                self.err("expected comma or right parenthesis")
+                self.skip_until({Token.COMMA, Token.RPAREN})
+                if (
+                    self.lexer.tkn.type == Token.EOF
+                    or self.lexer.tkn.type == Token.RPAREN
+                ):
                     break
             else:
-                lexer.next_token()
+                self.lexer.next_token()
         return args
 
-    def match_include(self, lexer):
-        root_path = lexer.path
-        tkn = lexer.next_token()
+    def match_include(self):
+        root_path = self.lexer.path
+        tkn = self.lexer.next_token()
         msg = "expected quote or angle-bracket delimited string"
-        if not self.expect(lexer, (Token.STRING, Token.BRACKETED), msg):
-            lexer.next_token()
+        if not self.expect({Token.STRING, Token.BRACKETED}, msg):
+            self.lexer.next_token()
             return []
 
-        lexer.next_token()
+        self.lexer.next_token()
         if tkn.type == Token.STRING:
             include_path = os.path.join(os.path.dirname(root_path), tkn.value)
 
@@ -194,23 +200,26 @@ class Parser:
                 self.err(str(e), tkn)
                 return []
             else:
-                sublexer = Lexer(included_text, path=include_path)
-                return self.parse(sublexer)
+                old_lexer = self.lexer
+                self.lexer = Lexer(included_text, path=include_path)
+                ops = self.parse()
+                self.lexer = old_lexer
+                return ops
         else:
-            return self.expand_angle_include(lexer, tkn)
+            return self.expand_angle_include(tkn)
 
-    def handle_cpp_boilerplate(self, lexer):
-        lexer.next_token()
-        if self.expect(lexer, Token.LPAREN, "expected left parenthesis"):
-            lexer.next_token()
+    def handle_cpp_boilerplate(self):
+        self.lexer.next_token()
+        if self.expect(Token.LPAREN, "expected left parenthesis"):
+            self.lexer.next_token()
 
-        if self.expect(lexer, Token.RPAREN, "expected right parenthesis"):
-            lexer.next_token()
+        if self.expect(Token.RPAREN, "expected right parenthesis"):
+            self.lexer.next_token()
 
-        self.expect(lexer, Token.LBRACE, "expected left curly brace")
-        lexer.next_token()
+        self.expect(Token.LBRACE, "expected left curly brace")
+        self.lexer.next_token()
 
-    def expand_angle_include(self, lexer, include_path):
+    def expand_angle_include(self, include_path):
         # There is no check for recursive includes in this function, under the
         # assumption that system libraries do not have recursive includes.
         if include_path.value == "HERA.h":
@@ -228,33 +237,39 @@ class Parser:
                 self.err(str(e), include_path)
                 return []
 
-        sublexer = Lexer(included_text, path=include_path.value)
-        return self.parse(sublexer)
+        old_lexer = self.lexer
+        self.lexer = Lexer(included_text, path=include_path.value)
+        ops = self.parse()
+        self.lexer = old_lexer
+        return ops
 
-    def expect(self, lexer, types, msg="unexpected token"):
+    def expect(self, types, msg="unexpected token"):
         if isinstance(types, str):
             types = {types}
 
-        if lexer.tkn.type not in types:
-            if lexer.tkn.type == Token.EOF:
-                self.err("premature end of input", lexer.tkn)
+        if self.lexer.tkn.type not in types:
+            if self.lexer.tkn.type == Token.EOF:
+                self.err("premature end of input")
             else:
-                self.err(msg, lexer.tkn)
+                self.err(msg)
 
             return False
         else:
             return True
 
-    def skip_until(self, lexer, types):
-        types = set(types)
+    def skip_until(self, types):
         types.add(Token.EOF)
-        while lexer.tkn.type not in types:
-            lexer.next_token()
+        while self.lexer.tkn.type not in types:
+            self.lexer.next_token()
 
-    def err(self, msg, tkn):
+    def err(self, msg, tkn=None):
+        if tkn is None:
+            tkn = self.lexer.tkn
         self.messages.err(msg, tkn.location)
 
-    def warn(self, msg, tkn):
+    def warn(self, msg, tkn=None):
+        if tkn is None:
+            tkn = self.lexer.tkn
         self.messages.warn(msg, tkn.location)
 
 
