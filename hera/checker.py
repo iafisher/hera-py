@@ -153,7 +153,7 @@ def get_labels(
     return (symbol_table, messages)
 
 
-def operation_length(op):
+def operation_length(op: AbstractOperation) -> int:
     if isinstance(op, RegisterBranch):
         if len(op.tokens) == 1 and op.tokens[0].type == Token.SYMBOL:
             return 3
@@ -180,7 +180,7 @@ def operation_length(op):
         return 1
 
 
-def looks_like_a_CONSTANT(op):
+def looks_like_a_CONSTANT(op: AbstractOperation) -> bool:
     return (
         op.name == "CONSTANT"
         and len(op.args) == 2
@@ -189,7 +189,7 @@ def looks_like_a_CONSTANT(op):
     )
 
 
-def out_of_range(n):
+def out_of_range(n: int) -> bool:
     return n < -32768 or n >= 65536
 
 

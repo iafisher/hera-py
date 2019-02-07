@@ -13,7 +13,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 import os.path
-from typing import List, Set, Tuple  # noqa: F401
+from typing import List, Optional, Set, Tuple, Union  # noqa: F401
 
 from .data import HERAError, Messages, Settings, Token
 from .lexer import Lexer
@@ -57,7 +57,7 @@ class Parser:
         self.messages.extend(self.lexer.messages)
         return ops
 
-    def match_program(self):
+    def match_program(self) -> List[AbstractOperation]:
         expecting_brace = False
         ops = []
         while self.lexer.tkn.type != Token.EOF:
@@ -94,7 +94,7 @@ class Parser:
 
         return ops
 
-    def match_op(self, name_tkn):
+    def match_op(self, name_tkn: Token) -> Optional[AbstractOperation]:
         """Match an operation, assuming that self.lexer.tkn is on the left parenthesis.
         """
         self.lexer.next_token()
@@ -110,7 +110,7 @@ class Parser:
 
     VALUE_TOKENS = {Token.INT, Token.REGISTER, Token.SYMBOL, Token.STRING, Token.CHAR}
 
-    def match_optional_arglist(self):
+    def match_optional_arglist(self) -> List[Token]:
         if self.lexer.tkn.type == Token.RPAREN:
             return []
 
@@ -142,7 +142,7 @@ class Parser:
                 self.lexer.next_token()
         return args
 
-    def match_value(self):
+    def match_value(self) -> Token:
         if self.lexer.tkn.type == Token.INT:
             # Detect zero-prefixed octal numbers.
             prefix = self.lexer.tkn.value[:2]
@@ -176,7 +176,7 @@ class Parser:
         else:
             return self.lexer.tkn
 
-    def match_include(self):
+    def match_include(self) -> List[AbstractOperation]:
         root_path = self.lexer.path
         tkn = self.lexer.next_token()
         msg = "expected quote or angle-bracket delimited string"
@@ -206,7 +206,7 @@ class Parser:
         else:
             return self.expand_angle_include(tkn)
 
-    def handle_cpp_boilerplate(self):
+    def handle_cpp_boilerplate(self) -> None:
         self.lexer.next_token()
         if self.expect(Token.LPAREN, "expected left parenthesis"):
             self.lexer.next_token()
@@ -217,7 +217,7 @@ class Parser:
         self.expect(Token.LBRACE, "expected left curly brace")
         self.lexer.next_token()
 
-    def expand_angle_include(self, include_path):
+    def expand_angle_include(self, include_path: Token) -> List[AbstractOperation]:
         # There is no check for recursive includes in this function, under the
         # assumption that system libraries do not have recursive includes.
         if include_path.value == "HERA.h":
@@ -241,7 +241,7 @@ class Parser:
         self.lexer = old_lexer
         return ops
 
-    def expect(self, types, msg="unexpected token"):
+    def expect(self, types: Union[str, Set[str]], msg="unexpected token") -> bool:
         if isinstance(types, str):
             types = {types}
 
@@ -255,23 +255,23 @@ class Parser:
         else:
             return True
 
-    def skip_until(self, types):
+    def skip_until(self, types: Set[str]) -> None:
         types.add(Token.EOF)
         while self.lexer.tkn.type not in types:
             self.lexer.next_token()
 
-    def err(self, msg, tkn=None):
+    def err(self, msg: str, tkn: Optional[Token] = None) -> None:
         if tkn is None:
             tkn = self.lexer.tkn
         self.messages.err(msg, tkn.location)
 
-    def warn(self, msg, tkn=None):
+    def warn(self, msg: str, tkn: Optional[Token] = None) -> None:
         if tkn is None:
             tkn = self.lexer.tkn
         self.messages.warn(msg, tkn.location)
 
 
-def get_canonical_path(fpath):
+def get_canonical_path(fpath: str) -> str:
     if fpath == "-" or fpath == "<string>":
         return fpath
     else:

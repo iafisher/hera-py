@@ -5,6 +5,7 @@ Version: February 2019
 """
 import sys
 import functools
+from typing import Optional
 
 from .data import Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
@@ -13,14 +14,14 @@ from .utils import format_int
 from .vm import VirtualMachine
 
 
-def external_main(argv=None):
+def external_main(argv=None) -> None:
     """A wrapper around main that ignores its return value, so it is not printed to the
     console when the program exits.
     """
     main(argv)
 
 
-def main(argv=None):
+def main(argv=None) -> Optional[VirtualMachine]:
     """The main entry point into hera-py."""
     arguments = parse_args(argv)
     path = arguments["<path>"]
@@ -45,19 +46,21 @@ def main(argv=None):
     if arguments["preprocess"]:
         settings.allow_interrupts = True
         main_preprocess(path, settings)
+        return None
     elif arguments["debug"]:
         main_debug(path, settings)
+        return None
     else:
         return main_execute(path, settings)
 
 
-def main_debug(path, settings):
+def main_debug(path: str, settings: Settings) -> None:
     """Debug the program."""
     program = load_program_from_file(path, settings)
     debug(program, settings)
 
 
-def main_execute(path, settings):
+def main_execute(path: str, settings: Settings) -> VirtualMachine:
     """Execute the program."""
     program = load_program_from_file(path, settings)
 
@@ -71,7 +74,7 @@ def main_execute(path, settings):
     return vm
 
 
-def main_preprocess(path, settings):
+def main_preprocess(path: str, settings: Settings) -> None:
     """Preprocess the program and print it to standard output."""
     program = load_program_from_file(path, settings)
     if program.data:

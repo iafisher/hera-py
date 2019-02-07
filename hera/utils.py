@@ -5,10 +5,10 @@ Version: February 2019
 """
 import sys
 
-from .data import HERAError, Location, Messages, Token
+from .data import HERAError, Location, Messages, Settings, Token
 
 
-def to_u16(n):
+def to_u16(n: int) -> int:
     """Reinterpret the signed integer `n` as a 16-bit unsigned integer.
 
     If `n` is too large for 16 bits, a HERAError is raised.
@@ -24,7 +24,7 @@ def to_u16(n):
         return n
 
 
-def from_u16(n):
+def from_u16(n: int) -> int:
     """Reinterpret the unsigned 16-bit integer `n` as a signed integer."""
     if n >= 2 ** 15:
         return -(2 ** 16 - n)
@@ -32,7 +32,7 @@ def from_u16(n):
         return n
 
 
-def to_u32(n):
+def to_u32(n: int) -> int:
     """Reinterpret the signed integer `n` as an unsigned 32-bit integer.
 
     If `n` is too large for 32 bits, a HERAError is raised.
@@ -51,7 +51,7 @@ def to_u32(n):
 NAMED_REGISTERS = {"rt": 11, "fp": 14, "sp": 15, "pc_ret": 13, "fp_alt": 12}
 
 
-def register_to_index(rname):
+def register_to_index(rname: str) -> int:
     """Return the index of the register with the given name in the register array."""
     original = rname
     rname = rname.lower()
@@ -64,7 +64,7 @@ def register_to_index(rname):
     raise HERAError("{} is not a valid register".format(original))
 
 
-def format_int(v, *, spec="xdsc"):
+def format_int(v: int, *, spec="xdsc") -> str:
     """Return a string of the form "... = ... = ..." where each ellipsis stands for a
     formatted integer determined by a character in the `spec` parameter. The following
     formats are supported: d for decimal, x for hexadecimal, o for octal, b for binary,
@@ -104,7 +104,7 @@ def format_int(v, *, spec="xdsc"):
     return " = ".join(ret)
 
 
-def print_warning(settings, msg, *, loc=None):
+def print_warning(settings: Settings, msg: str, *, loc=None) -> None:
     if settings.color:
         msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
     else:
@@ -112,7 +112,7 @@ def print_warning(settings, msg, *, loc=None):
     print_message(msg, loc=loc)
 
 
-def print_error(settings, msg, *, loc=None):
+def print_error(settings: Settings, msg: str, *, loc=None) -> None:
     if settings.color:
         msg = ANSI_RED_BOLD + "Error" + ANSI_RESET + ": " + msg
     else:
@@ -120,7 +120,7 @@ def print_error(settings, msg, *, loc=None):
     print_message(msg, loc=loc)
 
 
-def print_message(msg, *, loc=None):
+def print_message(msg: str, *, loc=None) -> None:
     """Print a message to stderr. If `loc` is provided as either a Location object, or
     a Token object with a `location` field, then the line of code that the location
     indicates will be printed with the message.
@@ -141,14 +141,14 @@ def print_message(msg, *, loc=None):
     sys.stderr.write(msg + "\n")
 
 
-def align_caret(line, col):
+def align_caret(line: str, col: int) -> str:
     """Return the whitespace necessary to align a caret to underline the desired
     column in the line of text. Mainly this means handling tabs.
     """
     return "".join("\t" if c == "\t" else " " for c in line[: col - 1])
 
 
-def read_file(path) -> str:
+def read_file(path: str) -> str:
     """Read a file and return its contents."""
     try:
         with open(path, encoding="ascii") as f:
@@ -163,11 +163,11 @@ def read_file(path) -> str:
         raise HERAError("non-ASCII byte in file")
 
 
-def pad(s, n):
+def pad(s: str, n: int) -> str:
     return (" " * (n - len(s))) + s
 
 
-def handle_messages(settings, ret_messages_pair):
+def handle_messages(settings: Settings, ret_messages_pair):
     if (
         isinstance(ret_messages_pair, tuple)
         and len(ret_messages_pair) == 2
@@ -198,7 +198,7 @@ def handle_messages(settings, ret_messages_pair):
 # you can use them unconditionally in your code without worrying about --no-color.
 
 
-def make_ansi(*params):
+def make_ansi(*params) -> str:
     return "\033[" + ";".join(map(str, params)) + "m"
 
 

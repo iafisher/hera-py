@@ -6,6 +6,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 import string
+from typing import Optional
 
 from hera.data import HERAError, Location, Messages, Token
 from hera.utils import NAMED_REGISTERS
@@ -14,7 +15,7 @@ from hera.utils import NAMED_REGISTERS
 class Lexer:
     """A lexer for HERA (and for the debugging mini-language)."""
 
-    def __init__(self, text, *, path=None):
+    def __init__(self, text: str, *, path: Optional[str] = None) -> None:
         self.text = text
         self.file_lines = text.splitlines()
         if self.text.endswith("\n"):
