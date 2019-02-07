@@ -1,6 +1,14 @@
-# flake8: noqa
+"""The standard library for the Tiger programming language, implemented in HERA.
+
+All of the pure HERA functions in this module have been copied from the original
+Tiger standard library file for HERA-C, written by Dave Wonnacott.
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: February 2019
+"""
 
 
+# The standard library with parameters-on-the-stack functions.
 TIGER_STDLIB_STACK = """
 LABEL(printint)
   __eval("print(vm.load_memory(vm.registers[14]+3), end='')")
@@ -23,7 +31,12 @@ LABEL(exit)
 
 
 LABEL(div)
-  __eval("left = vm.load_memory(vm.registers[14]+3); right = vm.load_memory(vm.registers[14]+4); vm.store_memory(vm.registers[14]+3, left // right)")
+  __eval("left = vm.load_memory(vm.registers[14]+3); right = vm.load_memory(vm.registers[14]+4); vm.store_memory(vm.registers[14]+3, left // right if right != 0 else 0)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(mod)
+  __eval("left = vm.load_memory(vm.registers[14]+3); right = vm.load_memory(vm.registers[14]+4); vm.store_memory(vm.registers[14]+3, left % right if right != 0 else 0)")
   RETURN(FP_alt, PC_ret)
 
 
@@ -313,6 +326,7 @@ LABEL(tstdlib_label_local_memcpy_reg)
 """
 
 
+# The data segment for the parameters-on-the-stack functions.
 TIGER_STDLIB_STACK_DATA = """
 CONSTANT(first_space_for_fsheap, 0x4000)
 CONSTANT(last_space_for_fsheap, 0xbfff)
