@@ -1,13 +1,11 @@
 """The virtual HERA machine.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: January 2019
+Version: February 2019
 """
 import copy
-from typing import List
 
-from .data import Settings
-from .op import AbstractOperation
+from .data import Program, Settings
 from .utils import print_warning
 
 
@@ -58,10 +56,8 @@ class VirtualMachine:
         ret.memory = self.memory.copy()
         return ret
 
-    def run(self, program: List[AbstractOperation]) -> None:
-        """Execute a program (i.e., a list of operations), resetting the machine's
-        state beforehand.
-        """
+    def run(self, program: Program) -> None:
+        """Execute a program resetting the machine's state beforehand."""
         self.reset()
 
         for data_op in program.data:

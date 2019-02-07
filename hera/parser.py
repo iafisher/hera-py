@@ -13,7 +13,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 import os.path
-from typing import List, Tuple
+from typing import List, Set, Tuple  # noqa: F401
 
 from .data import HERAError, Messages, Settings, Token
 from .lexer import Lexer
@@ -39,7 +39,7 @@ def parse(
 class Parser:
     def __init__(self, lexer: Lexer, settings: Settings) -> None:
         self.lexer = lexer
-        self.visited = set()
+        self.visited = set()  # type: Set[str]
         self.settings = settings
         self.messages = Messages()
 

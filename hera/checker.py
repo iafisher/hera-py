@@ -7,7 +7,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: Feburary 2019
 """
 from contextlib import suppress
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple  # noqa: F401
 
 from .data import Constant, DataLabel, Label, Messages, Program, Settings, Token
 from .op import (
@@ -88,7 +88,7 @@ def check_symbol_redeclaration(program: List[AbstractOperation]) -> Messages:
     messages.
     """
     messages = Messages()
-    symbols = set()
+    symbols = set()  # type: Set[str]
     for op in program:
         if op.name in ("CONSTANT", "LABEL", "DLABEL") and len(op.args) >= 1:
             symbol = op.args[0]
@@ -108,7 +108,7 @@ def get_labels(
     the program to their concrete values.
     """
     messages = Messages()
-    symbol_table = {}
+    symbol_table = {}  # type: Dict[str, int]
     # We need to maintain a separate dictionary of constants because DSKIP can take a
     # constant as its argument, which has to be resolved to set the data counter
     # correctly.
