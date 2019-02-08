@@ -415,3 +415,65 @@ Error: hera-py does not support RTI, line 2 col 1 of <stdin>
 
 """
     )
+
+
+def test_mega_error(capsys):
+    with pytest.raises(SystemExit):
+        main(["test/assets/error/mega_error.hera"])
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+Warning: consider using "0o" prefix for octal numbers, line 11 col 9 of test/assets/error/mega_error.hera
+
+  SET(R2, 01)
+          ^
+
+Warning: unrecognized backslash escape, line 17 col 13 of test/assets/error/mega_error.hera
+
+  LP_STRING("\\y")
+              ^
+
+Error: expected comma or right parenthesis, line 2 col 8 of test/assets/error/mega_error.hera
+
+  SET(R1 40)
+         ^
+
+Error: over-long character literal, line 14 col 11 of test/assets/error/mega_error.hera
+
+  SETLO(R7, 'ab')
+            ^
+
+Error: unclosed string literal, line 20 col 9 of test/assets/error/mega_error.hera
+
+  SET(R1, "
+          ^
+
+Error: expected integer, line 5 col 6 of test/assets/error/mega_error.hera
+
+  FOFF(R1)
+       ^
+
+Error: too few args to ADD (expected 3), line 8 col 1 of test/assets/error/mega_error.hera
+
+  ADD('c', "abc")
+  ^
+
+Error: expected register, line 8 col 6 of test/assets/error/mega_error.hera
+
+  ADD('c', "abc")
+       ^
+
+Error: expected register, line 8 col 10 of test/assets/error/mega_error.hera
+
+  ADD('c', "abc")
+           ^
+
+Error: data statement after code, line 17 col 1 of test/assets/error/mega_error.hera
+
+  LP_STRING("\\y")
+  ^
+
+"""
+    )

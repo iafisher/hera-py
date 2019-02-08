@@ -100,6 +100,9 @@ class Parser:
         self.lexer.next_token()
         args = self.match_optional_arglist()
         self.lexer.next_token()
+        if args is None:
+            return None
+
         try:
             cls = name_to_class[name_tkn.value]
         except KeyError:
@@ -110,13 +113,20 @@ class Parser:
 
     VALUE_TOKENS = {Token.INT, Token.REGISTER, Token.SYMBOL, Token.STRING, Token.CHAR}
 
-    def match_optional_arglist(self) -> List[Token]:
+    def match_optional_arglist(self) -> Optional[List[Token]]:
+        """Match zero or more comma-separated values. Exits with the right parenthesis
+        as the current token. Make sure to distinguish between a None return value (the
+        arglist could not be parsed) and a [] return value (an empty arglist was parsed
+        successfully).
+        """
         if self.lexer.tkn.type == Token.RPAREN:
             return []
 
         args = []
+        hit_error = False
         while True:
             if not self.expect(self.VALUE_TOKENS, "expected value"):
+                hit_error = True
                 self.skip_until({Token.COMMA, Token.RPAREN})
                 if self.lexer.tkn.type == Token.COMMA:
                     self.lexer.next_token()
@@ -131,6 +141,7 @@ class Parser:
             if self.lexer.tkn.type == Token.RPAREN:
                 break
             elif self.lexer.tkn.type != Token.COMMA:
+                hit_error = True
                 self.err("expected comma or right parenthesis")
                 self.skip_until({Token.COMMA, Token.RPAREN})
                 if (
@@ -140,7 +151,8 @@ class Parser:
                     break
             else:
                 self.lexer.next_token()
-        return args
+
+        return args if not hit_error else None
 
     def match_value(self) -> Token:
         if self.lexer.tkn.type == Token.INT:

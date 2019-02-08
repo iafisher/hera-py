@@ -1,0 +1,20 @@
+// A parse error (missing comma)
+SET(R1 40)
+
+// A type error
+FOFF(R1)
+
+// Multiple type errors on one line
+ADD('c', "abc")
+
+// Warning for zero-prefixed octal literal
+SET(R2, 01)
+
+// Error for over-long character literal
+SETLO(R7, 'ab')
+
+// Warning for invalid backslash escape, and error for data after code
+LP_STRING("\y")
+
+// Finish off with an unclosed string literal
+SET(R1, "

@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Execution times of long-running programs has been cut down by roughly 50%.
 - Use of `SWI` and `RTI` operations now result in parse-time errors instead of run-time warnings.
 - HERA files may no longer contain non-ASCII bytes.
+- Type errors are detected even in files with parse errors.
 
 ## [0.5.2] - 2019-02-02
 ### Added

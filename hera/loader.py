@@ -18,8 +18,10 @@ def load_program(text: str, settings=Settings()) -> Program:
 
     The return value of this function is valid input to the VirtualMachine.run method.
     """
-    oplist = handle_messages(settings, parse(text, settings=settings))
-    return handle_messages(settings, check(oplist, settings))
+    oplist, parse_messages = parse(text, settings=settings)
+    program, check_messages = check(oplist, settings=settings)
+    handle_messages(settings, parse_messages.extend(check_messages))
+    return program
 
 
 def load_program_from_file(path: str, settings=Settings()) -> Program:
@@ -48,5 +50,7 @@ def load_program_from_file(path: str, settings=Settings()) -> Program:
         except HERAError as e:
             handle_messages(settings, Messages(str(e) + "."))
 
-    oplist = handle_messages(settings, parse(text, path=path, settings=settings))
-    return handle_messages(settings, check(oplist, settings))
+    oplist, parse_messages = parse(text, path=path, settings=settings)
+    program, check_messages = check(oplist, settings=settings)
+    handle_messages(settings, parse_messages.extend(check_messages))
+    return program

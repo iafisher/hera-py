@@ -23,10 +23,10 @@ from .op import (
 
 def check(
     oplist: List[AbstractOperation], settings: Settings
-) -> Tuple[Optional[Program], Messages]:
+) -> Tuple[Program, Messages]:
     symbol_table, messages = typecheck(oplist, settings=settings)
     if messages.errors:
-        return (None, messages)
+        return (Program([], [], {}), messages)
 
     oplist, preprocess_messages = convert_ops(oplist, symbol_table)
     messages.extend(preprocess_messages)
