@@ -80,6 +80,7 @@ class Token:
     FMT = "TOKEN_FMT"
     INCLUDE = "TOKEN_INCLUDE"
     EOF = "TOKEN_EOF"
+    ERROR = "TOKEN_ERROR"
     UNKNOWN = "TOKEN_UNKNOWN"
 
     def __init__(self, type_, value, location=None):

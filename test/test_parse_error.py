@@ -287,3 +287,21 @@ Error: non-ASCII byte in file, line 1 col 10 of <stdin>
 
 """
     )
+
+
+def test_parse_error_for_over_long_character_literal(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper("SET(R1, 'abc')")
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Error: over-long character literal, line 1 col 9 of <stdin>
+
+  SET(R1, 'abc')
+          ^
+
+"""
+    )

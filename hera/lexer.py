@@ -8,7 +8,7 @@ Version: February 2019
 import string
 from typing import Optional
 
-from hera.data import HERAError, Location, Messages, Token
+from hera.data import Location, Messages, Token
 from hera.utils import NAMED_REGISTERS
 
 
@@ -28,10 +28,10 @@ class Lexer:
         # Set the current token.
         self.next_token()
 
-    def get_location(self):
+    def get_location(self) -> Location:
         return Location(self.line, self.column, self.path, self.file_lines)
 
-    def next_token(self):
+    def next_token(self) -> Token:
         self.skip()
 
         if self.position >= len(self.text):
@@ -48,47 +48,19 @@ class Lexer:
                 length = self.read_int()
                 self.set_token(Token.INT, length=length)
             elif ch == '"':
-                loc = self.get_location()
-                s = self.consume_str()
-                self.tkn = Token(Token.STRING, s, loc)
+                self.consume_str()
             elif ch == "'":
-                if self.peek_char() == "\\":
-                    if self.peek_char(3) == "'":
-                        ch = self.peek_char(2)
-                        escape = escape_char(ch)
-                        self.next_char()  # open quote
-                        self.next_char()  # backslash
-                        loc = self.get_location()
-                        self.next_char()  # character
-                        self.next_char()  # end quote
-                        if len(escape) == 2:
-                            self.tkn = Token(Token.CHAR, escape[1], loc)
-                            self.warn("unrecognized backslash escape", loc)
-                        else:
-                            self.tkn = Token(Token.CHAR, escape, loc)
-                else:
-                    if self.peek_char(2) == "'":
-                        ch = self.peek_char()
-                        self.next_char()  # open quote
-                        loc = self.get_location()
-                        self.next_char()  # character
-                        self.next_char()  # end quote
-                        self.tkn = Token(Token.CHAR, ch, loc)
-                    else:
-                        self.set_token(Token.UNKNOWN)
+                self.consume_char()
             elif self.text[self.position :].startswith("#include"):
                 self.set_token(Token.INCLUDE, length=len("#include"))
             elif ch == "<":
-                self.next_char()
-                length = self.read_bracketed()
-                self.set_token(Token.BRACKETED, length=length)
-                if self.position < len(self.text):
-                    self.next_char()
+                self.consume_bracketed()
             elif ch == ":":
                 self.position += 1
                 length = self.read_symbol()
                 self.set_token(Token.FMT, length=length)
             elif ch == "-":
+                # TODO: This doesn't handle e.g. x-10.
                 if self.peek_char().isdigit():
                     self.position += 1
                     length = self.read_int()
@@ -121,7 +93,7 @@ class Lexer:
 
         return self.tkn
 
-    def read_int(self):
+    def read_int(self) -> int:
         length = 1
         digits = {str(i) for i in range(10)}
         peek = self.peek_char()
@@ -135,7 +107,7 @@ class Lexer:
 
         return length
 
-    def read_symbol(self):
+    def read_symbol(self) -> int:
         length = 1
         while True:
             ch = self.peek_char(length)
@@ -144,22 +116,29 @@ class Lexer:
             length += 1
         return length
 
-    def read_bracketed(self):
-        length = 1
-        while self.position + length < len(self.text) and self.peek_char(length) != ">":
-            length += 1
-        if self.position + length == len(self.text):
-            raise HERAError("unclosed bracketed expression", self.get_location())
-        return length
+    def consume_bracketed(self) -> None:
+        self.next_char()
+        loc = self.get_location()
+        start = self.position
+        while self.position < len(self.text) and self.text[self.position] != ">":
+            self.next_char()
 
-    def consume_str(self):
+        if self.position == len(self.text):
+            self.tkn = Token(Token.ERROR, "unclosed bracketed expression", loc)
+            return
+
+        self.tkn = Token(Token.BRACKETED, self.text[start : self.position], loc)
+        self.next_char()
+
+    def consume_str(self) -> None:
         sbuilder = []
         loc = self.get_location()
         self.next_char()
         while self.position < len(self.text) and self.text[self.position] != '"':
             if self.text[self.position] == "\\":
                 if self.position == len(self.text) - 1:
-                    raise HERAError("unclosed string literal", loc)
+                    self.next_char()
+                    break
 
                 escape = escape_char(self.text[self.position + 1])
                 sbuilder.append(escape)
@@ -170,13 +149,47 @@ class Lexer:
             else:
                 sbuilder.append(self.text[self.position])
                 self.next_char()
-        if self.position < len(self.text):
-            self.next_char()
-        else:
-            raise HERAError("unclosed string literal", loc)
-        return "".join(sbuilder)
 
-    def skip(self):
+        if self.position == len(self.text):
+            self.tkn = Token(Token.ERROR, "unclosed string literal", loc)
+            return
+
+        self.next_char()
+        s = "".join(sbuilder)
+        self.tkn = Token(Token.STRING, s, loc)
+
+    def consume_char(self) -> None:
+        loc = self.get_location()
+        self.next_char()
+        start = self.position
+        while self.position < len(self.text) and self.text[self.position] != "'":
+            if self.text[self.position] == "\\":
+                self.next_char()
+            self.next_char()
+
+        if self.position == len(self.text):
+            self.tkn = Token(Token.ERROR, "unclosed character literal", loc)
+            return
+
+        contents = self.text[start : self.position]
+
+        if len(contents) == 1:
+            loc = loc._replace(column=loc.column + 1)
+            self.tkn = Token(Token.CHAR, contents, loc)
+        elif len(contents) == 2 and contents[0] == "\\":
+            loc = loc._replace(column=loc.column + 2)
+            escape = escape_char(contents[1])
+            if len(escape) == 2:
+                self.tkn = Token(Token.CHAR, escape[1], loc)
+                self.warn("unrecognized backslash escape", loc)
+            else:
+                self.tkn = Token(Token.CHAR, escape, loc)
+        else:
+            self.tkn = Token(Token.ERROR, "over-long character literal", loc)
+
+        self.next_char()
+
+    def skip(self) -> None:
         """Skip past whitespace and comments."""
         while True:
             # Skip whitespace.
@@ -206,7 +219,7 @@ class Lexer:
             else:
                 break
 
-    def next_char(self):
+    def next_char(self) -> None:
         if self.text[self.position] == "\n":
             self.line += 1
             self.column = 1
@@ -214,22 +227,22 @@ class Lexer:
             self.column += 1
         self.position += 1
 
-    def peek_char(self, n=1):
+    def peek_char(self, n=1) -> str:
         return (
             self.text[self.position + n] if self.position + n < len(self.text) else ""
         )
 
-    def set_token(self, typ, *, length=1):
+    def set_token(self, typ: str, *, length=1) -> None:
         loc = self.get_location()
         value = self.text[self.position : self.position + length]
         for _ in range(length):
             self.next_char()
         self.tkn = Token(typ, value, loc)
 
-    def err(self, msg, loc):
+    def err(self, msg: str, loc) -> None:
         self.messages.err(msg, loc)
 
-    def warn(self, msg, loc):
+    def warn(self, msg: str, loc) -> None:
         self.messages.warn(msg, loc)
 
 

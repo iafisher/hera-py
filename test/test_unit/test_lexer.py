@@ -69,9 +69,10 @@ def test_lexer_with_character_literal_backslash_escape():
 
 
 def test_lexer_with_over_long_character_literal():
-    lexer = lex_helper("'abc'")
+    lexer = lex_helper("'abc' 10")
 
-    assert eq(lexer.tkn, Token(Token.UNKNOWN, "'"))
+    assert eq(lexer.tkn, Token(Token.ERROR, "over-long character literal"))
+    assert eq(lexer.next_token(), Token(Token.INT, "10"))
 
 
 def test_lexer_with_string():
@@ -90,6 +91,24 @@ def test_lexer_with_empty_string():
 
     assert eq(lexer.tkn, Token(Token.STRING, ""))
     assert eq(lexer.next_token(), Token(Token.EOF, ""))
+
+
+def test_lexer_with_unclosed_string_literal():
+    lexer = lex_helper('"hello')
+
+    assert eq(lexer.tkn, Token(Token.ERROR, "unclosed string literal"))
+
+
+def test_lexer_with_unclosed_character_literal():
+    lexer = lex_helper("'a")
+
+    assert eq(lexer.tkn, Token(Token.ERROR, "unclosed character literal"))
+
+
+def test_lexer_with_unclosed_bracketed_expression():
+    lexer = lex_helper("<abc")
+
+    assert eq(lexer.tkn, Token(Token.ERROR, "unclosed bracketed expression"))
 
 
 def test_lexer_with_include():

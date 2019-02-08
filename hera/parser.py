@@ -248,6 +248,8 @@ class Parser:
         if self.lexer.tkn.type not in types:
             if self.lexer.tkn.type == Token.EOF:
                 self.err("premature end of input")
+            elif self.lexer.tkn.type == Token.ERROR:
+                self.err(self.lexer.tkn.value)
             else:
                 self.err(msg)
 
