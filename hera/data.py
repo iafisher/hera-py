@@ -23,7 +23,7 @@ class Settings:
         color=True,
         data_start=DEFAULT_DATA_START,
         debug=False,
-        no_debug=False,
+        no_debug_ops=False,
         volume=VOLUME_NORMAL,
         warn_octal_on=True,
         warn_return_on=True
@@ -32,7 +32,7 @@ class Settings:
         self.color = color
         self.data_start = data_start
         self.debug = debug
-        self.no_debug = no_debug
+        self.no_debug_ops = no_debug_ops
         self.warn_octal_on = warn_octal_on
         self.warn_return_on = warn_return_on
         self.volume = volume

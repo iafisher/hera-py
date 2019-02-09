@@ -34,7 +34,7 @@ def main(argv=None) -> Optional[VirtualMachine]:
         # Arbitrary value copied over from HERA-C.
         settings.data_start = 0xC167
 
-    settings.no_debug = arguments["--no-debug"]
+    settings.no_debug_ops = arguments["--no-debug-ops"]
     settings.warn_return_on = not arguments["--warn-return-off"]
     settings.warn_octal_on = not arguments["--warn-octal-off"]
 
@@ -175,7 +175,7 @@ FLAGS = {
     "--big-stack",
     "--help",
     "--no-color",
-    "--no-debug",
+    "--no-debug-ops",
     "--quiet",
     "--verbose",
     "--version",
@@ -198,7 +198,7 @@ Common options:
     -v, --version      Show the version and exit.
 
     --no-color         Do not print colored output.
-    --no-debug         Disallow debugging instructions.
+    --no-debug-ops     Disallow debugging instructions.
     -q --quiet         Set output level to quiet.
     --verbose          Set output level to verbose.
     --warn-octal-off   Do not print warnings for zero-prefixed integer literals.

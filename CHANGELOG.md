@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Use of `SWI` and `RTI` operations now result in parse-time errors instead of run-time warnings.
 - HERA files may no longer contain non-ASCII bytes.
 - Type errors are detected even in files with parse errors.
+- The `--no-debug` flag has been renamed to `--no-debug-ops`.
 
 ### Fixed
 - The debugger will no longer crash when printing the value of a label on the last line of a program.

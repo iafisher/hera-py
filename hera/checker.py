@@ -84,9 +84,9 @@ def typecheck(
         if not settings.allow_interrupts and isinstance(op, (RTI, SWI)):
             messages.err("hera-py does not support {}".format(op.name), loc=op.loc)
 
-        if settings.no_debug and isinstance(op, DebuggingOperation):
+        if settings.no_debug_ops and isinstance(op, DebuggingOperation):
             messages.err(
-                "debugging instructions disallowed with --no-debug flag", loc=op.loc
+                "debugging instructions disallowed with --no-debug-ops flag", loc=op.loc
             )
 
         # Add constants to the symbol table as they are encountered, so that a given

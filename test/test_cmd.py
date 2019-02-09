@@ -190,14 +190,14 @@ def test_main_with_no_debug_flag(capsys):
     with pytest.raises(SystemExit):
         program = "print_reg(R1)"
         with patch("sys.stdin", StringIO(program)):
-            main(["--no-debug", "-"])
+            main(["--no-debug-ops", "-"])
 
     captured = capsys.readouterr()
     assert (
         captured.err
         == """\
 
-Error: debugging instructions disallowed with --no-debug flag, line 1 col 1 of <stdin>
+Error: debugging instructions disallowed with --no-debug-ops flag, line 1 col 1 of <stdin>
 
   print_reg(R1)
   ^
