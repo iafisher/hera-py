@@ -7,6 +7,7 @@ import json
 from contextlib import suppress
 from typing import Dict, List, Optional
 
+from hera import stdlib
 from hera.data import Constant, DataLabel, Location, Messages, Token
 from hera.utils import format_int, from_u16, print_warning, to_u16, to_u32
 
@@ -936,13 +937,7 @@ class __EVAL(DebuggingOperation):
     P = (STRING,)
 
     def execute(self, vm):
-        # Rudimentary safeguard to make execution of malicious code harder. Users of
-        # hera-py should keep in mind that running arbitrary HERA code is no safer than
-        # running arbitrary code of any kind.
-        if "import" not in self.args[0]:
-            bytecode = compile(self.args[0], "<string>", "exec")
-            exec(bytecode, {}, {"vm": vm})
-
+        eval(self.args[0], {}, {"stdlib": stdlib, "vm": vm})
         vm.pc += 1
 
 

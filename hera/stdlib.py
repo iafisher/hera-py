@@ -8,35 +8,72 @@ Version: February 2019
 """
 
 
+def tiger_printint_stack(vm):
+    print(vm.load_memory(vm.registers[14] + 3), end="")
+
+
+def tiger_print_stack(vm):
+    addr = vm.load_memory(vm.registers[14] + 3)
+    n = vm.load_memory(addr)
+    for i in range(n):
+        print(chr(vm.load_memory(addr + i + 1)), end="")
+
+
+def tiger_println_stack(vm):
+    addr = vm.load_memory(vm.registers[14] + 3)
+    n = vm.load_memory(addr)
+    for i in range(n):
+        print(chr(vm.load_memory(addr + i + 1)), end="")
+    print()
+
+
+def tiger_exit(vm):
+    vm.halted = True
+
+
+def tiger_div_stack(vm):
+    left = vm.load_memory(vm.registers[14] + 3)
+    right = vm.load_memory(vm.registers[14] + 4)
+    result = left // right if right != 0 else 0
+    vm.store_memory(vm.registers[14] + 3, result)
+
+
+def tiger_mod_stack(vm):
+    left = vm.load_memory(vm.registers[14] + 3)
+    right = vm.load_memory(vm.registers[14] + 4)
+    result = left % right if right != 0 else 0
+    vm.store_memory(vm.registers[14] + 3, result)
+
+
 # The standard library with parameters-on-the-stack functions.
 TIGER_STDLIB_STACK = """
 LABEL(printint)
-  __eval("print(vm.load_memory(vm.registers[14]+3), end='')")
+  __eval("stdlib.tiger_printint_stack(vm)")
   RETURN(FP_alt, PC_ret)
 
 
 LABEL(print)
-  __eval("addr = vm.load_memory(vm.registers[14]+3); n = vm.load_memory(addr)\\nfor i in range(n):\\n  print(chr(vm.load_memory(addr+i+1)), end='')")
+  __eval("stdlib.tiger_print_stack(vm)")
   RETURN(FP_alt, PC_ret)
 
 
 LABEL(println)
-  __eval("addr = vm.load_memory(vm.registers[14]+3); n = vm.load_memory(addr)\\nfor i in range(n):\\n  print(chr(vm.load_memory(addr+i+1)), end='')\\nprint()")
+  __eval("stdlib.tiger_println_stack(vm)")
   RETURN(FP_alt, PC_ret)
 
 
 LABEL(exit)
-  __eval("vm.pc = float('inf')")
+  __eval("stdlib.tiger_exit(vm)")
   RETURN(FP_alt, PC_ret)
 
 
 LABEL(div)
-  __eval("left = vm.load_memory(vm.registers[14]+3); right = vm.load_memory(vm.registers[14]+4); vm.store_memory(vm.registers[14]+3, left // right if right != 0 else 0)")
+  __eval("stdlib.tiger_div_stack(vm)")
   RETURN(FP_alt, PC_ret)
 
 
 LABEL(mod)
-  __eval("left = vm.load_memory(vm.registers[14]+3); right = vm.load_memory(vm.registers[14]+4); vm.store_memory(vm.registers[14]+3, left % right if right != 0 else 0)")
+  __eval("stdlib.tiger_mod_stack(vm)")
   RETURN(FP_alt, PC_ret)
 
 

@@ -48,18 +48,12 @@ def test_println_increments_pc(vm):
 
 
 def test___eval(vm):
-    helper(vm, '__eval("vm.registers[7] = 10")')
+    helper(vm, '__eval("stdlib.tiger_exit(vm)")')
 
-    assert vm.registers[7] == 10
-
-
-def test___eval_cannot_import_anything(vm, capsys):
-    helper(vm, "__eval(\"import sys; sys.stdout.write('hi')\")")
-
-    assert capsys.readouterr().out == ""
+    assert vm.halted is True
 
 
 def test___eval_increments_pc(vm):
-    helper(vm, '__eval("")')
+    helper(vm, '__eval("0")')
 
     assert vm.pc == 1
