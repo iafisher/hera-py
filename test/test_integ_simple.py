@@ -301,6 +301,14 @@ SET(R1, 666)
     assert vm.registers[1] == 42
 
 
+def test_relative_branching_in_large_program():
+    program = ("NOP()\n") * 255 + "BRR(next)\nSET(R2, 666)\nLABEL(next)\nSET(R1, 42)"
+    vm = execute_program_helper(program)
+
+    assert vm.registers[1] == 42
+    assert vm.registers[2] == 0
+
+
 def test_branching_by_register():
     program = """\
 SET(R1, end)

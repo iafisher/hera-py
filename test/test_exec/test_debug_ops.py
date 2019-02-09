@@ -48,12 +48,6 @@ def test_println_increments_pc(vm):
     assert vm.pc == 1
 
 
-def test___eval(vm):
-    helper(vm, '__eval("stdlib.tiger_exit(vm)")')
-
-    assert vm.halted is True
-
-
 def test___eval_increments_pc(vm):
     helper(vm, '__eval("0")')
 

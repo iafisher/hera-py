@@ -1,0 +1,11 @@
+#include <Tiger-stdlib-stack-data.hera>
+
+CBON()
+MOVE(R12, SP)
+INC(SP, 3)
+CALL(R12, getchar_ord)
+LOAD(R1, 3, R12)
+DEC(SP, 3)
+HALT()
+
+#include <Tiger-stdlib-stack.hera>

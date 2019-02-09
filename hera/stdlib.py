@@ -6,10 +6,18 @@ Tiger standard library file for HERA-C, written by Dave Wonnacott.
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
+import sys
+
+from .utils import from_u16
 
 
 def tiger_printint_stack(vm):
-    print(vm.load_memory(vm.registers[14] + 3), end="")
+    print(from_u16(vm.load_memory(vm.registers[14] + 3)), end="")
+
+
+def tiger_printbool_stack(vm):
+    v = vm.load_memory(vm.registers[14] + 3)
+    print("false" if v == 0 else "true", end="")
 
 
 def tiger_print_stack(vm):
@@ -27,10 +35,6 @@ def tiger_println_stack(vm):
     print()
 
 
-def tiger_exit(vm):
-    vm.halted = True
-
-
 def tiger_div_stack(vm):
     left = vm.load_memory(vm.registers[14] + 3)
     right = vm.load_memory(vm.registers[14] + 4)
@@ -43,6 +47,42 @@ def tiger_mod_stack(vm):
     right = vm.load_memory(vm.registers[14] + 4)
     result = left % right if right != 0 else 0
     vm.store_memory(vm.registers[14] + 3, result)
+
+
+def tiger_getchar_ord_stack(vm):
+    if vm.input_pos >= len(vm.input_buffer):
+        vm.readline()
+
+    if len(vm.input_buffer) > 0:
+        c = ord(vm.input_buffer[vm.input_pos])
+        vm.input_pos += 1
+    else:
+        c = 0
+    vm.store_memory(vm.registers[14] + 3, c)
+
+
+def tiger_ungetchar_stack(vm):
+    vm.input_pos -= 1
+
+
+def tiger_putchar_ord_stack(vm):
+    print(chr(vm.load_memory(vm.registers[14] + 3)), end="")
+
+
+def tiger_flush_stack(vm):
+    sys.stdout.flush()
+
+
+def tiger_getline_preamble_stack(vm):
+    vm.readline()
+    vm.registers[1] = len(vm.input_buffer) + 1
+
+
+def tiger_getline_epilogue_stack(vm):
+    addr = vm.registers[1]
+    vm.store_memory(addr, len(vm.input_buffer))
+    for i, c in enumerate(vm.input_buffer, start=1):
+        vm.store_memory(addr + i, ord(c))
 
 
 # The standard library with parameters-on-the-stack functions.
@@ -62,11 +102,6 @@ LABEL(println)
   RETURN(FP_alt, PC_ret)
 
 
-LABEL(exit)
-  __eval("stdlib.tiger_exit(vm)")
-  RETURN(FP_alt, PC_ret)
-
-
 LABEL(div)
   __eval("stdlib.tiger_div_stack(vm)")
   RETURN(FP_alt, PC_ret)
@@ -75,6 +110,50 @@ LABEL(div)
 LABEL(mod)
   __eval("stdlib.tiger_mod_stack(vm)")
   RETURN(FP_alt, PC_ret)
+
+
+LABEL(getchar_ord)
+  __eval("stdlib.tiger_getchar_ord_stack(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(putchar_ord)
+  __eval("stdlib.tiger_putchar_ord_stack(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(flush)
+  __eval("stdlib.tiger_flush_stack(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(printbool)
+  __eval("stdlib.tiger_printbool_stack(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(ungetchar)
+  __eval("stdlib.tiger_ungetchar_stack(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(getline)
+  __eval("stdlib.tiger_getline_preamble_stack(vm)")
+  MOVE(R12, SP)
+  INC(SP, 4)
+
+  // R1 was set to the length of the string by tiger_getline_preamble_stack
+  STORE(R1, 4, R12)
+
+  CALL(R12, malloc)
+  LOAD(R1, 3, R12)
+  DEC(SP, 4)
+
+  __eval("stdlib.tiger_getline_epilogue_stack(vm)")
+
+
+LABEL(exit)
+  HALT()
 
 
 LABEL(size)
@@ -323,7 +402,6 @@ LABEL(malloc)
      DEC(SP, 3)
      RETURN(FP_alt, PC_ret)	// Normal return from malloc
 
-
    LABEL(malloc_inconsistent)
      SET(R1, malloc_inconsistent_error)
      BR(malloc_exit)
@@ -338,7 +416,6 @@ LABEL(malloc)
      CALL(FP_alt,print)
      CALL(FP_alt,exit)
     DEC(SP, 4) // just to match
-
 
 LABEL(tstdlib_label_local_memcpy_reg)
      // move n(reg 3) bytes from location sptr(reg 1) to location nptr (reg 2)
@@ -360,6 +437,96 @@ LABEL(tstdlib_label_local_memcpy_reg)
      LABEL(tstdlib_label_memcpy_while_end)
      ADD(Rt,R4,R0)
      RETURN(FP_alt, PC_ret)
+
+
+//   ord(s:string) : int
+LABEL(ord)
+     INC(SP,1)
+     STORE(R1,4,FP)
+     LOAD(R1,3,FP) // Reg 1 <-- argument (address of string)
+     LOAD(R1,1,R1)  // Reg 1 now has the 1st character of the string
+     STORE(R1,3,FP) // put it (the character) into return area
+     LOAD(R1,4,FP)
+     DEC(SP, 1)
+     RETURN(FP_alt, PC_ret)
+
+
+ //   chr(i:int) : string
+LABEL(chr)
+     STORE(PC_ret, 0,FP)
+     STORE(FP_alt,1,FP)
+     INC(SP,2)
+     STORE(R1,4,FP)
+     STORE(R2,5,FP)
+     MOVE(FP_alt,SP) // malloc(2)
+     INC(SP,5)
+     SET(r1,2)
+     STORE(r1,3,FP_alt)
+     CALL(FP_alt,malloc)
+     LOAD(r2,3,FP_alt)  // Reg 2 <-- result of malloc
+     DEC(SP, 5)
+     SET(R1,1)
+     STORE(R1,0,R2)	// set string length
+     LOAD(R1,3,FP)	// Reg 1 <-- argument (the integer value)
+     STORE(R1,1,R2)	// set string's one character
+     STORE(R2,3,FP)	// address of string into return area
+     LOAD(R1,4,FP)
+     LOAD(R2,5,FP)
+     LOAD(PC_ret, 0,FP)
+     LOAD(FP_alt,1,FP)
+     DEC(SP,2)
+     RETURN(FP_alt, PC_ret)
+
+
+//    not(i:int) : int
+LABEL(not)
+     STORE(PC_ret, 0,FP)
+     STORE(FP_alt,1,FP)
+     INC(SP,1)
+     STORE(R1,4,FP)
+     LOAD(R1,3,FP) // Reg 1 <-- argument
+     CMP(R1,R0)
+     BZ(tstdlib_label_arg_was_false)
+     SET(R1,0)
+     STORE(R1,3,FP) // put false into return area
+     BR(tstdlib_label_return_from_not)
+     LABEL(tstdlib_label_arg_was_false)
+     SET(R1,1)
+     STORE(R1,3,FP) // put true into return area
+     LABEL(tstdlib_label_return_from_not)
+     LOAD(R1,4,FP)
+     LOAD(PC_ret, 0,FP)
+     LOAD(FP_alt,1,FP)
+     DEC(SP,1)
+     RETURN(FP_alt, PC_ret)
+
+
+//   getchar() : string
+LABEL(getchar)
+    STORE(PC_ret, 0,FP)
+    STORE(FP_alt,1,FP)
+    INC(SP, 7)  // save registers, set up for call
+    STORE(R1, 4,FP)
+    STORE(R2, 5,FP)
+
+    MOVE(FP_alt,SP)
+
+    SET(R1, 2)
+    STORE(R1, 3,FP_alt)	// Added this Oct 2011 based on instinct that it needs to be here...
+    CALL(FP_alt, malloc)
+    LOAD(R2, 3,FP_alt)
+    STORE(R2, 3,FP)     // this is the string we'll return
+    SETLO(R1, 1)	// Size of string we're reading
+    STORE(R1, 0,R2)
+    CALL(FP_alt, getchar_ord)
+    LOAD(R1, 3,FP_alt)	// R1 is now the character
+    STORE(R1, 1,R2)
+    LOAD(R2, 5,FP)
+    LOAD(R1, 4,FP)
+    LOAD(PC_ret, 0,FP)
+    LOAD(FP_alt,1,FP)
+    DEC(SP, 7)
+    RETURN(FP_alt, PC_ret)
 """
 
 

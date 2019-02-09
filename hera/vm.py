@@ -4,6 +4,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 import copy
+import sys
 
 from .data import Program, Settings
 from .utils import print_warning
@@ -37,6 +38,9 @@ class VirtualMachine:
         # to be addressable, but we start off with a considerably smaller array and
         # expand it as necessary, to keep the start-up time fast.
         self.memory = [0] * (2 ** 4)
+        # Used by some Tiger standard library functions for rudimentary IO.
+        self.input_buffer = ""
+        self.input_pos = 0
         # Stack of (call_address, return_address) pairs for CALL/RETURN instructions.
         # Used for warning messages and debugging.
         self.expected_returns = []
@@ -101,6 +105,9 @@ class VirtualMachine:
         if address >= len(self.memory):
             self.memory.extend([0] * (address - len(self.memory) + 1))
         self.memory[address] = value
+
+    def readline(self):
+        self.input_buffer = sys.stdin.readline().rstrip("\n")
 
     def warn(self, msg, loc):
         print_warning(self.settings, msg, loc=loc)
