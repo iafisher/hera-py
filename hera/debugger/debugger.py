@@ -58,6 +58,9 @@ class Debugger:
     def set_breakpoint(self, b: int) -> None:
         self.breakpoints[b] = self.get_breakpoint_name(b)
 
+    def at_breakpoint(self) -> bool:
+        return not self.finished() and self.vm.pc in self.breakpoints
+
     def next(self, *, step) -> None:
         if self.finished():
             return
@@ -66,56 +69,37 @@ class Debugger:
             calls = self.calls
             # step=True prevents infinite regress.
             self.next(step=True)
-            while not self.finished() and self.calls > calls:
-                if self.vm.pc in self.breakpoints:
-                    break
+            while (
+                not self.finished() and not self.at_breakpoint() and self.calls > calls
+            ):
                 self.next(step=True)
         else:
-            real_ops = self.get_real_ops()
-            for real_op in real_ops:
+            for real_op in self.real_ops():
                 if real_op.name == "CALL":
                     self.calls += 1
                 elif real_op.name == "RETURN":
                     self.calls -= 1
 
                 real_op.execute(self.vm)
-
-    def exec_ops(self, n=-1, *, until=None) -> None:
-        """Execute `n` real instructions of the program. If `until` is provided, it
-        should be a function that returns True when execution should stop. If `n` is not
-        provided or set to a negative number, execution continues until the `until`
-        function returns True.
-        """
-        if until is None:
-            until = lambda vm: False  # noqa: E731
-
-        while n != 0:
-            real_ops = self.get_real_ops()
-            for real_op in real_ops:
-                if real_op.name == "CALL":
-                    self.calls += 1
-                elif real_op.name == "RETURN":
-                    self.calls -= 1
-
-                real_op.execute(self.vm)
-
-            if self.finished() or until(self):
-                break
-
-            n -= 1
 
     def reset(self) -> None:
         self.vm.reset()
 
-    def get_real_ops(self) -> List[AbstractOperation]:
+    def op(self, index=None) -> AbstractOperation:
+        """Return the original operation at the given index, which defaults to the
+        current program counter.
+        """
+        if index is None:
+            index = self.vm.pc
+        return self.program.code[index].original
+
+    def real_ops(self) -> List[AbstractOperation]:
         """Return all the real ops that correspond to the current original op. See
         module docstring for explanation of terminology.
         """
-        original = self.program.code[self.vm.pc].original
+        original = self.op()
         end = self.vm.pc
-        while (
-            end < len(self.program.code) and self.program.code[end].original == original
-        ):
+        while end < len(self.program.code) and self.op(end) == original:
             end += 1
 
         return self.program.code[self.vm.pc : end]

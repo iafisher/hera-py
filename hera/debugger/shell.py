@@ -201,7 +201,10 @@ class Shell:
             print("continue takes no arguments.")
             return
 
-        self.debugger.exec_ops(until=lambda dbg: dbg.vm.pc in dbg.breakpoints)
+        self.debugger.next(step=True)
+        while not self.debugger.finished() and not self.debugger.at_breakpoint():
+            self.debugger.next(step=True)
+
         self.print_current_op()
 
     @mutates
@@ -302,7 +305,7 @@ class Shell:
             else:
                 self.debugger.vm.pc = new_pc
         else:
-            self.debugger.vm.pc += len(self.debugger.get_real_ops())
+            self.debugger.vm.pc += len(self.debugger.real_ops())
 
         self.print_current_op()
 
@@ -317,7 +320,7 @@ class Shell:
             print("Could not parse argument to list.")
             return
 
-        loc = self.debugger.program.code[self.debugger.vm.pc].loc
+        loc = self.debugger.op().loc
         self.print_range_of_ops(loc, context=context)
 
     def handle_ll(self, args):
@@ -325,7 +328,7 @@ class Shell:
             print("ll takes no arguments.")
             return
 
-        loc = self.debugger.program.code[self.debugger.vm.pc].loc
+        loc = self.debugger.op().loc
         self.print_range_of_ops(loc)
 
     @mutates
@@ -462,7 +465,7 @@ class Shell:
             print("step takes no arguments.")
             return
 
-        if self.debugger.program.code[self.debugger.vm.pc].original.name != "CALL":
+        if self.debugger.op().name != "CALL":
             print("step is only valid when the current instruction is CALL.")
             return
 
@@ -619,7 +622,7 @@ class Shell:
         executed, nothing is printed.
         """
         if not self.debugger.finished():
-            loc = self.debugger.program.code[self.debugger.vm.pc].loc
+            loc = self.debugger.op().loc
             self.print_range_of_ops(loc, context=1)
         else:
             print("Program has finished executing.")
