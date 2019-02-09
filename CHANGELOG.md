@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - The debugger no longer crashes when printing the value of a label on the last line of a program.
 - The debugger no longer crashes when `list` or `ll` is invoked after the end of the program.
+- A relative branch to a label whose instruction number is greater than 255 is no longer erroneously reported as an error.
 
 ## [0.5.2] - 2019-02-02
 ### Added

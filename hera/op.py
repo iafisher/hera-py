@@ -9,7 +9,7 @@ from contextlib import suppress
 from typing import Dict, List, Optional
 
 from hera import stdlib
-from hera.data import Constant, DataLabel, Location, Messages, Token
+from hera.data import Constant, DataLabel, Label, Location, Messages, Token
 from hera.utils import format_int, from_u16, print_error, print_warning, to_u16, to_u32
 
 
@@ -1025,6 +1025,8 @@ def check_in_range(arg, symbol_table, *, lo, hi, labels=False):
         else:
             if not labels and not isinstance(arg.value, Constant):
                 return "cannot use label as constant"
+            elif labels and isinstance(arg.value, Label):
+                return None
 
     if arg.type != Token.INT:
         return "expected integer"
