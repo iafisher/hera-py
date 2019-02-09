@@ -60,12 +60,44 @@ def test_lexer_with_character_literal():
     assert eq(lexer.next_token(), Token(Token.EOF, ""))
 
 
+def test_lexer_with_consecutive_character_literals():
+    lexer = lex_helper("'a''b'")
+
+    assert eq(lexer.tkn, Token(Token.CHAR, "a"))
+    assert eq(lexer.next_token(), Token(Token.CHAR, "b"))
+    assert eq(lexer.next_token(), Token(Token.EOF, ""))
+
+
 def test_lexer_with_character_literal_backslash_escape():
     lexer = lex_helper("'\\n'")
 
     assert eq(lexer.tkn, Token(Token.CHAR, "\n"))
     assert eq(lexer.next_token(), Token(Token.EOF, ""))
     assert eq(lexer.next_token(), Token(Token.EOF, ""))
+
+
+def test_lexer_with_hex_escapes():
+    lexer = lex_helper("'\\x41' \"\\x41\"")
+
+    assert eq(lexer.tkn, Token(Token.CHAR, "A"))
+    assert eq(lexer.next_token(), Token(Token.STRING, "A"))
+
+
+def test_lexer_with_octal_escapes():
+    lexer = lex_helper("'\\0''\\12' \"\\141\"")
+
+    assert eq(lexer.tkn, Token(Token.CHAR, "\x00"))
+    assert eq(lexer.next_token(), Token(Token.CHAR, "\n"))
+    assert eq(lexer.next_token(), Token(Token.STRING, "a"))
+
+
+def test_lexer_with_invalid_hex_escape():
+    lexer = lex_helper("'\\xa'  \"\\xgh\"")
+
+    assert len(lexer.messages.warnings) == 1
+    assert eq(lexer.tkn, Token(Token.ERROR, "over-long character literal"))
+    assert eq(lexer.next_token(), Token(Token.STRING, "xgh"))
+    assert len(lexer.messages.warnings) == 2
 
 
 def test_lexer_with_over_long_character_literal():

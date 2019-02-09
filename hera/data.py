@@ -4,7 +4,6 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 from collections import namedtuple
-from typing import Optional, Tuple
 
 
 DEFAULT_DATA_START = 0xC001
@@ -130,9 +129,6 @@ class Messages:
 
     def warn(self, msg, loc=None):
         self.warnings.append((msg, loc))
-
-
-ErrorType = Tuple[str, Optional[Location]]
 
 
 class HERAError(Exception):

@@ -460,10 +460,10 @@ Error: too few args to ADD (expected 3), line 8 col 1 of test/assets/error/mega_
   ADD('c', "abc")
   ^
 
-Error: expected register, line 8 col 6 of test/assets/error/mega_error.hera
+Error: expected register, line 8 col 5 of test/assets/error/mega_error.hera
 
   ADD('c', "abc")
-       ^
+      ^
 
 Error: expected register, line 8 col 10 of test/assets/error/mega_error.hera
 

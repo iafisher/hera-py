@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 **NOTE**: As permitted by semantic versioning, backward compatibility is NOT maintained for initial development, i.e. releases before 1.0.0.
 
 ## Unreleased
+### Added
+- Hexadecimal and octal escape sequences are now accepted in character and string literals.
+
 ### Changed
 - Execution times of long-running programs has been cut down by roughly 50%.
 - Use of `SWI` and `RTI` operations now result in parse-time errors instead of run-time warnings.

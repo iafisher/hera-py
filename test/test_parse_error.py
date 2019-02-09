@@ -164,7 +164,14 @@ def test_parse_error_for_unclosed_arglist(capsys):
     captured = capsys.readouterr().err
     assert (
         captured
-        == "\nError: expected comma or right parenthesis, line 2 col 1 of <stdin>\n"
+        == """\
+
+Error: expected comma or right parenthesis, line 2 col 1 of <stdin>
+
+  
+  ^
+
+"""
     )
 
 

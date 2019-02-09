@@ -6,7 +6,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 import string
-from typing import Optional
+from typing import Optional, Tuple
 
 from hera.data import Location, Messages, Token
 from hera.utils import NAMED_REGISTERS
@@ -116,6 +116,51 @@ class Lexer:
             length += 1
         return length
 
+    HEX_DIGITS = "0123456789abcdefABCDEF"
+
+    def read_escape_char(self) -> Tuple[str, int]:
+        """Read an escape sequence (assuming `self.text[self.position] == "\\"`) and
+        return a pair (value, length), where `value` is what the escape sequence
+        resolves to and `length` is the number of characters read.
+        """
+        peek = self.peek_char()
+        loc = self.get_location()
+        loc = loc._replace(column=loc.column + 1)
+        if peek == "":
+            return ("", 0)
+        elif peek == "x":
+            # Hex escapes
+            peek2 = self.peek_char(2)
+            peek3 = self.peek_char(3)
+            if peek2 in self.HEX_DIGITS and peek3 in self.HEX_DIGITS:
+                ordv = int(peek2 + peek3, base=16)
+                return (chr(ordv), 3)
+            else:
+                self.warn("invalid hex escape", loc)
+                return ("x", 1)
+        elif peek.isdigit():
+            # Octal escapes
+            length = 1
+            while length <= 3:
+                if not self.peek_char(length).isdigit():
+                    break
+                length += 1
+
+            val = self.text[self.position + 1 : self.position + length]
+
+            try:
+                ordv = int(val, base=8)
+            except ValueError:
+                self.warn("invalid octal escape", loc)
+                return (self.peek_char(), 1)
+            else:
+                return (chr(ordv), length - 1)
+        else:
+            escape = escape_char(peek)
+            if len(escape) == 2:
+                self.warn("unrecognized backslash escape", loc)
+            return (escape, 1)
+
     def consume_bracketed(self) -> None:
         self.next_char()
         loc = self.get_location()
@@ -131,63 +176,53 @@ class Lexer:
         self.next_char()
 
     def consume_str(self) -> None:
-        sbuilder = []
         loc = self.get_location()
         self.next_char()
-        while self.position < len(self.text) and self.text[self.position] != '"':
-            if self.text[self.position] == "\\":
-                if self.position == len(self.text) - 1:
-                    self.next_char()
-                    break
-
-                escape = escape_char(self.text[self.position + 1])
-                sbuilder.append(escape)
-                self.next_char()
-                if len(escape) == 2:
-                    self.warn("unrecognized backslash escape", self.get_location())
-                self.next_char()
-            else:
-                sbuilder.append(self.text[self.position])
-                self.next_char()
+        s = self.consume_delimited('"')
 
         if self.position == len(self.text):
             self.tkn = Token(Token.ERROR, "unclosed string literal", loc)
             return
 
         self.next_char()
-        s = "".join(sbuilder)
         self.tkn = Token(Token.STRING, s, loc)
 
     def consume_char(self) -> None:
         loc = self.get_location()
         self.next_char()
-        start = self.position
-        while self.position < len(self.text) and self.text[self.position] != "'":
-            if self.text[self.position] == "\\":
-                self.next_char()
-            self.next_char()
+        s = self.consume_delimited("'")
 
         if self.position == len(self.text):
             self.tkn = Token(Token.ERROR, "unclosed character literal", loc)
             return
 
-        contents = self.text[start : self.position]
+        self.next_char()
 
-        if len(contents) == 1:
-            loc = loc._replace(column=loc.column + 1)
-            self.tkn = Token(Token.CHAR, contents, loc)
-        elif len(contents) == 2 and contents[0] == "\\":
-            loc = loc._replace(column=loc.column + 2)
-            escape = escape_char(contents[1])
-            if len(escape) == 2:
-                self.tkn = Token(Token.CHAR, escape[1], loc)
-                self.warn("unrecognized backslash escape", loc)
-            else:
-                self.tkn = Token(Token.CHAR, escape, loc)
+        if len(s) == 1:
+            self.tkn = Token(Token.CHAR, s, loc)
+        elif len(s) == 2 and s[0] == "\\":
+            self.tkn = Token(Token.CHAR, s[1], loc)
         else:
             self.tkn = Token(Token.ERROR, "over-long character literal", loc)
 
-        self.next_char()
+    def consume_delimited(self, delimiter) -> str:
+        sbuilder = []
+        while self.position < len(self.text) and self.text[self.position] != delimiter:
+            if self.text[self.position] == "\\":
+                value, length = self.read_escape_char()
+                self.next_char()
+                if length == 0:
+                    # Length of zero indicates EOF.
+                    break
+
+                sbuilder.append(value)
+                for _ in range(length):
+                    self.next_char()
+            else:
+                sbuilder.append(self.text[self.position])
+                self.next_char()
+
+        return "".join(sbuilder)
 
     def skip(self) -> None:
         """Skip past whitespace and comments."""
@@ -220,6 +255,9 @@ class Lexer:
                 break
 
     def next_char(self) -> None:
+        """Advance the position in the text by one. Do not call this method if the
+        current position is past the end of the text.
+        """
         if self.text[self.position] == "\n":
             self.line += 1
             self.column = 1
@@ -228,6 +266,9 @@ class Lexer:
         self.position += 1
 
     def peek_char(self, n=1) -> str:
+        """Return the n'th character in the text past the current position. If past the
+        end, return the empty string.
+        """
         return (
             self.text[self.position + n] if self.position + n < len(self.text) else ""
         )
@@ -238,9 +279,6 @@ class Lexer:
         for _ in range(length):
             self.next_char()
         self.tkn = Token(typ, value, loc)
-
-    def err(self, msg: str, loc) -> None:
-        self.messages.err(msg, loc)
 
     def warn(self, msg: str, loc) -> None:
         self.messages.warn(msg, loc)

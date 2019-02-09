@@ -130,13 +130,10 @@ def print_message(msg: str, *, loc=None) -> None:
 
     if isinstance(loc, Location):
         linetext = loc.file_lines[loc.line - 1]
-        if linetext.strip():
-            caret = align_caret(linetext, loc.column) + "^"
-            msg += ", line {} col {} of {}\n\n  {}\n  {}\n".format(
-                loc.line, loc.column, loc.path, linetext, caret
-            )
-        else:
-            msg += ", line {0.line} col {0.column} of {0.path}".format(loc)
+        caret = align_caret(linetext, loc.column) + "^"
+        msg += ", line {} col {} of {}\n\n  {}\n  {}\n".format(
+            loc.line, loc.column, loc.path, linetext, caret
+        )
 
     sys.stderr.write(msg + "\n")
 
