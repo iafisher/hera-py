@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - HERA files may no longer contain non-ASCII bytes.
 - Type errors are detected even in files with parse errors.
 - The `--no-debug` flag has been renamed to `--no-debug-ops`.
+- The `jump` debugging command has been renamed to `goto`.
+
+### Removed
+- The `jump` debugging command (now called `goto`) may no longer be invoked with no arguments.
 
 ### Fixed
 - The debugger will no longer crash when printing the value of a label on the last line of a program.

@@ -99,8 +99,8 @@ class Shell:
     # multiple commands share a prefix.
     CAN_BE_ABBREVIATED = (
         # Multiple lists to prevent reformatting.
-        ["assign", "break", "continue", "execute", "help"]
-        + ["info", "jump", "list", "next", "print", "quit", "step", "undo"]
+        ["assign", "break", "continue", "execute", "goto"]
+        + ["help", "info", "list", "next", "print", "quit", "step", "undo"]
     )
 
     # Commands that require the whole command to be spelled out.
@@ -236,6 +236,22 @@ class Shell:
             op.execute(vm)
         vm.pc = opc
 
+    @mutates
+    def handle_goto(self, args):
+        if len(args) != 1:
+            print("goto takes one argument.")
+            return
+
+        try:
+            new_pc = self.debugger.resolve_location(args[0])
+        except ValueError as e:
+            print("Error:", str(e))
+            return
+        else:
+            self.debugger.vm.pc = new_pc
+
+        self.print_current_op()
+
     def handle_help(self, args):
         if not args:
             print(HELP)
@@ -289,25 +305,6 @@ class Shell:
             return "flags"
         else:
             raise HERAError("unrecognized argument `{}`".format(arg))
-
-    @mutates
-    def handle_jump(self, args):
-        if len(args) > 1:
-            print("jump takes zero or one arguments.")
-            return
-
-        if len(args) == 1:
-            try:
-                new_pc = self.debugger.resolve_location(args[0])
-            except ValueError as e:
-                print("Error:", str(e))
-                return
-            else:
-                self.debugger.vm.pc = new_pc
-        else:
-            self.debugger.vm.pc += len(self.debugger.real_ops())
-
-        self.print_current_op()
 
     def handle_list(self, args):
         if len(args) > 1:
@@ -727,11 +724,11 @@ Available commands:
 
     execute <op>    Execute a HERA operation.
 
+    goto <loc>      Jump to the given location.
+
     help            Print this help message.
 
     info            Print information about the current state of the program.
-
-    jump <loc>      Jump to the given location.
 
     list <n>        Print the current lines of source code and the n previous
                     and next lines. If not provided, n defaults to 3.
@@ -801,6 +798,11 @@ execute <op>:
 
   Examples:
     execute ASR(R5, R4)""",
+    # goto
+    "goto": """\
+goto <loc>:
+  Jump to the given location (either a line number or a label) without
+  executing any of the intermediate instructions.""",
     # help
     "help": """\
 help:
@@ -815,14 +817,6 @@ info <arg>...:
   info are "registers", "stack", "flags" and "symbols". Arguments may be
   abbreviated with a unique prefix. The argument list defaults to "registers",
   "flags", and "stack" if not provided.""",
-    # jump
-    "jump": """\
-jump:
-  Skip the current instruction.
-
-jump <loc>:
-  Jump to the given location (either a line number or a label) without
-  executing any of the intermediate instructions.""",
     # list
     "list": """\
 list:
