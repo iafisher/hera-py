@@ -19,8 +19,8 @@ def debugger():
 
 
 def load_shell(program):
-    settings = Settings()
-    return Shell(Debugger(load_program(program), settings), settings)
+    settings = Settings(debug=True)
+    return Shell(Debugger(load_program(program, settings), settings), settings)
 
 
 SAMPLE_PROGRAM = load_program(
@@ -33,7 +33,8 @@ SET(R2, 39)
 LABEL(add)
 ADD(R3, R1, R2)
 HALT()
-"""
+""",
+    Settings(debug=True),
 )
 
 
@@ -357,7 +358,7 @@ def test_handle_info_with_symbols_arg(shell, capsys):
         captured
         == """\
 Constants: N (3)
-Labels: add (<string>:7)
+Labels: add (<string>:6)
 Data labels: array (0xc001)
 """
     )
@@ -383,7 +384,7 @@ def test_handle_info_with_multiple_args(shell, capsys):
         captured
         == """\
 Constants: N (3)
-Labels: add (<string>:7)
+Labels: add (<string>:6)
 Data labels: array (0xc001)
 
 All flags are off.
@@ -1248,7 +1249,7 @@ def test_reverse_lookup_label():
 
 
 def test_debug_empty_program(capsys):
-    debug(Program([], [], {}), Settings())
+    debug(Program([], [], {}, None), Settings())
 
     assert capsys.readouterr().out == "Cannot debug an empty program.\n"
 

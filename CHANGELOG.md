@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - HERA files may no longer contain non-ASCII bytes.
 - Type errors are detected even in files with parse errors.
 
+### Fixed
+- The debugger will no longer crash when printing the value of a label on the last line of a program.
+
 ## [0.5.2] - 2019-02-02
 ### Added
 - The `warn-octal-off` flag.

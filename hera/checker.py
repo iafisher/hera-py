@@ -9,13 +9,23 @@ Version: Feburary 2019
 from contextlib import suppress
 from typing import Dict, List, Optional, Set, Tuple  # noqa: F401
 
-from .data import Constant, DataLabel, Label, Messages, Program, Settings, Token
+from .data import (
+    Constant,
+    DataLabel,
+    DebugInfo,
+    Label,
+    Messages,
+    Program,
+    Settings,
+    Token,
+)
 from .op import (
     DataOperation,
     DebuggingOperation,
     AbstractOperation,
     RegisterBranch,
     RelativeBranch,
+    LABEL,
     RTI,
     SWI,
 )
@@ -26,7 +36,14 @@ def check(
 ) -> Tuple[Program, Messages]:
     symbol_table, messages = typecheck(oplist, settings=settings)
     if messages.errors:
-        return (Program([], [], {}), messages)
+        return (Program([], [], {}, None), messages)
+
+    debug_info = None  # type: Optional[DebugInfo]
+    if settings.debug:
+        labels = labels_to_line_numbers(oplist)
+        debug_info = DebugInfo(labels)
+    else:
+        debug_info = None
 
     oplist, preprocess_messages = convert_ops(oplist, symbol_table)
     messages.extend(preprocess_messages)
@@ -39,7 +56,7 @@ def check(
         else:
             code.append(op)
 
-    return (Program(data, code, symbol_table), messages)
+    return (Program(data, code, symbol_table, debug_info), messages)
 
 
 def typecheck(
@@ -238,3 +255,14 @@ def substitute_label(
             op.tokens[i] = Token.Int(symbol_table[tkn.value], location=tkn.location)
             op.args[i] = symbol_table[tkn.value]
     return op
+
+
+def labels_to_line_numbers(oplist: List[AbstractOperation]) -> Dict[str, str]:
+    """Return a dictionary that maps from label names to their locations in the program,
+    as a string of the form "<filepath>:<lineno>".
+    """
+    labels = {}
+    for op in oplist:
+        if isinstance(op, LABEL):
+            labels[op.args[0]] = "{0.path}:{0.line}".format(op.loc)
+    return labels

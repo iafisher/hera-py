@@ -542,8 +542,8 @@ class Shell:
         dlabels = []
         for key, val in self.debugger.symbol_table.items():
             if isinstance(val, Label):
-                lineno = self.debugger.get_breakpoint_name(val, append_label=False)
-                labels.append("{} ({})".format(key, lineno))
+                debug_info = self.debugger.program.debug_info
+                labels.append("{} ({})".format(key, debug_info.labels[key]))
             elif isinstance(val, DataLabel):
                 dlabels.append("{} (0x{:x})".format(key, val))
             else:

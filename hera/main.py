@@ -48,6 +48,7 @@ def main(argv=None) -> Optional[VirtualMachine]:
         main_preprocess(path, settings)
         return None
     elif arguments["debug"]:
+        settings.debug = True
         main_debug(path, settings)
         return None
     else:

@@ -22,6 +22,7 @@ class Settings:
         allow_interrupts=False,
         color=True,
         data_start=DEFAULT_DATA_START,
+        debug=False,
         no_debug=False,
         volume=VOLUME_NORMAL,
         warn_octal_on=True,
@@ -30,6 +31,7 @@ class Settings:
         self.allow_interrupts = allow_interrupts
         self.color = color
         self.data_start = data_start
+        self.debug = debug
         self.no_debug = no_debug
         self.warn_octal_on = warn_octal_on
         self.warn_return_on = warn_return_on
@@ -54,7 +56,8 @@ class Location(namedtuple("Location", ["line", "column", "path", "file_lines"]))
             )
 
 
-Program = namedtuple("Program", ["data", "code", "symbol_table"])
+Program = namedtuple("Program", ["data", "code", "symbol_table", "debug_info"])
+DebugInfo = namedtuple("DebugInfo", ["labels"])
 
 
 class Token:
