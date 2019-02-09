@@ -317,16 +317,22 @@ class Shell:
             print("Could not parse argument to list.")
             return
 
-        loc = self.debugger.op().loc
-        self.print_range_of_ops(loc, context=context)
+        if not self.debugger.finished():
+            loc = self.debugger.op().loc
+            self.print_range_of_ops(loc, context=context)
+        else:
+            print("Program has finished executing.")
 
     def handle_ll(self, args):
         if len(args) != 0:
             print("ll takes no arguments.")
             return
 
-        loc = self.debugger.op().loc
-        self.print_range_of_ops(loc)
+        if not self.debugger.finished():
+            loc = self.debugger.op().loc
+            self.print_range_of_ops(loc)
+        else:
+            print("Program has finished executing.")
 
     @mutates
     def handle_next(self, args):
@@ -334,20 +340,17 @@ class Shell:
             print("next takes zero or one arguments.")
             return
 
-        if self.debugger.finished():
-            print("Program has finished executing. Enter 'r' to restart.")
-            return
+        if not self.debugger.finished():
+            try:
+                n = int(args[0]) if args else 1
+            except ValueError:
+                print("Could not parse argument to next.")
+                return
 
-        try:
-            n = int(args[0]) if args else 1
-        except ValueError:
-            print("Could not parse argument to next.")
-            return
-
-        for _ in range(n):
-            if self.debugger.finished():
-                break
-            self.debugger.next(step=False)
+            for _ in range(n):
+                if self.debugger.finished():
+                    break
+                self.debugger.next(step=False)
 
         self.print_current_op()
 

@@ -21,7 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `jump` debugging command (now called `goto`) may no longer be invoked with no arguments.
 
 ### Fixed
-- The debugger will no longer crash when printing the value of a label on the last line of a program.
+- The debugger no longer crashes when printing the value of a label on the last line of a program.
+- The debugger no longer crashes when `list` or `ll` is invoked after the end of the program.
 
 ## [0.5.2] - 2019-02-02
 ### Added

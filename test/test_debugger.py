@@ -244,10 +244,7 @@ def test_handle_next_after_end_of_program(shell, capsys):
     shell.handle_command("next")
 
     assert shell.debugger.vm.pc == 9000
-    assert (
-        capsys.readouterr().out
-        == "Program has finished executing. Enter 'r' to restart.\n"
-    )
+    assert capsys.readouterr().out == "Program has finished executing.\n"
 
 
 def test_handle_next_with_too_many_args(shell, capsys):
@@ -581,6 +578,15 @@ def test_handle_list_with_invalid_context_arg(shell, capsys):
     assert capsys.readouterr().out == "Could not parse argument to list.\n"
 
 
+def test_handle_list_after_end_of_program(capsys):
+    shell = load_shell("SET(R1, 42)")
+    shell.handle_command("c")
+    capsys.readouterr()
+    shell.handle_command("list")
+
+    assert capsys.readouterr().out == "Program has finished executing.\n"
+
+
 def test_handle_list_with_too_many_args(shell, capsys):
     shell.handle_command("list 1 2")
 
@@ -619,6 +625,15 @@ def test_handle_ll_with_too_many_args(shell, capsys):
     shell.handle_command("ll 1")
 
     assert capsys.readouterr().out == "ll takes no arguments.\n"
+
+
+def test_handle_ll_after_end_of_program(capsys):
+    shell = load_shell("SET(R1, 42)")
+    shell.handle_command("c")
+    capsys.readouterr()
+    shell.handle_command("ll")
+
+    assert capsys.readouterr().out == "Program has finished executing.\n"
 
 
 def test_handle_abbreviated_ll(shell, capsys):
