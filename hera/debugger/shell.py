@@ -46,7 +46,7 @@ class Shell:
         self.command_history = []  # type: List[str]
 
     def loop(self):
-        if not self.debugger.program:
+        if self.debugger.empty():
             print("Cannot debug an empty program.")
             return
 
@@ -317,7 +317,7 @@ class Shell:
             print("Could not parse argument to list.")
             return
 
-        loc = self.debugger.program[self.debugger.vm.pc].loc
+        loc = self.debugger.program.code[self.debugger.vm.pc].loc
         self.print_range_of_ops(loc, context=context)
 
     def handle_ll(self, args):
@@ -325,7 +325,7 @@ class Shell:
             print("ll takes no arguments.")
             return
 
-        loc = self.debugger.program[self.debugger.vm.pc].loc
+        loc = self.debugger.program.code[self.debugger.vm.pc].loc
         self.print_range_of_ops(loc)
 
     @mutates
@@ -458,7 +458,7 @@ class Shell:
             print("step takes no arguments.")
             return
 
-        if self.debugger.program[self.debugger.vm.pc].original.name != "CALL":
+        if self.debugger.program.code[self.debugger.vm.pc].original.name != "CALL":
             print("step is only valid when the current instruction is CALL.")
             return
 
@@ -616,7 +616,7 @@ class Shell:
         executed, nothing is printed.
         """
         if not self.debugger.is_finished():
-            loc = self.debugger.program[self.debugger.vm.pc].loc
+            loc = self.debugger.program.code[self.debugger.vm.pc].loc
             self.print_range_of_ops(loc, context=1)
         else:
             print("Program has finished executing.")

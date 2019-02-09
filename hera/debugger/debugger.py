@@ -12,13 +12,14 @@ Internally, the debugger operates on real ops, but whenever it displays output t
 user, it must be in terms of original ops.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: January 2019
+Version: February 2019
 """
 import copy
 import readline  # noqa: F401
-from typing import Dict  # noqa: F401
+from typing import Dict, List, Optional
 
 from hera.data import Label, Program, Settings
+from hera.op import AbstractOperation
 from hera.vm import VirtualMachine
 
 
@@ -29,7 +30,7 @@ class Debugger:
 
     def __init__(self, program: Program, settings: Settings) -> None:
         self.settings = settings
-        self.program = program.code
+        self.program = program
         self.symbol_table = program.symbol_table
         # A map from instruction numbers (i.e., possible values of the program counter)
         # to human-readable line numbers.
@@ -40,24 +41,24 @@ class Debugger:
         # Back-up of the debugger's state, to implement the "undo" command.
         # Set to None when no operations have been performed, and to "undone" when an
         # "undo" has just been executed.
-        self.old = None
+        self.old = None  # type: Optional[Debugger]
 
-        for data_op in program.data:
+        for data_op in self.program.data:
             data_op.execute(self.vm)
 
-    def save(self):
+    def save(self) -> None:
         self.old = copy.copy(self)
-        self.old.symbol_table = self.symbol_table.copy()
+        self.old.symbol_table = self.program.symbol_table.copy()
         self.old.breakpoints = self.breakpoints.copy()
         self.old.vm = self.vm.copy()
 
-    def get_breakpoints(self):
+    def get_breakpoints(self) -> Dict[int, str]:
         return self.breakpoints
 
-    def set_breakpoint(self, b):
+    def set_breakpoint(self, b: int) -> None:
         self.breakpoints[b] = self.get_breakpoint_name(b)
 
-    def exec_ops(self, n=-1, *, until=None):
+    def exec_ops(self, n=-1, *, until=None) -> None:
         """Execute `n` real instructions of the program. If `until` is provided, it
         should be a function that returns True when execution should stop. If `n` is not
         provided or set to a negative number, execution continues until the `until`
@@ -81,44 +82,46 @@ class Debugger:
 
             n -= 1
 
-    def reset(self):
+    def reset(self) -> None:
         self.vm.reset()
 
-    def get_real_ops(self):
+    def get_real_ops(self) -> List[AbstractOperation]:
         """Return all the real ops that correspond to the current original op. See
         module docstring for explanation of terminology.
         """
-        original = self.program[self.vm.pc].original
+        original = self.program.code[self.vm.pc].original
         end = self.vm.pc
-        while end < len(self.program) and self.program[end].original == original:
+        while (
+            end < len(self.program.code) and self.program.code[end].original == original
+        ):
             end += 1
 
-        return self.program[self.vm.pc : end]
+        return self.program.code[self.vm.pc : end]
 
-    def resolve_location(self, b):
+    def resolve_location(self, b: str) -> int:
         """Resolve a user-supplied location string into an instruction number"""
         try:
             lineno = int(b)
         except ValueError:
             try:
-                opno = self.symbol_table[b]
+                opno = self.program.symbol_table[b]
                 assert isinstance(opno, Label)
                 return opno
             except (KeyError, AssertionError):
                 raise ValueError("could not locate label `{}`.".format(b)) from None
         else:
             # TODO: This could give wrong results for programs with multiple files.
-            for pc, op in enumerate(self.program):
+            for pc, op in enumerate(self.program.code):
                 if op.loc.line == lineno:
                     return pc
 
             raise ValueError("could not find corresponding line.")
 
-    def get_breakpoint_name(self, b, *, append_label=True):
+    def get_breakpoint_name(self, b: int, *, append_label=True) -> str:
         """Turn an instruction number into a human-readable location string with the
         file path and line number. More or less the inverse of `resolve_location`.
         """
-        op = self.program[b].original or self.program[b]
+        op = self.program.code[b].original or self.program.code[b]
         path = "<stdin>" if op.loc.path == "-" else op.loc.path
         loc = path + ":" + str(op.loc.line)
 
@@ -130,18 +133,21 @@ class Debugger:
 
         return loc
 
-    def find_label(self, ino):
+    def find_label(self, ino: int) -> Optional[str]:
         """Find a label, if one exists, corresponding to the instruction number."""
-        for symbol, value in self.symbol_table.items():
+        for symbol, value in self.program.symbol_table.items():
             if value == ino and isinstance(value, Label):
                 return symbol
         return None
 
-    def is_finished(self):
-        return self.vm.halted or self.vm.pc >= len(self.program)
+    def is_finished(self) -> bool:
+        return self.vm.halted or self.vm.pc >= len(self.program.code)
+
+    def empty(self) -> bool:
+        return len(self.program.code) == 0
 
 
-def reverse_lookup_label(symbol_table, value):
+def reverse_lookup_label(symbol_table: Dict[str, int], value: int) -> Optional[str]:
     """Return the name of the label that maps to `value`, or None if no such label is
     found. Constants and data labels are ignored.
     """
