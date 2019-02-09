@@ -417,6 +417,24 @@ Error: hera-py does not support RTI, line 2 col 1 of <stdin>
     )
 
 
+def test_error_for_python_exception_in___eval(capsys):
+    with pytest.raises(SystemExit):
+        execute_program_helper('__eval("10 / 0")')
+
+    captured = capsys.readouterr().err
+    assert (
+        captured
+        == """\
+
+Error: Python exception: division by zero, line 1 col 1 of <stdin>
+
+  __eval("10 / 0")
+  ^
+
+"""
+    )
+
+
 def test_mega_error(capsys):
     with pytest.raises(SystemExit):
         main(["test/assets/error/mega_error.hera"])

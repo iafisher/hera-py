@@ -4,12 +4,13 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 import json
+import sys
 from contextlib import suppress
 from typing import Dict, List, Optional
 
 from hera import stdlib
 from hera.data import Constant, DataLabel, Location, Messages, Token
-from hera.utils import format_int, from_u16, print_warning, to_u16, to_u32
+from hera.utils import format_int, from_u16, print_error, print_warning, to_u16, to_u32
 
 
 class AbstractOperation:
@@ -937,7 +938,11 @@ class __EVAL(DebuggingOperation):
     P = (STRING,)
 
     def execute(self, vm):
-        eval(self.args[0], {}, {"stdlib": stdlib, "vm": vm})
+        try:
+            eval(self.args[0], {}, {"stdlib": stdlib, "vm": vm})
+        except Exception as e:
+            print_error(vm.settings, "Python exception: " + str(e), loc=vm.location)
+            sys.exit(3)
         vm.pc += 1
 
 

@@ -1,12 +1,13 @@
 import pytest
 from .utils import helper
 
+from hera.data import Settings
 from hera.vm import VirtualMachine
 
 
 @pytest.fixture
 def vm():
-    return VirtualMachine()
+    return VirtualMachine(Settings(color=False))
 
 
 def test_exec_print_reg(vm, capsys):
