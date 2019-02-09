@@ -334,7 +334,7 @@ class Shell:
             print("next takes zero or one arguments.")
             return
 
-        if self.debugger.is_finished():
+        if self.debugger.finished():
             print("Program has finished executing. Enter 'r' to restart.")
             return
 
@@ -344,7 +344,11 @@ class Shell:
             print("Could not parse argument to next.")
             return
 
-        self.debugger.exec_ops(n)
+        for _ in range(n):
+            if self.debugger.finished():
+                break
+            self.debugger.next(step=False)
+
         self.print_current_op()
 
     @mutates
@@ -462,8 +466,7 @@ class Shell:
             print("step is only valid when the current instruction is CALL.")
             return
 
-        calls = self.debugger.calls
-        self.debugger.exec_ops(until=lambda dbg: dbg.calls == calls)
+        self.debugger.next(step=True)
         self.print_current_op()
 
     def handle_undo(self, args):
@@ -615,7 +618,7 @@ class Shell:
         """Print the next operation to be executed. If the program has finished
         executed, nothing is printed.
         """
-        if not self.debugger.is_finished():
+        if not self.debugger.finished():
             loc = self.debugger.program.code[self.debugger.vm.pc].loc
             self.print_range_of_ops(loc, context=1)
         else:
@@ -742,7 +745,7 @@ Available commands:
 
     restart         Restart the execution of the program from the beginning.
 
-    step            Step over the execution of a function.
+    step            Step into the execution of a function.
 
     undo            Undo the last operation.
 
@@ -832,8 +835,9 @@ ll:
     "next": """\
 next:
   Execute the current line. If the current line is a CALL instruction, the
-  debugger enters the function being called. If you wish to skip over the
-  function call, use `step` instead.
+  debugger executes the entire function (including nested and recursive calls)
+  and moves on to the next line. If you wish to neter over the function call,
+  use `step` instead.
 
 next <n>:
   Execute the next n instructions. This command will follow branches, so be
@@ -874,9 +878,8 @@ restart:
     # step
     "step": """\
 step:
-  Step over the execution of a function. The step command is only valid when
-  the current instruction is CALL. Stepping may behave unexpectedly in HERA
-  programs that do not follow conventional function call idioms.""",
+  Step into the execution of a function.  The step command is only valid when
+  the current instruction is CALL.""",
     # undo
     "undo": """\
 undo:

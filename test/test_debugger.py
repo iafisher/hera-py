@@ -128,6 +128,116 @@ def test_handle_next_with_HALT(shell, capsys):
     assert capsys.readouterr().out == "Program has finished executing.\n"
 
 
+def test_handle_next_with_function_call(capsys):
+    shell = load_shell(
+        """\
+SET(R1, 4)
+CALL(FP_alt, plus_two)
+SET(R2, 5)
+HALT()
+
+LABEL(plus_two)
+  INC(R1, 2)
+  RETURN(FP_alt, PC_ret)
+"""
+    )
+    shell.handle_command("n")
+    capsys.readouterr()
+    shell.handle_command("next")
+
+    assert shell.debugger.vm.pc == 5
+    assert shell.debugger.vm.registers[1] == 6
+    assert shell.debugger.vm.registers[2] == 0
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+[<string>]
+
+    2  CALL(FP_alt, plus_two)
+->  3  SET(R2, 5)
+    4  HALT()
+"""
+    )
+
+
+def test_handle_next_with_recursive_function(capsys):
+    shell = load_shell(
+        """\
+SET(R1, 9)
+CALL(FP_alt, rec)
+HALT()
+
+LABEL(rec)
+  MOVE(FP, SP)
+  INC(SP, 2)
+  STORE(PC_ret, 0, FP)
+  STORE(FP_alt, 1, FP)
+
+  CMP(R1, R0)
+  BZ(end)
+  INC(R2, 1)
+  DEC(R1, 1)
+  CALL(FP_alt, rec)
+  LABEL(end)
+
+  LOAD(PC_ret, 0, FP)
+  LOAD(FP_alt, 1, FP)
+  DEC(SP, 2)
+  RETURN(FP_alt, PC_ret)
+"""
+    )
+    shell.handle_command("n")
+    capsys.readouterr()
+    shell.handle_command("next")
+
+    assert shell.debugger.vm.pc == 5
+    assert shell.debugger.vm.registers[1] == 0
+    assert shell.debugger.vm.registers[2] == 9
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+[<string>]
+
+     2  CALL(FP_alt, rec)
+->   3  HALT()
+     4
+"""
+    )
+
+
+def test_handle_next_over_function_with_breakpoint(capsys):
+    shell = load_shell(
+        """\
+CALL(FP_alt, foo)
+HALT()
+
+LABEL(foo)
+  RETURN(FP_alt, PC_ret)
+  """
+    )
+    shell.handle_command("break foo")
+    capsys.readouterr()
+    shell.handle_command("next")
+
+    assert shell.debugger.vm.pc == 4
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+[<string>]
+
+    4  LABEL(foo)
+->  5    RETURN(FP_alt, PC_ret)
+    6
+"""
+    )
+
+
 def test_handle_next_after_end_of_program(shell, capsys):
     shell.debugger.vm.pc = 9000
 
@@ -1004,8 +1114,8 @@ LABEL(plus_two)
     capsys.readouterr()
     shell.handle_command("step")
 
-    assert shell.debugger.vm.pc == 5
-    assert shell.debugger.vm.registers[1] == 6
+    assert shell.debugger.vm.pc == 8
+    assert shell.debugger.vm.registers[1] == 4
     assert shell.debugger.vm.registers[2] == 0
 
     captured = capsys.readouterr().out
@@ -1014,56 +1124,9 @@ LABEL(plus_two)
         == """\
 [<string>]
 
-    2  CALL(FP_alt, plus_two)
-->  3  SET(R2, 5)
-    4  HALT()
-"""
-    )
-
-
-def test_handle_step_with_recursive_function(capsys):
-    shell = load_shell(
-        """\
-SET(R1, 9)
-CALL(FP_alt, rec)
-HALT()
-
-LABEL(rec)
-  MOVE(FP, SP)
-  INC(SP, 2)
-  STORE(PC_ret, 0, FP)
-  STORE(FP_alt, 1, FP)
-
-  CMP(R1, R0)
-  BZ(end)
-  INC(R2, 1)
-  DEC(R1, 1)
-  CALL(FP_alt, rec)
-  LABEL(end)
-
-  LOAD(PC_ret, 0, FP)
-  LOAD(FP_alt, 1, FP)
-  DEC(SP, 2)
-  RETURN(FP_alt, PC_ret)
-"""
-    )
-    shell.handle_command("n")
-    capsys.readouterr()
-    shell.handle_command("step")
-
-    assert shell.debugger.vm.pc == 5
-    assert shell.debugger.vm.registers[1] == 0
-    assert shell.debugger.vm.registers[2] == 9
-
-    captured = capsys.readouterr().out
-    assert (
-        captured
-        == """\
-[<string>]
-
-     2  CALL(FP_alt, rec)
-->   3  HALT()
-     4
+    6  LABEL(plus_two)
+->  7    INC(R1, 2)
+    8    RETURN(FP_alt, PC_ret)
 """
     )
 

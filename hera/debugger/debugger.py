@@ -58,6 +58,28 @@ class Debugger:
     def set_breakpoint(self, b: int) -> None:
         self.breakpoints[b] = self.get_breakpoint_name(b)
 
+    def next(self, *, step) -> None:
+        if self.finished():
+            return
+
+        if not step and self.program.code[self.vm.pc].original.name == "CALL":
+            calls = self.calls
+            # step=True prevents infinite regress.
+            self.next(step=True)
+            while not self.finished() and self.calls > calls:
+                if self.vm.pc in self.breakpoints:
+                    break
+                self.next(step=True)
+        else:
+            real_ops = self.get_real_ops()
+            for real_op in real_ops:
+                if real_op.name == "CALL":
+                    self.calls += 1
+                elif real_op.name == "RETURN":
+                    self.calls -= 1
+
+                real_op.execute(self.vm)
+
     def exec_ops(self, n=-1, *, until=None) -> None:
         """Execute `n` real instructions of the program. If `until` is provided, it
         should be a function that returns True when execution should stop. If `n` is not
@@ -77,7 +99,7 @@ class Debugger:
 
                 real_op.execute(self.vm)
 
-            if self.is_finished() or until(self):
+            if self.finished() or until(self):
                 break
 
             n -= 1
@@ -140,7 +162,7 @@ class Debugger:
                 return symbol
         return None
 
-    def is_finished(self) -> bool:
+    def finished(self) -> bool:
         return self.vm.halted or self.vm.pc >= len(self.program.code)
 
     def empty(self) -> bool:
