@@ -164,17 +164,10 @@ def pad(s: str, n: int) -> str:
     return (" " * (n - len(s))) + s
 
 
-def handle_messages(settings: Settings, ret_messages_pair):
-    if (
-        isinstance(ret_messages_pair, tuple)
-        and len(ret_messages_pair) == 2
-        and isinstance(ret_messages_pair[1], Messages)
-    ):
-        ret, messages = ret_messages_pair
-    else:
-        ret = None
-        messages = ret_messages_pair
-
+def handle_messages(settings: Settings, messages: Messages) -> None:
+    """Print to standard error for any warnings or errors recorded in `messages`. If
+    any errors were recorded, exit the program.
+    """
     for msg, loc in messages.warnings:
         print_warning(settings, msg, loc=loc)
 
@@ -186,8 +179,6 @@ def handle_messages(settings: Settings, ret_messages_pair):
 
     if messages.errors:
         sys.exit(3)
-    else:
-        return ret
 
 
 # ANSI color codes (https://stackoverflow.com/questions/4842424/)
