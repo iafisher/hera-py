@@ -16,8 +16,9 @@ Version: January 2019
 """
 import copy
 import readline  # noqa: F401
+from typing import Dict  # noqa: F401
 
-from hera.data import Label
+from hera.data import Label, Program, Settings
 from hera.vm import VirtualMachine
 
 
@@ -26,12 +27,13 @@ class Debugger:
     `debug` function instead of this class.
     """
 
-    def __init__(self, program):
+    def __init__(self, program: Program, settings: Settings) -> None:
+        self.settings = settings
         self.program = program.code
         self.symbol_table = program.symbol_table
         # A map from instruction numbers (i.e., possible values of the program counter)
         # to human-readable line numbers.
-        self.breakpoints = {}
+        self.breakpoints = {}  # type: Dict[int, str]
         self.vm = VirtualMachine()
         # How many CALLs without RETURNs?
         self.calls = 0

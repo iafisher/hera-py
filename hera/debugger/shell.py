@@ -18,9 +18,9 @@ from hera.parser import parse
 from hera.utils import format_int, pad
 
 
-def debug(program: Program, settings=Settings()) -> None:
+def debug(program: Program, settings: Settings) -> None:
     """Start the debug loop."""
-    debugger = Debugger(program)
+    debugger = Debugger(program, settings)
     Shell(debugger, settings).loop()
 
 
@@ -40,10 +40,10 @@ def mutates(handler):
 
 
 class Shell:
-    def __init__(self, debugger, settings=Settings()):
+    def __init__(self, debugger, settings: Settings):
         self.debugger = debugger
         self.settings = settings
-        self.command_history = []
+        self.command_history = []  # type: List[str]
 
     def loop(self):
         if not self.debugger.program:

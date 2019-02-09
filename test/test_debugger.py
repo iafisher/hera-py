@@ -9,16 +9,18 @@ from hera.loader import load_program
 
 @pytest.fixture
 def shell():
-    return Shell(Debugger(SAMPLE_PROGRAM), Settings(color=False))
+    settings = Settings(color=False)
+    return Shell(Debugger(SAMPLE_PROGRAM, settings), settings)
 
 
 @pytest.fixture
 def debugger():
-    return Debugger(SAMPLE_PROGRAM)
+    return Debugger(SAMPLE_PROGRAM, Settings())
 
 
 def load_shell(program):
-    return Shell(Debugger(load_program(program)))
+    settings = Settings()
+    return Shell(Debugger(load_program(program), settings), settings)
 
 
 SAMPLE_PROGRAM = load_program(
@@ -1246,6 +1248,15 @@ def test_reverse_lookup_label():
 
 
 def test_debug_empty_program(capsys):
-    debug(Program([], [], {}))
+    debug(Program([], [], {}), Settings())
 
     assert capsys.readouterr().out == "Cannot debug an empty program.\n"
+
+
+def test_label_on_last_line(capsys):
+    shell = load_shell("NOP()\nLABEL(my_label)")
+    shell.handle_command("info sym")
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert "my_label" in captured.out
