@@ -32,6 +32,20 @@ def test_lexical_scope_deep(capsys):
     assert captured.out == "42"
 
 
+def test_array_madness(capsys):
+    main(["test/assets/cs350/array_madness.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.out == "42"
+
+
+def test_record_trees(capsys):
+    main(["test/assets/cs350/record_trees.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.out == "42"
+
+
 def test_stdlib_ord():
     vm = execute_program_helper(helper_stdlib("ord", "A"))
 
