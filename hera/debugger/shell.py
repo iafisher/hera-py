@@ -1,5 +1,5 @@
 import functools
-from typing import List
+from typing import List, Optional
 
 from . import miniparser
 from .debugger import Debugger
@@ -11,7 +11,7 @@ from .miniparser import (
     RegisterNode,
     SymbolNode,
 )
-from hera.data import DataLabel, HERAError, Label, Program, Settings
+from hera.data import DataLabel, HERAError, Label, Location, Program, Settings
 from hera.loader import load_program
 from hera.op import Branch, DataOperation, LABEL
 from hera.parser import parse
@@ -63,10 +63,10 @@ class Shell:
                 continue
             else:
                 should_continue = self.handle_command(response)
-                if not should_continue:
+                if should_continue is False:
                     break
 
-    def handle_command(self, response):
+    def handle_command(self, response: str) -> bool:
         """Parse the command and execute it. Return False if the loop should exit, and
         True otherwise.
         """
@@ -83,6 +83,8 @@ class Shell:
                 self.handle_assign(response.split("=", maxsplit=1))
             else:
                 print("{} is not a recognized command.".format(cmd))
+
+            return True
         else:
             if fullcmd == "quit":
                 return False
@@ -109,7 +111,7 @@ class Shell:
     # Commands that do not take a whitespace-separated list of argument.
     TAKES_ARGSTR = ["execute", "print"]
 
-    def expand_command(self, cmd):
+    def expand_command(self, cmd: str) -> str:
         cmd = cmd.lower()
         for full in self.CAN_BE_ABBREVIATED:
             if full.startswith(cmd):
@@ -121,7 +123,7 @@ class Shell:
 
         raise HERAError
 
-    def handle_assign(self, args):
+    def handle_assign(self, args: List[str]) -> None:
         if len(args) != 2:
             print("assign takes two arguments.")
             return
@@ -171,7 +173,7 @@ class Shell:
             print("Eval error: " + str(e) + ".")
 
     @mutates
-    def handle_break(self, args):
+    def handle_break(self, args: List[str]) -> None:
         if len(args) > 1:
             print("break takes zero or one arguments.")
             return
@@ -196,7 +198,7 @@ class Shell:
                 self.debugger.set_breakpoint(b)
 
     @mutates
-    def handle_continue(self, args):
+    def handle_continue(self, args: List[str]) -> None:
         if len(args) != 0:
             print("continue takes no arguments.")
             return
@@ -208,7 +210,7 @@ class Shell:
         self.print_current_op()
 
     @mutates
-    def handle_execute(self, argstr):
+    def handle_execute(self, argstr: str) -> None:
         if not argstr.strip():
             print("execute takes one argument.")
             return
@@ -237,7 +239,7 @@ class Shell:
         vm.pc = opc
 
     @mutates
-    def handle_goto(self, args):
+    def handle_goto(self, args: List[str]) -> None:
         if len(args) != 1:
             print("goto takes one argument.")
             return
@@ -252,7 +254,7 @@ class Shell:
 
         self.print_current_op()
 
-    def handle_help(self, args):
+    def handle_help(self, args: List[str]) -> None:
         if not args:
             print(HELP)
         else:
@@ -267,7 +269,7 @@ class Shell:
                 if i != len(args) - 1:
                     print()
 
-    def handle_info(self, args):
+    def handle_info(self, args: List[str]) -> None:
         if args:
             try:
                 fullargs = [self.expand_info_arg(arg) for arg in args]
@@ -292,7 +294,7 @@ class Shell:
             if i != len(fullargs) - 1:
                 print()
 
-    def expand_info_arg(self, arg):
+    def expand_info_arg(self, arg: str) -> str:
         arg = arg.lower()
         if "stack".startswith(arg):
             # "stack" comes before "symbols" because "s" should resolve to "stack".
@@ -306,7 +308,7 @@ class Shell:
         else:
             raise HERAError("unrecognized argument `{}`".format(arg))
 
-    def handle_list(self, args):
+    def handle_list(self, args: List[str]) -> None:
         if len(args) > 1:
             print("list takes zero or one arguments.")
             return
@@ -323,7 +325,7 @@ class Shell:
         else:
             print("Program has finished executing.")
 
-    def handle_ll(self, args):
+    def handle_ll(self, args: List[str]) -> None:
         if len(args) != 0:
             print("ll takes no arguments.")
             return
@@ -335,7 +337,7 @@ class Shell:
             print("Program has finished executing.")
 
     @mutates
-    def handle_next(self, args):
+    def handle_next(self, args: List[str]) -> None:
         if len(args) > 1:
             print("next takes zero or one arguments.")
             return
@@ -355,7 +357,7 @@ class Shell:
         self.print_current_op()
 
     @mutates
-    def handle_off(self, args):
+    def handle_off(self, args: List[str]) -> None:
         if len(args) == 0:
             print("off takes one or more arguments.")
             return
@@ -370,7 +372,7 @@ class Shell:
             setattr(self.debugger.vm, flag, False)
 
     @mutates
-    def handle_on(self, args):
+    def handle_on(self, args: List[str]) -> None:
         if len(args) == 0:
             print("on takes one or more arguments.")
             return
@@ -384,7 +386,7 @@ class Shell:
         for flag in flags:
             setattr(self.debugger.vm, flag, True)
 
-    def handle_print(self, argstr):
+    def handle_print(self, argstr: str) -> None:
         if not argstr:
             print("print takes one or more arguments.")
             return
@@ -420,7 +422,7 @@ class Shell:
             except HERAError as e:
                 print("Eval error: {}.".format(e))
 
-    def print_one_expr(self, tree, spec, *, with_lhs=False):
+    def print_one_expr(self, tree, spec: str, *, with_lhs=False) -> None:
         """Print a single expression with the given format specification."""
 
         # Customize the format specifier depending on the type of expression.
@@ -451,7 +453,7 @@ class Shell:
             print(self.format_int(value, spec))
 
     @mutates
-    def handle_restart(self, args):
+    def handle_restart(self, args: List[str]) -> None:
         if len(args) != 0:
             print("restart takes no arguments.")
             return
@@ -460,7 +462,7 @@ class Shell:
         self.print_current_op()
 
     @mutates
-    def handle_step(self, args):
+    def handle_step(self, args: List[str]) -> None:
         if len(args) > 0:
             print("step takes no arguments.")
             return
@@ -472,7 +474,7 @@ class Shell:
         self.debugger.next(step=True)
         self.print_current_op()
 
-    def handle_undo(self, args):
+    def handle_undo(self, args: List[str]) -> None:
         if len(args) > 0:
             print("undo takes no arguments.")
             return
@@ -485,7 +487,7 @@ class Shell:
 
         self.debugger = self.debugger.old
 
-    def info_registers(self):
+    def info_registers(self) -> None:
         nonzero = 0
         for i, r in enumerate(self.debugger.vm.registers[1:], start=1):
             if r != 0:
@@ -500,7 +502,7 @@ class Shell:
         else:
             print()
 
-    def info_flags(self):
+    def info_flags(self) -> None:
         vm = self.debugger.vm
         flags = []
         if vm.flag_carry_block:
@@ -523,7 +525,7 @@ class Shell:
             flagstr = flagstr[0].upper() + flagstr[1:]
             print(flagstr + ", all other flags are off.")
 
-    def info_stack(self):
+    def info_stack(self) -> None:
         vm = self.debugger.vm
         if vm.expected_returns:
             print("Call stack (last call at bottom)")
@@ -542,7 +544,7 @@ class Shell:
         else:
             print("The call stack is empty.")
 
-    def info_symbols(self):
+    def info_symbols(self) -> None:
         constants = []
         labels = []
         dlabels = []
@@ -564,7 +566,7 @@ class Shell:
         if dlabels:
             print("Data labels: " + ", ".join(dlabels))
 
-    def evaluate_node(self, node):
+    def evaluate_node(self, node) -> int:
         vm = self.debugger.vm
         if isinstance(node, IntNode):
             if node.value >= 2 ** 16 or node.value < -2 ** 15:
@@ -617,7 +619,7 @@ class Shell:
         else:
             raise RuntimeError("unknown node type {}".format(node.__class__.__name__))
 
-    def print_current_op(self):
+    def print_current_op(self) -> None:
         """Print the next operation to be executed. If the program has finished
         executed, nothing is printed.
         """
@@ -627,9 +629,9 @@ class Shell:
         else:
             print("Program has finished executing.")
 
-    def print_range_of_ops(self, loc, context=None):
-        """Print the line indicated by the Location object `loc`, as well as `context`
-        previous and following lines. If `context` is None, the whole file is printed.
+    def print_range_of_ops(self, loc: Location, context: Optional[int] = None) -> None:
+        """Print the line indicated by `loc`, as well as `context` previous and
+        following lines. If `context` is None, the whole file is printed.
         """
         lineno = loc.line - 1
         lines = loc.file_lines
@@ -654,7 +656,7 @@ class Shell:
             else:
                 print()
 
-    def format_int(self, v, spec):
+    def format_int(self, v: int, spec: str) -> str:
         if not spec:
             spec = DEFAULT_SPEC
 
@@ -678,7 +680,7 @@ class Shell:
 DEFAULT_SPEC = "dsc"
 
 
-def augment_spec(spec, f):
+def augment_spec(spec: str, f: str) -> str:
     """Augment the format specifier with the additional format character."""
     if not spec:
         return augment_spec(DEFAULT_SPEC, f)
