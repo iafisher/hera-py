@@ -370,3 +370,155 @@ HALT()
 
     captured = capsys.readouterr().out
     assert captured == "210//5 = 42"
+
+
+def test_call_to_user_function(capsys):
+    # Figures 7.7, 7.8, 7.9, pp. 45-47
+    program = """\
+#include <Tiger-stdlib-reg-data.hera>
+
+CBON()
+
+SET(R1, 5)
+
+INC(SP, 1)
+STORE(R1, 0, FP)
+INC(R1, 5)
+SET(R2, 2)
+MOVE(FP_alt, SP)
+CALL(FP_alt, foo)
+
+LOAD(R2, 0, FP)
+DEC(SP, 1)
+SUB(R1, R1, R2)
+
+CALL(FP_alt, printint)
+HALT()
+
+LABEL(foo)
+  INC(SP, 3)
+  STORE(PC_ret, 0, FP)
+  STORE(FP_alt, 1, FP)
+  STORE(R1, 2, FP)
+
+  MOVE(R10, R1)
+  MOVE(R11, R2)
+
+  ADD(R1, R10, R11)
+  SUB(R2, R11, R10)
+  SETLO(R9, 75)
+  ADD(R2, R2, R9)
+
+  MOVE(FP_alt, SP)
+  CALL(FP_alt, two_x_plus_y)
+  LOAD(R2, 2, FP)
+  MUL(R1, R1, R2)
+
+  LOAD(PC_ret, 0, FP)
+  LOAD(FP_alt, 1, FP)
+  DEC(SP, 3)
+  RETURN(FP_alt, PC_ret)
+
+LABEL(two_x_plus_y)
+  ADD(R1, R1, R1)
+  ADD(R1, R1, R2)
+  RETURN(FP_alt, PC_ret)
+
+#include <Tiger-stdlib-reg.hera>
+"""
+    execute_program_helper(program)
+
+    captured = capsys.readouterr().out
+    assert captured == "905"
+
+
+def test_call_to_user_function_with_stack(capsys):
+    # Figures 7.11, 7.12, 7.14, pp. 48-51
+    program = """\
+#include <Tiger-stdlib-stack-data.hera>
+
+CBON()
+
+SET(R1, 5)
+
+MOVE(FP_alt, SP)
+INC(SP, 5)
+MOVE(R2, R1)
+INC(R2, 5)
+STORE(R2, 3, FP_alt)
+SET(R2, 2)
+STORE(R2, 4, FP_alt)
+CALL(FP_alt, foo)
+LOAD(R2, 3, FP_alt)
+DEC(SP, 5)
+
+SUB(R2, R2, R1)
+INC(SP, 4)
+STORE(R2, 3, FP_alt)
+CALL(FP_alt, printint)
+DEC(SP, 4)
+
+HALT()
+
+LABEL(two_x_plus_y)
+  INC(SP, 2)
+  STORE(PC_ret, 0, FP)
+  STORE(FP_alt, 1, FP)
+  STORE(R1, 5, FP)
+  STORE(R2, 6, FP)
+
+  LOAD(R1, 3, FP)
+  LOAD(R2, 4, FP)
+
+  ADD(R1, R1, R1)
+  ADD(R1, R1, R2)
+
+  STORE(R1, 3, FP)
+
+  LOAD(R2, 6, FP)
+  LOAD(R1, 5, FP)
+  LOAD(PC_ret, 0, FP)
+  LOAD(FP_alt, 1, FP)
+  DEC(SP, 2)
+  RETURN(FP_alt, PC_ret)
+
+LABEL(foo)
+  INC(SP, 2)
+  STORE(PC_ret, 0, FP)
+  STORE(FP_alt, 1, FP)
+  STORE(R1, 5, FP)
+  STORE(R2, 6, FP)
+
+  MOVE(FP_alt, SP)
+  INC(SP, 5)
+
+  LOAD(R1, 3, FP)
+  LOAD(R2, 4, FP)
+  ADD(Rt, R1, R2)
+  STORE(Rt, 3, FP_alt)
+  SUB(R2, R2, R1)
+  SETLO(Rt, 75)
+  ADD(R2, R2, Rt)
+  STORE(R2, 4, FP_alt)
+
+  CALL(FP_alt, two_x_plus_y)
+
+  LOAD(R2, 3, FP_alt)
+  DEC(SP, 5)
+  MUL(R1, R2, R1)
+
+  STORE(R1, 3, FP)
+
+  LOAD(R2, 6, FP)
+  LOAD(R1, 5, FP)
+  LOAD(PC_ret, 0, FP)
+  LOAD(FP_alt, 1, FP)
+  DEC(SP, 2)
+  RETURN(FP_alt, PC_ret)
+
+#include <Tiger-stdlib-stack.hera>
+"""
+    execute_program_helper(program)
+
+    captured = capsys.readouterr().out
+    assert captured == "905"
