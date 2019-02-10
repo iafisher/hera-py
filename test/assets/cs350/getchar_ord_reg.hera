@@ -1,0 +1,8 @@
+#include <Tiger-stdlib-reg-data.hera>
+
+CBON()
+MOVE(R12, SP)
+CALL(R12, getchar_ord)
+HALT()
+
+#include <Tiger-stdlib-reg.hera>

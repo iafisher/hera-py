@@ -8,7 +8,7 @@ Version: February 2019
 """
 import sys
 
-from .utils import from_u16
+from .utils import from_u16, to_u16
 
 
 def tiger_printint_stack(vm):
@@ -326,7 +326,7 @@ LABEL(substring)
      LOAD(R4,4,FP)	// "first"
      ADD(R0,R4,R0)
      BS(substring_bad_params)   // check for first <0
-     
+
      ADD(R0,R3,R0)
      BS(substring_bad_params)   // check for n<0
 
@@ -334,7 +334,7 @@ LABEL(substring)
      LOAD(R2,0,R1)      // size of s
      CMP(R2,R4)
      BL(substring_bad_params)  // check for size(s)<first+n
-     
+
 // nptr = next free address   (allocate n+1 cells, save address for later)
      ADD(R4,R3,R0)      // R4 = n
      INC(R4,1)
@@ -562,3 +562,284 @@ TIGER_STRING("this function is not yet implemented in tiger standard libarry; ha
 DLABEL(tstdlib_not_tested)
 TIGER_STRING("WARNING: Entering untested territory in tiger stdlib\\n")
 """
+
+
+def tiger_printint_reg(vm):
+    print(from_u16(vm.registers[1]), end="")
+
+
+def tiger_printbool_reg(vm):
+    print("false" if vm.registers[1] == 0 else "true", end="")
+
+
+def tiger_print_reg(vm):
+    addr = vm.registers[1]
+    n = vm.load_memory(addr)
+    for i in range(n):
+        print(chr(vm.load_memory(addr + i + 1)), end="")
+
+
+def tiger_println_reg(vm):
+    addr = vm.registers[1]
+    n = vm.load_memory(addr)
+    for i in range(n):
+        print(chr(vm.load_memory(addr + i + 1)), end="")
+    print()
+
+
+def tiger_div_reg(vm):
+    left = vm.registers[1]
+    right = vm.registers[2]
+    vm.registers[1] = left // right if right != 0 else 0
+
+
+def tiger_mod_reg(vm):
+    left = vm.registers[1]
+    right = vm.registers[2]
+    vm.registers[1] = left % right if right != 0 else 0
+
+
+def tiger_getchar_ord_reg(vm):
+    if vm.input_pos >= len(vm.input_buffer):
+        vm.readline()
+
+    if len(vm.input_buffer) > 0:
+        c = ord(vm.input_buffer[vm.input_pos])
+        vm.input_pos += 1
+    else:
+        c = 0
+    vm.registers[1] = c
+
+
+def tiger_ungetchar_reg(vm):
+    vm.input_pos -= 1
+
+
+def tiger_putchar_ord_reg(vm):
+    print(chr(vm.registers[1]), end="")
+
+
+def tiger_flush_reg(vm):
+    sys.stdout.flush()
+
+
+def tiger_getline_preamble_reg(vm):
+    vm.readline()
+    vm.registers[1] = len(vm.input_buffer) + 1
+
+
+def tiger_getline_epilogue_reg(vm):
+    addr = vm.registers[1]
+    vm.store_memory(addr, len(vm.input_buffer))
+    for i, c in enumerate(vm.input_buffer, start=1):
+        vm.store_memory(addr + i, ord(c))
+
+
+def tiger_tstrcmp_reg(vm):
+    # This could be implemented in pure HERA but I'm too lazy.
+    s1 = vm.registers[1]
+    s2 = vm.registers[2]
+    n1 = vm.load_memory(s1)
+    n2 = vm.load_memory(s2)
+    i = 0
+    while i < n1 and i < n2:
+        c1 = vm.load_memory(s1 + i + 1)
+        c2 = vm.load_memory(s2 + i + 1)
+        if c1 < c2:
+            vm.registers[1] = to_u16(-1)
+            return
+        elif c1 > c2:
+            vm.registers[1] = 1
+            return
+        i += 1
+
+    if n1 == n2:
+        vm.registers[1] = 0
+    elif n1 < n2:
+        vm.registers[1] = to_u16(-1)
+    else:
+        vm.registers[1] = 1
+
+
+# The standard library with parameters-in-registers functions.
+TIGER_STDLIB_REG = """
+LABEL(printint)
+  __eval("stdlib.tiger_printint_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(print)
+  __eval("stdlib.tiger_print_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(println)
+  __eval("stdlib.tiger_println_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(div)
+  __eval("stdlib.tiger_div_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(mod)
+  __eval("stdlib.tiger_mod_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(getchar_ord)
+  __eval("stdlib.tiger_getchar_ord_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(putchar_ord)
+  __eval("stdlib.tiger_putchar_ord_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(flush)
+  __eval("stdlib.tiger_flush_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(printbool)
+  __eval("stdlib.tiger_printbool_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(ungetchar)
+  __eval("stdlib.tiger_ungetchar_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(tstrcmp)
+  __eval("stdlib.tiger_tstrcmp_reg(vm)")
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(exit)
+  HALT()
+
+
+LABEL(getline)
+  INC(SP, 1)
+  STORE(PC_ret, 0, FP)
+  __eval("stdlib.tiger_getline_preamble_reg(vm)")
+  MOVE(R12, SP)
+
+  MOVE(FP_alt, SP)
+  // R1 was set to the length of the string by tiger_getline_preamble_stack
+  CALL(FP_alt, malloc)
+
+  __eval("stdlib.tiger_getline_epilogue_reg(vm)")
+  LOAD(PC_ret, 0, FP)
+  DEC(SP, 1)
+
+  RETURN(FP_alt, PC_ret)
+
+
+// fail if wrapped past 0xffff, hard-coded, but check
+// ** malloc(n_cells: int) : int  // returns address of allocated space
+LABEL(malloc)
+     // Reg 1  = argument 1 (number of cells needed)
+     // OK to just leave PC_ret as the return address, since we have no calls (except exiting)
+     SET(R11,first_space_for_fsheap)  // Ok to use R11, aka Rt, since no "not" pseudo-op or register-branches
+     LOAD(R10,0,R11)	// R10 is address of first free
+     FLAGS(R10)
+   BNZR(fsheap_already_initialized)
+     MOVE(R10, R11)
+     INC(R10, 1)      // initialize fs heap to its first free element then allocate from there
+     STORE(R10,0,R11) // defensive programming --- this should be overwritten later and thus dead
+   LABEL(fsheap_already_initialized)
+
+     MOVE(R9, R10)	// Hold on to value to be returned
+     ADD(R10,R10,R1)	// ALLOCATE -- FAIL BELOW IF WRAPPED PAST END OF ADDRESS SPACE OR "last_space_for_fsheap"
+     BCR(malloc_give_up)
+     SET(R1,last_space_for_fsheap)
+     CMP(R10, R1)	// want (unsigned) R10 < R1, so R10-R1 should BORROW, i.e. NOT carry!
+     BCR(malloc_give_up)
+     STORE(R10,0,R11)   // STORE BACK THE NEXT FREE SPACE
+
+     MOVE(R1,R9)	// Value to be returned was in R9
+     RETURN(FP_alt, PC_ret)	// Normal return from malloc
+
+   LABEL(malloc_inconsistent)
+     SET(R1, malloc_inconsistent_error)
+     BRR(malloc_exit)
+   LABEL(malloc_give_up)
+     SET(R1,malloc_out_of_memory_error)
+   LABEL(malloc_exit)
+     CALL(FP_alt,print)
+     SET(R1,127)
+     CALL(FP_alt,exit)
+     HALT() // shouldn't ever get here
+
+
+LABEL(not)
+	// Reg 1 <-- argument
+     CMP(R1,R0)
+     BZR(tstdlib_label_arg_was_false)
+     SET(R1,0)
+     BR(tstdlib_label_return_from_not)
+     LABEL(tstdlib_label_arg_was_false)
+     SET(R1,1)
+     LABEL(tstdlib_label_return_from_not)
+     RETURN(FP_alt, PC_ret)
+
+
+//    size(s:string) : int
+LABEL(size)
+     // Reg 1 <-- argument (address of string)
+     LOAD(R1,0,R1)  // Reg 1 now has the size of string
+     RETURN(FP_alt, PC_ret)
+
+
+//   ord(s:string) : int
+LABEL(ord)
+     // Reg 1 <-- argument (address of string)
+     LOAD(R1,1,R1)  // Reg 1 now has the 1st character of the string
+     RETURN(FP_alt, PC_ret)
+
+
+LABEL(getchar)
+  INC(SP, 1)
+
+  SET(R1, 2)
+  MOVE(FP_alt, SP)
+  CALL(FP_alt, malloc)
+
+  // R1 = pointer to newly-allocated string
+
+  // Store size of new string in M[R1]
+  SET(Rt, 1)
+  STORE(Rt, 0, R1)
+
+  // Save R1 on the stack
+  STORE(R1, 0, FP)
+
+  CALL(FP_alt, getchar_ord)
+
+  // R1 = ordinal number of character read
+
+  // Load string pointer from stack
+  LOAD(Rt, 0, FP)
+
+  // Insert character into string
+  STORE(R1, 1, Rt)
+
+  // Set R1 to return value (pointer to string)
+  MOVE(R1, Rt)
+
+  DEC(SP, 1)
+"""
+
+
+# The data segment for the parameters-in-registers functions.
+TIGER_STDLIB_REG_DATA = (
+    TIGER_STDLIB_STACK_DATA
+    + """\
+DLABEL(TIGER_STDLIB_REG_UNIMPLEMENTED)
+TIGER_STRING("Error -- call to unimplemented function from Tiger-stdlib-reg.hera\n")
+"""
+)

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## Unreleased
 ### Added
 - Hexadecimal and octal escape sequences are now accepted in character and string literals.
+- Support for parameters-in-registers version of the Tiger standard library.
 
 ### Changed
 - Execution times of long-running programs has been cut down by roughly 50%.

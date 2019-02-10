@@ -18,7 +18,12 @@ from typing import List, Optional, Set, Tuple, Union  # noqa: F401
 from .data import HERAError, Messages, Settings, Token
 from .lexer import Lexer
 from .op import AbstractOperation, name_to_class
-from .stdlib import TIGER_STDLIB_STACK, TIGER_STDLIB_STACK_DATA
+from .stdlib import (
+    TIGER_STDLIB_REG,
+    TIGER_STDLIB_REG_DATA,
+    TIGER_STDLIB_STACK,
+    TIGER_STDLIB_STACK_DATA,
+)
 from .utils import read_file, register_to_index
 
 
@@ -239,6 +244,10 @@ class Parser:
             included_text = TIGER_STDLIB_STACK_DATA
         elif include_path.value == "Tiger-stdlib-stack.hera":
             included_text = TIGER_STDLIB_STACK
+        elif include_path.value == "Tiger-stdlib-reg-data.hera":
+            included_text = TIGER_STDLIB_REG_DATA
+        elif include_path.value == "Tiger-stdlib-reg.hera":
+            included_text = TIGER_STDLIB_REG
         else:
             root_path = os.environ.get("HERA_C_DIR", "/home/courses/lib/HERA-lib")
             try:
