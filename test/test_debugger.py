@@ -73,6 +73,28 @@ def test_handle_break_with_dot(shell, capsys):
     assert capsys.readouterr().out == "Breakpoint set in file <string>, line 4.\n"
 
 
+def test_handle_break_with_multiple_files(capsys):
+    shell = load_shell('NOP()\n#include "test/assets/include/lib/add.hera"')
+    shell.handle_command("break test/assets/include/lib/add.hera:1")
+
+    assert len(shell.debugger.breakpoints) == 1
+    assert 1 in shell.debugger.breakpoints
+    assert shell.debugger.breakpoints[1] == "test/assets/include/lib/add.hera:1"
+
+    assert (
+        capsys.readouterr().out
+        == "Breakpoint set in file test/assets/include/lib/add.hera, line 1.\n"
+    )
+
+    shell.handle_command("break 1")
+
+    assert len(shell.debugger.breakpoints) == 2
+    assert 0 in shell.debugger.breakpoints
+    assert shell.debugger.breakpoints[0] == "<string>:1"
+
+    assert capsys.readouterr().out == "Breakpoint set in file <string>, line 1.\n"
+
+
 def test_handle_break_with_invalid_location(shell, capsys):
     shell.handle_command("break 1")
 
@@ -1276,7 +1298,7 @@ def test_data_statements(capsys):
 
 
 def test_resolve_location_with_line_number(debugger):
-    assert debugger.resolve_location(4) == 0
+    assert debugger.resolve_location("4") == 0
 
 
 def test_resolve_location_with_label(debugger):
@@ -1291,7 +1313,7 @@ def test_resolve_location_fails_with_constant(debugger):
 
 def test_resolve_location_out_of_range(debugger):
     with pytest.raises(ValueError) as e:
-        debugger.resolve_location(100)
+        debugger.resolve_location("100")
     assert "could not find corresponding line" in str(e)
 
 

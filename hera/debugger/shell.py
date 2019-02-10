@@ -791,6 +791,9 @@ break <n>
   Set a breakpoint at the given line number in the file that the debugger was
   opened on.
 
+break <path>:<n>
+  Set a breakpoint at the given line number in the given file.
+
 break <label>
   Set a breakpoint at the given label.
   

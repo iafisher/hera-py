@@ -8,9 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## Unreleased
 ### Added
 - The `break` debugging command now accepts a special argument `.` which sets a breakpoint at the current line.
+- The `break` debugging command now accepts arguments of the form `<path>:<line>` for setting breakpoints in different files.
 
 ### Changed
 - The `break` debugging command now prints the location of the breakpoint that it set.
+
+### Fixed
+- When no file path is provided, the `break` debugging command defaults to the file the debugger was opened on, not the current file.
+
 
 ## [0.6.0] - 2019-02-10
 ### Added

@@ -109,8 +109,14 @@ class Debugger:
         if b == ".":
             return self.vm.pc
 
+        if ":" in b:
+            path, lineno = b.split(":", maxsplit=1)
+        else:
+            path = self.settings.path
+            lineno = b
+
         try:
-            lineno = int(b)
+            lineno_as_int = int(lineno)
         except ValueError:
             try:
                 opno = self.program.symbol_table[b]
@@ -119,9 +125,8 @@ class Debugger:
             except (KeyError, AssertionError):
                 raise ValueError("could not locate label `{}`.".format(b)) from None
         else:
-            # TODO: This could give wrong results for programs with multiple files.
             for pc, op in enumerate(self.program.code):
-                if op.loc.line == lineno:
+                if op.loc.path == path and op.loc.line == lineno_as_int:
                     return pc
 
             raise ValueError("could not find corresponding line.")
