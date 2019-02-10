@@ -768,12 +768,12 @@ Command names can generally be abbreviated with a unique prefix, e.g. "n" for
 HELP_MAP = {
     # assign
     "assign": """\
-assign <x> <y>:
+assign <x> <y>
   Assign the value of y to x. x may be a register, a memory location, or the
   program counter. y may be a register, a memory location, the program counter,
   a symbol, or an integer.
 
-<x> = <y>:
+<x> = <y>
   Alias for "assign <x> <y>", with the additional advantage that <x> and <y>
   may contain spaces.
 
@@ -784,26 +784,26 @@ assign <x> <y>:
     Arithmetic:                    R7 = R5 * 10""",
     # break
     "break": """\
-break:
+break
   Print all current breakpoints.
 
-break <n>:
+break <n>
   Set a breakpoint at the given line number in the file that the debugger was
   opened on.
 
-break <label>:
+break <label>
   Set a breakpoint at the given label.
   
-break .:
+break .
   Set a breakpoint at the current instruction.""",
     # continue
     "continue": """\
-continue:
+continue
   Execute the program until a breakpoint is encountered or the program
   terminates.""",
     # execute
     "execute": """\
-execute <op>:
+execute <op>
   Execute a HERA operation. The operation must not be a data statement or a
   branch. The operation may affect registers and memory. Some operations can
   be more concisely expressed with the debugging mini-language. Type
@@ -813,59 +813,59 @@ execute <op>:
     execute ASR(R5, R4)""",
     # goto
     "goto": """\
-goto <loc>:
+goto <loc>
   Jump to the given location (either a line number or a label) without
   executing any of the intermediate instructions.""",
     # help
     "help": """\
-help:
+help
   Print a summary of all debugging commands.
 
-help <cmd>...:
+help <cmd>...
   Print a detailed help message for each command list.""",
     # info
     "info": """\
-info <arg>...:
+info <arg>...
   Print information about the current state of the program. Valid arguments to
   info are "registers", "stack", "flags" and "symbols". Arguments may be
   abbreviated with a unique prefix. The argument list defaults to "registers",
   "flags", and "stack" if not provided.""",
     # list
     "list": """\
-list:
+list
   Print the current line of source and the three previous and next lines.
 
-list <n>:
+list <n>
   Print the current line of source code and the `n` previous and next lines.""",
     # ll
     "ll": """\
-ll:
-  Print every line of the program's source code.""",
+ll
+  Print every line of the current file's source code.""",
     # next
     "next": """\
-next:
+next
   Execute the current line. If the current line is a CALL instruction, the
   debugger executes the entire function (including nested and recursive calls)
   and moves on to the next line. If you wish to neter over the function call,
   use `step` instead.
 
-next <n>:
+next <n>
   Execute the next n instructions. This command will follow branches, so be
   careful!""",
     # off
     "off": """\
-off <f1> <f2>...:
+off <f1> <f2>...
     Turn off all the HERA machine flags listed. Flags may be given in long
     form (carry-block, carry, overflow, sign, zero) or short form (cb, c, v,
     s, z).""",
     # on
     "on": """\
-on <f1> <f2>...:
+on <f1> <f2>...
     Turn on all the HERA machine flags listed. Flags may be given in long form
     (carry-block, carry, overflow, sign, zero) or short form (cb, c, v, s, z).""",
     # print
     "print": """\
-print <x> <y> <z>...:
+print <x> <y> <z>...
   Print the values of all the supplied arguments. The first argument may
   optionally be a format specifier, e.g. ":xds". Each character of the string
   identifies a format in which to print the value. The following formats are
@@ -882,20 +882,20 @@ print <x> <y> <z>...:
     Arithmetic:        print @(@(FP+1)) * 7""",
     # restart
     "restart": """\
-restart:
+restart
   Restart execution of the program from the beginning. All registers and
   memory cells are reset.""",
     # step
     "step": """\
-step:
+step
   Step into the execution of a function.  The step command is only valid when
   the current instruction is CALL.""",
     # undo
     "undo": """\
-undo:
+undo
   Undo the last operation that changed the state of the debugger.""",
     # quit
     "quit": """\
-quit:
+quit
   Exit the debugger.""",
 }
