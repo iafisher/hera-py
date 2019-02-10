@@ -280,3 +280,93 @@ LABEL(updateR3)
     assert vm.registers[1] == 23
     assert vm.registers[2] == 3
     assert vm.registers[3] == 273
+
+
+def test_call_to_library_function(capsys):
+    # Figure 7.5, p. 43
+    program = """\
+#include <Tiger-stdlib-reg-data.hera>
+
+DLABEL(INT_DIVIDE_AS_IN_PYTHON)  LP_STRING("//")
+DLABEL(EQUALS_SIGN_WITH_SPACES)  LP_STRING(" = ")
+
+CBON()
+SET(R1, 210)
+SET(R2, 5)
+
+MOVE(FP_alt, SP)
+CALL(FP_alt, printint)
+
+MOVE(R4, R1)
+MOVE(R5, R2)
+SET(R1, INT_DIVIDE_AS_IN_PYTHON)
+CALL(FP_alt, print)
+
+MOVE(R1, R5)
+CALL(FP_alt, printint)
+
+SET(R1, EQUALS_SIGN_WITH_SPACES)
+CALL(FP_alt, print)
+
+MOVE(R1, R4)
+MOVE(R2, R5)
+CALL(FP_alt, div)
+CALL(FP_alt, printint)
+
+HALT()
+
+#include <Tiger-stdlib-reg.hera>
+"""
+    execute_program_helper(program)
+
+    captured = capsys.readouterr().out
+    assert captured == "210//5 = 42"
+
+
+def test_call_to_library_function_with_stack(capsys):
+    # Figure 7.6, p. 44
+    program = """\
+#include <Tiger-stdlib-stack-data.hera>
+
+DLABEL(INT_DIVIDE_AS_IN_PYTHON)  LP_STRING("//")
+DLABEL(EQUALS_SIGN_WITH_SPACES)  LP_STRING(" = ")
+
+CBON()
+SET(R1, 210)
+SET(R2, 5)
+
+MOVE(FP_alt, SP)
+INC(SP, 4)
+STORE(R1, 3, FP_alt)
+CALL(FP_alt, printint)
+DEC(SP, 4)
+
+MOVE(FP_alt, SP)
+INC(SP, 4)
+SET(Rt, INT_DIVIDE_AS_IN_PYTHON)
+STORE(Rt, 3, FP_alt)
+CALL(FP_alt, print)
+
+STORE(R2, 3, FP_alt)
+CALL(FP_alt, printint)
+
+SET(Rt, EQUALS_SIGN_WITH_SPACES)
+STORE(Rt, 3, FP_alt)
+CALL(FP_alt, print)
+
+INC(SP, 1)
+STORE(R1, 3, FP_alt)
+STORE(R2, 4, FP_alt)
+CALL(FP_alt, div)
+DEC(SP, 1)
+CALL(FP_alt, printint)
+DEC(SP, 4)
+
+HALT()
+
+#include <Tiger-stdlib-stack.hera>
+"""
+    execute_program_helper(program)
+
+    captured = capsys.readouterr().out
+    assert captured == "210//5 = 42"
