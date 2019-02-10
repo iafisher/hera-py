@@ -112,7 +112,7 @@ class Debugger:
         if ":" in b:
             path, lineno = b.split(":", maxsplit=1)
         else:
-            path = self.settings.path
+            path = self.op().loc.path
             lineno = b
 
         try:

@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `break` debugging command now prints the location of the breakpoint that it set.
 
 ### Fixed
-- When no file path is provided, the `break` debugging command defaults to the file the debugger was opened on, not the current file.
+- When no file path is provided, the `break` debugging command defaults to the current file (whereas behavior was unpredictable before).
 - `assign` commands in the debugger can now be undone.
 
 

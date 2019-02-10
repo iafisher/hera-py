@@ -27,11 +27,6 @@ def main(argv=None) -> Optional[VirtualMachine]:
     path = arguments["<path>"]
 
     settings = Settings()
-    if path == "-":
-        settings.path = "<stdin>"
-    else:
-        settings.path = settings.realpath = path
-
     if arguments["--no-color"] or not sys.stderr.isatty():
         settings.color = False
 

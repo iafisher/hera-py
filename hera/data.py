@@ -24,8 +24,6 @@ class Settings:
         data_start=DEFAULT_DATA_START,
         debug=False,
         no_debug_ops=False,
-        path="<string>",
-        realpath=None,
         volume=VOLUME_NORMAL,
         warn_octal_on=True,
         warn_return_on=True
@@ -35,12 +33,6 @@ class Settings:
         self.data_start = data_start
         self.debug = debug
         self.no_debug_ops = no_debug_ops
-        # Real path is the actual file path the hera executable was invoked on. It is
-        # set to None for programs read from stdin or in-memory.
-        self.realpath = realpath
-        # Path is the human-readable file path. It is identical to realpath except for
-        # stdin (when it is "<stdin>") and in-memory (when it is "<string>").
-        self.path = path
         self.warn_octal_on = warn_octal_on
         self.warn_return_on = warn_return_on
         self.volume = volume

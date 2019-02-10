@@ -95,6 +95,20 @@ def test_handle_break_with_multiple_files(capsys):
     assert capsys.readouterr().out == "Breakpoint set in file <string>, line 1.\n"
 
 
+def test_handle_break_with_multiple_files_again(capsys):
+    shell = load_shell('#include "test/assets/include/lib/add.hera"\nNOP()')
+
+    shell.handle_command("break 1")
+
+    assert len(shell.debugger.breakpoints) == 1
+    assert 0 in shell.debugger.breakpoints
+
+    captured = capsys.readouterr().out
+    assert (
+        captured == "Breakpoint set in file test/assets/include/lib/add.hera, line 1.\n"
+    )
+
+
 def test_handle_break_with_invalid_location(shell, capsys):
     shell.handle_command("break 1")
 
