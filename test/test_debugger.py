@@ -127,6 +127,106 @@ def test_handle_break_abbreviated(shell):
         assert len(kwargs) == 0
 
 
+def test_handle_clear(shell, capsys):
+    shell.handle_command("break 4")
+    capsys.readouterr()
+
+    shell.handle_command("clear 4")
+
+    assert len(shell.debugger.breakpoints) == 0
+
+    captured = capsys.readouterr().out
+    assert captured == "Cleared breakpoint in file <string>, line 4.\n"
+
+
+def test_handle_clear_only_clears_one(shell):
+    shell.handle_command("break 4")
+    shell.handle_command("break 5")
+
+    shell.handle_command("clear 4")
+
+    assert len(shell.debugger.breakpoints) == 1
+    assert 2 in shell.debugger.breakpoints
+
+
+def test_handle_clear_with_multiple_args(shell, capsys):
+    shell.handle_command("break 4")
+    shell.handle_command("break 5")
+    shell.handle_command("break 7")
+    capsys.readouterr()
+
+    shell.handle_command("clear 4 5")
+
+    assert len(shell.debugger.breakpoints) == 1
+    assert 4 in shell.debugger.breakpoints
+
+    captured = capsys.readouterr().out
+    assert (
+        captured
+        == """\
+Cleared breakpoint in file <string>, line 4.
+Cleared breakpoint in file <string>, line 5.
+"""
+    )
+
+
+def test_handle_clear_with_no_breakpoint(shell, capsys):
+    shell.handle_command("clear 4")
+
+    captured = capsys.readouterr().out
+    assert captured == "No breakpoint at that location.\n"
+
+
+def test_handle_clear_with_star_arg(shell, capsys):
+    shell.handle_command("break 4")
+    shell.handle_command("break 5")
+    capsys.readouterr()
+
+    shell.handle_command("clear *")
+
+    assert len(shell.debugger.breakpoints) == 0
+
+    captured = capsys.readouterr().out
+    assert captured == "Cleared all breakpoints.\n"
+
+
+def test_handle_clear_with_star_and_other_args(shell, capsys):
+    shell.handle_command("break 4")
+    shell.handle_command("break 5")
+    capsys.readouterr()
+
+    shell.handle_command("clear 4 * ???")
+
+    assert len(shell.debugger.breakpoints) == 0
+
+    captured = capsys.readouterr().out
+    assert captured == "Cleared all breakpoints.\n"
+
+
+def test_handle_clear_with_bad_arg(shell, capsys):
+    shell.handle_command("clear ???")
+
+    captured = capsys.readouterr().out
+    assert captured == "Error: could not locate label `???`.\n"
+
+
+def test_handle_clear_with_too_few_args(shell, capsys):
+    shell.handle_command("clear")
+
+    assert capsys.readouterr().out == "clear takes one or more arguments.\n"
+
+
+def test_handle_clear_abbreviated(shell):
+    with patch("hera.debugger.shell.Shell.handle_clear") as mock_handle_clear:
+        shell.handle_command("cl 7")
+        assert mock_handle_clear.call_count == 1
+
+        args, kwargs = mock_handle_clear.call_args
+        assert len(args) == 1
+        assert args[0] == ["7"]
+        assert len(kwargs) == 0
+
+
 def test_handle_next(shell):
     assert shell.debugger.vm.registers[1] == 0
     assert shell.debugger.vm.pc == 0
@@ -1120,7 +1220,7 @@ def test_handle_help_with_multiple_args(shell, capsys):
 
 def test_handle_help_with_all_commands(shell, capsys):
     shell.handle_command(
-        "help assign break continue execute help info list ll next off on print \
+        "help assign break clear continue execute help info list ll next off on print \
          restart goto step undo quit"
     )
 

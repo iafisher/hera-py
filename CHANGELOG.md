@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 ### Added
+- The `clear` debugging command, for clearing breakpoints.
 - The `break` debugging command now accepts a special argument `.` which sets a breakpoint at the current line.
 - The `break` debugging command now accepts arguments of the form `<path>:<line>` for setting breakpoints in different files.
 

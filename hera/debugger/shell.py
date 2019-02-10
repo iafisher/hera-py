@@ -101,7 +101,7 @@ class Shell:
     # multiple commands share a prefix.
     CAN_BE_ABBREVIATED = (
         # Multiple lists to prevent reformatting.
-        ["assign", "break", "continue", "execute", "goto"]
+        ["assign", "break", "continue", "clear", "execute", "goto"]
         + ["help", "info", "list", "next", "print", "quit", "step", "undo"]
     )
 
@@ -124,6 +124,7 @@ class Shell:
         raise HERAError
 
     def handle_assign(self, args: List[str]) -> None:
+        # TODO: This should be a mutator.
         if len(args) != 2:
             print("assign takes two arguments.")
             return
@@ -198,6 +199,30 @@ class Shell:
                 self.debugger.set_breakpoint(b)
                 loc = self.debugger.op(b).loc
                 print("Breakpoint set in file {0.path}, line {0.line}.".format(loc))
+
+    @mutates
+    def handle_clear(self, args: List[str]) -> None:
+        if len(args) == 0:
+            print("clear takes one or more arguments.")
+            return
+
+        if any(arg == "*" for arg in args):
+            self.debugger.breakpoints.clear()
+            print("Cleared all breakpoints.")
+        else:
+            for arg in args:
+                try:
+                    b = self.debugger.resolve_location(arg)
+                except ValueError as e:
+                    print("Error:", e)
+                else:
+                    if b in self.debugger.breakpoints:
+                        loc = self.debugger.op(b).loc
+                        del self.debugger.breakpoints[b]
+                        msg = "Cleared breakpoint in file {0.path}, line {0.line}."
+                        print(msg.format(loc))
+                    else:
+                        print("No breakpoint at that location.")
 
     @mutates
     def handle_continue(self, args: List[str]) -> None:
@@ -726,6 +751,8 @@ Available commands:
     break <loc>     Set a breakpoint at the given location. When no arguments
                     are given, all current breakpoints are printed.
 
+    clear <loc>     Clear a breakpoint at the given location.
+
     continue        Execute the program until a breakpoint is encountered or
                     the program terminates.
 
@@ -799,6 +826,14 @@ break <label>
   
 break .
   Set a breakpoint at the current instruction.""",
+    # clear
+    "clear": """\
+clear <location>
+  Clear a breakpoint at the given line. Location formats accepted are the same
+  as the break command.
+
+clear *
+  Clear all breakpoints.""",
     # continue
     "continue": """\
 continue
