@@ -196,6 +196,8 @@ class Shell:
                 print("Error:", e)
             else:
                 self.debugger.set_breakpoint(b)
+                loc = self.debugger.op(b).loc
+                print("Breakpoint set in file {0.path}, line {0.line}.".format(loc))
 
     @mutates
     def handle_continue(self, args: List[str]) -> None:
@@ -785,9 +787,15 @@ assign <x> <y>:
 break:
   Print all current breakpoints.
 
-break <loc>:
-  Set a breakpoint at the given location. The location may be a line number or
-  a label.""",
+break <n>:
+  Set a breakpoint at the given line number in the file that the debugger was
+  opened on.
+
+break <label>:
+  Set a breakpoint at the given label.
+  
+break .:
+  Set a breakpoint at the current instruction.""",
     # continue
     "continue": """\
 continue:

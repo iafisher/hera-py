@@ -51,14 +51,26 @@ def test_handle_break_prints_breakpoints_with_no_breakpoints_set(shell, capsys):
     assert capsys.readouterr().out == "No breakpoints set.\n"
 
 
-def test_handle_break_sets_breakpoint(shell):
+def test_handle_break_sets_breakpoint(shell, capsys):
     assert len(shell.debugger.breakpoints) == 0
 
-    shell.handle_command("break 4")
+    shell.handle_command("break 5")
+
+    assert len(shell.debugger.breakpoints) == 1
+    assert 2 in shell.debugger.breakpoints
+    assert shell.debugger.breakpoints[2] == "<string>:5"
+
+    assert capsys.readouterr().out == "Breakpoint set in file <string>, line 5.\n"
+
+
+def test_handle_break_with_dot(shell, capsys):
+    shell.handle_command("break .")
 
     assert len(shell.debugger.breakpoints) == 1
     assert 0 in shell.debugger.breakpoints
     assert shell.debugger.breakpoints[0] == "<string>:4"
+
+    assert capsys.readouterr().out == "Breakpoint set in file <string>, line 4.\n"
 
 
 def test_handle_break_with_invalid_location(shell, capsys):

@@ -106,6 +106,9 @@ class Debugger:
 
     def resolve_location(self, b: str) -> int:
         """Resolve a user-supplied location string into an instruction number"""
+        if b == ".":
+            return self.vm.pc
+
         try:
             lineno = int(b)
         except ValueError:

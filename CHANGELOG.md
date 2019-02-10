@@ -6,7 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 **NOTE**: As permitted by semantic versioning, backward compatibility is NOT maintained for initial development, i.e. releases before 1.0.0.
 
 ## Unreleased
-Nothing yet.
+### Added
+- The `break` debugging command now accepts a special argument `.` which sets a breakpoint at the current line.
+
+### Changed
+- The `break` debugging command now prints the location of the breakpoint that it set.
 
 ## [0.6.0] - 2019-02-10
 ### Added
