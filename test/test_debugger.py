@@ -1348,6 +1348,25 @@ def test_handle_undo_after_nothing(shell, capsys):
     assert capsys.readouterr().out == "Nothing to undo.\n"
 
 
+def test_handle_undo_after_assign(shell, capsys):
+    shell.handle_command("r1 = 666")
+    shell.handle_command("undo")
+
+    assert shell.debugger.vm.registers[1] == 0
+    assert capsys.readouterr().out == "Undid assign.\n"
+
+
+def test_handle_undo_after_clear(shell, capsys):
+    shell.handle_command("break 4")
+    shell.handle_command("clear *")
+    capsys.readouterr()
+
+    shell.handle_command("undo")
+
+    assert len(shell.debugger.breakpoints) == 1
+    assert capsys.readouterr().out == "Undid clear.\n"
+
+
 def test_handle_undo_twice(shell, capsys):
     shell.handle_command("n")
     shell.handle_command("n")

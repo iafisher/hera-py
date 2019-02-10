@@ -123,8 +123,8 @@ class Shell:
 
         raise HERAError
 
+    @mutates
     def handle_assign(self, args: List[str]) -> None:
-        # TODO: This should be a mutator.
         if len(args) != 2:
             print("assign takes two arguments.")
             return
@@ -179,10 +179,6 @@ class Shell:
             print("break takes zero or one arguments.")
             return
 
-        # TODO: In pdb, break with no arguments set a breakpoint at the current
-        # line. Should I do that too?
-        #
-        # Better idea: accept "." as a location for the current line.
         if len(args) == 0:
             breakpoints = self.debugger.get_breakpoints()
             if breakpoints:
