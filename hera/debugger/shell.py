@@ -40,7 +40,7 @@ def mutates(handler):
 
 
 class Shell:
-    def __init__(self, debugger, settings: Settings):
+    def __init__(self, debugger: Debugger, settings: Settings) -> None:
         self.debugger = debugger
         self.settings = settings
         self.command_history = []  # type: List[str]
@@ -182,8 +182,8 @@ class Shell:
         if len(args) == 0:
             breakpoints = self.debugger.get_breakpoints()
             if breakpoints:
-                for b in breakpoints.values():
-                    print(b)
+                for brk in breakpoints.values():
+                    print(brk)
             else:
                 print("No breakpoints set.")
         else:
