@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - When no file path is provided, the `break` debugging command defaults to the current file (whereas behavior was unpredictable before).
 - `assign` commands in the debugger can now be undone.
+- In the debugging minilanguage, the subtraction operator no longer needs to be separated from integer literals by whitespace.
 
 
 ## [0.6.0] - 2019-02-10

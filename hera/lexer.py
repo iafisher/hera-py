@@ -60,14 +60,7 @@ class Lexer:
                 length = self.read_symbol()
                 self.set_token(Token.FMT, length=length)
             elif ch == "-":
-                # TODO: This doesn't handle e.g. x-10.
-                if self.peek_char().isdigit():
-                    self.position += 1
-                    length = self.read_int()
-                    self.position -= 1
-                    self.set_token(Token.INT, length=length + 1)
-                else:
-                    self.set_token(Token.MINUS)
+                self.set_token(Token.MINUS)
             elif ch == "+":
                 self.set_token(Token.PLUS)
             elif ch == "/":

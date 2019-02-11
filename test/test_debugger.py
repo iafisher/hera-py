@@ -1100,6 +1100,14 @@ def test_handle_print_arithmetic_expression(shell, capsys):
     assert capsys.readouterr().out == "0x002a\n"
 
 
+def test_handle_print_with_another_arithmetic_expression(shell, capsys):
+    shell.debugger.vm.registers[1] = 60
+
+    shell.handle_command("print :d r1-12")
+
+    assert capsys.readouterr().out == "48\n"
+
+
 def test_handle_print_with_multiple_arguments(shell, capsys):
     shell.debugger.vm.registers[1] = 5
     shell.debugger.vm.registers[2] = 7
@@ -1153,7 +1161,7 @@ def test_handle_print_with_overflow_from_multiplication(shell, capsys):
 def test_handle_print_with_integer_literal_too_small(shell, capsys):
     shell.handle_command("print -65000")
 
-    assert capsys.readouterr().out == "Eval error: integer literal exceeds 16 bits.\n"
+    assert capsys.readouterr().out == "Eval error: overflow from unary -.\n"
 
 
 def test_handle_print_with_invalid_format(shell, capsys):

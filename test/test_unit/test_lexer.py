@@ -29,7 +29,8 @@ def test_lexer_with_integer():
 def test_lexer_with_negative_integer():
     lexer = lex_helper("-1")
 
-    assert eq(lexer.tkn, Token(Token.INT, "-1"))
+    assert eq(lexer.tkn, Token(Token.MINUS, "-"))
+    assert eq(lexer.next_token(), Token(Token.INT, "1"))
     assert eq(lexer.next_token(), Token(Token.EOF, ""))
     assert eq(lexer.next_token(), Token(Token.EOF, ""))
 
@@ -37,7 +38,8 @@ def test_lexer_with_negative_integer():
 def test_lexer_with_negative_hex_number():
     lexer = lex_helper("-0xabc")
 
-    assert eq(lexer.tkn, Token(Token.INT, "-0xabc"))
+    assert eq(lexer.tkn, Token(Token.MINUS, "-"))
+    assert eq(lexer.next_token(), Token(Token.INT, "0xabc"))
 
 
 def test_lexer_with_invalid_hex_number():
@@ -171,7 +173,8 @@ def test_lexer_with_big_example():
     assert eq(lexer.next_token(), Token(Token.INT, "0xabc"))
     assert eq(lexer.next_token(), Token(Token.SYMBOL, "some_symbol"))
     assert eq(lexer.next_token(), Token(Token.FMT, "xdc"))
-    assert eq(lexer.next_token(), Token(Token.INT, "-10"))
+    assert eq(lexer.next_token(), Token(Token.MINUS, "-"))
+    assert eq(lexer.next_token(), Token(Token.INT, "10"))
     assert eq(lexer.next_token(), Token(Token.SEMICOLON, ";"))
     assert eq(lexer.next_token(), Token(Token.COMMA, ","))
     assert eq(lexer.next_token(), Token(Token.COMMA, ","))

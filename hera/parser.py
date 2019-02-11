@@ -116,7 +116,14 @@ class Parser:
         else:
             return cls(*args, loc=name_tkn)
 
-    VALUE_TOKENS = {Token.INT, Token.REGISTER, Token.SYMBOL, Token.STRING, Token.CHAR}
+    VALUE_TOKENS = {
+        Token.INT,
+        Token.REGISTER,
+        Token.SYMBOL,
+        Token.STRING,
+        Token.CHAR,
+        Token.MINUS,
+    }
 
     def match_optional_arglist(self) -> Optional[List[Token]]:
         """Match zero or more comma-separated values. Exits with the right parenthesis
@@ -130,7 +137,12 @@ class Parser:
         args = []
         hit_error = False
         while True:
-            if not self.expect(self.VALUE_TOKENS, "expected value"):
+            if self.expect(self.VALUE_TOKENS, "expected value"):
+                val = self.match_value()
+            else:
+                val = None
+
+            if val is None:
                 hit_error = True
                 self.skip_until({Token.COMMA, Token.RPAREN})
                 if self.lexer.tkn.type == Token.COMMA:
@@ -138,9 +150,8 @@ class Parser:
                     continue
                 else:
                     break
-
-            val = self.match_value()
-            args.append(val)
+            else:
+                args.append(val)
 
             self.lexer.next_token()
             if self.lexer.tkn.type == Token.RPAREN:
@@ -159,25 +170,9 @@ class Parser:
 
         return args if not hit_error else None
 
-    def match_value(self) -> Token:
+    def match_value(self) -> Optional[Token]:
         if self.lexer.tkn.type == Token.INT:
-            # Detect zero-prefixed octal numbers.
-            prefix = self.lexer.tkn.value[:2]
-            if len(prefix) == 2 and prefix[0] == "0" and prefix[1].isdigit():
-                base = 8
-                if self.settings.warn_octal_on:
-                    self.warn('consider using "0o" prefix for octal numbers')
-            else:
-                base = 0
-
-            try:
-                arg_as_int = int(self.lexer.tkn.value, base=base)
-            except ValueError:
-                self.err("invalid integer literal")
-                # 1 is a neutral value that is valid anywhere an integer is.
-                arg_as_int = 1
-            self.lexer.tkn.value = arg_as_int
-            return self.lexer.tkn
+            return self.match_int()
         elif self.lexer.tkn.type == Token.CHAR:
             return Token(
                 Token.INT, ord(self.lexer.tkn.value), location=self.lexer.tkn.location
@@ -190,8 +185,35 @@ class Parser:
                 i = 0
             self.lexer.tkn.value = i
             return self.lexer.tkn
+        elif self.lexer.tkn.type == Token.MINUS:
+            self.lexer.next_token()
+            if not self.expect(Token.INT, "expected integer"):
+                return None
+            else:
+                ret = self.match_int()
+                ret.value *= -1
+                return ret
         else:
             return self.lexer.tkn
+
+    def match_int(self) -> Token:
+        # Detect zero-prefixed octal numbers.
+        prefix = self.lexer.tkn.value[:2]
+        if len(prefix) == 2 and prefix[0] == "0" and prefix[1].isdigit():
+            base = 8
+            if self.settings.warn_octal_on:
+                self.warn('consider using "0o" prefix for octal numbers')
+        else:
+            base = 0
+
+        try:
+            arg_as_int = int(self.lexer.tkn.value, base=base)
+        except ValueError:
+            self.err("invalid integer literal")
+            # 1 is a neutral value that is valid anywhere an integer is.
+            arg_as_int = 1
+        self.lexer.tkn.value = arg_as_int
+        return self.lexer.tkn
 
     def match_include(self) -> List[AbstractOperation]:
         root_path = self.lexer.path
