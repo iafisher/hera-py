@@ -225,8 +225,6 @@ def convert_ops(
         if isinstance(op, RelativeBranch) and op.tokens[0].type == Token.SYMBOL:
             target = symbol_table[op.args[0]]
             jump = target - pc
-            # TODO: Will this work? I think pc takes data statements into account here
-            # erroneously.
             if jump < -128 or jump >= 128:
                 messages.err("label is too far for a relative branch", loc=op.tokens[0])
             else:

@@ -1,7 +1,4 @@
-"""All test programs in this module taken from the official HERA manual.
-
-TODO: Check these results against HERA-C.
-"""
+"""All test programs in this module taken from the official HERA manual."""
 from hera.data import DEFAULT_DATA_START
 from hera.utils import to_u16
 from .utils import execute_program_helper

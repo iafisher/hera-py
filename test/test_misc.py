@@ -91,7 +91,6 @@ LABEL(times_two)
 
 
 def test_fibonacci_program(capsys):
-    # TODO: Does this really belong in the simple test suite?
     program = """\
 /*
 
