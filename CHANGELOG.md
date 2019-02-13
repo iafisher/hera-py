@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 - The `break` debugging command now prints the location of the breakpoint that it set.
+- The preprocess subcommand now prints its normal output to standard out instead of standard error.
 
 ### Fixed
 - When no file path is provided, the `break` debugging command defaults to the current file (whereas behavior was unpredictable before).

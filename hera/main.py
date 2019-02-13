@@ -85,21 +85,22 @@ def main_execute(path: str, settings: Settings) -> VirtualMachine:
 
 
 def main_preprocess(path: str, settings: Settings) -> None:
-    """Preprocess the program and print it to standard output."""
+    """Preprocess the program and print it to stdout."""
     program = load_program_from_file(path, settings)
     if program.data:
-        sys.stderr.write("[DATA]\n")
+        print("[DATA]")
         for data_op in program.data:
-            sys.stderr.write("  {}\n".format(data_op))
+            print("  {}".format(data_op))
 
         if program.code:
-            sys.stderr.write("\n[CODE]\n")
+            print("\n[CODE]")
 
     for i, op in enumerate(program.code):
-        sys.stderr.write("  {:0>4}  {}\n".format(i, op))
+        print("  {:0>4}  {}".format(i, op))
 
 
 def main_assemble(path: str, settings: Settings) -> None:
+    """Assemble the program into machine code and print the hex output to stdout."""
     program = load_program_from_file(path, settings)
     raw_code, raw_data = assemble(program)
 
@@ -108,17 +109,18 @@ def main_assemble(path: str, settings: Settings) -> None:
 
     if settings.stdout:
         if settings.data:
-            sys.stderr.write(data)
-            sys.stderr.write("\n")
+            print(data)
         elif settings.code:
-            sys.stderr.write(code)
-            sys.stderr.write("\n")
+            print(code)
         else:
-            sys.stderr.write("[DATA]\n")
-            sys.stderr.write(textwrap.indent(data, "  "))
-            sys.stderr.write("\n[CODE]\n")
-            sys.stderr.write(textwrap.indent(code, "  "))
+            print("[DATA]")
+            print(textwrap.indent(data, "  "))
+            print("\n[CODE]")
+            print(textwrap.indent(code, "  "))
     else:
+        if path == "-":
+            path = "stdin"
+
         with open(path + ".lcode", "w", encoding="ascii") as f:
             f.write(code)
 
@@ -256,7 +258,7 @@ def dump_state(vm, settings):
         nprint("\n{} warning{} emitted.".format(c, "" if c == 1 else "s"))
 
 
-def bytes_to_hex(b):
+def bytes_to_hex(b: bytes) -> str:
     try:
         return b.hex()
     except AttributeError:
