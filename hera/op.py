@@ -116,7 +116,7 @@ class UnaryOp(AbstractOperation):
 
 class BinaryOp(AbstractOperation):
     """Abstract class to simplify implementation of binary operations. Child classes
-    only need to implement the calculate method.
+    only need to implement the calculate method and set the OPCODE field.
     """
 
     P = (REGISTER, REGISTER, REGISTER)
@@ -139,6 +139,11 @@ class BinaryOp(AbstractOperation):
         """
         raise NotImplementedError
 
+    def assemble(self):
+        return bytes(
+            [(self.OPCODE << 4) + self.args[0], (self.args[1] << 4) + self.args[2]]
+        )
+
 
 class Branch(AbstractOperation):
     pass
@@ -146,7 +151,7 @@ class Branch(AbstractOperation):
 
 class RegisterBranch(Branch):
     """Abstract class to simplify implementation of register branches. Child classes
-    only need to implement the should method.
+    only need to implement the should method and set the OPCODE field.
     """
 
     P = (REGISTER_OR_LABEL,)
@@ -183,7 +188,7 @@ class RegisterBranch(Branch):
 
 class RelativeBranch(Branch):
     """Abstract class to simplify implementation of relative branches. Child classes
-    only need to implement the should method.
+    only need to implement the should method and set the OPCODE field.
     """
 
     P = (I8_OR_LABEL,)
@@ -254,6 +259,8 @@ class SET(AbstractOperation):
 
 
 class ADD(BinaryOp):
+    OPCODE = 0b1010
+
     @staticmethod
     def calculate(vm, left, right):
         carry = 1 if not vm.flag_carry_block and vm.flag_carry else 0
@@ -265,11 +272,10 @@ class ADD(BinaryOp):
 
         return result
 
-    def assemble(self):
-        return bytes([(0b1010 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
-
 
 class SUB(BinaryOp):
+    OPCODE = 0b1011
+
     @staticmethod
     def calculate(vm, left, right):
         borrow = 1 if not vm.flag_carry_block and not vm.flag_carry else 0
@@ -283,12 +289,10 @@ class SUB(BinaryOp):
 
         return result
 
-    def assemble(self):
-        # TODO: Factor this out into a generic method on BinaryOp class.
-        return bytes([(0b1011 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
-
 
 class MUL(BinaryOp):
+    OPCODE = 0b1100
+
     @staticmethod
     def calculate(vm, left, right):
         if vm.flag_sign and not vm.flag_carry_block:
@@ -305,35 +309,29 @@ class MUL(BinaryOp):
 
         return result
 
-    def assemble(self):
-        return bytes([(0b1100 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
-
 
 class AND(BinaryOp):
+    OPCODE = 0b1000
+
     @staticmethod
     def calculate(vm, left, right):
         return left & right
 
-    def assemble(self):
-        return bytes([(0b1000 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
-
 
 class OR(BinaryOp):
+    OPCODE = 0b1001
+
     @staticmethod
     def calculate(vm, left, right):
         return left | right
 
-    def assemble(self):
-        return bytes([(0b1001 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
-
 
 class XOR(BinaryOp):
+    OPCODE = 0b1101
+
     @staticmethod
     def calculate(vm, left, right):
         return left ^ right
-
-    def assemble(self):
-        return bytes([(0b1101 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
 
 
 class INC(AbstractOperation):
