@@ -1,0 +1,4 @@
+LOAD(R1, 10, FP)
+STORE(R2, 0, FP)
+SWI(10)
+RTI()

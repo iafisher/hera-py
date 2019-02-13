@@ -1,0 +1,4 @@
+SETLO(R1, 0xFF)
+SETHI(R3, 42)
+INC(R10, 1)
+DEC(R1, 20)

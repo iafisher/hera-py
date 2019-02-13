@@ -101,13 +101,23 @@ def main_preprocess(path: str, settings: Settings) -> None:
 
 def main_assemble(path: str, settings: Settings) -> None:
     program = load_program_from_file(path, settings)
-    code, data = assemble(program)
+    raw_code, raw_data = assemble(program)
+
+    code = "\n".join(b.hex() for b in raw_code)
+    data = "\n".join(b.hex() for b in raw_data)
 
     if settings.stdout:
-        sys.stderr.write("[DATA]\n")
-        sys.stderr.write(textwrap.indent(data, "  "))
-        sys.stderr.write("\n[CODE]\n")
-        sys.stderr.write(textwrap.indent(code, "  "))
+        if settings.data:
+            sys.stderr.write(data)
+            sys.stderr.write("\n")
+        elif settings.code:
+            sys.stderr.write(code)
+            sys.stderr.write("\n")
+        else:
+            sys.stderr.write("[DATA]\n")
+            sys.stderr.write(textwrap.indent(data, "  "))
+            sys.stderr.write("\n[CODE]\n")
+            sys.stderr.write(textwrap.indent(code, "  "))
     else:
         with open(path + ".lcode", "w", encoding="ascii") as f:
             f.write(code)

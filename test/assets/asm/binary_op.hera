@@ -1,0 +1,6 @@
+AND(R1, R7, R12)
+OR(R0, R4, R2)
+ADD(R3, R5, R8)
+SUB(R9, R13, R15)
+MUL(R1, R2, R3)
+XOR(R8, R7, R4)

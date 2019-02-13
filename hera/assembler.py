@@ -3,12 +3,12 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
-from typing import Tuple
+from typing import List, Tuple
 
 from .data import Program
 
 
-def assemble(program: Program) -> Tuple[str, str]:
+def assemble(program: Program) -> Tuple[List[bytes], List[bytes]]:
     code = []
     data = []
 
@@ -18,4 +18,4 @@ def assemble(program: Program) -> Tuple[str, str]:
     for data_op in program.data:
         data.append(data_op.assemble())
 
-    return ("\n".join(code), "\n".join(data))
+    return (code, data)

@@ -40,7 +40,7 @@ class AbstractOperation:
     def convert(self) -> List["AbstractOperation"]:
         return [self]
 
-    def assemble(self) -> str:
+    def assemble(self) -> bytes:
         raise NotImplementedError
 
     def execute(self, vm: VirtualMachine) -> None:
@@ -177,6 +177,9 @@ class RegisterBranch(Branch):
                 self.__class__(Token.R(11)),
             ]
 
+    def assemble(self):
+        return bytes([(0b0001 << 4) + self.OPCODE, self.args[0]])
+
 
 class RelativeBranch(Branch):
     """Abstract class to simplify implementation of relative branches. Child classes
@@ -196,6 +199,9 @@ class RelativeBranch(Branch):
         """Return True if branching should occur, based on the virtual machine's state.
         """
         raise NotImplementedError
+
+    def assemble(self):
+        return bytes([self.OPCODE, self.args[0]])
 
 
 class DebuggingOperation(AbstractOperation):
@@ -217,6 +223,9 @@ class SETLO(AbstractOperation):
         vm.store_register(self.args[0], to_u16(value))
         vm.pc += 1
 
+    def assemble(self):
+        return bytes([(0b1110 << 4) + self.args[0], self.args[1]])
+
 
 class SETHI(AbstractOperation):
     P = (REGISTER, I8)
@@ -225,6 +234,9 @@ class SETHI(AbstractOperation):
         target, value = self.args
         vm.store_register(target, (value << 8) + (vm.load_register(target) & 0x00FF))
         vm.pc += 1
+
+    def assemble(self):
+        return bytes([(0b1111 << 4) + self.args[0], self.args[1]])
 
 
 class SET(AbstractOperation):
@@ -253,6 +265,9 @@ class ADD(BinaryOp):
 
         return result
 
+    def assemble(self):
+        return bytes([(0b1010 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
+
 
 class SUB(BinaryOp):
     @staticmethod
@@ -267,6 +282,10 @@ class SUB(BinaryOp):
         vm.flag_overflow = from_u16(result) != from_u16(left) - from_u16(right) - borrow
 
         return result
+
+    def assemble(self):
+        # TODO: Factor this out into a generic method on BinaryOp class.
+        return bytes([(0b1011 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
 
 
 class MUL(BinaryOp):
@@ -286,11 +305,17 @@ class MUL(BinaryOp):
 
         return result
 
+    def assemble(self):
+        return bytes([(0b1100 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
+
 
 class AND(BinaryOp):
     @staticmethod
     def calculate(vm, left, right):
         return left & right
+
+    def assemble(self):
+        return bytes([(0b1000 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
 
 
 class OR(BinaryOp):
@@ -298,11 +323,17 @@ class OR(BinaryOp):
     def calculate(vm, left, right):
         return left | right
 
+    def assemble(self):
+        return bytes([(0b1001 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
+
 
 class XOR(BinaryOp):
     @staticmethod
     def calculate(vm, left, right):
         return left ^ right
+
+    def assemble(self):
+        return bytes([(0b1101 << 4) + self.args[0], (self.args[1] << 4) + self.args[2]])
 
 
 class INC(AbstractOperation):
@@ -320,6 +351,9 @@ class INC(AbstractOperation):
         vm.flag_carry = value + original >= 2 ** 16
         vm.pc += 1
 
+    def assemble(self):
+        return bytes([(0b0011 << 4) + self.args[0], (0b10 << 6) + self.args[1] - 1])
+
 
 class DEC(AbstractOperation):
     P = (REGISTER, range(1, 65))
@@ -336,6 +370,9 @@ class DEC(AbstractOperation):
         vm.flag_carry = original < value
         vm.pc += 1
 
+    def assemble(self):
+        return bytes([(0b0011 << 4) + self.args[0], (0b11 << 6) + self.args[1] - 1])
+
 
 class LSL(UnaryOp):
     @staticmethod
@@ -346,6 +383,9 @@ class LSL(UnaryOp):
         vm.flag_carry = arg & 0x8000
 
         return result
+
+    def assemble(self):
+        return bytes([(0b0011 << 4) + self.args[0], self.args[1]])
 
 
 class LSR(UnaryOp):
@@ -358,17 +398,26 @@ class LSR(UnaryOp):
 
         return result
 
+    def assemble(self):
+        return bytes([(0b0011 << 4) + self.args[0], (0b0001 << 4) + self.args[1]])
+
 
 class LSL8(UnaryOp):
     @staticmethod
     def calculate(vm, arg):
         return (arg << 8) & 0xFFFF
 
+    def assemble(self):
+        return bytes([(0b0011 << 4) + self.args[0], (0b0010 << 4) + self.args[1]])
+
 
 class LSR8(UnaryOp):
     @staticmethod
     def calculate(vm, arg):
         return arg >> 8
+
+    def assemble(self):
+        return bytes([(0b0011 << 4) + self.args[0], (0b0011 << 4) + self.args[1]])
 
 
 class ASL(UnaryOp):
@@ -381,6 +430,9 @@ class ASL(UnaryOp):
         vm.flag_overflow = arg & 0x8000 and not result & 0x8000
 
         return result
+
+    def assemble(self):
+        return bytes([(0b0011 << 4) + self.args[0], (0b0100 << 4) + self.args[1]])
 
 
 class ASR(UnaryOp):
@@ -401,6 +453,9 @@ class ASR(UnaryOp):
 
         return result
 
+    def assemble(self):
+        return bytes([(0b0011 << 4) + self.args[0], (0b0101 << 4) + self.args[1]])
+
 
 class SAVEF(AbstractOperation):
     P = (REGISTER,)
@@ -416,6 +471,9 @@ class SAVEF(AbstractOperation):
         vm.store_register(self.args[0], value)
         vm.pc += 1
 
+    def assemble(self):
+        return bytes([(0b0011 << 4) + self.args[0], 0b01110000])
+
 
 class RSTRF(AbstractOperation):
     P = (REGISTER,)
@@ -428,6 +486,9 @@ class RSTRF(AbstractOperation):
         vm.flag_carry = bool(value & 0b1000)
         vm.flag_carry_block = bool(value & 0b10000)
         vm.pc += 1
+
+    def assemble(self):
+        return bytes([(0b0011 << 4) + self.args[0], 0b01111000])
 
 
 class FON(AbstractOperation):
@@ -442,6 +503,11 @@ class FON(AbstractOperation):
         vm.flag_carry_block = vm.flag_carry_block or bool(value & 0b10000)
         vm.pc += 1
 
+    def assemble(self):
+        hi = self.args[0] >> 4
+        lo = self.args[0] & 0b1111
+        return bytes([0b00110000 + hi, (0b0110 << 4) + lo])
+
 
 class FOFF(AbstractOperation):
     P = (U5,)
@@ -454,6 +520,11 @@ class FOFF(AbstractOperation):
         vm.flag_carry = vm.flag_carry and not bool(value & 0b1000)
         vm.flag_carry_block = vm.flag_carry_block and not bool(value & 0b10000)
         vm.pc += 1
+
+    def assemble(self):
+        hi = self.args[0] >> 4
+        lo = self.args[0] & 0b1111
+        return bytes([0b00111000 + hi, (0b0110 << 4) + lo])
 
 
 class FSET5(AbstractOperation):
@@ -468,6 +539,11 @@ class FSET5(AbstractOperation):
         vm.flag_carry_block = bool(value & 0b10000)
         vm.pc += 1
 
+    def assemble(self):
+        hi = self.args[0] >> 4
+        lo = self.args[0] & 0b1111
+        return bytes([0b00110100 + hi, (0b0110 << 4) + lo])
+
 
 class FSET4(AbstractOperation):
     P = (U4,)
@@ -479,6 +555,11 @@ class FSET4(AbstractOperation):
         vm.flag_overflow = bool(value & 0b100)
         vm.flag_carry = bool(value & 0b1000)
         vm.pc += 1
+
+    def assemble(self):
+        hi = self.args[0] >> 4
+        lo = self.args[0] & 0b1111
+        return bytes([0b00111100 + hi, (0b0110 << 4) + lo])
 
 
 class LOAD(AbstractOperation):
@@ -492,6 +573,11 @@ class LOAD(AbstractOperation):
         vm.store_register(target, result)
         vm.pc += 1
 
+    def assemble(self):
+        hi = self.args[1] >> 4
+        lo = self.args[1] & 0b1111
+        return bytes([((0b0100 + hi) << 4) + self.args[0], (lo << 4) + self.args[2]])
+
 
 class STORE(AbstractOperation):
     P = (REGISTER, U5, REGISTER)
@@ -502,14 +588,23 @@ class STORE(AbstractOperation):
         vm.store_memory(vm.load_register(address) + offset, vm.load_register(source))
         vm.pc += 1
 
+    def assemble(self):
+        hi = self.args[1] >> 4
+        lo = self.args[1] & 0b1111
+        return bytes([((0b0110 + hi) << 4) + self.args[0], (lo << 4) + self.args[2]])
+
 
 class BR(RegisterBranch):
+    OPCODE = 0b0000
+
     @staticmethod
     def should(vm):
         return True
 
 
 class BRR(RelativeBranch):
+    OPCODE = 0b0000
+
     def execute(self, vm):
         if self.args[0] != 0:
             vm.pc += self.args[0]
@@ -518,168 +613,224 @@ class BRR(RelativeBranch):
 
 
 class BL(RegisterBranch):
+    OPCODE = 0b0010
+
     @staticmethod
     def should(vm):
         return vm.flag_sign ^ vm.flag_overflow
 
 
 class BLR(RelativeBranch):
+    OPCODE = 0b0010
+
     @staticmethod
     def should(vm):
         return vm.flag_sign ^ vm.flag_overflow
 
 
 class BGE(RegisterBranch):
+    OPCODE = 0b0011
+
     @staticmethod
     def should(vm):
         return not (vm.flag_sign ^ vm.flag_overflow)
 
 
 class BGER(RelativeBranch):
+    OPCODE = 0b0011
+
     @staticmethod
     def should(vm):
         return not (vm.flag_sign ^ vm.flag_overflow)
 
 
 class BLE(RegisterBranch):
+    OPCODE = 0b0100
+
     @staticmethod
     def should(vm):
         return (vm.flag_sign ^ vm.flag_overflow) or vm.flag_zero
 
 
 class BLER(RelativeBranch):
+    OPCODE = 0b0100
+
     @staticmethod
     def should(vm):
         return (vm.flag_sign ^ vm.flag_overflow) or vm.flag_zero
 
 
 class BG(RegisterBranch):
+    OPCODE = 0b0101
+
     @staticmethod
     def should(vm):
         return not (vm.flag_sign ^ vm.flag_overflow) and not vm.flag_zero
 
 
 class BGR(RelativeBranch):
+    OPCODE = 0b0101
+
     @staticmethod
     def should(vm):
         return not (vm.flag_sign ^ vm.flag_overflow) and not vm.flag_zero
 
 
 class BULE(RegisterBranch):
+    OPCODE = 0b0110
+
     @staticmethod
     def should(vm):
         return not vm.flag_carry or vm.flag_zero
 
 
 class BULER(RelativeBranch):
+    OPCODE = 0b0110
+
     @staticmethod
     def should(vm):
         return not vm.flag_carry or vm.flag_zero
 
 
 class BUG(RegisterBranch):
+    OPCODE = 0b0111
+
     @staticmethod
     def should(vm):
         return vm.flag_carry and not vm.flag_zero
 
 
 class BUGR(RelativeBranch):
+    OPCODE = 0b0111
+
     @staticmethod
     def should(vm):
         return vm.flag_carry and not vm.flag_zero
 
 
 class BZ(RegisterBranch):
+    OPCODE = 0b1000
+
     @staticmethod
     def should(vm):
         return vm.flag_zero
 
 
 class BZR(RelativeBranch):
+    OPCODE = 0b1000
+
     @staticmethod
     def should(vm):
         return vm.flag_zero
 
 
 class BNZ(RegisterBranch):
+    OPCODE = 0b1001
+
     @staticmethod
     def should(vm):
         return not vm.flag_zero
 
 
 class BNZR(RelativeBranch):
+    OPCODE = 0b1001
+
     @staticmethod
     def should(vm):
         return not vm.flag_zero
 
 
 class BC(RegisterBranch):
+    OPCODE = 0b1010
+
     @staticmethod
     def should(vm):
         return vm.flag_carry
 
 
 class BCR(RelativeBranch):
+    OPCODE = 0b1010
+
     @staticmethod
     def should(vm):
         return vm.flag_carry
 
 
 class BNC(RegisterBranch):
+    OPCODE = 0b1011
+
     @staticmethod
     def should(vm):
         return not vm.flag_carry
 
 
 class BNCR(RelativeBranch):
+    OPCODE = 0b1011
+
     @staticmethod
     def should(vm):
         return not vm.flag_carry
 
 
 class BS(RegisterBranch):
+    OPCODE = 0b1100
+
     @staticmethod
     def should(vm):
         return vm.flag_sign
 
 
 class BSR(RelativeBranch):
+    OPCODE = 0b1100
+
     @staticmethod
     def should(vm):
         return vm.flag_sign
 
 
 class BNS(RegisterBranch):
+    OPCODE = 0b1101
+
     @staticmethod
     def should(vm):
         return not vm.flag_sign
 
 
 class BNSR(RelativeBranch):
+    OPCODE = 0b1101
+
     @staticmethod
     def should(vm):
         return not vm.flag_sign
 
 
 class BV(RegisterBranch):
+    OPCODE = 0b1110
+
     @staticmethod
     def should(vm):
         return vm.flag_overflow
 
 
 class BVR(RelativeBranch):
+    OPCODE = 0b1110
+
     @staticmethod
     def should(vm):
         return vm.flag_overflow
 
 
 class BNV(RegisterBranch):
+    OPCODE = 0b1111
+
     @staticmethod
     def should(vm):
         return not vm.flag_overflow
 
 
 class BNVR(RelativeBranch):
+    OPCODE = 0b1111
+
     @staticmethod
     def should(vm):
         return not vm.flag_overflow
@@ -725,6 +876,9 @@ class CALL(CALL_AND_RETURN):
         vm.expected_returns.append((vm.load_register(self.args[1]), vm.pc + 1))
         super().execute(vm)
 
+    def assemble(self):
+        return bytes([0b00100000, (self.args[0] << 4) + self.args[1]])
+
 
 class RETURN(CALL_AND_RETURN):
     P = (REGISTER, REGISTER)
@@ -758,13 +912,22 @@ class RETURN(CALL_AND_RETURN):
                 vm.settings.warning_count += 1
         super().execute(vm)
 
+    def assemble(self):
+        return bytes([0b00100001, (self.args[0] << 4) + self.args[1]])
+
 
 class SWI(AbstractOperation):
     P = (U4,)
 
+    def assemble(self):
+        return bytes([0b00100010, self.args[0]])
+
 
 class RTI(AbstractOperation):
     P = ()
+
+    def assemble(self):
+        return bytes([0b00100011, 0])
 
 
 class CMP(AbstractOperation):
