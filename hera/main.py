@@ -51,6 +51,10 @@ def main(argv=None) -> Optional[VirtualMachine]:
         settings.debug = True
         main_debug(path, settings)
         return None
+    elif arguments["assemble"]:
+        settings.allow_interrupts = True
+        main_assemble(path, settings)
+        return None
     else:
         return main_execute(path, settings)
 
@@ -88,6 +92,10 @@ def main_preprocess(path: str, settings: Settings) -> None:
 
     for i, op in enumerate(program.code):
         sys.stderr.write("  {:0>4}  {}\n".format(i, op))
+
+
+def main_assemble(path: str, settings: Settings) -> None:
+    pass
 
 
 def parse_args(argv):
@@ -181,8 +189,9 @@ FLAGS = {
     "--version",
     "--warn-octal-off",
     "--warn-return-off",
-    "preprocess",
+    "assemble",
     "debug",
+    "preprocess",
 }
 VERSION = "hera-py 0.6.0 for HERA version 2.4"
 HELP = """\
@@ -190,8 +199,9 @@ hera: an interpreter for the Haverford Educational RISC Architecture.
 
 Usage:
     hera <path>
-    hera preprocess <path>
     hera debug <path>
+    hera assemble <path>
+    hera preprocess <path>
 
 Common options:
     -h, --help         Show this message and exit.
