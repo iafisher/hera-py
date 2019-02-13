@@ -16,31 +16,17 @@ VOLUME_VERBOSE = "verbose"
 class Settings:
     """Global settings of the interpreter."""
 
-    def __init__(
-        self,
-        *,
-        allow_interrupts=False,
-        code=False,
-        color=True,
-        data=False,
-        data_start=DEFAULT_DATA_START,
-        debug=False,
-        no_debug_ops=False,
-        stdout=False,
-        volume=VOLUME_NORMAL,
-        warn_octal_on=True,
-        warn_return_on=True
-    ):
-        self.allow_interrupts = allow_interrupts
-        self.code = code
+    def __init__(self, *, color=True, debug=False, volume=VOLUME_NORMAL):
+        self.allow_interrupts = False
+        self.code = False
         self.color = color
-        self.data = data
-        self.data_start = data_start
+        self.data = False
+        self.data_start = DEFAULT_DATA_START
         self.debug = debug
-        self.no_debug_ops = no_debug_ops
-        self.stdout = stdout
-        self.warn_octal_on = warn_octal_on
-        self.warn_return_on = warn_return_on
+        self.no_debug_ops = False
+        self.stdout = False
+        self.warn_octal_on = True
+        self.warn_return_on = True
         self.volume = volume
         self.warning_count = 0
 
