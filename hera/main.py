@@ -6,7 +6,7 @@ Version: February 2019
 import functools
 import sys
 import textwrap
-from typing import Optional
+from typing import List, Optional
 
 from .assembler import assemble
 from .data import Settings, VOLUME_QUIET, VOLUME_VERBOSE
@@ -25,38 +25,21 @@ def external_main(argv=None) -> None:
 
 def main(argv=None) -> Optional[VirtualMachine]:
     """The main entry point into hera-py."""
-    arguments = parse_args(argv)
-    path = arguments["<path>"]
+    settings = parse_args(argv)
+    path = settings.path
 
-    settings = Settings()
-    if arguments["--no-color"] or not sys.stderr.isatty():
+    if not sys.stderr.isatty():
         settings.color = False
 
-    if arguments["--big-stack"]:
-        # Arbitrary value copied over from HERA-C.
-        settings.data_start = 0xC167
-
-    settings.code = arguments["--code"]
-    settings.data = arguments["--data"]
-    settings.no_debug_ops = arguments["--no-debug-ops"]
-    settings.stdout = arguments["--stdout"]
-    settings.warn_return_on = not arguments["--warn-return-off"]
-    settings.warn_octal_on = not arguments["--warn-octal-off"]
-
-    if arguments["--verbose"]:
-        settings.volume = VOLUME_VERBOSE
-    elif arguments["--quiet"]:
-        settings.volume = VOLUME_QUIET
-
-    if arguments["preprocess"]:
+    if settings.subcommand == "preprocess":
         settings.allow_interrupts = True
         main_preprocess(path, settings)
         return None
-    elif arguments["debug"]:
+    elif settings.subcommand == "debug":
         settings.debug = True
         main_debug(path, settings)
         return None
-    elif arguments["assemble"]:
+    elif settings.subcommand == "assemble":
         settings.allow_interrupts = True
         main_assemble(path, settings)
         return None
@@ -128,7 +111,7 @@ def main_assemble(path: str, settings: Settings) -> None:
             f.write(data)
 
 
-def parse_args(argv):
+def parse_args(argv: List[str]) -> Settings:
     if argv is None:
         argv = sys.argv[1:]
 
@@ -190,15 +173,40 @@ def parse_args(argv):
         sys.stderr.write("--quiet and --verbose are incompatible.\n")
         sys.exit(1)
 
-    flags["<path>"] = posargs[0]
     for f in FLAGS:
         if f not in flags:
             flags[f] = False
 
-    return flags
+    settings = Settings()
+    settings.path = posargs[0]
+    if flags["debug"]:
+        settings.subcommand = "debug"
+        settings.debug = True
+    elif flags["assemble"]:
+        settings.subcommand = "assemble"
+    elif flags["preprocess"]:
+        settings.subcommand = "preprocess"
+
+    settings.allow_interrupts = settings.subcommand in ("assemble", "preprocess")
+    settings.code = flags["--code"]
+    settings.color = not flags["--no-color"]
+    settings.data = flags["--data"]
+    if flags["--big-stack"]:
+        # Arbitrary value copied over from HERA-C.
+        settings.data_start = 0xC167
+    settings.no_debug_ops = flags["--no-debug-ops"]
+    settings.stdout = flags["--stdout"]
+    settings.warn_octal_on = not flags["--warn-octal-off"]
+    settings.warn_return_on = not flags["--warn-return-off"]
+    if flags["--verbose"]:
+        settings.volume = VOLUME_VERBOSE
+    elif flags["--quiet"]:
+        settings.volume = VOLUME_QUIET
+
+    return settings
 
 
-def short_to_long(arg):
+def short_to_long(arg: str) -> str:
     if arg == "-h":
         return "--help"
     elif arg == "-v":
@@ -209,7 +217,7 @@ def short_to_long(arg):
         return arg
 
 
-def dump_state(vm, settings):
+def dump_state(vm: VirtualMachine, settings: Settings) -> None:
     """Print the state of the virtual machine to standard output."""
     # Make sure that all program output has been printed.
     sys.stdout.flush()
