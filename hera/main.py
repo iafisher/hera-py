@@ -3,10 +3,12 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
-import sys
 import functools
+import sys
+import textwrap
 from typing import Optional
 
+from .assembler import assemble
 from .data import Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
 from .loader import load_program_from_file
@@ -34,7 +36,10 @@ def main(argv=None) -> Optional[VirtualMachine]:
         # Arbitrary value copied over from HERA-C.
         settings.data_start = 0xC167
 
+    settings.code = arguments["--code"]
+    settings.data = arguments["--data"]
     settings.no_debug_ops = arguments["--no-debug-ops"]
+    settings.stdout = arguments["--stdout"]
     settings.warn_return_on = not arguments["--warn-return-off"]
     settings.warn_octal_on = not arguments["--warn-octal-off"]
 
@@ -95,7 +100,20 @@ def main_preprocess(path: str, settings: Settings) -> None:
 
 
 def main_assemble(path: str, settings: Settings) -> None:
-    pass
+    program = load_program_from_file(path, settings)
+    code, data = assemble(program)
+
+    if settings.stdout:
+        sys.stderr.write("[DATA]\n")
+        sys.stderr.write(textwrap.indent(data, "  "))
+        sys.stderr.write("\n[CODE]\n")
+        sys.stderr.write(textwrap.indent(code, "  "))
+    else:
+        with open(path + ".lcode", "w", encoding="ascii") as f:
+            f.write(code)
+
+        with open(path + ".ldata", "w", encoding="ascii") as f:
+            f.write(data)
 
 
 def parse_args(argv):
@@ -179,46 +197,6 @@ def short_to_long(arg):
         return arg
 
 
-FLAGS = {
-    "--big-stack",
-    "--help",
-    "--no-color",
-    "--no-debug-ops",
-    "--quiet",
-    "--verbose",
-    "--version",
-    "--warn-octal-off",
-    "--warn-return-off",
-    "assemble",
-    "debug",
-    "preprocess",
-}
-VERSION = "hera-py 0.6.0 for HERA version 2.4"
-HELP = """\
-hera: an interpreter for the Haverford Educational RISC Architecture.
-
-Usage:
-    hera <path>
-    hera debug <path>
-    hera assemble <path>
-    hera preprocess <path>
-
-Common options:
-    -h, --help         Show this message and exit.
-    -v, --version      Show the version and exit.
-
-    --no-color         Do not print colored output.
-    --no-debug-ops     Disallow debugging instructions.
-    -q --quiet         Set output level to quiet.
-    --verbose          Set output level to verbose.
-    --warn-octal-off   Do not print warnings for zero-prefixed integer literals.
-
-Interpreter and debugger options:
-    --big-stack        Reserve more space for the stack.
-    --warn-return-off  Do not print warnings for invalid RETURN addresses.
-"""
-
-
 def dump_state(vm, settings):
     """Print the state of the virtual machine to standard output."""
     # Make sure that all program output has been printed.
@@ -266,3 +244,52 @@ def dump_state(vm, settings):
     if settings.warning_count > 0:
         c = settings.warning_count
         nprint("\n{} warning{} emitted.".format(c, "" if c == 1 else "s"))
+
+
+FLAGS = {
+    "--big-stack",
+    "--code",
+    "--data",
+    "--help",
+    "--no-color",
+    "--no-debug-ops",
+    "--quiet",
+    "--stdout",
+    "--verbose",
+    "--version",
+    "--warn-octal-off",
+    "--warn-return-off",
+    "assemble",
+    "debug",
+    "preprocess",
+}
+VERSION = "hera-py 0.6.0 for HERA version 2.4"
+HELP = """\
+hera: an interpreter for the Haverford Educational RISC Architecture.
+
+Usage:
+    hera <path>
+    hera debug <path>
+    hera assemble <path>
+    hera preprocess <path>
+
+Common options:
+    -h, --help         Show this message and exit.
+    -v, --version      Show the version and exit.
+
+    --no-color         Do not print colored output.
+    --no-debug-ops     Disallow debugging instructions.
+    -q --quiet         Set output level to quiet.
+    --verbose          Set output level to verbose.
+    --warn-octal-off   Do not print warnings for zero-prefixed integer literals.
+
+Interpreter and debugger options:
+    --big-stack        Reserve more space for the stack.
+    --warn-return-off  Do not print warnings for invalid RETURN addresses.
+
+Assembler options:
+    --code             Only output the assembled code.
+    --data             Only output the assembled data.
+    --stdout           Print the assembled program to stdout instead of creating
+                       files.
+"""

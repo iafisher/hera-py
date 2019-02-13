@@ -11,6 +11,7 @@ from typing import Dict, List, Optional
 from hera import stdlib
 from hera.data import Constant, DataLabel, Label, Location, Messages, Token
 from hera.utils import format_int, from_u16, print_error, print_warning, to_u16, to_u32
+from hera.vm import VirtualMachine
 
 
 class AbstractOperation:
@@ -39,10 +40,10 @@ class AbstractOperation:
     def convert(self) -> List["AbstractOperation"]:
         return [self]
 
-    def assemble(self):
+    def assemble(self) -> str:
         raise NotImplementedError
 
-    def execute(self, vm) -> None:
+    def execute(self, vm: VirtualMachine) -> None:
         raise NotImplementedError
 
     def __getattr__(self, name):
