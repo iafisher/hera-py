@@ -103,8 +103,8 @@ def main_assemble(path: str, settings: Settings) -> None:
     program = load_program_from_file(path, settings)
     raw_code, raw_data = assemble(program)
 
-    code = "\n".join(b.hex() for b in raw_code)
-    data = "\n".join(b.hex() for b in raw_data)
+    code = "\n".join(bytes_to_hex(b) for b in raw_code)
+    data = "\n".join(bytes_to_hex(b) for b in raw_data)
 
     if settings.stdout:
         if settings.data:
@@ -254,6 +254,14 @@ def dump_state(vm, settings):
     if settings.warning_count > 0:
         c = settings.warning_count
         nprint("\n{} warning{} emitted.".format(c, "" if c == 1 else "s"))
+
+
+def bytes_to_hex(b):
+    try:
+        return b.hex()
+    except AttributeError:
+        # bytes.hex is not implemented in Python 3.4.
+        return "".join("{:0>2x}".format(c) for c in b)
 
 
 FLAGS = {
