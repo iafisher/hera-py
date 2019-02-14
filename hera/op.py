@@ -1031,12 +1031,18 @@ class INTEGER(DataOperation):
         vm.store_memory(vm.dc, to_u16(self.args[0]))
         vm.dc += 1
 
+    def assemble(self):
+        return bytes([self.args[0] & 0xFF00, self.args[0] & 0xFF])
+
 
 class DSKIP(DataOperation):
     P = (U16,)
 
     def execute(self, vm):
         vm.dc += self.args[0]
+
+    def assemble(self):
+        return bytes([0] * self.args[0] * 2)
 
 
 class LP_STRING(DataOperation):
@@ -1048,6 +1054,15 @@ class LP_STRING(DataOperation):
         for c in self.args[0]:
             vm.store_memory(vm.dc, ord(c))
             vm.dc += 1
+
+    def assemble(self):
+        s = self.args[0]
+        length_bytes = [len(s) & 0xFF00, len(s) & 0xFF]
+        data_bytes = []
+        for c in s:
+            data_bytes.append(0)
+            data_bytes.append(ord(c))
+        return bytes(length_bytes + data_bytes)
 
 
 class CONSTANT(DataOperation):

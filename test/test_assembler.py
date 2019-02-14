@@ -59,3 +59,13 @@ def test_assemble_misc(capsys):
 
     with open("test/assets/asm/misc.hera.lcode") as f:
         assert captured.out == f.read()
+
+
+def test_assemble_data(capsys):
+    main(["assemble", "--data", "--stdout", "test/assets/asm/data.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+
+    with open("test/assets/asm/data.hera.ldata") as f:
+        assert captured.out == f.read()

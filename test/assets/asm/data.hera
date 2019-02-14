@@ -1,0 +1,5 @@
+LP_STRING("hello")
+INTEGER(42)
+DSKIP(10)
+INTEGER(10)
+LP_STRING("goodbye")
