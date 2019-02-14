@@ -31,15 +31,15 @@ def main(argv=None) -> Optional[VirtualMachine]:
     if not sys.stderr.isatty():
         settings.color = False
 
-    if settings.subcommand == "preprocess":
+    if settings.mode == "preprocess":
         settings.allow_interrupts = True
         main_preprocess(path, settings)
         return None
-    elif settings.subcommand == "debug":
+    elif settings.mode == "debug":
         settings.debug = True
         main_debug(path, settings)
         return None
-    elif settings.subcommand == "assemble":
+    elif settings.mode == "assemble":
         settings.allow_interrupts = True
         main_assemble(path, settings)
         return None
@@ -157,17 +157,22 @@ def parse_args(argv: List[str]) -> Settings:
         sys.stderr.write("Too many file paths supplied.\n")
         sys.exit(1)
 
-    if "--big-stack" in flags:
-        if "preprocess" in flags:
-            sys.stderr.write("--big-stack cannot be used with preprocess subcommand.\n")
-            sys.exit(1)
+    if "debug" in flags:
+        mode = "debug"
+    elif "assemble" in flags:
+        mode = "assemble"
+    elif "preprocess" in flags:
+        mode = "preprocess"
+    else:
+        mode = ""
 
-    if "--warn-return-off" in flags:
-        if "preprocess" in flags:
-            sys.stderr.write(
-                "--warn-return-off cannot be used with preprocess subcommand.\n"
-            )
-            sys.exit(1)
+    for picky_flag, valid_modes in PICKY_FLAGS.items():
+        if picky_flag in flags:
+            if mode not in valid_modes:
+                sys.stderr.write(
+                    "{} is not compatible with the chosen mode.\n".format(picky_flag)
+                )
+                sys.exit(1)
 
     if "--quiet" in flags and "--verbose" in flags:
         sys.stderr.write("--quiet and --verbose are incompatible.\n")
@@ -179,15 +184,11 @@ def parse_args(argv: List[str]) -> Settings:
 
     settings = Settings()
     settings.path = posargs[0]
-    if flags["debug"]:
-        settings.subcommand = "debug"
+    settings.mode = mode
+    if settings.mode == "debug":
         settings.debug = True
-    elif flags["assemble"]:
-        settings.subcommand = "assemble"
-    elif flags["preprocess"]:
-        settings.subcommand = "preprocess"
 
-    settings.allow_interrupts = settings.subcommand in ("assemble", "preprocess")
+    settings.allow_interrupts = settings.mode in ("assemble", "preprocess")
     settings.code = flags["--code"]
     settings.color = not flags["--no-color"]
     settings.data = flags["--data"]
@@ -291,6 +292,17 @@ FLAGS = {
     "debug",
     "preprocess",
 }
+
+# Map from flag names to compatible modes, e.g. "--big-stack" is only compatible with
+# the run, debug and assemble modes.
+PICKY_FLAGS = {
+    "--big-stack": ["", "debug", "assemble"],
+    "--warn-return-off": ["", "debug"],
+    "--code": ["assemble"],
+    "--data": ["assemble"],
+    "--stdout": ["assemble"],
+}
+
 VERSION = "hera-py 0.6.0 for HERA version 2.4"
 HELP = """\
 hera: an interpreter for the Haverford Educational RISC Architecture.

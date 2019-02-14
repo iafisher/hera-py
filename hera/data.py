@@ -23,10 +23,10 @@ class Settings:
         self.data = False
         self.data_start = DEFAULT_DATA_START
         self.debug = debug
+        self.mode = ""
         self.no_debug_ops = False
         self.path = None
         self.stdout = False
-        self.subcommand = ""
         self.warn_octal_on = True
         self.warn_return_on = True
         self.volume = volume

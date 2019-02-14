@@ -125,7 +125,7 @@ def test_main_preprocess_and_debug_with_big_stack_flag(capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert captured.err == "--big-stack cannot be used with preprocess subcommand.\n"
+    assert captured.err == "--big-stack is not compatible with the chosen mode.\n"
 
 
 def test_main_preprocess_with_warn_return_off_flag(capsys):
@@ -134,9 +134,7 @@ def test_main_preprocess_with_warn_return_off_flag(capsys):
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert (
-        captured.err == "--warn-return-off cannot be used with preprocess subcommand.\n"
-    )
+    assert captured.err == "--warn-return-off is not compatible with the chosen mode.\n"
 
 
 def test_main_with_verbose_flag(capsys):
@@ -204,6 +202,24 @@ Error: debugging instructions disallowed with --no-debug-ops flag, line 1 col 1 
 
 """
     )
+
+
+def test_main_with_code_flag(capsys):
+    with pytest.raises(SystemExit):
+        main(["--code", "whatever.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "--code is not compatible with the chosen mode.\n"
+
+
+def test_main_with_data_flag(capsys):
+    with pytest.raises(SystemExit):
+        main(["--data", "whatever.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "--data is not compatible with the chosen mode.\n"
 
 
 def test_no_ANSI_color_when_stderr_is_not_tty():
