@@ -32,11 +32,19 @@ def load_program_from_file(path: str, settings=Settings()) -> Program:
         try:
             text = sys.stdin.read()
         except (IOError, KeyboardInterrupt):
-            print(file=sys.stderr)
+            # Print to stderr when in interpreter or debug mode, because the output of
+            # the HERA program goes to stdout.
+            if settings.mode in ("", "debug"):
+                print(file=sys.stderr)
+            else:
+                print()
             sys.exit(3)
         else:
             # So that the program and its output are visually separate.
-            print(file=sys.stderr)
+            if settings.mode in ("", "debug"):
+                print(file=sys.stderr)
+            else:
+                print()
 
         try:
             text.encode("ascii")

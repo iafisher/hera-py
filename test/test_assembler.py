@@ -89,10 +89,11 @@ def test_assemble_code_and_data_together(capsys):
         main(["assemble", "--stdout", "-"])
 
     captured = capsys.readouterr()
-    assert captured.err == "\n"
+    assert captured.err == ""
     assert (
         captured.out
         == """\
+
 [DATA]
   49152*0
   c001
