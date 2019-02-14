@@ -13,6 +13,8 @@ __pycache__
 .DS_Store
 
 /*.hera
+/*.ldata
+/*.lcode
 /*.txt
 /examples
 !/requirements-dev.txt

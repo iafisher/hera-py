@@ -1,3 +1,6 @@
+from unittest.mock import patch
+from io import StringIO
+
 from hera.main import main
 
 
@@ -79,3 +82,23 @@ def test_assemble_data_with_big_stack(capsys):
 
     with open("test/assets/asm/data_big_stack.hera.ldata") as f:
         assert captured.out == f.read()
+
+
+def test_assemble_code_and_data_together(capsys):
+    with patch("sys.stdin", StringIO("SET(R1, 42)")):
+        main(["assemble", "--stdout", "-"])
+
+    captured = capsys.readouterr()
+    assert captured.err == "\n"
+    assert (
+        captured.out
+        == """\
+[DATA]
+  49152*0
+  c001
+
+[CODE]
+  e12a
+  f100
+"""
+    )

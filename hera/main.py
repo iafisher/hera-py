@@ -109,7 +109,7 @@ def main_assemble(path: str, settings: Settings) -> None:
         else:
             print("[DATA]")
             print(textwrap.indent(data, "  "))
-            print("\n[CODE]")
+            print("[CODE]")
             print(textwrap.indent(code, "  "))
     else:
         if path == "-":
@@ -117,6 +117,7 @@ def main_assemble(path: str, settings: Settings) -> None:
 
         with open(path + ".lcode", "w", encoding="ascii") as f:
             f.write(code)
+            f.write("\n")
 
         with open(path + ".ldata", "w", encoding="ascii") as f:
             f.write(data)
