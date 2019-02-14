@@ -69,3 +69,13 @@ def test_assemble_data(capsys):
 
     with open("test/assets/asm/data.hera.ldata") as f:
         assert captured.out == f.read()
+
+
+def test_assemble_data_with_big_stack(capsys):
+    main(["assemble", "--data", "--stdout", "--big-stack", "test/assets/asm/data.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+
+    with open("test/assets/asm/data_big_stack.hera.ldata") as f:
+        assert captured.out == f.read()
