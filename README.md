@@ -26,13 +26,19 @@ Enter the interactive debugger with the `debug` subcommand:
 $ hera debug main.hera
 ```
 
+Assemble a HERA program into machine code:
+
+```
+$ hera assemble main.hera
+```
+
 You can also preprocess a HERA program without running it, to see how pseudo-instructions and labels are resolved to HERA code:
 
 ```
 $ hera preprocess main.hera
 ```
 
-## Comparison with HERA-C
+## Comparison with HERA-C and Hassem
 HERA-C is the current HERA interpreter used at Haverford. It is implemented as a shell-script wrapper around a set of C++ macros that expand HERA instructions into C++ code, which is then compiled by g++.
 
 hera-py improves on HERA-C in the following areas:
@@ -57,6 +63,8 @@ HERA-C has a few features that hera-py does not:
   - C-style #define macros (and more generally the ability to embed arbitrary C++ code in HERA programs)
 
 hera-py generally runs faster than HERA-C on small and medium-sized programs, while HERA-C is faster for very large programs.
+
+Hassem is the current HERA assembler used at Haverford. hera-py has better error messages than Hassem, allows the user greater control of output (e.g., with the `--stdout` flag), and fixes some Hassem bugs.
 
 ## Acknowledgements
 Thank you to [Christopher Villalta](https://github.com/csvillalta) for valuable feedback on early iterations of this project.
