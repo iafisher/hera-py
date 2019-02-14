@@ -36,7 +36,6 @@ def main(argv=None) -> Optional[VirtualMachine]:
         main_preprocess(path, settings)
         return None
     elif settings.mode == "debug":
-        settings.debug = True
         main_debug(path, settings)
         return None
     elif settings.mode == "assemble":
@@ -185,8 +184,6 @@ def parse_args(argv: List[str]) -> Settings:
     settings = Settings()
     settings.path = posargs[0]
     settings.mode = mode
-    if settings.mode == "debug":
-        settings.debug = True
 
     settings.allow_interrupts = settings.mode in ("assemble", "preprocess")
     settings.code = flags["--code"]

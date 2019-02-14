@@ -19,7 +19,7 @@ def debugger():
 
 
 def load_shell(program):
-    settings = Settings(debug=True)
+    settings = Settings(mode="debug")
     return Shell(Debugger(load_program(program, settings), settings), settings)
 
 
@@ -34,7 +34,7 @@ LABEL(add)
 ADD(R3, R1, R2)
 HALT()
 """,
-    Settings(debug=True),
+    Settings(mode="debug"),
 )
 
 

@@ -39,7 +39,7 @@ def check(
         return (Program([], [], {}, None), messages)
 
     debug_info = None  # type: Optional[DebugInfo]
-    if settings.debug:
+    if settings.mode == "debug":
         labels = labels_to_line_numbers(oplist)
         debug_info = DebugInfo(labels)
     else:
