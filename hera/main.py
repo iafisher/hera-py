@@ -9,10 +9,11 @@ import textwrap
 from typing import List, Optional
 
 from .assembler import assemble
-from .data import Settings, VOLUME_QUIET, VOLUME_VERBOSE
+from .data import HERAError, Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
+from .disassembler import disassemble
 from .loader import load_program_from_file
-from .utils import format_int
+from .utils import format_int, read_file
 from .vm import VirtualMachine
 
 
@@ -41,6 +42,9 @@ def main(argv=None) -> Optional[VirtualMachine]:
     elif settings.mode == "assemble":
         settings.allow_interrupts = True
         main_assemble(path, settings)
+        return None
+    elif settings.mode == "disassemble":
+        main_disassemble(path, settings)
         return None
     else:
         return main_execute(path, settings)
@@ -123,6 +127,25 @@ def main_assemble(path: str, settings: Settings) -> None:
             f.write(data)
 
 
+def main_disassemble(path: str, settings: Settings) -> None:
+    try:
+        contents = read_file(path)
+    except HERAError:
+        pass
+    else:
+        for line in contents.splitlines():
+            try:
+                v = int(line, base=16)
+            except ValueError:
+                print("// Invalid hex literal: {}".format(line))
+                continue
+
+            try:
+                print(disassemble(bytes([v >> 8, v & 0xFF])))
+            except HERAError:
+                print("// Unknown instruction: {}".format(line))
+
+
 def parse_args(argv: List[str]) -> Settings:
     if argv is None:
         argv = sys.argv[1:]
@@ -175,6 +198,8 @@ def parse_args(argv: List[str]) -> Settings:
         mode = "assemble"
     elif "preprocess" in flags:
         mode = "preprocess"
+    elif "disassemble" in flags:
+        mode = "disassemble"
     else:
         mode = ""
 
@@ -300,6 +325,7 @@ FLAGS = {
     "--warn-return-off",
     "assemble",
     "debug",
+    "disassemble",
     "preprocess",
 }
 
@@ -322,6 +348,7 @@ Usage:
     hera debug <path>
     hera assemble <path>
     hera preprocess <path>
+    hera disassemble <path>
 
 Common options:
     -h, --help         Show this message and exit.

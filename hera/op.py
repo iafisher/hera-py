@@ -18,6 +18,7 @@ class AbstractOperation:
     def __init__(self, *args, loc=None):
         self.args = [a.value for a in args]
         self.tokens = list(args)
+
         if isinstance(loc, Location):
             self.loc = loc
         elif hasattr(loc, "location"):
