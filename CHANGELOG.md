@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - Newlines are no longer semi-randomly printed to standard error in preprocessing and assembling mode.
 
+### Added
+- The `--credits` flags.
+
 ## [0.7.0] - 2019-02-13
 ### Added
 - The `assemble` subcommand, for assembling HERA programs into raw machine code.

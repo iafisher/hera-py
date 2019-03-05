@@ -242,6 +242,15 @@ Error: expected HERA operation or #include, line 1 col 1 of <stdin>
     )
 
 
+def test_credits_flag(capsys):
+    with pytest.raises(SystemExit):
+        main(["--credits"])
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert "Ian Fisher" in captured.out
+
+
 def test_dump_state(capsys):
     dump_state(VirtualMachine(), Settings(volume=VOLUME_VERBOSE))
 

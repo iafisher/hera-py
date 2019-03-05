@@ -185,6 +185,16 @@ def parse_args(argv: List[str]) -> Settings:
             )
             sys.exit(1)
 
+    if "--credits" in flags:
+        if len(flags) == 1 and not posargs:
+            print(CREDITS)
+            sys.exit(0)
+        else:
+            sys.stderr.write(
+                "--credits may not be combined with other flags or commands.\n"
+            )
+            sys.exit(1)
+
     if len(posargs) == 0:
         sys.stderr.write("No file path supplied.\n")
         sys.exit(1)
@@ -313,6 +323,7 @@ def bytes_to_hex(b: bytes) -> str:
 FLAGS = {
     "--big-stack",
     "--code",
+    "--credits",
     "--data",
     "--help",
     "--no-color",
@@ -340,6 +351,12 @@ PICKY_FLAGS = {
 }
 
 VERSION = "hera-py 0.7.0 for HERA version 2.4"
+CREDITS = (
+    VERSION
+    + """
+
+Developed by Ian Fisher (HC '19) - iafisher@protonmail.com."""
+)
 HELP = """\
 hera: an interpreter for the Haverford Educational RISC Architecture.
 
@@ -353,6 +370,7 @@ Usage:
 Common options:
     -h, --help         Show this message and exit.
     -v, --version      Show the version and exit.
+    --credits          Print the credits for hera-py development.
 
     --no-color         Do not print colored output.
     --no-debug-ops     Disallow debugging instructions.
