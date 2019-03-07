@@ -371,7 +371,7 @@ PICKY_FLAGS = {
     "--stdout": ["assemble"],
 }
 
-VERSION = "hera-py 0.7.0 for HERA version 2.4"
+VERSION = "hera-py 0.8.0 for HERA version 2.4"
 CREDITS = (
     VERSION
     + """
