@@ -251,6 +251,14 @@ def test_credits_flag(capsys):
     assert "Ian Fisher" in captured.out
 
 
+def test_throttle_flag(capsys):
+    with patch("sys.stdin", StringIO("LABEL(start); BR(start)")):
+        main(["--throttle", "100", "-"])
+
+    captured = capsys.readouterr()
+    assert "Program throttled after 100 instructions." in captured.err
+
+
 def test_dump_state(capsys):
     dump_state(VirtualMachine(), Settings(volume=VOLUME_VERBOSE))
 

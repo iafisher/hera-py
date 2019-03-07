@@ -26,6 +26,7 @@ class Settings:
         self.no_debug_ops = False
         self.path = None
         self.stdout = False
+        self.throttle = False
         self.warn_octal_on = True
         self.warn_return_on = True
         self.volume = volume

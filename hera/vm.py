@@ -48,6 +48,8 @@ class VirtualMachine:
         self.halted = False
         # Location object for the current operation
         self.location = None
+        # Number of operations that have been executed - used for throttling.
+        self.op_count = 0
         # Have warnings been issued for use of SWI and RTI instructions?
         self.warned_for_SWI = False
         self.warned_for_RTI = False
@@ -67,10 +69,25 @@ class VirtualMachine:
         for data_op in program.data:
             data_op.execute(self)
 
-        while not self.halted and self.pc < len(program.code):
-            op = program.code[self.pc]
-            self.location = op.loc
-            op.execute(self)
+        # This loop is performance-critical, so instead of having a single loop that
+        # always does the throttle-checking, we check beforehand if throttling is turned
+        # on, to avoid the performance penalty in the (normal) case where throttling is
+        # off.
+        if self.settings.throttle is False:
+            while not self.halted and self.pc < len(program.code):
+                op = program.code[self.pc]
+                self.location = op.loc
+                op.execute(self)
+        else:
+            while (
+                not self.halted
+                and self.pc < len(program.code)
+                and self.op_count < self.settings.throttle
+            ):
+                op = program.code[self.pc]
+                self.location = op.loc
+                op.execute(self)
+                self.op_count += 1
 
     def load_register(self, index):
         """Get the contents of the register with the given index."""

@@ -62,6 +62,13 @@ def main_execute(path: str, settings: Settings) -> VirtualMachine:
 
     vm = VirtualMachine(settings)
     vm.run(program)
+
+    # Check if the program exited prematurely due to throttling.
+    if settings.throttle is not False and vm.op_count == settings.throttle:
+        sys.stderr.write(
+            "Program throttled after {} instructions.\n".format(vm.op_count)
+        )
+
     settings.warning_count += vm.warning_count
 
     if settings.volume != VOLUME_QUIET:
@@ -153,17 +160,28 @@ def parse_args(argv: List[str]) -> Settings:
     flags = {}
     posargs = []
     after_flags = False
-    for arg in argv:
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
         longarg = short_to_long(arg)
         if longarg == "--":
             after_flags = True
         elif longarg in FLAGS:
-            flags[longarg] = True
+            # --throttle is the only flag that takes an argument.
+            if longarg == "--throttle":
+                if i == len(argv) - 1 or not argv[i + 1].isdigit():
+                    sys.stderr.write("--throttle takes one integer argument.\n")
+                    sys.exit(1)
+                flags[longarg] = int(argv[i + 1])
+                i += 1
+            else:
+                flags[longarg] = True
         elif not after_flags and longarg.startswith("-") and len(longarg) > 1:
             sys.stderr.write("Unrecognized flag: " + arg + "\n")
             sys.exit(1)
         else:
             posargs.append(longarg)
+        i += 1
 
     if "--help" in flags:
         if len(flags) == 1 and not posargs:
@@ -242,6 +260,7 @@ def parse_args(argv: List[str]) -> Settings:
         settings.data_start = 0xC167
     settings.no_debug_ops = flags["--no-debug-ops"]
     settings.stdout = flags["--stdout"]
+    settings.throttle = flags["--throttle"]
     settings.warn_octal_on = not flags["--warn-octal-off"]
     settings.warn_return_on = not flags["--warn-return-off"]
     if flags["--verbose"]:
@@ -330,6 +349,7 @@ FLAGS = {
     "--no-debug-ops",
     "--quiet",
     "--stdout",
+    "--throttle",
     "--verbose",
     "--version",
     "--warn-octal-off",
@@ -344,6 +364,7 @@ FLAGS = {
 # the run, debug and assemble modes.
 PICKY_FLAGS = {
     "--big-stack": ["", "debug", "assemble"],
+    "--throttle": [""],
     "--warn-return-off": ["", "debug"],
     "--code": ["assemble"],
     "--data": ["assemble"],
@@ -380,6 +401,7 @@ Common options:
 
 Interpreter and debugger options:
     --big-stack        Reserve more space for the stack.
+    --throttle <n>     Exit after <n> instructions have been executed.
     --warn-return-off  Do not print warnings for invalid RETURN addresses.
 
 Assembler options:
