@@ -1,4 +1,4 @@
-from typing import List  # noqa: F401
+from typing import List, Union
 
 from . import op
 from .data import HERAError, Token
@@ -154,15 +154,25 @@ def disassemble(data: bytes) -> AbstractOperation:
     raise HERAError("unknown instruction")
 
 
-def match(pattern: str, v: int):
+def match(pattern: str, v: int) -> Union[List, bool]:
+    """Try to match the 16-bit integer `v` against `pattern`. Return a list of
+    extracted arguments if `v` matches, or False otherwise.
+
+    `pattern` should be a string of sixteen characters, which may be the digits '0' or
+    '1' or lowercase Latin letters. The digits are matched against the literal digits
+    in `v`; letters are used to extract values. For example, "0000aaaabbbb1111" would
+    match, e.g., 0000 1001 0110 11111, returning [0b1001, 0b0110].
+    """
     s = bin(v)[2:].rjust(16, "0")
     args = []  # type: List[int]
 
     for pattern_bit, real_bit in zip(pattern, s):
-        if pattern_bit == "0" and real_bit != "0":
-            return False
-        elif pattern_bit == "1" and real_bit != "1":
-            return False
+        if pattern_bit == "0":
+            if real_bit != "0":
+                return False
+        elif pattern_bit == "1":
+            if real_bit != "1":
+                return False
         else:
             index = ord(pattern_bit) - ord("a")
             while index >= len(args):
