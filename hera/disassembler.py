@@ -143,9 +143,9 @@ def disassemble(data: bytes) -> AbstractOperation:
             return op.BNVR(r)
     elif hi4 == 0b0010 and midhi4 >> 1 == 0b000:
         if midhi4 & 1:
-            return op.CALL(R(midlo4), R(lo4))
-        else:
             return op.RETURN(R(midlo4), R(lo4))
+        else:
+            return op.CALL(R(midlo4), R(lo4))
     elif hi == 0b00100010 and midlo4 == 0b0000:
         return op.SWI(UINT(lo4))
     elif hi == 0b00100011 and lo == 0:
