@@ -2,10 +2,10 @@ from typing import List, Union
 
 from . import op
 from .data import HERAError, Token
-from .op import AbstractOperation
 
 
-def disassemble(data: bytes) -> AbstractOperation:
+# def disassemble(data: bytes) -> op.AbstractOperation:
+def disassemble(data: bytes):
     if len(data) != 2:
         raise HERAError("all HERA operations are two bytes")
 

@@ -9,7 +9,8 @@ from contextlib import suppress
 from typing import Dict, List, Optional
 
 from hera import stdlib
-from hera.data import Constant, DataLabel, Label, Location, Messages, Token
+from hera.data import Constant, DataLabel, HERAError, Label, Location, Messages, Token
+from hera.disassembler import disassemble
 from hera.utils import format_int, from_u16, print_error, print_warning, to_u16, to_u32
 from hera.vm import VirtualMachine
 
@@ -1025,6 +1026,27 @@ class NOT(AbstractOperation):
         ]
 
 
+class OPCODE(AbstractOperation):
+    P = (U16,)
+
+    def typecheck(self, *args, **kwargs):
+        messages = super().typecheck(*args, **kwargs)
+
+        data = bytes([self.args[0] >> 8, self.args[0] & 0xFF])
+        try:
+            disassemble(data)
+        except HERAError:
+            messages.error("not a HERA instruction", self.tokens[0])
+
+        return messages
+
+    def convert(self):
+        # We don't need to call .convert() on the return value of disassemble because
+        # disassemble never returns a pseudo-op.
+        data = bytes([self.args[0] >> 8, self.args[0] & 0xFF])
+        return [disassemble(data)]
+
+
 class INTEGER(DataOperation):
     P = (I16,)
 
@@ -1280,6 +1302,7 @@ name_to_class = {
     "NEG": NEG,
     "NOP": NOP,
     "NOT": NOT,
+    "OPCODE": OPCODE,
     "OR": OR,
     "print": PRINT,
     "println": PRINTLN,

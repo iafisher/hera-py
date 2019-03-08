@@ -7,7 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 
 ## Unreleased
-Nothing yet!
+### Added
+- The `OPCODE` instruction.
 
 ## [0.8.0] - 2019-03-07
 ### Added

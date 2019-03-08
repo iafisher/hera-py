@@ -430,3 +430,21 @@ LABEL(after_bnvr)
     assert vm.registers[8] == 0
     assert vm.registers[9] == 0
     assert vm.registers[10] == 0
+
+
+def test_OPCODE_instructions():
+    program = """\
+// SETLO(R1, 0xFF)
+OPCODE(0xe1ff)
+// SETHI(R3, 42)
+OPCODE(0xf32a)
+// INC(R10, 1)
+OPCODE(0x3a80)
+// DEC(R1, 20)
+OPCODE(0x31d3)
+    """
+    vm = execute_program_helper(program)
+
+    assert vm.registers[1] == 65515
+    assert vm.registers[3] == 10752
+    assert vm.registers[10] == 1
