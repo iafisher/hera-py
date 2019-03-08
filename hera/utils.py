@@ -157,7 +157,39 @@ def read_file(path: str) -> str:
     except OSError:
         raise HERAError('could not open file "{}"'.format(path))
     except UnicodeDecodeError:
-        raise HERAError("non-ASCII byte in file")
+        raise HERAError('non-ASCII byte in file "{}"'.format(path))
+
+
+def read_file_or_stdin(path: str, settings) -> str:
+    if path == "-":
+        try:
+            text = sys.stdin.read()
+        except (IOError, KeyboardInterrupt):
+            # Print to stderr when in interpreter or debug mode, because the output of
+            # the HERA program goes to stdout.
+            if settings.mode in ("", "debug"):
+                print(file=sys.stderr)
+            else:
+                print()
+            sys.exit(3)
+        else:
+            # So that the program and its output are visually separate.
+            if settings.mode in ("", "debug"):
+                print(file=sys.stderr)
+            else:
+                print()
+
+        try:
+            text.encode("ascii")
+        except UnicodeEncodeError:
+            handle_messages(settings, Messages("non-ASCII byte in file."))
+    else:
+        try:
+            text = read_file(path)
+        except HERAError as e:
+            handle_messages(settings, Messages(str(e) + "."))
+
+    return text
 
 
 def pad(s: str, n: int) -> str:

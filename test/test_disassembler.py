@@ -10,7 +10,7 @@ def test_disassemble_from_stdin(capsys):
 
     captured = capsys.readouterr()
     assert captured.err == ""
-    assert captured.out == "SETLO(R1, 255)\n"
+    assert captured.out == "\nSETLO(R1, 255)\n"
 
 
 def test_disassemble_set_inc(capsys):

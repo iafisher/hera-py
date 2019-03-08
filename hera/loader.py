@@ -2,14 +2,12 @@
 file.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: February 2019
+Version: March 2019
 """
-import sys
-
 from .checker import check
-from .data import HERAError, Messages, Program, Settings
+from .data import Program, Settings
 from .parser import parse
-from .utils import handle_messages, read_file
+from .utils import handle_messages, read_file_or_stdin
 
 
 def load_program(text: str, settings=Settings()) -> Program:
@@ -28,35 +26,9 @@ def load_program_from_file(path: str, settings=Settings()) -> Program:
     """Convenience function to a read a file and then invoke `load_program_from_str` on
     its contents.
     """
+    text = read_file_or_stdin(path, settings)
     if path == "-":
-        try:
-            text = sys.stdin.read()
-        except (IOError, KeyboardInterrupt):
-            # Print to stderr when in interpreter or debug mode, because the output of
-            # the HERA program goes to stdout.
-            if settings.mode in ("", "debug"):
-                print(file=sys.stderr)
-            else:
-                print()
-            sys.exit(3)
-        else:
-            # So that the program and its output are visually separate.
-            if settings.mode in ("", "debug"):
-                print(file=sys.stderr)
-            else:
-                print()
-
-        try:
-            text.encode("ascii")
-        except UnicodeEncodeError:
-            handle_messages(settings, Messages("non-ASCII byte in file."))
-
         path = "<stdin>"
-    else:
-        try:
-            text = read_file(path)
-        except HERAError as e:
-            handle_messages(settings, Messages(str(e) + "."))
 
     oplist, parse_messages = parse(text, path=path, settings=settings)
     program, check_messages = check(oplist, settings=settings)

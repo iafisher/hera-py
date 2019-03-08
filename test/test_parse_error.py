@@ -287,7 +287,7 @@ def test_parse_error_for_non_ASCII_byte_in_file(capsys):
         captured
         == """\
 
-Error: non-ASCII byte in file, line 1 col 10 of <stdin>
+Error: non-ASCII byte in file "test/assets/error/non_ascii_byte.hera", line 1 col 10 of <stdin>
 
   #include "test/assets/error/non_ascii_byte.hera"
            ^

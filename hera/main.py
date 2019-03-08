@@ -1,7 +1,7 @@
 """The command-line entry point into the hera-py system.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: February 2019
+Version: March 2019
 """
 import functools
 import sys
@@ -13,7 +13,7 @@ from .data import HERAError, Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
 from .disassembler import disassemble
 from .loader import load_program_from_file
-from .utils import format_int, read_file
+from .utils import format_int, read_file_or_stdin
 from .vm import VirtualMachine
 
 
@@ -135,22 +135,18 @@ def main_assemble(path: str, settings: Settings) -> None:
 
 
 def main_disassemble(path: str, settings: Settings) -> None:
-    try:
-        contents = read_file(path)
-    except HERAError:
-        pass
-    else:
-        for line in contents.splitlines():
-            try:
-                v = int(line, base=16)
-            except ValueError:
-                print("// Invalid hex literal: {}".format(line))
-                continue
+    text = read_file_or_stdin(path, settings)
+    for line in text.splitlines():
+        try:
+            v = int(line, base=16)
+        except ValueError:
+            print("// Invalid hex literal: {}".format(line))
+            continue
 
-            try:
-                print(disassemble(bytes([v >> 8, v & 0xFF])))
-            except HERAError:
-                print("// Unknown instruction: {}".format(line))
+        try:
+            print(disassemble(bytes([v >> 8, v & 0xFF])))
+        except HERAError:
+            print("// Unknown instruction: {}".format(line))
 
 
 def parse_args(argv: List[str]) -> Settings:

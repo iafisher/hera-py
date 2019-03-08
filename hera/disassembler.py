@@ -1,3 +1,8 @@
+"""The HERA disassembler.
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: March 2019
+"""
 from typing import List, Union
 
 from . import op
