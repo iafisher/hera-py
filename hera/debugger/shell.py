@@ -6,6 +6,7 @@ Version: March 2019
 """
 import copy
 import functools
+import textwrap
 from typing import List, Optional
 
 from . import miniparser
@@ -134,6 +135,10 @@ class Shell:
         raise HERAError
 
     def handle_asm(self, argstr: str) -> None:
+        """
+        asm <op>
+          Assemble the HERA operation into machine code
+        """
         if not argstr.strip():
             print("asm takes one argument.")
             return
@@ -159,6 +164,22 @@ class Shell:
 
     @mutates
     def handle_assign(self, args: List[str]) -> None:
+        """
+        assign <x> <y>
+          Assign the value of y to x. x may be a register, a memory location, or the
+          program counter. y may be a register, a memory location, the program counter,
+          a symbol, or an integer.
+
+        <x> = <y>
+          Alias for "assign <x> <y>", with the additional advantage that <x> and <y>
+          may contain spaces.
+
+          Examples:
+            Assign to a register:          R1 = 42
+            Assign to a memory location:   @(1000) = R4
+            Assign a label to a register:  R1 = some_label
+            Arithmetic:                    R7 = R5 * 10
+        """
         if len(args) != 2:
             print("assign takes two arguments.")
             return
@@ -209,6 +230,23 @@ class Shell:
 
     @mutates
     def handle_break(self, args: List[str]) -> None:
+        """
+        break
+          Print all current breakpoints.
+
+        break <n>
+          Set a breakpoint at the given line number in the file that the debugger was
+          opened on.
+
+        break <path>:<n>
+          Set a breakpoint at the given line number in the given file.
+
+        break <label>
+          Set a breakpoint at the given label.
+          
+        break .
+          Set a breakpoint at the current instruction.
+        """
         if len(args) > 1:
             print("break takes zero or one arguments.")
             return
@@ -232,6 +270,14 @@ class Shell:
 
     @mutates
     def handle_clear(self, args: List[str]) -> None:
+        """
+        clear <location>
+          Clear a breakpoint at the given line. Location formats accepted are the same
+          as the break command.
+
+        clear *
+          Clear all breakpoints.
+        """
         if len(args) == 0:
             print("clear takes one or more arguments.")
             return
@@ -256,6 +302,11 @@ class Shell:
 
     @mutates
     def handle_continue(self, args: List[str]) -> None:
+        """
+        continue
+          Execute the program until a breakpoint is encountered or the program
+          terminates.
+        """
         if len(args) != 0:
             print("continue takes no arguments.")
             return
@@ -267,6 +318,17 @@ class Shell:
         self.print_current_op()
 
     def handle_dis(self, args: List[str]) -> None:
+        """
+        dis <n>
+          Interpret the 16-bit integer as a HERA machine instruction, and disassemble
+          it into its assembly-language mnemonic.
+
+        dis <n1> <n2>...
+          Disassemble multiple integers.
+
+        dis
+          If the current instruction is an OPCODE, disassemble its contents.
+        """
         if len(args) > 0:
             intargs = []
             for a in args:
@@ -292,6 +354,17 @@ class Shell:
 
     @mutates
     def handle_execute(self, argstr: str) -> None:
+        """
+        execute <op>
+          Execute a HERA operation. The operation must not be a data statement or a
+          branch. The operation may affect registers and memory. Some operations can
+          be more concisely expressed with the debugging mini-language. Type
+          "help assign" for details.
+
+          Examples:
+            execute ASR(R5, R4)
+            execute SET(R1, 20)  SET(R2, 22)  ADD(R3, R2, R1)
+        """
         if not argstr.strip():
             print("execute takes one argument.")
             return
@@ -321,6 +394,11 @@ class Shell:
 
     @mutates
     def handle_goto(self, args: List[str]) -> None:
+        """
+        goto <loc>
+          Jump to the given location (either a line number or a label) without
+          executing any of the intermediate instructions.
+        """
         if len(args) != 1:
             print("goto takes one argument.")
             return
@@ -336,6 +414,13 @@ class Shell:
         self.print_current_op()
 
     def handle_help(self, args: List[str]) -> None:
+        """
+        help
+          Print a summary of all debugging commands.
+
+        help <cmd>...
+          Print a detailed help message for each command list.
+        """
         if not args:
             print(HELP)
         else:
@@ -345,12 +430,23 @@ class Shell:
                 except HERAError:
                     print("{} is not a recognized command.".format(arg))
                 else:
-                    print(HELP_MAP[fullarg])
+                    if fullarg == "quit":
+                        print("quit\n  Exit the debugger.")
+                    else:
+                        doc = getattr(self, "handle_" + fullarg).__doc__
+                        print(textwrap.dedent(doc).strip())
 
                 if i != len(args) - 1:
                     print()
 
     def handle_info(self, args: List[str]) -> None:
+        """
+        info <arg>...
+          Print information about the current state of the program. Valid arguments to
+          info are "registers", "stack", "flags" and "symbols". Arguments may be
+          abbreviated with a unique prefix. The argument list defaults to "registers",
+          "flags", and "stack" if not provided.
+        """
         if args:
             try:
                 fullargs = [self.expand_info_arg(arg) for arg in args]
@@ -390,6 +486,13 @@ class Shell:
             raise HERAError("unrecognized argument `{}`".format(arg))
 
     def handle_list(self, args: List[str]) -> None:
+        """
+        list
+          Print the current line of source and the three previous and next lines.
+
+        list <n>
+          Print the current line of source code and the `n` previous and next lines.
+        """
         if len(args) > 1:
             print("list takes zero or one arguments.")
             return
@@ -407,6 +510,10 @@ class Shell:
             print("Program has finished executing.")
 
     def handle_ll(self, args: List[str]) -> None:
+        """
+        ll
+          Print every line of the current file's source code.
+        """
         if len(args) != 0:
             print("ll takes no arguments.")
             return
@@ -419,6 +526,17 @@ class Shell:
 
     @mutates
     def handle_next(self, args: List[str]) -> None:
+        """
+        next
+          Execute the current line. If the current line is a CALL instruction, the
+          debugger executes the entire function (including nested and recursive calls)
+          and moves on to the next line. If you wish to neter over the function call,
+          use `step` instead.
+
+        next <n>
+          Execute the next n instructions. This command will follow branches, so be
+          careful!
+        """
         if len(args) > 1:
             print("next takes zero or one arguments.")
             return
@@ -439,6 +557,12 @@ class Shell:
 
     @mutates
     def handle_off(self, args: List[str]) -> None:
+        """
+        off <f1> <f2>...
+          Turn off all the HERA machine flags listed. Flags may be given in long
+          form (carry-block, carry, overflow, sign, zero) or short form (cb, c, v,
+          s, z).
+        """
         if len(args) == 0:
             print("off takes one or more arguments.")
             return
@@ -454,6 +578,11 @@ class Shell:
 
     @mutates
     def handle_on(self, args: List[str]) -> None:
+        """
+        on <f1> <f2>...
+          Turn on all the HERA machine flags listed. Flags may be given in long form
+          (carry-block, carry, overflow, sign, zero) or short form (cb, c, v, s, z).
+        """
         if len(args) == 0:
             print("on takes one or more arguments.")
             return
@@ -468,6 +597,23 @@ class Shell:
             setattr(self.debugger.vm, flag, True)
 
     def handle_print(self, argstr: str) -> None:
+        """
+        print <x> <y> <z>...
+          Print the values of all the supplied arguments. The first argument may
+          optionally be a format specifier, e.g. ":xds". Each character of the string
+          identifies a format in which to print the value. The following formats are
+          recognized: d for decimal, x for hexadecimal, o for octal, b for binary, c
+          for character literals, s for signed integers, and l for source code
+          locations. When not provided, the format specifier defaults to ":xdsc".
+
+          Examples:
+            A register:        print R7
+            A memory location: print @1000
+            A symbol:          print some_label
+            Multiple values:   print R1, R2, R3
+            Formatted:         print :bl PC_ret
+            Arithmetic:        print @(@(FP+1)) * 7
+        """
         if not argstr:
             print("print takes one or more arguments.")
             return
@@ -535,6 +681,11 @@ class Shell:
 
     @mutates
     def handle_restart(self, args: List[str]) -> None:
+        """
+        restart
+          Restart execution of the program from the beginning. All registers and
+          memory cells are reset.
+        """
         if len(args) != 0:
             print("restart takes no arguments.")
             return
@@ -544,6 +695,11 @@ class Shell:
 
     @mutates
     def handle_step(self, args: List[str]) -> None:
+        """
+        step
+          Step into the execution of a function.  The step command is only valid when
+          the current instruction is CALL.
+        """
         if len(args) > 0:
             print("step takes no arguments.")
             return
@@ -556,6 +712,10 @@ class Shell:
         self.print_current_op()
 
     def handle_undo(self, args: List[str]) -> None:
+        """
+        undo
+          Undo the last operation that changed the state of the debugger.
+        """
         if len(args) > 0:
             print("undo takes no arguments.")
             return
@@ -859,165 +1019,3 @@ Available commands:
 Command names can generally be abbreviated with a unique prefix, e.g. "n" for
 "next".
 """
-
-
-HELP_MAP = {
-    # asm
-    "asm": """\
-asm <op>
-  Assemble the HERA operation into machine code.""",
-    # assign
-    "assign": """\
-assign <x> <y>
-  Assign the value of y to x. x may be a register, a memory location, or the
-  program counter. y may be a register, a memory location, the program counter,
-  a symbol, or an integer.
-
-<x> = <y>
-  Alias for "assign <x> <y>", with the additional advantage that <x> and <y>
-  may contain spaces.
-
-  Examples:
-    Assign to a register:          R1 = 42
-    Assign to a memory location:   @(1000) = R4
-    Assign a label to a register:  R1 = some_label
-    Arithmetic:                    R7 = R5 * 10""",
-    # break
-    "break": """\
-break
-  Print all current breakpoints.
-
-break <n>
-  Set a breakpoint at the given line number in the file that the debugger was
-  opened on.
-
-break <path>:<n>
-  Set a breakpoint at the given line number in the given file.
-
-break <label>
-  Set a breakpoint at the given label.
-  
-break .
-  Set a breakpoint at the current instruction.""",
-    # clear
-    "clear": """\
-clear <location>
-  Clear a breakpoint at the given line. Location formats accepted are the same
-  as the break command.
-
-clear *
-  Clear all breakpoints.""",
-    # continue
-    "continue": """\
-continue
-  Execute the program until a breakpoint is encountered or the program
-  terminates.""",
-    # dis
-    "dis": """\
-dis <n>
-  Interpret the 16-bit integer as a HERA machine instruction, and disassemble
-  it into its assembly-language mnemonic.
-
-dis <n1> <n2>...
-  Disassemble multiple integers.
-
-dis
-  If the current instruction is an OPCODE, disassemble its contents.""",
-    # execute
-    "execute": """\
-execute <op>
-  Execute a HERA operation. The operation must not be a data statement or a
-  branch. The operation may affect registers and memory. Some operations can
-  be more concisely expressed with the debugging mini-language. Type
-  "help assign" for details.
-
-  Examples:
-    execute ASR(R5, R4)""",
-    # goto
-    "goto": """\
-goto <loc>
-  Jump to the given location (either a line number or a label) without
-  executing any of the intermediate instructions.""",
-    # help
-    "help": """\
-help
-  Print a summary of all debugging commands.
-
-help <cmd>...
-  Print a detailed help message for each command list.""",
-    # info
-    "info": """\
-info <arg>...
-  Print information about the current state of the program. Valid arguments to
-  info are "registers", "stack", "flags" and "symbols". Arguments may be
-  abbreviated with a unique prefix. The argument list defaults to "registers",
-  "flags", and "stack" if not provided.""",
-    # list
-    "list": """\
-list
-  Print the current line of source and the three previous and next lines.
-
-list <n>
-  Print the current line of source code and the `n` previous and next lines.""",
-    # ll
-    "ll": """\
-ll
-  Print every line of the current file's source code.""",
-    # next
-    "next": """\
-next
-  Execute the current line. If the current line is a CALL instruction, the
-  debugger executes the entire function (including nested and recursive calls)
-  and moves on to the next line. If you wish to neter over the function call,
-  use `step` instead.
-
-next <n>
-  Execute the next n instructions. This command will follow branches, so be
-  careful!""",
-    # off
-    "off": """\
-off <f1> <f2>...
-    Turn off all the HERA machine flags listed. Flags may be given in long
-    form (carry-block, carry, overflow, sign, zero) or short form (cb, c, v,
-    s, z).""",
-    # on
-    "on": """\
-on <f1> <f2>...
-    Turn on all the HERA machine flags listed. Flags may be given in long form
-    (carry-block, carry, overflow, sign, zero) or short form (cb, c, v, s, z).""",
-    # print
-    "print": """\
-print <x> <y> <z>...
-  Print the values of all the supplied arguments. The first argument may
-  optionally be a format specifier, e.g. ":xds". Each character of the string
-  identifies a format in which to print the value. The following formats are
-  recognized: d for decimal, x for hexadecimal, o for octal, b for binary, c
-  for character literals, s for signed integers, and l for source code
-  locations. When not provided, the format specifier defaults to ":xdsc".
-
-  Examples:
-    A register:        print R7
-    A memory location: print @1000
-    A symbol:          print some_label
-    Multiple values:   print R1, R2, R3
-    Formatted:         print :bl PC_ret
-    Arithmetic:        print @(@(FP+1)) * 7""",
-    # restart
-    "restart": """\
-restart
-  Restart execution of the program from the beginning. All registers and
-  memory cells are reset.""",
-    # step
-    "step": """\
-step
-  Step into the execution of a function.  The step command is only valid when
-  the current instruction is CALL.""",
-    # undo
-    "undo": """\
-undo
-  Undo the last operation that changed the state of the debugger.""",
-    # quit
-    "quit": """\
-quit
-  Exit the debugger.""",
-}
