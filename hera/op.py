@@ -1150,7 +1150,7 @@ class __EVAL(DebuggingOperation):
 
 def disassemble(v: int) -> AbstractOperation:
     for cls in name_to_class.values():
-        if hasattr(cls, "BITV"):
+        if cls.BITV != "":
             m = match_bitvector(cls.BITV, v)
             if m is not False and isinstance(m, list):
                 return cls.disassemble(*m)
