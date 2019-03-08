@@ -136,12 +136,23 @@ class Shell:
             print("asm takes one argument.")
             return
 
+        # Check if the program is all code, all data, or a mix.
+        any_code = False
+        any_data = False
+        for op in parse(argstr)[0]:
+            if isinstance(op, DataOperation):
+                any_data = True
+            else:
+                any_code = True
+
         try:
             program = load_program(argstr, self.settings)
         except SystemExit:
             return
 
-        settings = self.asm_settings()
+        code_flag = any_code and not any_data
+        data_flag = any_data and not any_code
+        settings = self.asm_settings(code=code_flag, data=data_flag)
         assemble_and_print(program, settings)
 
     @mutates
@@ -737,12 +748,12 @@ class Shell:
         else:
             return format_int(v, spec=spec)
 
-    def asm_settings(self):
+    def asm_settings(self, *, code, data):
         """Override some defaults in self.settings for the assembler."""
         settings = copy.copy(self.settings)
         settings.stdout = True
-        settings.code = True
-        settings.data = False
+        settings.code = code
+        settings.data = data
         return settings
 
 

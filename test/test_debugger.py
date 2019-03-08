@@ -1438,6 +1438,29 @@ def test_handle_asm(shell, capsys):
     assert capsys.readouterr().out == "e1ff\n"
 
 
+def test_handle_asm_with_only_data(shell, capsys):
+    shell.handle_command("asm INTEGER(42)")
+
+    assert capsys.readouterr().out == "49152*0\nc002\n2a\n"
+
+
+def test_handle_asm_with_data_and_code(shell, capsys):
+    shell.handle_command("asm DLABEL(x) INTEGER(42) SET(R1, x)")
+
+    assert (
+        capsys.readouterr().out
+        == """\
+[DATA]
+  49152*0
+  c002
+  2a
+[CODE]
+  e101
+  f1c0
+"""
+    )
+
+
 def test_handle_asm_with_too_few_args(shell, capsys):
     shell.handle_command("asm")
 
