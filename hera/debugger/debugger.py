@@ -15,8 +15,12 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 import copy
-import readline  # noqa: F401
 from typing import Dict, List, Optional
+
+try:
+    import readline  # noqa: F401
+except ImportError:
+    pass
 
 from hera.data import Label, Program, Settings
 from hera.op import AbstractOperation
