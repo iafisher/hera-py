@@ -1,4 +1,5 @@
-"""The lexer for HERA and the debugging mini-language.
+"""
+The lexer for HERA and the debugging mini-language.
 
 Consumed by hera/parser.py and hera/debugger/miniparser.py.
 
@@ -112,9 +113,10 @@ class Lexer:
     HEX_DIGITS = "0123456789abcdefABCDEF"
 
     def read_escape_char(self) -> Tuple[str, int]:
-        """Read an escape sequence (assuming `self.text[self.position] == "\\"`) and
-        return a pair (value, length), where `value` is what the escape sequence
-        resolves to and `length` is the number of characters read.
+        """
+        Read an escape sequence (assuming `self.text[self.position] == "\\"`) and return
+        a pair (value, length), where `value` is what the escape sequence resolves to
+        and `length` is the number of characters read.
         """
         peek = self.peek_char()
         loc = self.get_location()
@@ -248,8 +250,9 @@ class Lexer:
                 break
 
     def next_char(self) -> None:
-        """Advance the position in the text by one. Do not call this method if the
-        current position is past the end of the text.
+        """
+        Advance the position in the text by one. Do not call this method if the current
+        position is past the end of the text.
         """
         if self.text[self.position] == "\n":
             self.line += 1
@@ -259,7 +262,8 @@ class Lexer:
         self.position += 1
 
     def peek_char(self, n=1) -> str:
-        """Return the n'th character in the text past the current position. If past the
+        """
+        Return the n'th character in the text past the current position. If past the
         end, return the empty string.
         """
         return (
@@ -278,7 +282,8 @@ class Lexer:
 
 
 def escape_char(c):
-    """Return the special character that `c` encodes.
+    """
+    Return the special character that `c` encodes.
 
         >>> escape_char("n")
         "\n"

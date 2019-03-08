@@ -1,6 +1,5 @@
-"""Debug HERA programs.
-
-`debug` is the sole public function.
+"""
+Debug HERA programs.
 
 The code in this module makes an important distinction between "real ops" and "original
 ops." Original ops are the HERA operations as they appear in the program that the user
@@ -28,8 +27,9 @@ from hera.vm import VirtualMachine
 
 
 class Debugger:
-    """A class for debugging. External users should generally use the module-level
-    `debug` function instead of this class.
+    """
+    A class for debugging. External users should generally use the `debug` function
+    in hera.debugger.shell instead of this class.
     """
 
     def __init__(self, program: Program, settings: Settings) -> None:
@@ -90,7 +90,8 @@ class Debugger:
         self.vm.reset()
 
     def op(self, index=None) -> AbstractOperation:
-        """Return the original operation at the given index, which defaults to the
+        """
+        Return the original operation at the given index, which defaults to the
         current program counter.
         """
         if index is None:
@@ -98,7 +99,8 @@ class Debugger:
         return self.program.code[index].original
 
     def real_ops(self) -> List[AbstractOperation]:
-        """Return all the real ops that correspond to the current original op. See
+        """
+        Return all the real ops that correspond to the current original op. See
         module docstring for explanation of terminology.
         """
         original = self.op()
@@ -136,8 +138,9 @@ class Debugger:
             raise ValueError("could not find corresponding line.")
 
     def get_breakpoint_name(self, b: int, *, append_label=True) -> str:
-        """Turn an instruction number into a human-readable location string with the
-        file path and line number. More or less the inverse of `resolve_location`.
+        """
+        Turn an instruction number into a human-readable location string with the file
+        path and line number. More or less the inverse of `resolve_location`.
         """
         op = self.program.code[b].original or self.program.code[b]
         path = "<stdin>" if op.loc.path == "-" else op.loc.path
@@ -166,7 +169,8 @@ class Debugger:
 
 
 def reverse_lookup_label(symbol_table: Dict[str, int], value: int) -> Optional[str]:
-    """Return the name of the label that maps to `value`, or None if no such label is
+    """
+    Return the name of the label that maps to `value`, or None if no such label is
     found. Constants and data labels are ignored.
     """
     for k, v in symbol_table.items():

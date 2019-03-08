@@ -1,4 +1,5 @@
-"""The shell interface to the HERA debugger.
+"""
+The shell interface to the HERA debugger.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: March 2019
@@ -32,7 +33,8 @@ def debug(program: Program, settings: Settings) -> None:
 
 
 def mutates(handler):
-    """Decorator for command handlers in the Shell class that mutate the state of the
+    """
+    Decorator for command handlers in the Shell class that mutate the state of the
     debugger.
     """
 
@@ -74,7 +76,8 @@ class Shell:
                     break
 
     def handle_command(self, response: str) -> bool:
-        """Parse the command and execute it. Return False if the loop should exit, and
+        """
+        Parse the command and execute it. Return False if the loop should exit, and
         True otherwise.
         """
         try:
@@ -698,8 +701,9 @@ class Shell:
             raise RuntimeError("unknown node type {}".format(node.__class__.__name__))
 
     def print_current_op(self) -> None:
-        """Print the next operation to be executed. If the program has finished
-        executed, nothing is printed.
+        """
+        Print the next operation to be executed. If the program has finished executed,
+        nothing is printed.
         """
         if not self.debugger.finished():
             loc = self.debugger.op().loc
@@ -708,8 +712,9 @@ class Shell:
             print("Program has finished executing.")
 
     def print_range_of_ops(self, loc: Location, context: Optional[int] = None) -> None:
-        """Print the line indicated by `loc`, as well as `context` previous and
-        following lines. If `context` is None, the whole file is printed.
+        """
+        Print the line indicated by `loc`, as well as `context` previous and following
+        lines. If `context` is None, the whole file is printed.
         """
         lineno = loc.line - 1
         lines = loc.file_lines

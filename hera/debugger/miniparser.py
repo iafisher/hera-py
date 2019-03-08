@@ -1,4 +1,5 @@
-"""The expression mini-language for the debugger.
+"""
+The expression mini-language for the debugger.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
@@ -11,15 +12,17 @@ from ..utils import register_to_index
 
 
 def parse(line):
-    """Return a parse tree for the line of code. Raise a SyntaxError if it is not
-    well-formatted.
+    """
+    Return a parse tree for the line of code. Raise a SyntaxError if it is not well-
+    formatted.
     """
     return MiniParser(Lexer(line)).parse()
 
 
 class MiniParser:
-    """A parser for the debugger's expression mini-language. Arithmetic operations have
-    the usual precedence.
+    """
+    A parser for the debugger's expression mini-language. Arithmetic operations have the
+    usual precedence.
 
       start := FORMAT? exprlist
 

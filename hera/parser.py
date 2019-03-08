@@ -1,4 +1,5 @@
-"""The parser for the HERA language.
+"""
+The parser for the HERA language.
 
 Abstract grammar:
   start := (op | include)*
@@ -30,7 +31,8 @@ from .utils import read_file, register_to_index
 def parse(
     text: str, *, path=None, settings=Settings()
 ) -> Tuple[List[AbstractOperation], Messages]:
-    """Parse a HERA program.
+    """
+    Parse a HERA program.
 
     `path` is the path of the file being parsed, as it will appear in error and
     warning messages. It defaults to "<string>".
@@ -100,7 +102,8 @@ class Parser:
         return ops
 
     def match_op(self, name_tkn: Token) -> Optional[AbstractOperation]:
-        """Match an operation, assuming that self.lexer.tkn is on the left parenthesis.
+        """
+        Match an operation, assuming that self.lexer.tkn is on the left parenthesis.
         """
         self.lexer.next_token()
         args = self.match_optional_arglist()
@@ -126,8 +129,9 @@ class Parser:
     }
 
     def match_optional_arglist(self) -> Optional[List[Token]]:
-        """Match zero or more comma-separated values. Exits with the right parenthesis
-        as the current token. Make sure to distinguish between a None return value (the
+        """
+        Match zero or more comma-separated values. Exits with the right parenthesis as
+        the current token. Make sure to distinguish between a None return value (the
         arglist could not be parsed) and a [] return value (an empty arglist was parsed
         successfully).
         """

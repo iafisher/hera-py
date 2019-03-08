@@ -1,4 +1,5 @@
-"""Some important data structures for the HERA interpreter.
+"""
+Some important data structures for the HERA interpreter.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
@@ -35,7 +36,8 @@ class Settings:
 
 
 class Location(namedtuple("Location", ["line", "column", "path", "file_lines"])):
-    """A class to represent a location in a file, for the use of warnings and error
+    """
+    A class to represent a location in a file, for the use of warnings and error
     messages. The `file_lines` field is a pointer to a list of lines in the file, so
     that the actual line can be printed in the message.
     """

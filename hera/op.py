@@ -1,4 +1,5 @@
-"""The definition of all the operations in the HERA language.
+"""
+The definition of all the operations in the HERA language.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: March 2019
@@ -15,8 +16,9 @@ from hera.vm import VirtualMachine
 
 
 class AbstractOperation:
-    """The base class for HERA operations. All operation classes should inherit from
-    this class.
+    """
+    The abstract base class for HERA operations. All operation classes should inherit
+    from this class.
     """
 
     BITV = ""
@@ -37,7 +39,8 @@ class AbstractOperation:
             self.loc = None
 
     def typecheck(self, symbol_table: Dict[str, int]) -> Messages:
-        """Type-check the operation. Subclasses do not generally need to override this
+        """
+        Type-check the operation. Subclasses do not generally need to override this
         method, as long as they provide a P class field listing their parameter types.
         """
         messages = Messages()
@@ -51,27 +54,31 @@ class AbstractOperation:
         return messages.extend(check_arglist(self.P, self.tokens, symbol_table))
 
     def convert(self) -> List["AbstractOperation"]:
-        """Convert the pseudo-operation into a list of real operations. Only pseudo-ops
+        """
+        Convert the pseudo-operation into a list of real operations. Only pseudo-ops
         need to override this method.
         """
         return [self]
 
     def assemble(self) -> bytes:
-        """Assemble the operation into a 16-bit string. Subclasses do not generally need
+        """
+        Assemble the operation into a 16-bit string. Subclasses do not generally need
         to override this method, as long as they provide a BITV class field.
         """
         return substitute_bitvector(self.BITV, self.args)
 
     @classmethod
     def disassemble(cls, *args):
-        """Disassemble the integer arguments into an operation. Subclasses do not
+        """
+        Disassemble the integer arguments into an operation. Subclasses do not
         generally need to override this method; it is provided only for the special
         purposes of the INC and DEC classes.
         """
         return cls(*args)
 
     def execute(self, vm: VirtualMachine) -> None:
-        """Execute the operation on a virtual machine. Real operations should override
+        """
+        Execute the operation on a virtual machine. Real operations should override
         this method; pseudo-operations should not.
         """
         raise NotImplementedError
@@ -121,8 +128,9 @@ U4 = range(2 ** 4)
 
 
 class UnaryOp(AbstractOperation):
-    """Abstract class to simplify implementation of unary operations. Child classes
-    only need to implement the calculate method.
+    """
+    Abstract class to simplify implementation of unary operations. Child classes only
+    need to implement the calculate method and set the BITV field.
     """
 
     P = (REGISTER, REGISTER)
@@ -136,7 +144,8 @@ class UnaryOp(AbstractOperation):
 
     @staticmethod
     def calculate(vm, arg):
-        """Calculate the result of the unary operation, given a concrete argument.
+        """
+        Calculate the result of the unary operation, given a concrete argument.
 
         The virtual machine is passed in so that the overflow and carry flags can be
         set if necessary.
@@ -145,8 +154,9 @@ class UnaryOp(AbstractOperation):
 
 
 class BinaryOp(AbstractOperation):
-    """Abstract class to simplify implementation of binary operations. Child classes
-    only need to implement the calculate method and set the BITV field.
+    """
+    Abstract class to simplify implementation of binary operations. Child classes only
+    need to implement the calculate method and set the BITV field.
     """
 
     P = (REGISTER, REGISTER, REGISTER)
@@ -161,8 +171,9 @@ class BinaryOp(AbstractOperation):
 
     @staticmethod
     def calculate(vm, left, right):
-        """Calculate the result of the binary operation, given the concrete left and
-        right arguments.
+        """
+        Calculate the result of the binary operation, given the concrete left and right
+        arguments.
 
         The virtual machine is passed in so that the overflow and carry flags can be
         set if necessary.
@@ -175,8 +186,9 @@ class Branch(AbstractOperation):
 
 
 class RegisterBranch(Branch):
-    """Abstract class to simplify implementation of register branches. Child classes
-    only need to implement the should method and set the BITV field.
+    """
+    Abstract class to simplify implementation of register branches. Child classes only
+    need to implement the should method and set the BITV field.
     """
 
     P = (REGISTER_OR_LABEL,)
@@ -189,7 +201,8 @@ class RegisterBranch(Branch):
 
     @staticmethod
     def should(vm):
-        """Return True if branching should occur, based on the virtual machine's state.
+        """
+        Return True if branching should occur, based on the virtual machine's state.
         """
         raise NotImplementedError
 
@@ -209,8 +222,9 @@ class RegisterBranch(Branch):
 
 
 class RelativeBranch(Branch):
-    """Abstract class to simplify implementation of relative branches. Child classes
-    only need to implement the should method and set the BITV field.
+    """
+    Abstract class to simplify implementation of relative branches. Child classes only
+    need to implement the should method and set the BITV field.
     """
 
     P = (I8_OR_LABEL,)
@@ -223,7 +237,8 @@ class RelativeBranch(Branch):
 
     @staticmethod
     def should(vm):
-        """Return True if branching should occur, based on the virtual machine's state.
+        """
+        Return True if branching should occur, based on the virtual machine's state.
         """
         raise NotImplementedError
 
@@ -1144,8 +1159,9 @@ def disassemble(v: int) -> AbstractOperation:
 
 
 def match_bitvector(pattern: str, v: int) -> Union[List, bool]:
-    """Try to match the 16-bit integer `v` against `pattern`. Return a list of
-    extracted arguments if `v` matches, or False otherwise.
+    """
+    Try to match the 16-bit integer `v` against `pattern`. Return a list of extracted
+    arguments if `v` matches, or False otherwise.
 
     `pattern` should be a string of sixteen characters, which may be the digits '0' or
     '1' or Latin letters. The digits are matched against the literal digits in `v`;

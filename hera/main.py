@@ -1,4 +1,5 @@
-"""The command-line entry point into the hera-py system.
+"""
+The command-line entry point into the hera-py system.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: March 2019
@@ -17,7 +18,8 @@ from .vm import VirtualMachine
 
 
 def external_main(argv=None) -> None:
-    """A wrapper around main that ignores its return value, so it is not printed to the
+    """
+    A wrapper around main that ignores its return value, so it is not printed to the
     console when the program exits.
     """
     main(argv)
@@ -108,7 +110,8 @@ def main_assemble(path: str, settings: Settings) -> None:
 
 
 def main_disassemble(path: str, settings: Settings) -> None:
-    """Disassemble the machine code (expressed as newline-separated hex numbers, without
+    """
+    Disassemble the machine code (expressed as newline-separated hex numbers, without
     the "0x" prefix), and print the HERA output to stdout.
     """
     text = read_file_or_stdin(path, settings)

@@ -1,4 +1,5 @@
-"""The HERA assembler.
+"""
+The HERA assembler.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: March 2019

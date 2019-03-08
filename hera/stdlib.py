@@ -1,4 +1,5 @@
-"""The standard library for the Tiger programming language, implemented in HERA.
+"""
+The standard library for the Tiger programming language, implemented in HERA.
 
 All of the pure HERA functions in this module have been copied from the original
 Tiger standard library file for HERA-C, written by Dave Wonnacott.

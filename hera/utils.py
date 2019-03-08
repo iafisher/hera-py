@@ -1,4 +1,5 @@
-"""Utilities for the hera-py system.
+"""
+Utilities for the hera-py system.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
@@ -9,7 +10,8 @@ from .data import HERAError, Location, Messages, Settings, Token
 
 
 def to_u16(n: int) -> int:
-    """Reinterpret the signed integer `n` as a 16-bit unsigned integer.
+    """
+    Reinterpret the signed integer `n` as a 16-bit unsigned integer.
 
     If `n` is too large for 16 bits, a HERAError is raised.
     """
@@ -33,7 +35,8 @@ def from_u16(n: int) -> int:
 
 
 def to_u32(n: int) -> int:
-    """Reinterpret the signed integer `n` as an unsigned 32-bit integer.
+    """
+    Reinterpret the signed integer `n` as an unsigned 32-bit integer.
 
     If `n` is too large for 32 bits, a HERAError is raised.
     """
@@ -65,7 +68,8 @@ def register_to_index(rname: str) -> int:
 
 
 def format_int(v: int, *, spec="xdsc") -> str:
-    """Return a string of the form "... = ... = ..." where each ellipsis stands for a
+    """
+    Return a string of the form "... = ... = ..." where each ellipsis stands for a
     formatted integer determined by a character in the `spec` parameter. The following
     formats are supported: d for decimal, x for hexadecimal, o for octal, b for binary,
     c for character literal, and s for signed integer. The latter two formats only
@@ -121,8 +125,9 @@ def print_error(settings: Settings, msg: str, *, loc=None) -> None:
 
 
 def print_message(msg: str, *, loc=None) -> None:
-    """Print a message to stderr. If `loc` is provided as either a Location object, or
-    a Token object with a `location` field, then the line of code that the location
+    """
+    Print a message to stderr. If `loc` is provided as either a Location object, or a
+    Token object with a `location` field, then the line of code that the location
     indicates will be printed with the message.
     """
     if isinstance(loc, Token):
@@ -139,8 +144,9 @@ def print_message(msg: str, *, loc=None) -> None:
 
 
 def align_caret(line: str, col: int) -> str:
-    """Return the whitespace necessary to align a caret to underline the desired
-    column in the line of text. Mainly this means handling tabs.
+    """
+    Return the whitespace necessary to align a caret to underline the desired column in
+    the line of text. Mainly this means handling tabs.
     """
     return "".join("\t" if c == "\t" else " " for c in line[: col - 1])
 
@@ -197,8 +203,9 @@ def pad(s: str, n: int) -> str:
 
 
 def handle_messages(settings: Settings, messages: Messages) -> None:
-    """Print to standard error for any warnings or errors recorded in `messages`. If
-    any errors were recorded, exit the program.
+    """
+    Print to standard error for any warnings or errors recorded in `messages`. If any
+    errors were recorded, exit the program.
     """
     for msg, loc in messages.warnings:
         print_warning(settings, msg, loc=loc)

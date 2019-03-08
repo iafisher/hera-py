@@ -1,4 +1,5 @@
-"""Type-checking and pseudo-op conversion.
+"""
+Type-checking and pseudo-op conversion.
 
 Note that the code for type-checking individual operations lives in hera/op.py. This
 module contains the code for program-wide type-checking.
@@ -62,7 +63,8 @@ def check(
 def typecheck(
     program: List[AbstractOperation], settings=Settings()
 ) -> Tuple[Dict[str, int], Messages]:
-    """Type-check the program and emit error messages as appropriate. Return the
+    """
+    Type-check the program and emit error messages as appropriate. Return the
     program's symbol table.
     """
     messages = check_symbol_redeclaration(program)
@@ -101,7 +103,8 @@ def typecheck(
 
 
 def check_symbol_redeclaration(program: List[AbstractOperation]) -> Messages:
-    """Check if any symbols are redeclared in the program and return the error
+    """
+    Check if any symbols are redeclared in the program and return the error
     messages.
     """
     messages = Messages()
@@ -121,7 +124,8 @@ def check_symbol_redeclaration(program: List[AbstractOperation]) -> Messages:
 def get_labels(
     program: List[AbstractOperation], settings: Settings
 ) -> Tuple[Dict[str, int], Messages]:
-    """Return a dictionary mapping the labels and data labels (but not the constants) of
+    """
+    Return a dictionary mapping the labels and data labels (but not the constants) of
     the program to their concrete values.
     """
     messages = Messages()
@@ -213,7 +217,8 @@ def out_of_range(n: int) -> bool:
 def convert_ops(
     oplist: List[AbstractOperation], symbol_table: Dict[str, int]
 ) -> Tuple[List[AbstractOperation], Messages]:
-    """Convert the operations from pseudo-ops to real ops, and substitute values for
+    """
+    Convert the operations from pseudo-ops to real ops, and substitute values for
     labels and constants.
 
     The program must be type-checked before being passed to this function.
@@ -256,7 +261,8 @@ def substitute_label(
 
 
 def labels_to_line_numbers(oplist: List[AbstractOperation]) -> Dict[str, str]:
-    """Return a dictionary that maps from label names to their locations in the program,
+    """
+    Return a dictionary that maps from label names to their locations in the program,
     as a string of the form "<filepath>:<lineno>".
     """
     labels = {}

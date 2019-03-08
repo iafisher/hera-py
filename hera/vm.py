@@ -1,4 +1,5 @@
-"""The virtual HERA machine.
+"""
+The virtual HERA machine.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
