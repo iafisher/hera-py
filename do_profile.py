@@ -1,3 +1,12 @@
+"""
+Generate a profile of hera-py's performance.
+
+The generated file can be browsed with the command:
+
+    $ python3 -m pstats profile/profile-YYYY-MM-DD-HH:MM
+    % sort tottime
+    % stats
+"""
 import cProfile
 import datetime
 
