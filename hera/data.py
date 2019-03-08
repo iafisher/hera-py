@@ -24,6 +24,7 @@ class Settings:
         self.data_start = DEFAULT_DATA_START
         self.mode = mode
         self.no_debug_ops = False
+        self.obfuscate = False
         self.path = None
         self.stdout = False
         self.throttle = False

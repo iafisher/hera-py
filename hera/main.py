@@ -79,16 +79,26 @@ def main_execute(path: str, settings: Settings) -> VirtualMachine:
 def main_preprocess(path: str, settings: Settings) -> None:
     """Preprocess the program and print it to stdout."""
     program = load_program_from_file(path, settings)
-    if program.data:
-        print("[DATA]")
+
+    if not settings.obfuscate:
+        if program.data:
+            print("[DATA]")
+            for data_op in program.data:
+                print("  {}".format(data_op))
+
+            if program.code:
+                print("\n[CODE]")
+
+        for i, op in enumerate(program.code):
+            print("  {:0>4}  {}".format(i, op))
+    else:
         for data_op in program.data:
-            print("  {}".format(data_op))
+            print("{}".format(data_op))
 
-        if program.code:
-            print("\n[CODE]")
-
-    for i, op in enumerate(program.code):
-        print("  {:0>4}  {}".format(i, op))
+        for i, op in enumerate(program.code):
+            assembled = op.assemble()
+            v = (assembled[0] << 8) + assembled[1]
+            print("OPCODE(0x{:x})".format(v))
 
 
 def main_assemble(path: str, settings: Settings) -> None:
@@ -221,6 +231,7 @@ def parse_args(argv: List[str]) -> Settings:
         # Arbitrary value copied over from HERA-C.
         settings.data_start = 0xC167
     settings.no_debug_ops = flags["--no-debug-ops"]
+    settings.obfuscate = flags["--obfuscate"]
     settings.stdout = flags["--stdout"]
     settings.throttle = flags["--throttle"]
     settings.warn_octal_on = not flags["--warn-octal-off"]
@@ -301,6 +312,7 @@ FLAGS = {
     "--help",
     "--no-color",
     "--no-debug-ops",
+    "--obfuscate",
     "--quiet",
     "--stdout",
     "--throttle",
@@ -318,6 +330,7 @@ FLAGS = {
 # the run, debug and assemble modes.
 PICKY_FLAGS = {
     "--big-stack": ["", "debug", "assemble"],
+    "--obfuscate": ["preprocess"],
     "--throttle": [""],
     "--warn-return-off": ["", "debug"],
     "--code": ["assemble"],
