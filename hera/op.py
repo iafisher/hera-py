@@ -1036,7 +1036,7 @@ class OPCODE(AbstractOperation):
         try:
             disassemble(data)
         except HERAError:
-            messages.error("not a HERA instruction", self.tokens[0])
+            messages.err("not a HERA instruction", self.tokens[0])
 
         return messages
 

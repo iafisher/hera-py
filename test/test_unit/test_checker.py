@@ -419,6 +419,15 @@ def test_typecheck_RTI():
     valid("RTI()")
 
 
+def test_typecheck_OPCODE():
+    # AND(R1, R7, R12)
+    valid("OPCODE(0x817c)")
+    # BRR(0)
+    valid("OPCODE(0)")
+    # A branch instruction that doesn't exist.
+    invalid("OPCODE(0b0001000100000101)", "not a HERA instruction")
+
+
 def test_typecheck_print_reg():
     valid("print_reg(R1)")
 
