@@ -1243,7 +1243,7 @@ def test_handle_help_with_multiple_args(shell, capsys):
 def test_handle_help_with_all_commands(shell, capsys):
     shell.handle_command(
         "help assign break clear continue execute help info list ll next off on print \
-         restart goto step undo quit"
+         restart goto step undo quit asm dis"
     )
 
     assert "not a recognized command" not in capsys.readouterr().out
@@ -1412,6 +1412,36 @@ def test_handle_undo_abbreviated(shell):
     with patch("hera.debugger.shell.Shell.handle_undo") as mock_handle_undo:
         shell.handle_command("u")
         assert mock_handle_undo.call_count == 1
+
+
+def test_handle_dis(shell, capsys):
+    shell.handle_command("dis 0xe1ff")
+
+    assert capsys.readouterr().out == "SETLO(R1, 255)\n"
+
+
+def test_handle_dis_invalid_argument(shell, capsys):
+    shell.handle_command("dis abc")
+
+    assert capsys.readouterr().out == "Could not parse argument to dis.\n"
+
+
+def test_handle_dis_too_few_args(shell, capsys):
+    shell.handle_command("dis")
+
+    assert capsys.readouterr().out == "dis takes one argument.\n"
+
+
+def test_handle_asm(shell, capsys):
+    shell.handle_command("asm SETLO(R1, 255)")
+
+    assert capsys.readouterr().out == "e1ff\n"
+
+
+def test_handle_asm_with_too_few_args(shell, capsys):
+    shell.handle_command("asm")
+
+    assert capsys.readouterr().out == "asm takes one argument.\n"
 
 
 def test_handle_unknown_command(shell, capsys):

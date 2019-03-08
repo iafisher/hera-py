@@ -1,3 +1,9 @@
+"""The shell interface to the HERA debugger.
+
+Author:  Ian Fisher (iafisher@protonmail.com)
+Version: March 2019
+"""
+import copy
 import functools
 from typing import List, Optional
 
@@ -11,7 +17,9 @@ from .miniparser import (
     RegisterNode,
     SymbolNode,
 )
+from hera.assembler import assemble_and_print
 from hera.data import DataLabel, HERAError, Label, Location, Program, Settings
+from hera.disassembler import disassemble
 from hera.loader import load_program
 from hera.op import Branch, DataOperation, LABEL
 from hera.parser import parse
@@ -106,10 +114,10 @@ class Shell:
     )
 
     # Commands that require the whole command to be spelled out.
-    CANNOT_BE_ABBREVIATED = ["ll", "off", "on", "restart"]
+    CANNOT_BE_ABBREVIATED = ["asm", "dis", "ll", "off", "on", "restart"]
 
     # Commands that do not take a whitespace-separated list of argument.
-    TAKES_ARGSTR = ["execute", "print"]
+    TAKES_ARGSTR = ["asm", "execute", "print"]
 
     def expand_command(self, cmd: str) -> str:
         cmd = cmd.lower()
@@ -122,6 +130,19 @@ class Shell:
                 return full
 
         raise HERAError
+
+    def handle_asm(self, argstr: str) -> None:
+        if not argstr.strip():
+            print("asm takes one argument.")
+            return
+
+        try:
+            program = load_program(argstr, self.settings)
+        except SystemExit:
+            return
+
+        settings = self.asm_settings()
+        assemble_and_print(program, settings)
 
     @mutates
     def handle_assign(self, args: List[str]) -> None:
@@ -231,6 +252,23 @@ class Shell:
             self.debugger.next(step=True)
 
         self.print_current_op()
+
+    def handle_dis(self, args: List[str]) -> None:
+        if len(args) != 1:
+            print("dis takes one argument.")
+            return
+
+        try:
+            v = int(args[0], base=0)
+        except ValueError:
+            print("Could not parse argument to dis.")
+            return
+
+        data = bytes([v >> 8, v & 0xFF])
+        try:
+            print(disassemble(data))
+        except HERAError as e:
+            print("Error:", e)
 
     @mutates
     def handle_execute(self, argstr: str) -> None:
@@ -699,6 +737,14 @@ class Shell:
         else:
             return format_int(v, spec=spec)
 
+    def asm_settings(self):
+        """Override some defaults in self.settings for the assembler."""
+        settings = copy.copy(self.settings)
+        settings.stdout = True
+        settings.code = True
+        settings.data = False
+        return settings
+
 
 DEFAULT_SPEC = "dsc"
 
@@ -742,6 +788,9 @@ def overflow(v: int) -> bool:
 
 HELP = """\
 Available commands:
+    asm <op>        Show the binary machine code that the HERA operations
+                    assembles to.
+
     assign <x> <y>  Assign the value of y to x.
 
     break <loc>     Set a breakpoint at the given location. When no arguments
@@ -751,6 +800,8 @@ Available commands:
 
     continue        Execute the program until a breakpoint is encountered or
                     the program terminates.
+
+    dis <n>         Disassemble the 16-bit integer into a HERA operation.
 
     execute <op>    Execute a HERA operation.
 
@@ -789,6 +840,10 @@ Command names can generally be abbreviated with a unique prefix, e.g. "n" for
 
 
 HELP_MAP = {
+    # asm
+    "asm": """\
+asm <op>
+  Assemble the HERA operation into machine code.""",
     # assign
     "assign": """\
 assign <x> <y>
@@ -835,6 +890,11 @@ clear *
 continue
   Execute the program until a breakpoint is encountered or the program
   terminates.""",
+    # dis
+    "dis": """\
+dis <n>
+   Interpret the 16-bit integer as a HERA machine instruction, and disassemble
+   it into its assembly-language mnemonic.""",
     # execute
     "execute": """\
 execute <op>

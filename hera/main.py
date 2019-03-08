@@ -5,10 +5,9 @@ Version: March 2019
 """
 import functools
 import sys
-import textwrap
 from typing import List, Optional
 
-from .assembler import assemble
+from .assembler import assemble_and_print
 from .data import HERAError, Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
 from .disassembler import disassemble
@@ -95,46 +94,13 @@ def main_preprocess(path: str, settings: Settings) -> None:
 def main_assemble(path: str, settings: Settings) -> None:
     """Assemble the program into machine code and print the hex output to stdout."""
     program = load_program_from_file(path, settings)
-    raw_code, raw_data = assemble(program)
-
-    code = "\n".join(bytes_to_hex(b) for b in raw_code)
-
-    raw_data_concat = b"".join(raw_data)
-    datalist = []
-    for i in range(0, len(raw_data_concat), 2):
-        hi = raw_data_concat[i]
-        lo = raw_data_concat[i + 1]
-        datalist.append("{:x}".format((hi << 8) + lo))
-    data = "\n".join(datalist)
-    # I don't know what the significance of this cell is, but Hassem includes it.
-    cell = (len(raw_data_concat) // 2) + settings.data_start
-    data = "{:x}\n".format(cell) + data
-    # Make sure to put zeroes up to the start of the data segment.
-    data = "{}*0\n".format(settings.data_start - 1) + data
-
-    if settings.stdout:
-        if settings.data:
-            print(data)
-        elif settings.code:
-            print(code)
-        else:
-            print("[DATA]")
-            print(textwrap.indent(data, "  "))
-            print("[CODE]")
-            print(textwrap.indent(code, "  "))
-    else:
-        if path == "-":
-            path = "stdin"
-
-        with open(path + ".lcode", "w", encoding="ascii") as f:
-            f.write(code)
-            f.write("\n")
-
-        with open(path + ".ldata", "w", encoding="ascii") as f:
-            f.write(data)
+    assemble_and_print(program, settings)
 
 
 def main_disassemble(path: str, settings: Settings) -> None:
+    """Disassemble the machine code (expressed as newline-separated hex numbers, without
+    the "0x" prefix), and print the HERA output to stdout.
+    """
     text = read_file_or_stdin(path, settings)
     for line in text.splitlines():
         try:
@@ -325,14 +291,6 @@ def dump_state(vm: VirtualMachine, settings: Settings) -> None:
     if settings.warning_count > 0:
         c = settings.warning_count
         nprint("\n{} warning{} emitted.".format(c, "" if c == 1 else "s"))
-
-
-def bytes_to_hex(b: bytes) -> str:
-    try:
-        return b.hex()
-    except AttributeError:
-        # bytes.hex is not implemented in Python 3.4.
-        return "".join("{:0>2x}".format(c) for c in b)
 
 
 FLAGS = {
