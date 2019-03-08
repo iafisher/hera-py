@@ -7,9 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 
 ## Unreleased
+Nothing yet!
+
+## [0.8.1] - 2019-03-08
 ### Added
 - The `OPCODE` instruction.
 - The `asm` and `dis` debugging commands, for assembling and disassembling HERA code in the debugger.
+
+### Changed
+- The readline library is no longer required for `hera` to run.
+
 
 ## [0.8.0] - 2019-03-07
 ### Added
@@ -19,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 - Newlines are no longer semi-randomly printed to standard error in preprocessing and assembling mode.
+
 
 ## [0.7.0] - 2019-02-13
 ### Added
@@ -59,6 +67,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The debugger no longer crashes when `list` or `ll` is invoked after the end of the program.
 - A relative branch to a label whose instruction number is greater than 255 is no longer erroneously reported as an error.
 
+
 ## [0.5.2] - 2019-02-02
 ### Added
 - The `warn-octal-off` flag.
@@ -74,6 +83,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `hera-py` now installs with Python 3.4 without errors. I believe this was broken in version 0.5.1.
 - The debugger now executes data statements on start-up.
 - The `execute` debugging command now prints an error message when invoked with no arguments.
+
 
 ## [0.5.1] - 2019-01-31
 ### Added
@@ -107,6 +117,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The printed register values after program execution now correctly print negative numbers under the signed interpretation of 16 bits.
 - The `step` command no longer stops prematurely when the number of instructions executed exceeds the length of the program.
 - Printing invalid registers in the debugger no longer crashes it.
+
 
 ## [0.5.0] - 2019-01-27
 ### Added
