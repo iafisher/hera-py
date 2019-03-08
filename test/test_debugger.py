@@ -1420,16 +1420,36 @@ def test_handle_dis(shell, capsys):
     assert capsys.readouterr().out == "SETLO(R1, 255)\n"
 
 
+def test_handle_dis_with_multiple_arguments(shell, capsys):
+    shell.handle_command("dis 0xe198 0xf1b7")
+
+    assert capsys.readouterr().out == "SETLO(R1, 152)\nSETHI(R1, 183)\n"
+
+
 def test_handle_dis_invalid_argument(shell, capsys):
     shell.handle_command("dis abc")
 
-    assert capsys.readouterr().out == "Could not parse argument to dis.\n"
+    assert capsys.readouterr().out == "Could not parse argument `abc` to dis.\n"
 
 
-def test_handle_dis_too_few_args(shell, capsys):
+def test_handle_dis_with_an_OPCODE(capsys):
+    shell = load_shell("OPCODE(0x3132)")
     shell.handle_command("dis")
 
-    assert capsys.readouterr().out == "dis takes one argument.\n"
+    assert capsys.readouterr().out == "LSR8(R1, R2)\n"
+
+
+def test_handle_dis_without_an_OPCODE(shell, capsys):
+    shell.handle_command("dis")
+
+    assert capsys.readouterr().out == "Current operation is not an OPCODE.\n"
+
+    # Make sure it doesn't choke at the end of program.
+    shell.handle_command("continue")
+    capsys.readouterr()
+    shell.handle_command("dis")
+
+    assert capsys.readouterr().out == "Current operation is not an OPCODE.\n"
 
 
 def test_handle_asm(shell, capsys):

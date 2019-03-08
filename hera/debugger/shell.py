@@ -21,7 +21,7 @@ from hera.assembler import assemble_and_print
 from hera.data import DataLabel, HERAError, Label, Location, Program, Settings
 from hera.disassembler import disassemble
 from hera.loader import load_program
-from hera.op import Branch, DataOperation, LABEL
+from hera.op import Branch, DataOperation, LABEL, OPCODE
 from hera.parser import parse
 from hera.utils import format_int, pad
 
@@ -265,21 +265,30 @@ class Shell:
         self.print_current_op()
 
     def handle_dis(self, args: List[str]) -> None:
-        if len(args) != 1:
-            print("dis takes one argument.")
-            return
+        if len(args) > 0:
+            intargs = []
+            for a in args:
+                try:
+                    v = int(a, base=0)
+                except ValueError:
+                    print("Could not parse argument `{}` to dis.".format(a))
+                    return
+                else:
+                    intargs.append(v)
 
-        try:
-            v = int(args[0], base=0)
-        except ValueError:
-            print("Could not parse argument to dis.")
-            return
-
-        data = bytes([v >> 8, v & 0xFF])
-        try:
-            print(disassemble(data))
-        except HERAError as e:
-            print("Error:", e)
+            for v in intargs:
+                data = bytes([v >> 8, v & 0xFF])
+                try:
+                    print(disassemble(data))
+                except HERAError as e:
+                    print("Error:", e)
+        else:
+            if not self.debugger.finished() and isinstance(self.debugger.op(), OPCODE):
+                op = self.debugger.op()
+                data = bytes([op.args[0] >> 8, op.args[0] & 0xFF])
+                print(disassemble(data))
+            else:
+                print("Current operation is not an OPCODE.")
 
     @mutates
     def handle_execute(self, argstr: str) -> None:
@@ -904,8 +913,14 @@ continue
     # dis
     "dis": """\
 dis <n>
-   Interpret the 16-bit integer as a HERA machine instruction, and disassemble
-   it into its assembly-language mnemonic.""",
+  Interpret the 16-bit integer as a HERA machine instruction, and disassemble
+  it into its assembly-language mnemonic.
+
+dis <n1> <n2>...
+  Disassemble multiple integers.
+
+dis
+  If the current instruction is an OPCODE, disassemble its contents.""",
     # execute
     "execute": """\
 execute <op>
