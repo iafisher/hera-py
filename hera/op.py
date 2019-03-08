@@ -1,24 +1,33 @@
 """The definition of all the operations in the HERA language.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: February 2019
+Version: March 2019
 """
 import json
 import sys
 from contextlib import suppress
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from hera import stdlib
 from hera.data import Constant, DataLabel, HERAError, Label, Location, Messages, Token
-from hera.disassembler import disassemble
 from hera.utils import format_int, from_u16, print_error, print_warning, to_u16, to_u32
 from hera.vm import VirtualMachine
 
 
 class AbstractOperation:
+    """The base class for HERA operations. All operation classes should inherit from
+    this class.
+    """
+
+    BITV = ""
+
     def __init__(self, *args, loc=None):
         self.args = [a.value for a in args]
         self.tokens = list(args)
+        # When the preprocessor converts pseudo-ops to real ops, it will set the
+        # original field of the real op to the corresponding pseudo-op, for use by the
+        # HERA debugger.
+        self.original = None
 
         if isinstance(loc, Location):
             self.loc = loc
@@ -26,9 +35,11 @@ class AbstractOperation:
             self.loc = loc.location
         else:
             self.loc = None
-        self.original = None
 
     def typecheck(self, symbol_table: Dict[str, int]) -> Messages:
+        """Type-check the operation. Subclasses do not generally need to override this
+        method, as long as they provide a P class field listing their parameter types.
+        """
         messages = Messages()
         if len(self.P) < len(self.tokens):
             msg = "too many args to {} (expected {})".format(self.name, len(self.P))
@@ -40,12 +51,29 @@ class AbstractOperation:
         return messages.extend(check_arglist(self.P, self.tokens, symbol_table))
 
     def convert(self) -> List["AbstractOperation"]:
+        """Convert the pseudo-operation into a list of real operations. Only pseudo-ops
+        need to override this method.
+        """
         return [self]
 
     def assemble(self) -> bytes:
-        raise NotImplementedError
+        """Assemble the operation into a 16-bit string. Subclasses do not generally need
+        to override this method, as long as they provide a BITV class field.
+        """
+        return substitute_bitvector(self.BITV, self.args)
+
+    @classmethod
+    def disassemble(cls, *args):
+        """Disassemble the integer arguments into an operation. Subclasses do not
+        generally need to override this method; it is provided only for the special
+        purposes of the INC and DEC classes.
+        """
+        return cls(*args)
 
     def execute(self, vm: VirtualMachine) -> None:
+        """Execute the operation on a virtual machine. Real operations should override
+        this method; pseudo-operations should not.
+        """
         raise NotImplementedError
 
     def __getattr__(self, name):
@@ -118,7 +146,7 @@ class UnaryOp(AbstractOperation):
 
 class BinaryOp(AbstractOperation):
     """Abstract class to simplify implementation of binary operations. Child classes
-    only need to implement the calculate method and set the OPCODE field.
+    only need to implement the calculate method and set the BITV field.
     """
 
     P = (REGISTER, REGISTER, REGISTER)
@@ -141,11 +169,6 @@ class BinaryOp(AbstractOperation):
         """
         raise NotImplementedError
 
-    def assemble(self):
-        return bytes(
-            [(self.OPCODE << 4) + self.args[0], (self.args[1] << 4) + self.args[2]]
-        )
-
 
 class Branch(AbstractOperation):
     pass
@@ -153,7 +176,7 @@ class Branch(AbstractOperation):
 
 class RegisterBranch(Branch):
     """Abstract class to simplify implementation of register branches. Child classes
-    only need to implement the should method and set the OPCODE field.
+    only need to implement the should method and set the BITV field.
     """
 
     P = (REGISTER_OR_LABEL,)
@@ -184,13 +207,10 @@ class RegisterBranch(Branch):
                 self.__class__(Token.R(11)),
             ]
 
-    def assemble(self):
-        return bytes([(0b0001 << 4) + self.OPCODE, self.args[0]])
-
 
 class RelativeBranch(Branch):
     """Abstract class to simplify implementation of relative branches. Child classes
-    only need to implement the should method and set the OPCODE field.
+    only need to implement the should method and set the BITV field.
     """
 
     P = (I8_OR_LABEL,)
@@ -207,9 +227,6 @@ class RelativeBranch(Branch):
         """
         raise NotImplementedError
 
-    def assemble(self):
-        return bytes([self.OPCODE, self.args[0]])
-
 
 class DebuggingOperation(AbstractOperation):
     pass
@@ -221,6 +238,7 @@ class DataOperation(AbstractOperation):
 
 class SETLO(AbstractOperation):
     P = (REGISTER, I8)
+    BITV = "1110 AAAA bbbbbbbb"
 
     def execute(self, vm):
         value = self.args[1]
@@ -230,20 +248,15 @@ class SETLO(AbstractOperation):
         vm.store_register(self.args[0], to_u16(value))
         vm.pc += 1
 
-    def assemble(self):
-        return bytes([(0b1110 << 4) + self.args[0], self.args[1]])
-
 
 class SETHI(AbstractOperation):
     P = (REGISTER, I8)
+    BITV = "1111 AAAA bbbbbbbb"
 
     def execute(self, vm):
         target, value = self.args
         vm.store_register(target, (value << 8) + (vm.load_register(target) & 0x00FF))
         vm.pc += 1
-
-    def assemble(self):
-        return bytes([(0b1111 << 4) + self.args[0], self.args[1]])
 
 
 class SET(AbstractOperation):
@@ -261,7 +274,7 @@ class SET(AbstractOperation):
 
 
 class ADD(BinaryOp):
-    OPCODE = 0b1010
+    BITV = "1010 AAAA BBBB CCCC"
 
     @staticmethod
     def calculate(vm, left, right):
@@ -276,7 +289,7 @@ class ADD(BinaryOp):
 
 
 class SUB(BinaryOp):
-    OPCODE = 0b1011
+    BITV = "1011 AAAA BBBB CCCC"
 
     @staticmethod
     def calculate(vm, left, right):
@@ -293,7 +306,7 @@ class SUB(BinaryOp):
 
 
 class MUL(BinaryOp):
-    OPCODE = 0b1100
+    BITV = "1100 AAAA BBBB CCCC"
 
     @staticmethod
     def calculate(vm, left, right):
@@ -313,7 +326,7 @@ class MUL(BinaryOp):
 
 
 class AND(BinaryOp):
-    OPCODE = 0b1000
+    BITV = "1000 AAAA BBBB CCCC"
 
     @staticmethod
     def calculate(vm, left, right):
@@ -321,7 +334,7 @@ class AND(BinaryOp):
 
 
 class OR(BinaryOp):
-    OPCODE = 0b1001
+    BITV = "1001 AAAA BBBB CCCC"
 
     @staticmethod
     def calculate(vm, left, right):
@@ -329,7 +342,7 @@ class OR(BinaryOp):
 
 
 class XOR(BinaryOp):
-    OPCODE = 0b1101
+    BITV = "1101 AAAA BBBB CCCC"
 
     @staticmethod
     def calculate(vm, left, right):
@@ -338,6 +351,7 @@ class XOR(BinaryOp):
 
 class INC(AbstractOperation):
     P = (REGISTER, range(1, 65))
+    BITV = "0011 AAAA 10bb bbbb"
 
     def execute(self, vm):
         target, value = self.args
@@ -352,11 +366,20 @@ class INC(AbstractOperation):
         vm.pc += 1
 
     def assemble(self):
-        return bytes([(0b0011 << 4) + self.args[0], (0b10 << 6) + self.args[1] - 1])
+        # The increment value encoded in the instruction is one less than the actual
+        # increment, i.e. INC(R1, 1) is assembled as if it were INC(R1, 0) since the
+        # latter is illegal.
+        bv = super().assemble()
+        return bytes([bv[0], bv[1] - 1])
+
+    @classmethod
+    def disassemble(cls, arg0, arg1):
+        return cls(arg0, Token(Token.INT, arg1.value + 1))
 
 
 class DEC(AbstractOperation):
     P = (REGISTER, range(1, 65))
+    BITV = "0011 AAAA 11bb bbbb"
 
     def execute(self, vm):
         target, value = self.args
@@ -371,10 +394,20 @@ class DEC(AbstractOperation):
         vm.pc += 1
 
     def assemble(self):
-        return bytes([(0b0011 << 4) + self.args[0], (0b11 << 6) + self.args[1] - 1])
+        # The decrement value encoded in the instruction is one less than the actual
+        # decrement, i.e. DEC(R1, 1) is assembled as if it were DEC(R1, 0) since the
+        # latter is illegal.
+        bv = super().assemble()
+        return bytes([bv[0], bv[1] - 1])
+
+    @classmethod
+    def disassemble(cls, arg0, arg1):
+        return cls(arg0, Token(Token.INT, arg1.value + 1))
 
 
 class LSL(UnaryOp):
+    BITV = "0011 AAAA 0000 BBBB"
+
     @staticmethod
     def calculate(vm, arg):
         carry = 1 if vm.flag_carry and not vm.flag_carry_block else 0
@@ -384,11 +417,10 @@ class LSL(UnaryOp):
 
         return result
 
-    def assemble(self):
-        return bytes([(0b0011 << 4) + self.args[0], self.args[1]])
-
 
 class LSR(UnaryOp):
+    BITV = "0011 AAAA 0001 BBBB"
+
     @staticmethod
     def calculate(vm, arg):
         carry = 2 ** 15 if vm.flag_carry and not vm.flag_carry_block else 0
@@ -398,29 +430,26 @@ class LSR(UnaryOp):
 
         return result
 
-    def assemble(self):
-        return bytes([(0b0011 << 4) + self.args[0], (0b0001 << 4) + self.args[1]])
-
 
 class LSL8(UnaryOp):
+    BITV = "0011 AAAA 0010 BBBB"
+
     @staticmethod
     def calculate(vm, arg):
         return (arg << 8) & 0xFFFF
 
-    def assemble(self):
-        return bytes([(0b0011 << 4) + self.args[0], (0b0010 << 4) + self.args[1]])
-
 
 class LSR8(UnaryOp):
+    BITV = "0011 AAAA 0011 BBBB"
+
     @staticmethod
     def calculate(vm, arg):
         return arg >> 8
 
-    def assemble(self):
-        return bytes([(0b0011 << 4) + self.args[0], (0b0011 << 4) + self.args[1]])
-
 
 class ASL(UnaryOp):
+    BITV = "0011 AAAA 0100 BBBB"
+
     @staticmethod
     def calculate(vm, arg):
         carry = 1 if vm.flag_carry and not vm.flag_carry_block else 0
@@ -431,11 +460,10 @@ class ASL(UnaryOp):
 
         return result
 
-    def assemble(self):
-        return bytes([(0b0011 << 4) + self.args[0], (0b0100 << 4) + self.args[1]])
-
 
 class ASR(UnaryOp):
+    BITV = "0011 AAAA 0101 BBBB"
+
     @staticmethod
     def calculate(vm, arg):
         # This is a little messy because right shift in Python rounds towards
@@ -453,12 +481,10 @@ class ASR(UnaryOp):
 
         return result
 
-    def assemble(self):
-        return bytes([(0b0011 << 4) + self.args[0], (0b0101 << 4) + self.args[1]])
-
 
 class SAVEF(AbstractOperation):
     P = (REGISTER,)
+    BITV = "0011 AAAA 0111 0000"
 
     def execute(self, vm):
         value = (
@@ -471,12 +497,10 @@ class SAVEF(AbstractOperation):
         vm.store_register(self.args[0], value)
         vm.pc += 1
 
-    def assemble(self):
-        return bytes([(0b0011 << 4) + self.args[0], 0b01110000])
-
 
 class RSTRF(AbstractOperation):
     P = (REGISTER,)
+    BITV = "0011 AAAA 0111 1000"
 
     def execute(self, vm):
         value = vm.load_register(self.args[0])
@@ -487,12 +511,10 @@ class RSTRF(AbstractOperation):
         vm.flag_carry_block = bool(value & 0b10000)
         vm.pc += 1
 
-    def assemble(self):
-        return bytes([(0b0011 << 4) + self.args[0], 0b01111000])
-
 
 class FON(AbstractOperation):
     P = (U5,)
+    BITV = "0011 000a 0110 aaaa"
 
     def execute(self, vm):
         value = self.args[0]
@@ -503,14 +525,10 @@ class FON(AbstractOperation):
         vm.flag_carry_block = vm.flag_carry_block or bool(value & 0b10000)
         vm.pc += 1
 
-    def assemble(self):
-        hi = self.args[0] >> 4
-        lo = self.args[0] & 0b1111
-        return bytes([0b00110000 + hi, (0b0110 << 4) + lo])
-
 
 class FOFF(AbstractOperation):
     P = (U5,)
+    BITV = "0011 100a 0110 aaaa"
 
     def execute(self, vm):
         value = self.args[0]
@@ -521,14 +539,10 @@ class FOFF(AbstractOperation):
         vm.flag_carry_block = vm.flag_carry_block and not bool(value & 0b10000)
         vm.pc += 1
 
-    def assemble(self):
-        hi = self.args[0] >> 4
-        lo = self.args[0] & 0b1111
-        return bytes([0b00111000 + hi, (0b0110 << 4) + lo])
-
 
 class FSET5(AbstractOperation):
     P = (U5,)
+    BITV = "0011 010a 0110 aaaa"
 
     def execute(self, vm):
         value = self.args[0]
@@ -539,14 +553,10 @@ class FSET5(AbstractOperation):
         vm.flag_carry_block = bool(value & 0b10000)
         vm.pc += 1
 
-    def assemble(self):
-        hi = self.args[0] >> 4
-        lo = self.args[0] & 0b1111
-        return bytes([0b00110100 + hi, (0b0110 << 4) + lo])
-
 
 class FSET4(AbstractOperation):
     P = (U4,)
+    BITV = "0011 110a 0110 aaaa"
 
     def execute(self, vm):
         value = self.args[0]
@@ -556,14 +566,10 @@ class FSET4(AbstractOperation):
         vm.flag_carry = bool(value & 0b1000)
         vm.pc += 1
 
-    def assemble(self):
-        hi = self.args[0] >> 4
-        lo = self.args[0] & 0b1111
-        return bytes([0b00111100 + hi, (0b0110 << 4) + lo])
-
 
 class LOAD(AbstractOperation):
     P = (REGISTER, U5, REGISTER)
+    BITV = "010b AAAA bbbb CCCC"
 
     def execute(self, vm):
         target, offset, address = self.args
@@ -573,14 +579,10 @@ class LOAD(AbstractOperation):
         vm.store_register(target, result)
         vm.pc += 1
 
-    def assemble(self):
-        hi = self.args[1] >> 4
-        lo = self.args[1] & 0b1111
-        return bytes([((0b0100 + hi) << 4) + self.args[0], (lo << 4) + self.args[2]])
-
 
 class STORE(AbstractOperation):
     P = (REGISTER, U5, REGISTER)
+    BITV = "011b AAAA bbbb CCCC"
 
     def execute(self, vm):
         source, offset, address = self.args
@@ -588,14 +590,9 @@ class STORE(AbstractOperation):
         vm.store_memory(vm.load_register(address) + offset, vm.load_register(source))
         vm.pc += 1
 
-    def assemble(self):
-        hi = self.args[1] >> 4
-        lo = self.args[1] & 0b1111
-        return bytes([((0b0110 + hi) << 4) + self.args[0], (lo << 4) + self.args[2]])
-
 
 class BR(RegisterBranch):
-    OPCODE = 0b0000
+    BITV = "0001 0000 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -603,7 +600,7 @@ class BR(RegisterBranch):
 
 
 class BRR(RelativeBranch):
-    OPCODE = 0b0000
+    BITV = "0000 0000 aaaa aaaa"
 
     def execute(self, vm):
         if self.args[0] != 0:
@@ -613,7 +610,7 @@ class BRR(RelativeBranch):
 
 
 class BL(RegisterBranch):
-    OPCODE = 0b0010
+    BITV = "0001 0010 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -621,7 +618,7 @@ class BL(RegisterBranch):
 
 
 class BLR(RelativeBranch):
-    OPCODE = 0b0010
+    BITV = "0000 0010 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -629,7 +626,7 @@ class BLR(RelativeBranch):
 
 
 class BGE(RegisterBranch):
-    OPCODE = 0b0011
+    BITV = "0001 0011 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -637,7 +634,7 @@ class BGE(RegisterBranch):
 
 
 class BGER(RelativeBranch):
-    OPCODE = 0b0011
+    BITV = "0000 0011 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -645,7 +642,7 @@ class BGER(RelativeBranch):
 
 
 class BLE(RegisterBranch):
-    OPCODE = 0b0100
+    BITV = "0001 0100 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -653,7 +650,7 @@ class BLE(RegisterBranch):
 
 
 class BLER(RelativeBranch):
-    OPCODE = 0b0100
+    BITV = "0000 0100 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -661,7 +658,7 @@ class BLER(RelativeBranch):
 
 
 class BG(RegisterBranch):
-    OPCODE = 0b0101
+    BITV = "0001 0101 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -669,7 +666,7 @@ class BG(RegisterBranch):
 
 
 class BGR(RelativeBranch):
-    OPCODE = 0b0101
+    BITV = "0000 0101 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -677,7 +674,7 @@ class BGR(RelativeBranch):
 
 
 class BULE(RegisterBranch):
-    OPCODE = 0b0110
+    BITV = "0001 0110 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -685,7 +682,7 @@ class BULE(RegisterBranch):
 
 
 class BULER(RelativeBranch):
-    OPCODE = 0b0110
+    BITV = "0000 0110 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -693,7 +690,7 @@ class BULER(RelativeBranch):
 
 
 class BUG(RegisterBranch):
-    OPCODE = 0b0111
+    BITV = "0001 0111 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -701,7 +698,7 @@ class BUG(RegisterBranch):
 
 
 class BUGR(RelativeBranch):
-    OPCODE = 0b0111
+    BITV = "0000 0111 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -709,7 +706,7 @@ class BUGR(RelativeBranch):
 
 
 class BZ(RegisterBranch):
-    OPCODE = 0b1000
+    BITV = "0001 1000 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -717,7 +714,7 @@ class BZ(RegisterBranch):
 
 
 class BZR(RelativeBranch):
-    OPCODE = 0b1000
+    BITV = "0000 1000 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -725,7 +722,7 @@ class BZR(RelativeBranch):
 
 
 class BNZ(RegisterBranch):
-    OPCODE = 0b1001
+    BITV = "0001 1001 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -733,7 +730,7 @@ class BNZ(RegisterBranch):
 
 
 class BNZR(RelativeBranch):
-    OPCODE = 0b1001
+    BITV = "0000 1001 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -741,7 +738,7 @@ class BNZR(RelativeBranch):
 
 
 class BC(RegisterBranch):
-    OPCODE = 0b1010
+    BITV = "0001 1010 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -749,7 +746,7 @@ class BC(RegisterBranch):
 
 
 class BCR(RelativeBranch):
-    OPCODE = 0b1010
+    BITV = "0000 1010 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -757,7 +754,7 @@ class BCR(RelativeBranch):
 
 
 class BNC(RegisterBranch):
-    OPCODE = 0b1011
+    BITV = "0001 1011 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -765,7 +762,7 @@ class BNC(RegisterBranch):
 
 
 class BNCR(RelativeBranch):
-    OPCODE = 0b1011
+    BITV = "0000 1011 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -773,7 +770,7 @@ class BNCR(RelativeBranch):
 
 
 class BS(RegisterBranch):
-    OPCODE = 0b1100
+    BITV = "0001 1100 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -781,7 +778,7 @@ class BS(RegisterBranch):
 
 
 class BSR(RelativeBranch):
-    OPCODE = 0b1100
+    BITV = "0000 1100 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -789,7 +786,7 @@ class BSR(RelativeBranch):
 
 
 class BNS(RegisterBranch):
-    OPCODE = 0b1101
+    BITV = "0001 1101 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -797,7 +794,7 @@ class BNS(RegisterBranch):
 
 
 class BNSR(RelativeBranch):
-    OPCODE = 0b1101
+    BITV = "0000 1101 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -805,7 +802,7 @@ class BNSR(RelativeBranch):
 
 
 class BV(RegisterBranch):
-    OPCODE = 0b1110
+    BITV = "0001 1110 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -813,7 +810,7 @@ class BV(RegisterBranch):
 
 
 class BVR(RelativeBranch):
-    OPCODE = 0b1110
+    BITV = "0000 1110 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -821,7 +818,7 @@ class BVR(RelativeBranch):
 
 
 class BNV(RegisterBranch):
-    OPCODE = 0b1111
+    BITV = "0001 1111 0000 AAAA"
 
     @staticmethod
     def should(vm):
@@ -829,7 +826,7 @@ class BNV(RegisterBranch):
 
 
 class BNVR(RelativeBranch):
-    OPCODE = 0b1111
+    BITV = "0000 1111 aaaa aaaa"
 
     @staticmethod
     def should(vm):
@@ -862,6 +859,7 @@ class CALL_AND_RETURN(Branch):
 
 class CALL(CALL_AND_RETURN):
     P = (REGISTER, REGISTER_OR_LABEL)
+    BITV = "0010 0000 AAAA BBBB"
 
     def convert(self):
         if self.tokens[1].type == Token.REGISTER:
@@ -876,12 +874,10 @@ class CALL(CALL_AND_RETURN):
         vm.expected_returns.append((vm.load_register(self.args[1]), vm.pc + 1))
         super().execute(vm)
 
-    def assemble(self):
-        return bytes([0b00100000, (self.args[0] << 4) + self.args[1]])
-
 
 class RETURN(CALL_AND_RETURN):
     P = (REGISTER, REGISTER)
+    BITV = "0010 0001 AAAA BBBB"
 
     def typecheck(self, *args, **kwargs):
         messages = super().typecheck(*args, **kwargs)
@@ -912,22 +908,15 @@ class RETURN(CALL_AND_RETURN):
                 vm.settings.warning_count += 1
         super().execute(vm)
 
-    def assemble(self):
-        return bytes([0b00100001, (self.args[0] << 4) + self.args[1]])
-
 
 class SWI(AbstractOperation):
     P = (U4,)
-
-    def assemble(self):
-        return bytes([0b00100010, self.args[0]])
+    BITV = "0010 0010 0000 aaaa"
 
 
 class RTI(AbstractOperation):
     P = ()
-
-    def assemble(self):
-        return bytes([0b00100011, 0])
+    BITV = "0010 0011 0000 0000"
 
 
 class CMP(AbstractOperation):
@@ -1032,9 +1021,8 @@ class OPCODE(AbstractOperation):
     def typecheck(self, *args, **kwargs):
         messages = super().typecheck(*args, **kwargs)
 
-        data = bytes([self.args[0] >> 8, self.args[0] & 0xFF])
         try:
-            disassemble(data)
+            disassemble(self.args[0])
         except HERAError:
             messages.err("not a HERA instruction", self.tokens[0])
 
@@ -1043,8 +1031,7 @@ class OPCODE(AbstractOperation):
     def convert(self):
         # We don't need to call .convert() on the return value of disassemble because
         # disassemble never returns a pseudo-op.
-        data = bytes([self.args[0] >> 8, self.args[0] & 0xFF])
-        return [disassemble(data)]
+        return [disassemble(self.args[0])]
 
 
 class INTEGER(DataOperation):
@@ -1144,6 +1131,97 @@ class __EVAL(DebuggingOperation):
             print_error(vm.settings, "Python exception: " + str(e), loc=vm.location)
             sys.exit(3)
         vm.pc += 1
+
+
+def disassemble(v: int) -> AbstractOperation:
+    for cls in name_to_class.values():
+        if hasattr(cls, "BITV"):
+            m = match_bitvector(cls.BITV, v)
+            if m is not False and isinstance(m, list):
+                return cls.disassemble(*m)
+
+    raise HERAError("bit pattern does not correspond to HERA instruction")
+
+
+def match_bitvector(pattern: str, v: int) -> Union[List, bool]:
+    """Try to match the 16-bit integer `v` against `pattern`. Return a list of
+    extracted arguments if `v` matches, or False otherwise.
+
+    `pattern` should be a string of sixteen characters, which may be the digits '0' or
+    '1' or Latin letters. The digits are matched against the literal digits in `v`;
+    letters are used to extract values. Uppercase letters match integer values and
+    lowercase letters match registers. For example, "0000aaaaBBBB1111" would match,
+    e.g., 0000 1001 0110 11111, returning
+
+        [Token(Token.INT, 0b1001), Token(Token.REGISTER, 0b0110)]
+    """
+    s = bin(v)[2:].rjust(16, "0")
+    args = []  # type: List[Token]
+
+    pattern = pattern.replace(" ", "")
+
+    # Initialize argument list with the correct types (integers or registers).
+    for pattern_bit in pattern:
+        if pattern_bit.isalpha():
+            index = ord(pattern_bit.lower()) - ord("a")
+            while index >= len(args):
+                args.append(Token(Token.INT, 0))
+
+            if pattern_bit.isupper():
+                args[index] = Token(Token.REGISTER, 0)
+            else:
+                args[index] = Token(Token.INT, 0)
+
+    # Fill in the argument list with the actual values from the binary data.
+    for pattern_bit, real_bit in zip(pattern, s):
+        if pattern_bit == "0":
+            if real_bit != "0":
+                return False
+        elif pattern_bit == "1":
+            if real_bit != "1":
+                return False
+        else:
+            index = ord(pattern_bit.lower()) - ord("a")
+            args[index].value <<= 1
+            if real_bit == "1":
+                args[index].value += 1
+
+    return args
+
+
+def substitute_bitvector(pattern: str, args: List[int]) -> bytes:
+    # Make a copy of the arguments as we will be modifying it.
+    args = args[:]
+
+    # Remove spaces from the pattern string.
+    pattern = pattern.replace(" ", "")
+
+    # Substituting the low byte MUST happen before the high byte, because it pulls the
+    # low bits from each argument.
+    low_pattern = pattern[8:16]
+    low_byte = substitute_half_a_bitvector(low_pattern, args)
+
+    high_pattern = pattern[0:8]
+    high_byte = substitute_half_a_bitvector(high_pattern, args)
+
+    return bytes([high_byte, low_byte])
+
+
+def substitute_half_a_bitvector(pattern: str, args: List[int]) -> int:
+    ret = 0
+    for shift, pattern_bit in enumerate(reversed(pattern)):
+        if pattern_bit == "0":
+            real_bit = 0
+        elif pattern_bit == "1":
+            real_bit = 1
+        else:
+            index = ord(pattern_bit.lower()) - ord("a")
+            real_bit = args[index] & 1
+            args[index] >>= 1
+
+        ret += real_bit << shift
+
+    return ret
 
 
 def check_arglist(argtypes, args, symbol_table):

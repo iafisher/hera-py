@@ -19,9 +19,8 @@ from .miniparser import (
 )
 from hera.assembler import assemble_and_print
 from hera.data import DataLabel, HERAError, Label, Location, Program, Settings
-from hera.disassembler import disassemble
 from hera.loader import load_program
-from hera.op import Branch, DataOperation, LABEL, OPCODE
+from hera.op import Branch, DataOperation, disassemble, LABEL, OPCODE
 from hera.parser import parse
 from hera.utils import format_int, pad
 
@@ -277,16 +276,14 @@ class Shell:
                     intargs.append(v)
 
             for v in intargs:
-                data = bytes([v >> 8, v & 0xFF])
                 try:
-                    print(disassemble(data))
+                    print(disassemble(v))
                 except HERAError as e:
                     print("Error:", e)
         else:
             if not self.debugger.finished() and isinstance(self.debugger.op(), OPCODE):
                 op = self.debugger.op()
-                data = bytes([op.args[0] >> 8, op.args[0] & 0xFF])
-                print(disassemble(data))
+                print(disassemble(op.args[0]))
             else:
                 print("Current operation is not an OPCODE.")
 

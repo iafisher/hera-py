@@ -10,8 +10,8 @@ from typing import List, Optional
 from .assembler import assemble_and_print
 from .data import HERAError, Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
-from .disassembler import disassemble
 from .loader import load_program_from_file
+from .op import disassemble
 from .utils import format_int, read_file_or_stdin
 from .vm import VirtualMachine
 
@@ -120,7 +120,7 @@ def main_disassemble(path: str, settings: Settings) -> None:
             continue
 
         try:
-            print(disassemble(bytes([v >> 8, v & 0xFF])))
+            print(disassemble(v))
         except HERAError:
             print("// Unknown instruction: {}".format(line))
 
