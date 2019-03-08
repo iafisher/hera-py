@@ -116,7 +116,7 @@ def disassemble(data: bytes):
         elif midhi4 == 0b1111:
             return op.BNV(r)
     elif hi4 == 0b0000:
-        r = UINT(lo4)
+        r = UINT(lo)
         if midhi4 == 0b0000:
             return op.BRR(r)
         elif midhi4 == 0b0010:

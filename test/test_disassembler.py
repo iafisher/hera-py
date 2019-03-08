@@ -126,3 +126,12 @@ SWI(10)
 RTI()
 """
     )
+
+
+def test_disassemble_another_branch(capsys):
+    with patch("sys.stdin", StringIO("0011")):
+        main(["disassemble", "-"])
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert captured.out == "\nBRR(17)\n"
