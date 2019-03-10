@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## Unreleased
 Nothing yet!
 
-## [0.8.1] - 2019-03-08
+## [0.8.1] - 2019-03-09
 ### Added
 - The `OPCODE` instruction.
 - The `asm` and `dis` debugging commands, for assembling and disassembling HERA code in the debugger.
