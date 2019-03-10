@@ -34,6 +34,16 @@ def test_assemble_branch(capsys):
         assert captured.out == f.read()
 
 
+def test_assemble_relative_branch(capsys):
+    main(["assemble", "--code", "--stdout", "test/assets/asm/rel_branch.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+
+    with open("test/assets/asm/rel_branch.hera.lcode") as f:
+        assert captured.out == f.read()
+
+
 def test_assemble_flag(capsys):
     main(["assemble", "--code", "--stdout", "test/assets/asm/flag.hera"])
 

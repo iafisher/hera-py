@@ -56,7 +56,7 @@ def test_disassemble_branch(capsys):
         captured.out
         == """\
 BR(R1)
-BL(R1)
+BL(R7)
 BGE(R1)
 BLE(R1)
 BG(R1)
@@ -72,6 +72,33 @@ BV(R1)
 BNV(R1)
 CALL(R12, R11)
 RETURN(R12, R13)
+"""
+    )
+
+
+def test_disassemble_relative_branch(capsys):
+    main(["disassemble", "test/assets/asm/rel_branch.hera.lcode"])
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert (
+        captured.out
+        == """\
+BRR(1)
+BLR(255)
+BGER(100)
+BLER(156)
+BGR(1)
+BULER(1)
+BUGR(1)
+BZR(1)
+BNZR(1)
+BCR(1)
+BNCR(1)
+BSR(1)
+BNSR(1)
+BVR(1)
+BNVR(1)
 """
     )
 

@@ -1,5 +1,5 @@
 BR(R1)
-BL(R1)
+BL(R7)
 BGE(R1)
 BLE(R1)
 BG(R1)
