@@ -1,5 +1,5 @@
 """
-The shell interface to the HERA debugger.
+The interactive shell interface to the HERA debugger.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: March 2019

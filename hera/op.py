@@ -21,6 +21,7 @@ class AbstractOperation:
     from this class.
     """
 
+    # Default value supplied to silence mypy's complaints.
     BITV = ""
 
     def __init__(self, *args, loc=None):

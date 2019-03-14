@@ -1,5 +1,9 @@
 """
-Type-checking and pseudo-op conversion.
+Type-checking and preprocessing.
+
+Preprocessing is the step in which assembly-language features like labels and named
+constants, and pseudo-operations like `SET` and `CMP`, are converted into strict HERA
+code.
 
 Note that the code for type-checking individual operations lives in hera/op.py. This
 module contains the code for program-wide type-checking.
@@ -35,6 +39,11 @@ from .op import (
 def check(
     oplist: List[AbstractOperation], settings: Settings
 ) -> Tuple[Program, Messages]:
+    """
+    Type-check and program and preprocess it.
+
+    The `oplist` input is generally the output of parsing.
+    """
     symbol_table, messages = typecheck(oplist, settings=settings)
     if messages.errors:
         return (Program([], [], {}, None), messages)
@@ -49,8 +58,9 @@ def check(
     oplist, preprocess_messages = convert_ops(oplist, symbol_table)
     messages.extend(preprocess_messages)
 
-    data = []
+    # Split the operations into code and data.
     code = []
+    data = []
     for op in oplist:
         if isinstance(op, DataOperation):
             data.append(op)
@@ -64,8 +74,10 @@ def typecheck(
     program: List[AbstractOperation], settings=Settings()
 ) -> Tuple[Dict[str, int], Messages]:
     """
-    Type-check the program and emit error messages as appropriate. Return the
-    program's symbol table.
+    Type-check the program, and return its symbol table.
+
+    The symbol table is needed by the preprocessor, so having it returned by the
+    type-checker avoids redundantly generating it a second time.
     """
     messages = check_symbol_redeclaration(program)
 
@@ -83,6 +95,8 @@ def typecheck(
         else:
             seen_code = True
 
+        # Some modes (e.g., interpreting and debugging) don't support interrupt
+        # instructions as their behavior is not defined by the HERA manual.
         if not settings.allow_interrupts and isinstance(op, (RTI, SWI)):
             messages.err("hera-py does not support {}".format(op.name), loc=op.loc)
 
@@ -91,7 +105,7 @@ def typecheck(
                 "debugging instructions disallowed with --no-debug-ops flag", loc=op.loc
             )
 
-        # Add constants to the symbol table as they are encountered, so that a given
+        # Add constants to the symbol table as they are encountered, so that each
         # constant is not in scope until after its declaration.
         if looks_like_a_CONSTANT(op):
             if out_of_range(op.args[1]):
@@ -103,10 +117,7 @@ def typecheck(
 
 
 def check_symbol_redeclaration(program: List[AbstractOperation]) -> Messages:
-    """
-    Check if any symbols are redeclared in the program and return the error
-    messages.
-    """
+    """Check if any symbols are redeclared in the program."""
     messages = Messages()
     symbols = set()  # type: Set[str]
     for op in program:
@@ -131,8 +142,8 @@ def get_labels(
     messages = Messages()
     symbol_table = {}  # type: Dict[str, int]
     # We need to maintain a separate dictionary of constants because DSKIP can take a
-    # constant as its argument, which has to be resolved to set the data counter
-    # correctly.
+    # constant as its argument, which has to be resolved to a concrete value so that
+    # subsequent DLABEL declarations are correctly evaluated.
     constants = {}
     pc = 0
     dc = settings.data_start
@@ -167,7 +178,7 @@ def get_labels(
         else:
             pc += operation_length(op)
 
-        # TODO: Can I move this elsewhere?
+        # Detect overflow of the data counter.
         if out_of_range(dc) and not out_of_range(odc):
             messages.err("past the end of available memory", loc=op.loc)
 
@@ -175,6 +186,14 @@ def get_labels(
 
 
 def operation_length(op: AbstractOperation) -> int:
+    """
+    Return the number of operations that the given op will expand to upon preprocessing.
+
+    In theory, this could be implemented simply as `len(op.convert())`, but this
+    function is called before type-checking occurs, and `AbstractOperation.convert`
+    assumes that it has already been type-checked and is allowed to fail if the
+    operation is ill-formed.
+    """
     if isinstance(op, RegisterBranch):
         if len(op.tokens) == 1 and op.tokens[0].type == Token.SYMBOL:
             return 3
@@ -199,19 +218,6 @@ def operation_length(op: AbstractOperation) -> int:
         return 3
     else:
         return 1
-
-
-def looks_like_a_CONSTANT(op: AbstractOperation) -> bool:
-    return (
-        op.name == "CONSTANT"
-        and len(op.args) == 2
-        and isinstance(op.args[0], str)
-        and isinstance(op.args[1], int)
-    )
-
-
-def out_of_range(n: int) -> bool:
-    return n < -32768 or n >= 65536
 
 
 def convert_ops(
@@ -252,7 +258,7 @@ def convert_ops(
 def substitute_label(
     op: AbstractOperation, symbol_table: Dict[str, int]
 ) -> AbstractOperation:
-    """Substitute any label in the instruction with its concrete value."""
+    """Substitute any symbol in the operation with its concrete value."""
     for i, tkn in enumerate(op.tokens):
         if tkn.type == Token.SYMBOL:
             op.tokens[i] = Token.Int(symbol_table[tkn.value], location=tkn.location)
@@ -264,9 +270,24 @@ def labels_to_line_numbers(oplist: List[AbstractOperation]) -> Dict[str, str]:
     """
     Return a dictionary that maps from label names to their locations in the program,
     as a string of the form "<filepath>:<lineno>".
+
+    The dictionary that this function generates is used by the debugger.
     """
     labels = {}
     for op in oplist:
         if isinstance(op, LABEL):
             labels[op.args[0]] = "{0.path}:{0.line}".format(op.loc)
     return labels
+
+
+def looks_like_a_CONSTANT(op: AbstractOperation) -> bool:
+    return (
+        op.name == "CONSTANT"
+        and len(op.args) == 2
+        and isinstance(op.args[0], str)
+        and isinstance(op.args[1], int)
+    )
+
+
+def out_of_range(n: int) -> bool:
+    return n < -32768 or n >= 65536
