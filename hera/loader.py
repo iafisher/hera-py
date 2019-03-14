@@ -1,6 +1,6 @@
 """
-Convenient interface for parsing, type-checking and optionally preprocessing a HERA
-file.
+Convenient interface for parsing, type-checking and preprocessing a HERA program
+contained in a string or file.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: March 2019
@@ -13,8 +13,7 @@ from .utils import handle_messages, read_file_or_stdin
 
 def load_program(text: str, settings=Settings()) -> Program:
     """
-    Parse the string into a program, type-check it, and preprocess it. A tuple
-    (ops, symbol_table) is returned.
+    Parse the string into a program, type-check it, and preprocess it.
 
     The return value of this function is valid input to the VirtualMachine.run method.
     """

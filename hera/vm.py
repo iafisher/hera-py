@@ -6,6 +6,7 @@ Version: February 2019
 """
 import copy
 import sys
+from typing import List, Tuple  # noqa: F401
 
 from .data import Program, Settings
 from .utils import print_warning
@@ -14,11 +15,11 @@ from .utils import print_warning
 class VirtualMachine:
     """An abstract representation of a HERA processor."""
 
-    def __init__(self, settings=Settings()):
+    def __init__(self, settings=Settings()) -> None:
         self.settings = settings
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset the machine to its initial state."""
         # Sixteen 16-bit registers. The virtual machine stores integers in their
         # unsigned representation, so the values of self.registers will always be
@@ -44,7 +45,7 @@ class VirtualMachine:
         self.input_pos = 0
         # Stack of (call_address, return_address) pairs for CALL/RETURN instructions.
         # Used for warning messages and debugging.
-        self.expected_returns = []
+        self.expected_returns = []  # type: List[Tuple[int, int]]
         # Special flag set by the HALT operation.
         self.halted = False
         # Location object for the current operation
@@ -57,7 +58,7 @@ class VirtualMachine:
         self.warned_for_overflow = False
         self.warning_count = 0
 
-    def copy(self):
+    def copy(self) -> "VirtualMachine":
         ret = copy.copy(self)
         ret.registers = self.registers.copy()
         ret.memory = self.memory.copy()
@@ -90,11 +91,11 @@ class VirtualMachine:
                 op.execute(self)
                 self.op_count += 1
 
-    def load_register(self, index):
+    def load_register(self, index: int) -> int:
         """Get the contents of the register with the given index."""
         return self.registers[index]
 
-    def store_register(self, index, value):
+    def store_register(self, index: int, value: int) -> None:
         """Store the value in the target register."""
         if index != 0:
             self.registers[index] = value
@@ -105,28 +106,30 @@ class VirtualMachine:
                     )
                     self.warned_for_overflow = True
 
-    def set_zero_and_sign(self, value):
+    def set_zero_and_sign(self, value: int) -> None:
         """Set the zero and sign flags based on the value."""
         self.flag_zero = value == 0
-        self.flag_sign = value & 0x8000
+        self.flag_sign = bool(value & 0x8000)
 
-    def load_memory(self, address):
+    def load_memory(self, address: int) -> int:
         """Get the value at the given memory address."""
         if address >= len(self.memory):
             return 0
         else:
             return self.memory[address]
 
-    def store_memory(self, address, value):
+    def store_memory(self, address: int, value: int) -> None:
         """Store a value to a location in memory."""
         # Extend the size of the memory array if necessary.
         if address >= len(self.memory):
             self.memory.extend([0] * (address - len(self.memory) + 1))
         self.memory[address] = value
 
-    def readline(self):
+    def readline(self) -> None:
+        """Read a line from standard input."""
         self.input_buffer = sys.stdin.readline().rstrip("\n")
 
-    def warn(self, msg, loc):
+    def warn(self, msg: str, loc) -> None:
+        """Print a warning message."""
         print_warning(self.settings, msg, loc=loc)
         self.warning_count += 1

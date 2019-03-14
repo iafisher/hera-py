@@ -12,6 +12,7 @@ from typing import List, Optional
 from . import miniparser
 from .debugger import Debugger
 from .miniparser import (
+    AbstractNode,
     InfixNode,
     IntNode,
     MemoryNode,
@@ -831,7 +832,7 @@ class Shell:
         if dlabels:
             print("Data labels: " + ", ".join(dlabels))
 
-    def evaluate_node(self, node) -> int:
+    def evaluate_node(self, node: AbstractNode) -> int:
         """
         Evaluate the AST node (returned by the `miniparser` module) into an integer
         value

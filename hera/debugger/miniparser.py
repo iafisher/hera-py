@@ -1,5 +1,5 @@
 """
-The expression mini-language for the debugger.
+The parser for the debugger's expression mini-language.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: January 2019
@@ -11,7 +11,7 @@ from ..data import HERAError, Token
 from ..utils import register_to_index
 
 
-def parse(line):
+def parse(line: str) -> "SeqNode":
     """
     Return a parse tree for the line of code. Raise a SyntaxError if it is not well-
     formatted.
@@ -21,8 +21,8 @@ def parse(line):
 
 class MiniParser:
     """
-    A parser for the debugger's expression mini-language. Arithmetic operations have the
-    usual precedence.
+    A parser for the debugger's expression mini-language. The abstract grammar below
+    describes the language. Arithmetic operations have the usual precedence.
 
       start := FORMAT? exprlist
 
@@ -40,17 +40,17 @@ class MiniParser:
     token of the next expression.
     """
 
-    def __init__(self, lexer):
+    def __init__(self, lexer: Lexer) -> None:
         self.lexer = lexer
 
-    def parse(self):
+    def parse(self) -> "SeqNode":
         tree = self.match_exprlist()
         if self.lexer.tkn.type == Token.EOF:
             return tree
         else:
             raise SyntaxError("trailing input")
 
-    def match_exprlist(self):
+    def match_exprlist(self) -> "SeqNode":
         """Match a sequence of comma-separated expressions."""
         seq = []
 
@@ -70,9 +70,11 @@ class MiniParser:
 
         return SeqNode(fmt, seq)
 
-    def match_expr(self, precedence):
+    def match_expr(self, precedence: int) -> "AbstractNode":
         """Parse the expression with the given precedence."""
         tkn = self.lexer.tkn
+        # This line is solely to satisfy mypy.
+        left = AbstractNode()
         if tkn.type == Token.AT:
             self.lexer.next_token()
             address = self.match_expr(PREC_PREFIX)
@@ -114,7 +116,7 @@ class MiniParser:
             infix_tkn = self.lexer.tkn
         return left
 
-    def unexpected(self, tkn):
+    def unexpected(self, tkn: Token) -> None:
         if tkn.type == Token.EOF:
             raise SyntaxError("premature end of input")
         elif tkn.type == Token.UNKNOWN:
@@ -123,7 +125,11 @@ class MiniParser:
             raise SyntaxError("did not expect `{}` in this position".format(tkn))
 
 
-class SeqNode(namedtuple("SeqNode", ["fmt", "seq"])):
+class AbstractNode:
+    """An abstract base class for AST nodes. Used for type annotations."""
+
+
+class SeqNode(namedtuple("SeqNode", ["fmt", "seq"]), AbstractNode):
     def __str__(self):
         seqstr = ", ".join(map(str, self.seq))
         if self.fmt:
@@ -132,37 +138,37 @@ class SeqNode(namedtuple("SeqNode", ["fmt", "seq"])):
             return seqstr
 
 
-class MemoryNode(namedtuple("MemoryNode", ["address"])):
+class MemoryNode(namedtuple("MemoryNode", ["address"]), AbstractNode):
     def __str__(self):
         return "@{}".format(wrap(self.address))
 
 
-class RegisterNode(namedtuple("RegisterNode", ["value"])):
+class RegisterNode(namedtuple("RegisterNode", ["value"]), AbstractNode):
     def __str__(self):
         return "R" + str(self.value)
 
 
-class IntNode(namedtuple("IntNode", ["value"])):
+class IntNode(namedtuple("IntNode", ["value"]), AbstractNode):
     def __str__(self):
         return str(self.value)
 
 
-class SymbolNode(namedtuple("SymbolNode", ["value"])):
+class SymbolNode(namedtuple("SymbolNode", ["value"]), AbstractNode):
     def __str__(self):
         return self.value
 
 
-class PrefixNode(namedtuple("PrefixNode", ["op", "arg"])):
+class PrefixNode(namedtuple("PrefixNode", ["op", "arg"]), AbstractNode):
     def __str__(self):
         return "{}{}".format(self.op, wrap(self.arg))
 
 
-class InfixNode(namedtuple("InfixNode", ["op", "left", "right"])):
+class InfixNode(namedtuple("InfixNode", ["op", "left", "right"]), AbstractNode):
     def __str__(self):
         return "{} {} {}".format(wrap(self.left), self.op, wrap(self.right))
 
 
-def wrap(node):
+def wrap(node: AbstractNode) -> str:
     """Stringify the node and wrap it in parentheses if necessary."""
     if isinstance(node, InfixNode):
         return "(" + str(node) + ")"

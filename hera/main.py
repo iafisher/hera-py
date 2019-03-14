@@ -1,5 +1,5 @@
 """
-The command-line entry point into the hera-py system.
+The command-line entry point into hera-py.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: March 2019
@@ -19,14 +19,19 @@ from .vm import VirtualMachine
 
 def external_main(argv=None) -> None:
     """
-    A wrapper around main that ignores its return value, so it is not printed to the
-    console when the program exits.
+    A wrapper around main that ignores its return value, which would otherwise be
+    printed to the console on program exit.
     """
     main(argv)
 
 
-def main(argv=None) -> Optional[VirtualMachine]:
-    """The main entry point into hera-py."""
+def main(argv: Optional[List[str]] = None) -> Optional[VirtualMachine]:
+    """
+    The entry point into hera-py.
+
+    When the interpreter is invoked, the virtual machine on which the program is run is
+    returned so that its internal state may be inspected for testing.
+    """
     settings = parse_args(argv)
     path = settings.path
 
@@ -128,7 +133,8 @@ def main_disassemble(path: str, settings: Settings) -> None:
             print("// Unknown instruction: {}".format(line))
 
 
-def parse_args(argv: List[str]) -> Settings:
+def parse_args(argv: Optional[List[str]]) -> Settings:
+    """Parse the command-line argument list into a Settings object."""
     if argv is None:
         argv = sys.argv[1:]
 
@@ -248,6 +254,7 @@ def parse_args(argv: List[str]) -> Settings:
 
 
 def short_to_long(arg: str) -> str:
+    """Convert the short form of an argument to its long form."""
     if arg == "-h":
         return "--help"
     elif arg == "-v":

@@ -30,9 +30,11 @@ class Lexer:
         self.next_token()
 
     def get_location(self) -> Location:
+        """Return the current location of the lexer."""
         return Location(self.line, self.column, self.path, self.file_lines)
 
     def next_token(self) -> Token:
+        """Advance forward one token, set self.tkn to it, and return it."""
         self.skip()
 
         if self.position >= len(self.text):
@@ -88,6 +90,7 @@ class Lexer:
         return self.tkn
 
     def read_int(self) -> int:
+        """Read an integer starting at the current position, and return its length."""
         length = 1
         digits = {str(i) for i in range(10)}
         peek = self.peek_char()
@@ -102,6 +105,7 @@ class Lexer:
         return length
 
     def read_symbol(self) -> int:
+        """Read a symbol starting at the current position, and return its length."""
         length = 1
         while True:
             ch = self.peek_char(length)
@@ -171,6 +175,10 @@ class Lexer:
         self.next_char()
 
     def consume_str(self) -> None:
+        """
+        Advance the lexer to one past the end of a string literal starting at the
+        current position, and set self.tkn appropriately.
+        """
         loc = self.get_location()
         self.next_char()
         s = self.consume_delimited('"')
@@ -183,6 +191,10 @@ class Lexer:
         self.tkn = Token(Token.STRING, s, loc)
 
     def consume_char(self) -> None:
+        """
+        Advance the lexer to one past the end of a character literal starting at the
+        current position, and set self.tkn appropriately.
+        """
         loc = self.get_location()
         self.next_char()
         s = self.consume_delimited("'")
@@ -200,7 +212,17 @@ class Lexer:
         else:
             self.tkn = Token(Token.ERROR, "over-long character literal", loc)
 
-    def consume_delimited(self, delimiter) -> str:
+    def consume_delimited(self, delimiter: str) -> str:
+        """
+        Advance the lexer to one past the end of an expression delimited by the
+        character `delimiter`, and set self.tkn appropriately.
+
+        Backslash escapes inside the expression are converted, and escaped delimiters
+        are ignored.
+
+        This method exists to capture the shared functionality of consuming string and
+        character literals.
+        """
         sbuilder = []
         while self.position < len(self.text) and self.text[self.position] != delimiter:
             if self.text[self.position] == "\\":
@@ -271,6 +293,11 @@ class Lexer:
         )
 
     def set_token(self, typ: str, *, length=1) -> None:
+        """
+        Set self.tkn to a Token object whose type is `typ` and whose value is the
+        substring of the input of length `length` starting at the current position. The
+        lexer's position is advanced to one past the end of the token.
+        """
         loc = self.get_location()
         value = self.text[self.position : self.position + length]
         for _ in range(length):
@@ -300,5 +327,6 @@ def escape_char(c):
         return "\\" + c
 
 
-def is_register(s):
+def is_register(s: str) -> bool:
+    """Return True if the string names a register."""
     return (s[0] in "rR" and s[1:].isdigit()) or s.lower() in NAMED_REGISTERS
