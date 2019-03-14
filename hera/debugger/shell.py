@@ -24,11 +24,11 @@ from hera.data import DataLabel, HERAError, Label, Location, Program, Settings
 from hera.loader import load_program
 from hera.op import Branch, DataOperation, disassemble, LABEL, OPCODE
 from hera.parser import parse
-from hera.utils import format_int, pad
+from hera.utils import format_int, out_of_range, pad
 
 
 def debug(program: Program, settings: Settings) -> None:
-    """Start the debug loop."""
+    """Begin an interactive debugging session with the given program."""
     debugger = Debugger(program, settings)
     Shell(debugger, settings).loop()
 
@@ -50,12 +50,28 @@ def mutates(handler):
 
 
 class Shell:
+    """
+    A class for the interactive command-line interface to the debugger.
+
+    The bulk of this class consists of the command handler methods, one for each
+    debugging command. A command `foo` should have a corresponding command handler named
+    `handle_foo`. If `foo` changes the state of the debugger or shell, then it should
+    be decorated with `@mutates`. The name of the command should be added either to the
+    CAN_BE_ABBREVIATED or CANNOT_BE_ABBREVIATED class-level lists, as appropriate, and
+    if the command needs to accept the entire argument list as a string rather than a
+    list of strings (e.g., because whitespace is significant), it should be added to the
+    TAKES_ARGSTR list. The docstring of the command handler is displayed to the user by
+    the help command (e.g., `help foo`). See one of the existing command handlers for an
+    example of the required docstring format.
+    """
+
     def __init__(self, debugger: Debugger, settings: Settings) -> None:
         self.debugger = debugger
         self.settings = settings
         self.command_history = []  # type: List[str]
 
-    def loop(self):
+    def loop(self) -> None:
+        """Run the debug loop."""
         if self.debugger.empty():
             print("Cannot debug an empty program.")
             return
@@ -123,6 +139,10 @@ class Shell:
     TAKES_ARGSTR = ["asm", "execute", "print"]
 
     def expand_command(self, cmd: str) -> str:
+        """
+        Expand an abbreviated command name into its full name, or raise HERAError if the
+        abbreviation is not recognized.
+        """
         cmd = cmd.lower()
         for full in self.CAN_BE_ABBREVIATED:
             if full.startswith(cmd):
@@ -471,20 +491,6 @@ class Shell:
             if i != len(fullargs) - 1:
                 print()
 
-    def expand_info_arg(self, arg: str) -> str:
-        arg = arg.lower()
-        if "stack".startswith(arg):
-            # "stack" comes before "symbols" because "s" should resolve to "stack".
-            return "stack"
-        elif "symbols".startswith(arg):
-            return "symbols"
-        elif "registers".startswith(arg):
-            return "registers"
-        elif "flags".startswith(arg):
-            return "flags"
-        else:
-            raise HERAError("unrecognized argument `{}`".format(arg))
-
     def handle_list(self, args: List[str]) -> None:
         """
         list
@@ -568,7 +574,7 @@ class Shell:
             return
 
         try:
-            flags = resolve_flags(args)
+            flags = [expand_flag(arg) for arg in args]
         except HERAError as e:
             print(e)
             return
@@ -588,7 +594,7 @@ class Shell:
             return
 
         try:
-            flags = resolve_flags(args)
+            flags = [expand_flag(arg) for arg in args]
         except HERAError as e:
             print(e)
             return
@@ -654,8 +660,8 @@ class Shell:
 
         # Customize the format specifier depending on the type of expression.
         if isinstance(tree, RegisterNode):
-            # R13 is used to hold the return value of the PC in function calls,
-            # so printing the location is useful.
+            # R13 is used to hold the return value of the PC in function calls, so
+            # printing the location is useful.
             if tree.value == 13 and not spec:
                 spec = augment_spec(spec, "l")
         elif isinstance(tree, SymbolNode):
@@ -727,6 +733,24 @@ class Shell:
             print("Undid {}.".format(self.command_history.pop()))
 
         self.debugger = self.debugger.old
+
+    def expand_info_arg(self, arg: str) -> str:
+        """
+        Expand an abbreviated argument to info into its full name, or raise HERAError if
+        the abbreviation is not recognized.
+        """
+        arg = arg.lower()
+        if "stack".startswith(arg):
+            # "stack" comes before "symbols" because "s" should resolve to "stack".
+            return "stack"
+        elif "symbols".startswith(arg):
+            return "symbols"
+        elif "registers".startswith(arg):
+            return "registers"
+        elif "flags".startswith(arg):
+            return "flags"
+        else:
+            raise HERAError("unrecognized argument `{}`".format(arg))
 
     def info_registers(self) -> None:
         nonzero = 0
@@ -808,6 +832,14 @@ class Shell:
             print("Data labels: " + ", ".join(dlabels))
 
     def evaluate_node(self, node) -> int:
+        """
+        Evaluate the AST node (returned by the `miniparser` module) into an integer
+        value
+
+        A HERAError is raised on expected failures (e.g., undefined symbols) and a
+        RuntimeError is raised on unexpected failures (e.g., an unknown operator) which
+        generally indicate a bug elsewhere in the code.
+        """
         vm = self.debugger.vm
         if isinstance(node, IntNode):
             if node.value >= 2 ** 16 or node.value < -2 ** 15:
@@ -833,7 +865,7 @@ class Shell:
             else:
                 raise RuntimeError("unhandled prefix operator: " + node.op)
 
-            if overflow(result):
+            if out_of_range(result):
                 raise HERAError("overflow from unary " + node.op)
 
             return result
@@ -853,7 +885,7 @@ class Shell:
             else:
                 raise RuntimeError("unhandled infix operator: " + node.op)
 
-            if overflow(result):
+            if out_of_range(result):
                 raise HERAError("overflow from " + node.op)
 
             return result
@@ -921,7 +953,7 @@ class Shell:
         else:
             return format_int(v, spec=spec)
 
-    def asm_settings(self, *, code, data):
+    def asm_settings(self, *, code: bool, data: bool) -> Settings:
         """Override some defaults in self.settings for the assembler."""
         settings = copy.copy(self.settings)
         settings.stdout = True
@@ -950,24 +982,21 @@ FLAG_SHORT_TO_LONG = {
 }
 
 
-def resolve_flags(args: List[str]) -> List[str]:
-    flags = []
-    for arg in args:
-        arg = arg.replace("-", "_")
-        if arg not in FLAG_SHORT_TO_LONG.values():
-            try:
-                longflag = FLAG_SHORT_TO_LONG[arg]
-            except KeyError:
-                raise HERAError("Unrecognized flag: `{}`.".format(arg))
-            else:
-                flags.append("flag_" + longflag)
+def expand_flag(flag: str) -> str:
+    """
+    Expand an abbreviated flag name into its full name, or raise HERAError if the
+    abbreviation is not recognized.
+    """
+    flag = flag.replace("-", "_")
+    if flag not in FLAG_SHORT_TO_LONG.values():
+        try:
+            longflag = FLAG_SHORT_TO_LONG[flag]
+        except KeyError:
+            raise HERAError("Unrecognized flag: `{}`.".format(flag))
         else:
-            flags.append("flag_" + arg)
-    return flags
-
-
-def overflow(v: int) -> bool:
-    return v >= 2 ** 16 or v < -2 ** 15
+            return "flag_" + longflag
+    else:
+        return "flag_" + flag
 
 
 HELP = """\

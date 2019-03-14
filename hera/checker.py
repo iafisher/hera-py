@@ -34,6 +34,7 @@ from .op import (
     RTI,
     SWI,
 )
+from .utils import out_of_range
 
 
 def check(
@@ -287,7 +288,3 @@ def looks_like_a_CONSTANT(op: AbstractOperation) -> bool:
         and isinstance(op.args[0], str)
         and isinstance(op.args[1], int)
     )
-
-
-def out_of_range(n: int) -> bool:
-    return n < -32768 or n >= 65536

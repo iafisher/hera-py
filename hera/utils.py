@@ -51,6 +51,10 @@ def to_u32(n: int) -> int:
         return n
 
 
+def out_of_range(n: int) -> bool:
+    return n < -32768 or n >= 65536
+
+
 NAMED_REGISTERS = {"rt": 11, "fp": 14, "sp": 15, "pc_ret": 13, "fp_alt": 12}
 
 
