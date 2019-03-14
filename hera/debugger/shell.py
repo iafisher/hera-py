@@ -260,7 +260,7 @@ class Shell:
                 print("No breakpoints set.")
         else:
             try:
-                b = self.debugger.resolve_location(args[0])
+                b = self.debugger.location_to_instruction_number(args[0])
             except ValueError as e:
                 print("Error:", e)
             else:
@@ -288,7 +288,7 @@ class Shell:
         else:
             for arg in args:
                 try:
-                    b = self.debugger.resolve_location(arg)
+                    b = self.debugger.location_to_instruction_number(arg)
                 except ValueError as e:
                     print("Error:", e)
                 else:
@@ -404,7 +404,7 @@ class Shell:
             return
 
         try:
-            new_pc = self.debugger.resolve_location(args[0])
+            new_pc = self.debugger.location_to_instruction_number(args[0])
         except ValueError as e:
             print("Error:", str(e))
             return
@@ -772,10 +772,10 @@ class Shell:
             print("Call stack (last call at bottom)")
             for call_address, return_address in vm.expected_returns:
                 fname = self.debugger.find_label(call_address)
-                floc = self.debugger.get_breakpoint_name(
+                floc = self.debugger.instruction_number_to_location(
                     call_address, append_label=False
                 )
-                rloc = self.debugger.get_breakpoint_name(
+                rloc = self.debugger.instruction_number_to_location(
                     return_address - 1, append_label=False
                 )
                 if fname is not None:
@@ -911,7 +911,9 @@ class Shell:
 
         if loc:
             try:
-                label = self.debugger.get_breakpoint_name(v, append_label=False)
+                label = self.debugger.instruction_number_to_location(
+                    v, append_label=False
+                )
             except IndexError:
                 return format_int(v, spec=spec)
             else:

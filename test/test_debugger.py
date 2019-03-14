@@ -1511,43 +1511,43 @@ def test_data_statements(capsys):
     assert shell.debugger.vm.load_memory(DEFAULT_DATA_START) == 42
 
 
-def test_resolve_location_with_line_number(debugger):
-    assert debugger.resolve_location("4") == 0
+def test_location_to_instruction_number_with_line_number(debugger):
+    assert debugger.location_to_instruction_number("4") == 0
 
 
-def test_resolve_location_with_label(debugger):
-    assert debugger.resolve_location("add") == 4
+def test_location_to_instruction_number_with_label(debugger):
+    assert debugger.location_to_instruction_number("add") == 4
 
 
-def test_resolve_location_fails_with_constant(debugger):
+def test_location_to_instruction_number_fails_with_constant(debugger):
     with pytest.raises(ValueError) as e:
-        debugger.resolve_location("N")
+        debugger.location_to_instruction_number("N")
     assert "could not locate label `N`" in str(e)
 
 
-def test_resolve_location_out_of_range(debugger):
+def test_location_to_instruction_number_out_of_range(debugger):
     with pytest.raises(ValueError) as e:
-        debugger.resolve_location("100")
+        debugger.location_to_instruction_number("100")
     assert "could not find corresponding line" in str(e)
 
 
-def test_resolve_location_invalid_format(debugger):
+def test_location_to_instruction_number_invalid_format(debugger):
     with pytest.raises(ValueError) as e:
-        debugger.resolve_location("a")
+        debugger.location_to_instruction_number("a")
     assert "could not locate label `a`" in str(e)
 
 
-def test_get_breakpoint_name(debugger):
+def test_instruction_number_to_location(debugger):
     # Zero'th instruction corresponds to second line.
-    assert debugger.get_breakpoint_name(0) == "<string>:4"
+    assert debugger.instruction_number_to_location(0) == "<string>:4"
 
 
-def test_get_breakpoint_name_with_label(debugger):
-    assert debugger.get_breakpoint_name(4) == "<string>:7 (add)"
+def test_instruction_number_to_location_with_label(debugger):
+    assert debugger.instruction_number_to_location(4) == "<string>:7 (add)"
 
 
-def test_get_breakpoint_name_does_not_include_constant(debugger):
-    assert debugger.get_breakpoint_name(3) == "<string>:5"
+def test_instruction_number_to_location_does_not_include_constant(debugger):
+    assert debugger.instruction_number_to_location(3) == "<string>:5"
 
 
 def test_print_current_op(shell, capsys):

@@ -70,7 +70,7 @@ class Debugger:
 
     def set_breakpoint(self, b: int) -> None:
         """Set a breakpoint at the given instruction number (not line number)."""
-        self.breakpoints[b] = self.get_breakpoint_name(b)
+        self.breakpoints[b] = self.instruction_number_to_location(b)
 
     def at_breakpoint(self) -> bool:
         """Return True if the debugger is currently at a breakpoint."""
@@ -129,7 +129,7 @@ class Debugger:
 
         return self.program.code[self.vm.pc : end]
 
-    def resolve_location(self, b: str) -> int:
+    def location_to_instruction_number(self, b: str) -> int:
         """Resolve a user-supplied location string into an instruction number."""
         if b == ".":
             return self.vm.pc
@@ -156,10 +156,10 @@ class Debugger:
 
             raise ValueError("could not find corresponding line.")
 
-    def get_breakpoint_name(self, b: int, *, append_label=True) -> str:
+    def instruction_number_to_location(self, b: int, *, append_label=True) -> str:
         """
         Turn an instruction number into a human-readable location string with the file
-        path and line number. More or less the inverse of `resolve_location`.
+        path and line number.
         """
         op = self.program.code[b].original or self.program.code[b]
         path = "<stdin>" if op.loc.path == "-" else op.loc.path
