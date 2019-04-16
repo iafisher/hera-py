@@ -372,7 +372,7 @@ Common options:
 
     --no-color         Do not print colored output.
     --no-debug-ops     Disallow debugging instructions.
-    -q --quiet         Set output level to quiet.
+    -q, --quiet        Set output level to quiet.
     --verbose          Set output level to verbose.
     --warn-octal-off   Do not print warnings for zero-prefixed integer literals.
 
