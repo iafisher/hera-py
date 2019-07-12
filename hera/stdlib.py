@@ -4,6 +4,12 @@ The standard library for the Tiger programming language, implemented in HERA.
 All of the pure HERA functions in this module have been copied from the original
 Tiger standard library file for HERA-C, written by Dave Wonnacott.
 
+Some standard library functions are implemented purely in HERA (e.g., `size`), and
+others are implemented partially or wholly in Python using the `__eval` pseudo-op,
+either because the operation accesses system resources like I/O that the HERA spec makes
+no provision for (e.g., `print`), or because implementing it in HERA would be too
+time-consuming (e.g., `div`).
+
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """

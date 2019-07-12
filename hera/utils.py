@@ -52,6 +52,10 @@ def to_u32(n: int) -> int:
 
 
 def out_of_range(n: int) -> bool:
+    """
+    Return True if `n` could not be represented as either a 16-bit signed or unsigned
+    integer.
+    """
     return n < -32768 or n >= 65536
 
 
@@ -113,6 +117,10 @@ def format_int(v: int, *, spec="xdsc") -> str:
 
 
 def print_warning(settings: Settings, msg: str, *, loc=None) -> None:
+    """
+    Print a warning message to the console. See `print_message` for the meaning of
+    `loc`.
+    """
     if settings.color:
         msg = ANSI_MAGENTA_BOLD + "Warning" + ANSI_RESET + ": " + msg
     else:
@@ -121,6 +129,10 @@ def print_warning(settings: Settings, msg: str, *, loc=None) -> None:
 
 
 def print_error(settings: Settings, msg: str, *, loc=None) -> None:
+    """
+    Print an error message to the console. See `print_message` for the meaning of
+    `loc`.
+    """
     if settings.color:
         msg = ANSI_RED_BOLD + "Error" + ANSI_RESET + ": " + msg
     else:
@@ -171,6 +183,14 @@ def read_file(path: str) -> str:
 
 
 def read_file_or_stdin(path: str, settings) -> str:
+    """
+    Read a file and return its contents as a string.
+
+    If `path` is "-", then standard input is read rather than a file.
+
+    This function will print warnings and errors to the console, and will exit the
+    entire program on error.
+    """
     if path == "-":
         try:
             text = sys.stdin.read()
