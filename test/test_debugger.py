@@ -1217,6 +1217,21 @@ def test_handle_doc_with_arguments(shell, capsys):
     assert "BULER" in out
 
 
+def test_handle_doc_with_nonexistent_operation(shell, capsys):
+    shell.handle_command("doc div")
+
+    out = capsys.readouterr().out
+    assert "DIV is not a HERA operation" in out
+
+
+def test_handle_doc_with_BRANCH(shell, capsys):
+    shell.handle_command("doc branch")
+
+    out = capsys.readouterr().out
+    assert "Register branch" in out
+    assert "Relative branch" in out
+
+
 def test_handle_help(shell, capsys):
     shell.handle_command("help")
 

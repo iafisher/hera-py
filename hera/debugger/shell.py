@@ -373,6 +373,37 @@ class Shell:
             else:
                 print("Current operation is not an OPCODE.")
 
+    _doc_branch_message = """
+      HERA supports two kinds of branching instructions: register branching and
+      relative branching.
+
+      Register branching
+        Register branching instructions take a label argument and jump to the label if
+        the instruction's condition is met. If the condition is not met, execution
+        continues to the next instruction.
+
+        Register branching instructions may also take a register argument instead of a
+        label (hence the name), in which case instead of jumping to a label they jump to
+        the n'th instruction where n is the contents of the register. In most cases, you
+        want to use a label rather than a register.
+
+      Relative branching
+        For every register branching instruction, there is a counterpart relative
+        branching instruction, whose name is the same except with an extra 'R' at the
+        end. For example, the register branching instruction BULE has a relative
+        branching counterpart called BULER.
+
+        Relative branching instructions take an integer argument instead of a label or
+        a register, and if their condition is met they jump that many instructions
+        forward or backwards (depending on if the number is positive or negative).
+
+        Relative branching instructions can also take a label argument, in which case
+        they do the same thing as their corresponding register branching instruction.
+
+        In most cases, HERA programmers should use register branching instructions with
+        labels, and avoid using relative branching instructions at all.
+    """
+
     def handle_doc(self, args: List[str]) -> None:
         """
         doc <opname>...
@@ -383,21 +414,26 @@ class Shell:
           printed.
         """
         if not args:
-            args = [self.debugger.op().__class__.__name__]
+            args = [self.debugger.op().name]
 
         for arg in args:
             arg = arg.upper()
-            try:
-                op = name_to_class[arg]
-            except KeyError:
-                print("{} is not a known HERA operation.".format(arg))
+            if arg == "BRANCH":
+                docstring = self._doc_branch_message
             else:
-                docstring = op.__doc__
-                if not docstring:
-                    print("{} has no documentation.".format(arg))
+                try:
+                    op = name_to_class[arg]
+                except KeyError:
+                    print("{} is not a HERA operation.".format(arg))
+                    continue
                 else:
-                    docstring = textwrap.dedent(docstring.strip())
-                    print(docstring)
+                    docstring = op.__doc__
+
+            if not docstring:
+                print("{} has no documentation.".format(arg))
+            else:
+                docstring = textwrap.dedent(docstring)
+                print(docstring)
 
     @mutates
     def handle_execute(self, argstr: str) -> None:

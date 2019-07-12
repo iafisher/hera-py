@@ -26,10 +26,6 @@ Data operations (e.g., `INTEGER`) should inherit from `DataOperation` and define
 field and `execute` and `assemble` methods. The `assemble` method of a data operation
 returns the data, as a `bytes` object, that the operation places into static memory.
 
-Make sure that the name of the class is identical to the operation's representation in
-the HERA language, e.g. the class for the SETLO operation should be called SETLO. Other
-parts of the hera-py system, e.g. the `doc` debugging command, depend on this property!
-
 Once the operation's class has been defined, make an entry in the `name_to_class`
 dictonary in this module. After doing this, the operation should work throughout the
 hera-py toolkit (interpreter, debugger, assembler, etc.)!
@@ -911,8 +907,7 @@ class BR(RegisterBranch):
     BR(label)
       Jump unconditionally to the given label.
 
-    BR(Rd)
-      Set the program counter to the contents of Rd.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 0000 0000 AAAA"
@@ -924,11 +919,10 @@ class BR(RegisterBranch):
 
 class BRR(RelativeBranch):
     """
-    BRR(label)
-      Jump unconditionally to the given label.
+    BRR(n)
+      Jump forward or backward n instructions.
 
-    BRR(o)
-      Adjust the program counter by the 8-bit signed integer o.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 0000 aaaa aaaa"
@@ -946,9 +940,7 @@ class BL(RegisterBranch):
       Jump to the given label if either the sign flag or the overflow flag are on, but
       not if both are.
 
-    BL(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 0010 0000 AAAA"
@@ -960,13 +952,11 @@ class BL(RegisterBranch):
 
 class BLR(RelativeBranch):
     """
-    BLR(label)
-      Jump to the given label if either the sign flag or the overflow flag are on, but
-      not if both are.
+    BLR(n)
+      Jump forward or backward n instructions if either the sign flag or the overflow
+      flag are on, but not if both are.
 
-    BLR(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 0010 aaaa aaaa"
@@ -982,9 +972,7 @@ class BGE(RegisterBranch):
       Jump to the given label if the sign flag or the overflow flag are either both on
       or both off.
 
-    BGE(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 0011 0000 AAAA"
@@ -996,13 +984,11 @@ class BGE(RegisterBranch):
 
 class BGER(RelativeBranch):
     """
-    BGER(label)
-      Jump to the given label if the sign flag or the overflow flag are either both on
-      or both off.
+    BGER(n)
+      Jump forward or backward n instructions if the sign flag or the overflow flag are
+      either both on or both off.
 
-    BGER(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 0011 aaaa aaaa"
@@ -1018,9 +1004,7 @@ class BLE(RegisterBranch):
       Jump to the given label under the same conditions as BL, and also if the zero flag
       is on.
 
-    BLE(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 0100 0000 AAAA"
@@ -1032,13 +1016,11 @@ class BLE(RegisterBranch):
 
 class BLER(RelativeBranch):
     """
-    BLER(label)
-      Jump to the given label under the same conditions as BL, and also if the zero flag
-      is on.
+    BLER(n)
+      Jump forward or backward n instructions under the same conditions as BL, and also
+      if the zero flag is on.
 
-    BLER(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 0100 aaaa aaaa"
@@ -1053,9 +1035,7 @@ class BG(RegisterBranch):
     BG(label)
       Jump to the given label whenever BLE would not jump.
 
-    BG(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 0101 0000 AAAA"
@@ -1067,12 +1047,10 @@ class BG(RegisterBranch):
 
 class BGR(RelativeBranch):
     """
-    BGR(label)
-      Jump to the given label whenever BLE would not jump.
+    BGR(n)
+      Jump forward or backward n instructions whenever BLE would not jump.
 
-    BGR(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 0101 aaaa aaaa"
@@ -1087,9 +1065,7 @@ class BULE(RegisterBranch):
     BULE(label)
       Jump to the given label if either the carry flag is off or the zero flag is on.
 
-    BULE(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 0110 0000 AAAA"
@@ -1101,12 +1077,11 @@ class BULE(RegisterBranch):
 
 class BULER(RelativeBranch):
     """
-    BULER(label)
-      Jump to the given label if either the carry flag is off or the zero flag is on.
+    BULER(n)
+      Jump forward or backward n instructions if either the carry flag is off or the
+      zero flag is on.
 
-    BULER(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 0110 aaaa aaaa"
@@ -1121,9 +1096,7 @@ class BUG(RegisterBranch):
     BUG(label)
       Jump to the given label if the carry flag is on and the zero flag is off.
 
-    BUG(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 0111 0000 AAAA"
@@ -1135,12 +1108,11 @@ class BUG(RegisterBranch):
 
 class BUGR(RelativeBranch):
     """
-    BUGR(label)
-      Jump to the given label if the carry flag is on and the zero flag is off.
+    BUGR(n)
+      Jump forward or backward n instructions if the carry flag is on and the zero flag
+      is off.
 
-    BUGR(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 0111 aaaa aaaa"
@@ -1155,9 +1127,7 @@ class BZ(RegisterBranch):
     BZ(label)
       Jump to the given label if the zero flag is on.
 
-    BZ(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 1000 0000 AAAA"
@@ -1169,12 +1139,10 @@ class BZ(RegisterBranch):
 
 class BZR(RelativeBranch):
     """
-    BZR(label)
-      Jump to the given label if the zero flag is on.
+    BZR(n)
+      Jump forward or backward n instructions if the zero flag is on.
 
-    BZR(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 1000 aaaa aaaa"
@@ -1189,9 +1157,7 @@ class BNZ(RegisterBranch):
     BNZ(label)
       Jump to the given label if the zero flag is off.
 
-    BNZ(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 1001 0000 AAAA"
@@ -1203,12 +1169,10 @@ class BNZ(RegisterBranch):
 
 class BNZR(RelativeBranch):
     """
-    BNZR(label)
-      Jump to the given label if the zero flag is off.
+    BNZR(n)
+      Jump forward or backward n instructions if the zero flag is off.
 
-    BNZR(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 1001 aaaa aaaa"
@@ -1223,9 +1187,7 @@ class BC(RegisterBranch):
     BC(label)
       Jump to the given label if the carry flag is on.
 
-    BC(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 1010 0000 AAAA"
@@ -1237,12 +1199,10 @@ class BC(RegisterBranch):
 
 class BCR(RelativeBranch):
     """
-    BCR(label)
-      Jump to the given label if the carry flag is on.
+    BCR(n)
+      Jump forward or backward n instructions if the carry flag is on.
 
-    BCR(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 1010 aaaa aaaa"
@@ -1257,9 +1217,7 @@ class BNC(RegisterBranch):
     BNC(label)
       Jump to the given label if the carry flag is off.
 
-    BNC(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 1011 0000 AAAA"
@@ -1271,12 +1229,10 @@ class BNC(RegisterBranch):
 
 class BNCR(RelativeBranch):
     """
-    BNCR(label)
-      Jump to the given label if the carry flag is off.
+    BNCR(n)
+      Jump forward or backward n instructions if the carry flag is off.
 
-    BNCR(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 1011 aaaa aaaa"
@@ -1291,9 +1247,7 @@ class BS(RegisterBranch):
     BS(label)
       Jump to the given label if the sign flag is on.
 
-    BS(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 1100 0000 AAAA"
@@ -1305,12 +1259,10 @@ class BS(RegisterBranch):
 
 class BSR(RelativeBranch):
     """
-    BSR(label)
-      Jump to the given label if the sign flag is on.
+    BSR(n)
+      Jump forward or backward n instructions if the sign flag is on.
 
-    BSR(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 1100 aaaa aaaa"
@@ -1325,9 +1277,7 @@ class BNS(RegisterBranch):
     BNS(label)
       Jump to the given label if the sign flag is off.
 
-    BNS(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 1101 0000 AAAA"
@@ -1339,12 +1289,10 @@ class BNS(RegisterBranch):
 
 class BNSR(RelativeBranch):
     """
-    BNSR(label)
-      Jump to the given label if the sign flag is off.
+    BNSR(n)
+      Jump forward or backward n instructions if the sign flag is off.
 
-    BNSR(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 1101 aaaa aaaa"
@@ -1359,9 +1307,7 @@ class BV(RegisterBranch):
     BV(label)
       Jump to the given label if the overflow flag is on.
 
-    BV(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 1110 0000 AAAA"
@@ -1373,12 +1319,10 @@ class BV(RegisterBranch):
 
 class BVR(RelativeBranch):
     """
-    BVR(label)
-      Jump to the given label if the overflow flag is on.
+    BVR(n)
+      Jump forward or backward n instructions if the overflow flag is on.
 
-    BVR(Rd)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 1110 aaaa aaaa"
@@ -1393,9 +1337,7 @@ class BNV(RegisterBranch):
     BNV(label)
       Jump to the given label if the overflow flag is off.
 
-    BNV(Rd)
-      Set the program counter to the contents of Rd if the condition described above
-      holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0001 1111 0000 AAAA"
@@ -1407,12 +1349,10 @@ class BNV(RegisterBranch):
 
 class BNVR(RelativeBranch):
     """
-    BNVR(label)
-      Jump to the given label if the overflow flag is off.
+    BNVR(n)
+      Jump forward or backward n instructions if the overflow flag is off.
 
-    BNVR(o)
-      Adjust the program counter by 8-bit signed integer o if the condition described
-      above holds.
+      Run `doc branch` for a detailed explanation of branching instructions.
     """
 
     BITV = "0000 1111 aaaa aaaa"
