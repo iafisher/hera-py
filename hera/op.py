@@ -1,8 +1,37 @@
 """
 The definition of all the operations in the HERA language.
 
+Each operation is defined as a class which inherits from `AbstractOperation` or one of
+its subclasses. A class for a HERA op typically needs to define only three things:
+
+    - A class-level `P` field that is a tuple of the types of the operations arguments.
+      The types are defined in the TYPES FOR `P` FIELD section of this module.
+
+    - A class-level `BITV` field that is a string describing the pattern of the
+      operation's binary encoding. See the docstring of `match_bitvector` for a
+      description of the pattern format.
+
+    - An `execute` method that takes a `VirtualMachine` object and performs its
+      operation on it.
+
+Many subclasses of `AbstractOperation` are provided to ease implementation further, such
+as `UnaryOp`, `BinaryOp`, `RegisterBranch`, and `RelativeBranch`.
+
+A class for a HERA pseudo-op typically needs to define only two things:
+
+    - A `P` field, same as regular ops.
+    - A `convert` method which converts the pseudo-op into a list of regular operations.
+
+Data operations (e.g., `INTEGER`) should inherit from `DataOperation` and define a `P`
+field and `execute` and `assemble` methods. The `assemble` method of a data operation
+returns the data, as a `bytes` object, that the operation places into static memory.
+
+Once the operation's class has been defined, make an entry in the `name_to_class`
+dictonary in this module. After doing this, the operation should work throughout the
+hera-py toolkit (interpreter, debugger, assembler, etc.)!
+
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: March 2019
+Version: July 2019
 """
 import json
 import sys
@@ -115,6 +144,8 @@ def arg_to_string(arg):
         return str(arg.value)
 
 
+# == TYPES FOR `P` FIELD ==
+# Use these variables in the `P` field of classes for HERA ops.
 REGISTER = "REGISTER"
 REGISTER_OR_LABEL = "REGISTER_OR_LABEL"
 STRING = "STRING"
@@ -1150,6 +1181,8 @@ class __EVAL(DebuggingOperation):
 
 
 def disassemble(v: int) -> AbstractOperation:
+    """Disassemble a 16-bit integer into a HERA operation."""
+    # Iterating over every HERA class is inefficient but simple.
     for cls in name_to_class.values():
         if cls.BITV != "":
             m = match_bitvector(cls.BITV, v)
@@ -1207,6 +1240,10 @@ def match_bitvector(pattern: str, v: int) -> Union[List, bool]:
 
 
 def substitute_bitvector(pattern: str, args: List[int]) -> bytes:
+    """
+    Given a 16-bit pattern and a list of arguments, substitute the arguments into the
+    pattern to yield a two-byte machine operation.
+    """
     # Make a copy of the arguments as we will be modifying it.
     args = args[:]
 
@@ -1225,6 +1262,10 @@ def substitute_bitvector(pattern: str, args: List[int]) -> bytes:
 
 
 def substitute_half_a_bitvector(pattern: str, args: List[int]) -> int:
+    """
+    Helper function for `substitute_bitvector`. Takes an 8-bit pattern and returns a
+    single byte.
+    """
     ret = 0
     for shift, pattern_bit in enumerate(reversed(pattern)):
         if pattern_bit == "0":
@@ -1242,6 +1283,10 @@ def substitute_half_a_bitvector(pattern: str, args: List[int]) -> int:
 
 
 def check_arglist(argtypes, args, symbol_table):
+    """
+    Check that the values in `args` match the types in `argtypes`, and return a
+    `Messages` object with any warnings or errors generated.
+    """
     messages = Messages()
     for expected, got in zip(argtypes, args):
         if expected == REGISTER:
@@ -1269,6 +1314,9 @@ def check_arglist(argtypes, args, symbol_table):
 
 
 def check_register(arg) -> Optional[str]:
+    """
+    Check that `arg` is a register. Return an error message as a string if it is not.
+    """
     if arg.type == Token.REGISTER:
         return None
     else:
@@ -1279,6 +1327,10 @@ def check_register(arg) -> Optional[str]:
 
 
 def check_register_or_label(arg, symbol_table: Dict[str, int]) -> Optional[str]:
+    """
+    Check that `arg` is a register or a label. Return an error message as a string if it
+    is not.
+    """
     if arg.type == Token.REGISTER:
         return None
     elif arg.type == Token.SYMBOL:
@@ -1298,20 +1350,35 @@ def check_register_or_label(arg, symbol_table: Dict[str, int]) -> Optional[str]:
 
 
 def check_label(arg) -> Optional[str]:
+    """Check that `arg` is a label. Return an error message as a string if it is not."""
     if arg.type == Token.SYMBOL:
         return None
     else:
         return "expected label"
 
 
-def check_string(arg):
+def check_string(arg) -> Optional[str]:
+    """
+    Check that `arg` is a string literal. Return an error message as a string if it is
+    not.
+    """
     if not isinstance(arg, Token) or arg.type != Token.STRING:
         return "expected string literal"
     else:
         return None
 
 
-def check_in_range(arg, symbol_table, *, lo, hi, labels=False):
+def check_in_range(arg, symbol_table, *, lo, hi, labels=False) -> Optional[str]:
+    """
+    Check that `arg` is an integer (or a symbol resolving to an integer) within the
+    bounds established by `lo` and `hi`.
+
+    If `labels` is True, then `arg` may be a label; otherwise it may only be a constant
+    symbol.
+
+    Return an error message as a string if `arg` is not an integer or is not in the
+    given bounds.
+    """
     if arg.type == Token.SYMBOL:
         try:
             arg = Token.Int(symbol_table[arg.value])
