@@ -32,6 +32,11 @@ Assemble a HERA program into machine code:
 $ hera assemble main.hera
 ```
 
+Disassemble machine code back into the human-readable HERA syntax:
+```
+$ hera disassemble main.hera.lcode
+```
+
 You can also preprocess a HERA program without running it, to see how pseudo-instructions and labels are resolved to HERA code:
 
 ```
