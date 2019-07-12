@@ -13,7 +13,12 @@ from .utils import print_warning
 
 
 class VirtualMachine:
-    """An abstract representation of a HERA processor."""
+    """
+    An abstract representation of a HERA processor.
+
+    This class defines the state of a HERA processor and some utility functions for
+    manipulating it, but the HERA language itself is defined in `hera/op.py`.
+    """
 
     def __init__(self, settings=Settings()) -> None:
         self.settings = settings
@@ -59,13 +64,14 @@ class VirtualMachine:
         self.warning_count = 0
 
     def copy(self) -> "VirtualMachine":
+        """Return a copy of the virtual machine."""
         ret = copy.copy(self)
         ret.registers = self.registers.copy()
         ret.memory = self.memory.copy()
         return ret
 
     def run(self, program: Program) -> None:
-        """Execute a program resetting the machine's state beforehand."""
+        """Execute a program, resetting the machine's state beforehand."""
         self.reset()
 
         for data_op in program.data:
