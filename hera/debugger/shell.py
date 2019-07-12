@@ -23,7 +23,7 @@ from .miniparser import (
 from hera.assembler import assemble_and_print
 from hera.data import DataLabel, HERAError, Label, Location, Program, Settings
 from hera.loader import load_program
-from hera.op import Branch, DataOperation, disassemble, LABEL, OPCODE
+from hera.op import Branch, DataOperation, disassemble, LABEL, name_to_class, OPCODE
 from hera.parser import parse
 from hera.utils import format_int, out_of_range, pad
 
@@ -134,7 +134,7 @@ class Shell:
     )
 
     # Commands that require the whole command to be spelled out.
-    CANNOT_BE_ABBREVIATED = ["asm", "dis", "ll", "off", "on", "restart"]
+    CANNOT_BE_ABBREVIATED = ["asm", "dis", "doc", "ll", "off", "on", "restart"]
 
     # Commands that do not take a whitespace-separated list of argument.
     TAKES_ARGSTR = ["asm", "execute", "print"]
@@ -372,6 +372,32 @@ class Shell:
                 print(disassemble(op.args[0]))
             else:
                 print("Current operation is not an OPCODE.")
+
+    def handle_doc(self, args: List[str]) -> None:
+        """
+        doc <opname>...
+          For each operation, print a message detailing its use and behavior.
+
+        doc
+          Same as above, except that the documentation for the current operation is
+          printed.
+        """
+        if not args:
+            args = [self.debugger.op().__class__.__name__]
+
+        for arg in args:
+            arg = arg.upper()
+            try:
+                op = name_to_class[arg]
+            except KeyError:
+                print("{} is not a known HERA operation.".format(arg))
+            else:
+                docstring = op.__doc__
+                if not docstring:
+                    print("{} has no documentation.".format(arg))
+                else:
+                    docstring = textwrap.dedent(docstring.strip())
+                    print(docstring)
 
     @mutates
     def handle_execute(self, argstr: str) -> None:

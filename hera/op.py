@@ -26,6 +26,10 @@ Data operations (e.g., `INTEGER`) should inherit from `DataOperation` and define
 field and `execute` and `assemble` methods. The `assemble` method of a data operation
 returns the data, as a `bytes` object, that the operation places into static memory.
 
+Make sure that the name of the class is identical to the operation's representation in
+the HERA language, e.g. the class for the SETLO operation should be called SETLO. Other
+parts of the hera-py system, e.g. the `doc` debugging command, depend on this property!
+
 Once the operation's class has been defined, make an entry in the `name_to_class`
 dictonary in this module. After doing this, the operation should work throughout the
 hera-py toolkit (interpreter, debugger, assembler, etc.)!
@@ -284,6 +288,22 @@ class DataOperation(AbstractOperation):
 
 
 class SETLO(AbstractOperation):
+    """
+    SETLO(Rd, v)
+      Set register Rd to the sign-extended 8-bit integer v. Sign-extension means that
+      Rd will contain the value of v, interpreted as a signed integer, regardless of
+      what was in Rd before. In other words, although the operation is called SETLO, it
+      affects not just the low 8 bits but also the high 8 bits.
+
+      Note that values of v above 127 are interpreted as negative numbers, so that for
+      instance SETLO(R1, 200) results in R1 having a value of -56 (= 200 - 256).
+
+      SETLO does not affect any flags.
+
+      HERA programmers typically use the SET pseudo-operation to assign a value to a
+      register, rather than the low-level SETLO operation.
+    """
+
     P = (REGISTER, I8)
     BITV = "1110 AAAA bbbbbbbb"
 
@@ -297,6 +317,17 @@ class SETLO(AbstractOperation):
 
 
 class SETHI(AbstractOperation):
+    """
+    SETHI(Rd, v)
+      Set the high 8 bits of the register Rd to the unsigned 8-bit integer v. SETHI
+      is typically used just after a SETLO operation on the same register.
+
+      SETHI does not affect any flags.
+
+      HERA programmers typically use the SET pseudo-operation to assign a value to a
+      register, rather than the low-level SETHI operation.
+    """
+
     P = (REGISTER, I8)
     BITV = "1111 AAAA bbbbbbbb"
 
@@ -307,6 +338,16 @@ class SETHI(AbstractOperation):
 
 
 class SET(AbstractOperation):
+    """
+    SET(Rd, v)
+      Set the register Rd to the signed 16-bit integer v.
+
+      SET cannot be used to set a register to the value of another register; use MOVE
+      for that instead.
+
+      SET does not affect any flags.
+    """
+
     P = (REGISTER, I16_OR_LABEL)
 
     def convert(self):
@@ -321,6 +362,27 @@ class SET(AbstractOperation):
 
 
 class ADD(BinaryOp):
+    """
+    ADD(Rd, Ra, Rb)
+      Compute Ra + Rb and store the result in Rd. If the carry block flag is off, then
+      the carry flag will be added to the sum if it is set, i.e. Ra + Rb + 1 will be
+      computed instead.
+
+      If the sum exceeds 16 bits, the higher bits are lost. For example, if an ADD
+      results in a sum of 0x10067, then 0x0067 will be stored in the destination
+      register.
+
+      ADD sets the following flags:
+        sign, if the sum was negative
+        zero, if the sum was zero
+        carry, if the sum exceeded 16 bits
+        overflow, if signed integer overflow occurred (i.e., D != A + B under the signed
+                  interpretation of the bits of A, B and D)
+
+      HERA programmers will often want to set the carry block flag (using SETCB())
+      before performing this operation, to avoid unexpected results.
+    """
+
     BITV = "1010 AAAA BBBB CCCC"
 
     @staticmethod
@@ -336,6 +398,24 @@ class ADD(BinaryOp):
 
 
 class SUB(BinaryOp):
+    """
+    SUB(Rd, Ra, Rb)
+      Compute Ra - Rb and store the result in Rd. If the carry block flag is off, then
+      the carry flag will be subtracted from the difference if it is NOT set, i.e.
+      Ra - Rb - 1 will be computed instead.
+
+      SUB sets the following flags:
+        sign, if the difference was negative
+        zero, if the difference was zero
+        carry, if there was no need to borrow from the 2^16's place (i.e., A > B,
+               interpreting A and B as unsigned)
+        overflow, if signed integer overflow occurred (i.e., D != A - B under the signed
+                  interpretation of the bits of A, B and D)
+
+      HERA programmers will often want to set the carry block flag (using SETCB())
+      before performing this operation, to avoid unexpected results.
+    """
+
     BITV = "1011 AAAA BBBB CCCC"
 
     @staticmethod
@@ -353,6 +433,31 @@ class SUB(BinaryOp):
 
 
 class MUL(BinaryOp):
+    """
+    MUL(Rd, Ra, Rb)
+      Compute Ra * Rb and store the result in Rd.
+
+      The behavior of the MUL instruction depends on the values of the flags. If the
+      carry-block is on, or if all the flags are off, then it produces the low 16 bits
+      of the product. If the carry-block is off and the sign flag is on, then it
+      produces the high 16 bits of the product, to facilitate multiplication of large
+      numbers. For all other combinations of flags, the behavior of MUL is undefined by
+      the HERA specification; in hera-py, MUL will produce the low 16 bits for the other
+      combinations of flags.
+
+      MUL sets the following flags:
+        sign, if the product was negative
+        zero, if the product was zero
+        carry, if the product exceeded 16 bits
+        carry, if there was no need to borrow from the 2^16's place (i.e., A > B,
+               interpreting A and B as unsigned)
+        overflow, if signed integer overflow occurs (i.e., D != A * B under the signed
+                  interpretation of the bits of A, B and D)
+
+      HERA programmers will often want to set the carry block flag (using SETCB())
+      before performing this operation, to avoid unexpected results.
+    """
+
     BITV = "1100 AAAA BBBB CCCC"
 
     @staticmethod
@@ -373,6 +478,13 @@ class MUL(BinaryOp):
 
 
 class AND(BinaryOp):
+    """
+    AND(Rd, Ra, Rb)
+      Compute the bitwise and of Ra and Rb and store the result in Rd. AND's behavior
+      does not depend on the flags, but it does set the sign flag when the result is
+      negative and the zero flag when the result is zero.
+    """
+
     BITV = "1000 AAAA BBBB CCCC"
 
     @staticmethod
@@ -381,6 +493,13 @@ class AND(BinaryOp):
 
 
 class OR(BinaryOp):
+    """
+    OR(Rd, Ra, Rb)
+      Compute the bitwise or of Ra and Rb and store the result in Rd. OR's behavior does
+      not depend on the flags, but it does set the sign flag when the result is negative
+      and the zero flag when the result is zero.
+    """
+
     BITV = "1001 AAAA BBBB CCCC"
 
     @staticmethod
@@ -389,6 +508,13 @@ class OR(BinaryOp):
 
 
 class XOR(BinaryOp):
+    """
+    XOR(Rd, Ra, Rb)
+      Compute the bitwise xor of Ra and Rb and store the result in Rd. XOR's behavior
+      does not depend on the flags, but it does set the sign flag when the result is
+      negative and the zero flag when the result is zero.
+    """
+
     BITV = "1101 AAAA BBBB CCCC"
 
     @staticmethod
@@ -397,6 +523,13 @@ class XOR(BinaryOp):
 
 
 class INC(AbstractOperation):
+    """
+    INC(Rd, v)
+      Increment the register by v, an integer between 1 and 64 inclusive. INC sets the
+      same flags as the equivalent ADD instruction would, but it ignores the carry flag
+      when computing its result.
+    """
+
     P = (REGISTER, range(1, 65))
     BITV = "0011 AAAA 10bb bbbb"
 
@@ -425,6 +558,13 @@ class INC(AbstractOperation):
 
 
 class DEC(AbstractOperation):
+    """
+    DEC(Rd, v)
+      Decrement the register by v, an integer between 1 and 64 inclusive. DEC sets the
+      same flags as the equivalent SUB instruction would, but it ignores the carry flag
+      when computing its result.
+    """
+
     P = (REGISTER, range(1, 65))
     BITV = "0011 AAAA 11bb bbbb"
 
@@ -453,6 +593,16 @@ class DEC(AbstractOperation):
 
 
 class LSL(UnaryOp):
+    """
+    LSL(Rd, Rb)
+      Shift the value of Rb one bit to the left, and store the result in Rd. If the
+      carry-block is off and the carry is set, then the bit 1 is shifted in on the
+      right; otherwise 0 is shifted in. The bit shifted out becomes the carry flag.
+
+      LSL sets the sign flag when the result is negative, and the zero flag when the
+      result is zero.
+    """
+
     BITV = "0011 AAAA 0000 BBBB"
 
     @staticmethod
@@ -466,6 +616,16 @@ class LSL(UnaryOp):
 
 
 class LSR(UnaryOp):
+    """
+    LSR(Rd, Rb)
+      Shift the value of Rb one bit to the right, and store the result in Rd. If the
+      carry-block is off and the carry is set, then the bit 1 is shifted in on the
+      left; otherwise 0 is shifted in. The bit shifted out becomes the carry flag.
+
+      LSR sets the sign flag when the result is negative, and the zero flag when the
+      result is zero.
+    """
+
     BITV = "0011 AAAA 0001 BBBB"
 
     @staticmethod
@@ -479,6 +639,14 @@ class LSR(UnaryOp):
 
 
 class LSL8(UnaryOp):
+    """
+    LSL8(Rd, Rb)
+      Shift the value of Rb eight bits to the left, and store the result in Rd.
+
+      LSL8 sets the sign flag when the result is negative, and the zero flag when the
+      result is zero.
+    """
+
     BITV = "0011 AAAA 0010 BBBB"
 
     @staticmethod
@@ -487,6 +655,14 @@ class LSL8(UnaryOp):
 
 
 class LSR8(UnaryOp):
+    """
+    LSR8(Rd, Rb)
+      Shift the value of Rb eight bits to the right, and store the result in Rd.
+
+      LSR8 sets the sign flag when the result is negative, and the zero flag when the
+      result is zero.
+    """
+
     BITV = "0011 AAAA 0011 BBBB"
 
     @staticmethod
@@ -495,6 +671,19 @@ class LSR8(UnaryOp):
 
 
 class ASL(UnaryOp):
+    """
+    ASL(Rd, Rb)
+      Shift the value of Rb one bit to the left, and store the result in Rd. If the
+      carry-block is off and the carry is set, then the bit 1 is shifted in on the
+      left; otherwise 0 is shifted in. The bit shifted out becomes the carry flag.
+
+      ASL sets the sign flag when the result is negative, and the zero flag when the
+      result is zero.
+
+      The only difference between ASL and LSL is that ASL will additionally set the
+      overflow flag to the same value it would receive after executing ADD(Rd, Rb, Rb).
+    """
+
     BITV = "0011 AAAA 0100 BBBB"
 
     @staticmethod
@@ -509,6 +698,19 @@ class ASL(UnaryOp):
 
 
 class ASR(UnaryOp):
+    """
+    ASL(Rd, Rb)
+      Shift the value of Rb one bit to the left, and store the result in Rd. If the
+      carry-block is off and the carry is set, then the bit 1 is shifted in on the
+      left; otherwise 0 is shifted in. The bit shifted out becomes the carry flag.
+
+      ASL sets the sign flag when the result is negative, and the zero flag when the
+      result is zero.
+
+      The only difference between ASL and LSL is that ASL will additionally set the
+      overflow flag to the same value it would receive after executing ADD(Rd, Rb, Rb).
+    """
+
     BITV = "0011 AAAA 0101 BBBB"
 
     @staticmethod
@@ -530,6 +732,19 @@ class ASR(UnaryOp):
 
 
 class SAVEF(AbstractOperation):
+    """
+    SAVEF(Rd)
+      Save the flags to Rd. The flags are stored in the following bits:
+
+        0: sign
+        1: zero
+        2: overflow
+        3: carry
+        4: carry-block
+
+      The higher bits of Rd are set to 0.
+    """
+
     P = (REGISTER,)
     BITV = "0011 AAAA 0111 0000"
 
@@ -546,6 +761,14 @@ class SAVEF(AbstractOperation):
 
 
 class RSTRF(AbstractOperation):
+    """
+    RSTRF(Rd)
+      Restore the flags from Rd.
+
+      Normally you should only invoke RSTRF on a register whose contents have previously
+      been set by a call to SAVEF.
+    """
+
     P = (REGISTER,)
     BITV = "0011 AAAA 0111 1000"
 
@@ -560,6 +783,17 @@ class RSTRF(AbstractOperation):
 
 
 class FON(AbstractOperation):
+    """
+    FON(v)
+      Turn on the flags indicated by the bits of the 5-bit integer v.
+
+        0: sign
+        1: zero
+        2: overflow
+        3: carry
+        4: carry-block
+    """
+
     P = (U5,)
     BITV = "0011 000a 0110 aaaa"
 
@@ -574,6 +808,12 @@ class FON(AbstractOperation):
 
 
 class FOFF(AbstractOperation):
+    """
+    FOFF(v)
+      Turn off the flags indicated by the bits of the 5-bit integer v. See the docs for
+      FON for a list of which bits of v correspond to which flags.
+    """
+
     P = (U5,)
     BITV = "0011 100a 0110 aaaa"
 
@@ -588,6 +828,12 @@ class FOFF(AbstractOperation):
 
 
 class FSET5(AbstractOperation):
+    """
+    FSET5(v)
+      Set the flags according to the bits of the 5-bit integer v. See the docs for FON
+      for a list of which bits of v correspond to which flags.
+    """
+
     P = (U5,)
     BITV = "0011 010a 0110 aaaa"
 
@@ -602,6 +848,11 @@ class FSET5(AbstractOperation):
 
 
 class FSET4(AbstractOperation):
+    """
+    FSET4(v)
+      Like FSET5, except it does not affect the carry-block flag.
+    """
+
     P = (U4,)
     BITV = "0011 110a 0110 aaaa"
 
@@ -615,6 +866,15 @@ class FSET4(AbstractOperation):
 
 
 class LOAD(AbstractOperation):
+    """
+    LOAD(Rd, o, Rb)
+      Load into Rd the value at memory location Rb + o, where o is a 5-bit unsigned
+      integer.
+
+      LOAD sets the sign flag when the value loaded into Rd is negative, and the zero
+      flag when it is zero.
+    """
+
     P = (REGISTER, U5, REGISTER)
     BITV = "010b AAAA bbbb CCCC"
 
@@ -628,6 +888,14 @@ class LOAD(AbstractOperation):
 
 
 class STORE(AbstractOperation):
+    """
+    STORE(Rd, o, Rb)
+      Store the value in Rd at the memory location Rb + o, where o is a 5-bit unsigned
+      integer.
+
+      STORE does not set any flags.
+    """
+
     P = (REGISTER, U5, REGISTER)
     BITV = "011b AAAA bbbb CCCC"
 
@@ -639,6 +907,14 @@ class STORE(AbstractOperation):
 
 
 class BR(RegisterBranch):
+    """
+    BR(label)
+      Jump unconditionally to the given label.
+
+    BR(Rd)
+      Set the program counter to the contents of Rd.
+    """
+
     BITV = "0001 0000 0000 AAAA"
 
     @staticmethod
@@ -647,6 +923,14 @@ class BR(RegisterBranch):
 
 
 class BRR(RelativeBranch):
+    """
+    BRR(label)
+      Jump unconditionally to the given label.
+
+    BRR(o)
+      Adjust the program counter by the 8-bit signed integer o.
+    """
+
     BITV = "0000 0000 aaaa aaaa"
 
     def execute(self, vm):
@@ -657,6 +941,16 @@ class BRR(RelativeBranch):
 
 
 class BL(RegisterBranch):
+    """
+    BL(label)
+      Jump to the given label if either the sign flag or the overflow flag are on, but
+      not if both are.
+
+    BL(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 0010 0000 AAAA"
 
     @staticmethod
@@ -665,6 +959,16 @@ class BL(RegisterBranch):
 
 
 class BLR(RelativeBranch):
+    """
+    BLR(label)
+      Jump to the given label if either the sign flag or the overflow flag are on, but
+      not if both are.
+
+    BLR(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 0010 aaaa aaaa"
 
     @staticmethod
@@ -673,6 +977,16 @@ class BLR(RelativeBranch):
 
 
 class BGE(RegisterBranch):
+    """
+    BGE(label)
+      Jump to the given label if the sign flag or the overflow flag are either both on
+      or both off.
+
+    BGE(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 0011 0000 AAAA"
 
     @staticmethod
@@ -681,6 +995,16 @@ class BGE(RegisterBranch):
 
 
 class BGER(RelativeBranch):
+    """
+    BGER(label)
+      Jump to the given label if the sign flag or the overflow flag are either both on
+      or both off.
+
+    BGER(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 0011 aaaa aaaa"
 
     @staticmethod
@@ -689,6 +1013,16 @@ class BGER(RelativeBranch):
 
 
 class BLE(RegisterBranch):
+    """
+    BLE(label)
+      Jump to the given label under the same conditions as BL, and also if the zero flag
+      is on.
+
+    BLE(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 0100 0000 AAAA"
 
     @staticmethod
@@ -697,6 +1031,16 @@ class BLE(RegisterBranch):
 
 
 class BLER(RelativeBranch):
+    """
+    BLER(label)
+      Jump to the given label under the same conditions as BL, and also if the zero flag
+      is on.
+
+    BLER(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 0100 aaaa aaaa"
 
     @staticmethod
@@ -705,6 +1049,15 @@ class BLER(RelativeBranch):
 
 
 class BG(RegisterBranch):
+    """
+    BG(label)
+      Jump to the given label whenever BLE would not jump.
+
+    BG(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 0101 0000 AAAA"
 
     @staticmethod
@@ -713,6 +1066,15 @@ class BG(RegisterBranch):
 
 
 class BGR(RelativeBranch):
+    """
+    BGR(label)
+      Jump to the given label whenever BLE would not jump.
+
+    BGR(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 0101 aaaa aaaa"
 
     @staticmethod
@@ -721,6 +1083,15 @@ class BGR(RelativeBranch):
 
 
 class BULE(RegisterBranch):
+    """
+    BULE(label)
+      Jump to the given label if either the carry flag is off or the zero flag is on.
+
+    BULE(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 0110 0000 AAAA"
 
     @staticmethod
@@ -729,6 +1100,15 @@ class BULE(RegisterBranch):
 
 
 class BULER(RelativeBranch):
+    """
+    BULER(label)
+      Jump to the given label if either the carry flag is off or the zero flag is on.
+
+    BULER(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 0110 aaaa aaaa"
 
     @staticmethod
@@ -737,6 +1117,15 @@ class BULER(RelativeBranch):
 
 
 class BUG(RegisterBranch):
+    """
+    BUG(label)
+      Jump to the given label if the carry flag is on and the zero flag is off.
+
+    BUG(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 0111 0000 AAAA"
 
     @staticmethod
@@ -745,6 +1134,15 @@ class BUG(RegisterBranch):
 
 
 class BUGR(RelativeBranch):
+    """
+    BUGR(label)
+      Jump to the given label if the carry flag is on and the zero flag is off.
+
+    BUGR(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 0111 aaaa aaaa"
 
     @staticmethod
@@ -753,6 +1151,15 @@ class BUGR(RelativeBranch):
 
 
 class BZ(RegisterBranch):
+    """
+    BZ(label)
+      Jump to the given label if the zero flag is on.
+
+    BZ(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 1000 0000 AAAA"
 
     @staticmethod
@@ -761,6 +1168,15 @@ class BZ(RegisterBranch):
 
 
 class BZR(RelativeBranch):
+    """
+    BZR(label)
+      Jump to the given label if the zero flag is on.
+
+    BZR(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 1000 aaaa aaaa"
 
     @staticmethod
@@ -769,6 +1185,15 @@ class BZR(RelativeBranch):
 
 
 class BNZ(RegisterBranch):
+    """
+    BNZ(label)
+      Jump to the given label if the zero flag is off.
+
+    BNZ(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 1001 0000 AAAA"
 
     @staticmethod
@@ -777,6 +1202,15 @@ class BNZ(RegisterBranch):
 
 
 class BNZR(RelativeBranch):
+    """
+    BNZR(label)
+      Jump to the given label if the zero flag is off.
+
+    BNZR(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 1001 aaaa aaaa"
 
     @staticmethod
@@ -785,6 +1219,15 @@ class BNZR(RelativeBranch):
 
 
 class BC(RegisterBranch):
+    """
+    BC(label)
+      Jump to the given label if the carry flag is on.
+
+    BC(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 1010 0000 AAAA"
 
     @staticmethod
@@ -793,6 +1236,15 @@ class BC(RegisterBranch):
 
 
 class BCR(RelativeBranch):
+    """
+    BCR(label)
+      Jump to the given label if the carry flag is on.
+
+    BCR(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 1010 aaaa aaaa"
 
     @staticmethod
@@ -801,6 +1253,15 @@ class BCR(RelativeBranch):
 
 
 class BNC(RegisterBranch):
+    """
+    BNC(label)
+      Jump to the given label if the carry flag is off.
+
+    BNC(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 1011 0000 AAAA"
 
     @staticmethod
@@ -809,6 +1270,15 @@ class BNC(RegisterBranch):
 
 
 class BNCR(RelativeBranch):
+    """
+    BNCR(label)
+      Jump to the given label if the carry flag is off.
+
+    BNCR(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 1011 aaaa aaaa"
 
     @staticmethod
@@ -817,6 +1287,15 @@ class BNCR(RelativeBranch):
 
 
 class BS(RegisterBranch):
+    """
+    BS(label)
+      Jump to the given label if the sign flag is on.
+
+    BS(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 1100 0000 AAAA"
 
     @staticmethod
@@ -825,6 +1304,15 @@ class BS(RegisterBranch):
 
 
 class BSR(RelativeBranch):
+    """
+    BSR(label)
+      Jump to the given label if the sign flag is on.
+
+    BSR(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 1100 aaaa aaaa"
 
     @staticmethod
@@ -833,6 +1321,15 @@ class BSR(RelativeBranch):
 
 
 class BNS(RegisterBranch):
+    """
+    BNS(label)
+      Jump to the given label if the sign flag is off.
+
+    BNS(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 1101 0000 AAAA"
 
     @staticmethod
@@ -841,6 +1338,15 @@ class BNS(RegisterBranch):
 
 
 class BNSR(RelativeBranch):
+    """
+    BNSR(label)
+      Jump to the given label if the sign flag is off.
+
+    BNSR(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 1101 aaaa aaaa"
 
     @staticmethod
@@ -849,6 +1355,15 @@ class BNSR(RelativeBranch):
 
 
 class BV(RegisterBranch):
+    """
+    BV(label)
+      Jump to the given label if the overflow flag is on.
+
+    BV(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 1110 0000 AAAA"
 
     @staticmethod
@@ -857,6 +1372,15 @@ class BV(RegisterBranch):
 
 
 class BVR(RelativeBranch):
+    """
+    BVR(label)
+      Jump to the given label if the overflow flag is on.
+
+    BVR(Rd)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 1110 aaaa aaaa"
 
     @staticmethod
@@ -865,6 +1389,15 @@ class BVR(RelativeBranch):
 
 
 class BNV(RegisterBranch):
+    """
+    BNV(label)
+      Jump to the given label if the overflow flag is off.
+
+    BNV(Rd)
+      Set the program counter to the contents of Rd if the condition described above
+      holds.
+    """
+
     BITV = "0001 1111 0000 AAAA"
 
     @staticmethod
@@ -873,6 +1406,15 @@ class BNV(RegisterBranch):
 
 
 class BNVR(RelativeBranch):
+    """
+    BNVR(label)
+      Jump to the given label if the overflow flag is off.
+
+    BNVR(o)
+      Adjust the program counter by 8-bit signed integer o if the condition described
+      above holds.
+    """
+
     BITV = "0000 1111 aaaa aaaa"
 
     @staticmethod
@@ -905,6 +1447,21 @@ class CALL_AND_RETURN(Branch):
 
 
 class CALL(CALL_AND_RETURN):
+    """
+    CALL(FP_alt, function)
+      Call the function. The first argument doesn't have to be FP_alt, but you should
+      use FP_alt unless you have a good reason not to.
+
+      Unlike in higher-level languages like Python, function calls in HERA don't have
+      explicit argument lists. Instead, the caller passes arguments by either placing
+      them in designated registers or on designated locations on the stack. The contract
+      of where to put arguments is known as the calling convention. See the HERA manual
+      for details.
+
+    CALL(Ra, Rb)
+      The general-purpose form of the CALL instruction. See the HERA manual for details.
+    """
+
     P = (REGISTER, REGISTER_OR_LABEL)
     BITV = "0010 0000 AAAA BBBB"
 
@@ -923,6 +1480,21 @@ class CALL(CALL_AND_RETURN):
 
 
 class RETURN(CALL_AND_RETURN):
+    """
+    RETURN(FP_alt, PC_ret)
+      Return from a function call. The arguments don't have to be FP_alt and PC_ret, but
+      you should use them unless you have a good reason not to.
+
+      Unlike in higher-level languages like Python, function returns in HERA don't have
+      explicit return values. Instead, the function returns a value by either placing
+      it in a designated register or on a designated location on the stack. See the HERA
+      manual for details.
+
+    RETURN(Ra, Rb)
+      The general-purpose form of the RETURN instruction. See the HERA manual for
+      details.
+    """
+
     P = (REGISTER, REGISTER)
     BITV = "0010 0001 AAAA BBBB"
 
@@ -957,16 +1529,37 @@ class RETURN(CALL_AND_RETURN):
 
 
 class SWI(AbstractOperation):
+    """
+    SWI(i)
+      Simulate a software interrupt that has the number i, a 4-bit integer. The
+      counterpart to this instruction is RTI.
+    """
+
     P = (U4,)
     BITV = "0010 0010 0000 aaaa"
 
 
 class RTI(AbstractOperation):
+    """
+    RTI()
+      Return from a software interrupt. The counterpart to this instruction is SWI.
+    """
+
     P = ()
     BITV = "0010 0011 0000 0000"
 
 
 class CMP(AbstractOperation):
+    """
+    CMP(Ra, Rb)
+      Compare the values of Ra and Rb. The branch instructions are named so that they
+      do the expected thing when immediately preceded by a CMP instruction, e.g.
+      CMP(R1, R2) BLE(somewhere_else) will jump to somewhere_else if R1 <= R2.
+
+      At the machine level, this instruction sets the same flags as would be set for
+      subtracting Rb from Ra.
+    """
+
     P = (REGISTER, REGISTER)
 
     def convert(self):
@@ -974,6 +1567,11 @@ class CMP(AbstractOperation):
 
 
 class CON(AbstractOperation):
+    """
+    CON()
+      Turn the carry flag on. See also COFF.
+    """
+
     P = ()
 
     def convert(self):
@@ -981,6 +1579,11 @@ class CON(AbstractOperation):
 
 
 class COFF(AbstractOperation):
+    """
+    COFF()
+      Turn the carry flag off. See also CON.
+    """
+
     P = ()
 
     def convert(self):
@@ -988,6 +1591,11 @@ class COFF(AbstractOperation):
 
 
 class CBON(AbstractOperation):
+    """
+    CBON()
+      Turn the carry-block flag on. See also CCBOFF.
+    """
+
     P = ()
 
     def convert(self):
@@ -995,6 +1603,11 @@ class CBON(AbstractOperation):
 
 
 class CCBOFF(AbstractOperation):
+    """
+    CCBOFF()
+      Turn the carry and carry-block flags off. See also CBON and CON.
+    """
+
     P = ()
 
     def convert(self):
@@ -1002,6 +1615,12 @@ class CCBOFF(AbstractOperation):
 
 
 class MOVE(AbstractOperation):
+    """
+    MOVE(Ra, Rb)
+      Set Ra to the value of Rb. Equivalent to an assignment statement in a higher-level
+      language.
+    """
+
     P = (REGISTER, REGISTER)
 
     def convert(self):
@@ -1009,6 +1628,11 @@ class MOVE(AbstractOperation):
 
 
 class SETRF(AbstractOperation):
+    """
+    SETRF(Rd, v)
+      Set Rd to v and set the flags for v + 0.
+    """
+
     P = (REGISTER, I16_OR_LABEL)
 
     def convert(self):
@@ -1016,6 +1640,11 @@ class SETRF(AbstractOperation):
 
 
 class FLAGS(AbstractOperation):
+    """
+    FLAGS(Ra)
+      Set the flags for Ra + 0.
+    """
+
     P = (REGISTER,)
 
     def convert(self):
@@ -1023,6 +1652,11 @@ class FLAGS(AbstractOperation):
 
 
 class HALT(AbstractOperation):
+    """
+    HALT()
+      Stop execution of the program, permanently.
+    """
+
     P = ()
 
     def convert(self):
@@ -1030,6 +1664,11 @@ class HALT(AbstractOperation):
 
 
 class NOP(AbstractOperation):
+    """
+    NOP()
+      Do nothing.
+    """
+
     P = ()
 
     def convert(self):
@@ -1037,6 +1676,12 @@ class NOP(AbstractOperation):
 
 
 class NEG(AbstractOperation):
+    """
+    NEG(Rd, Ra)
+      Compute the arithmetic negation of Ra and store it in Rd. Flags are set as for
+      0 - Ra.
+    """
+
     P = (REGISTER, REGISTER)
 
     def convert(self):
@@ -1044,6 +1689,13 @@ class NEG(AbstractOperation):
 
 
 class NOT(AbstractOperation):
+    """
+    NOT(Rd, Ra)
+      Compute the logical bitwise negation of Ra and store it in Rd. The sign flag is
+      set if the result is negative, and the zero flag if it is zero; no other flags
+      are affected.
+    """
+
     P = (REGISTER, REGISTER)
 
     def typecheck(self, *args, **kwargs):
@@ -1063,6 +1715,17 @@ class NOT(AbstractOperation):
 
 
 class OPCODE(AbstractOperation):
+    """
+    OPCODE(d)
+      Interpret the 16-bit integer d as a binary encoding of a HERA instruction, and
+      execute that instruction.
+
+      There is no good reason to use this, but if you want you can convert your entire
+      program into OPCODE instructions by running
+
+        hera preprocess --obfuscate myprogram.hera
+    """
+
     P = (U16,)
 
     def typecheck(self, *args, **kwargs):
@@ -1082,6 +1745,13 @@ class OPCODE(AbstractOperation):
 
 
 class INTEGER(DataOperation):
+    """
+    INTEGER(i)
+      Place the 16-bit signed integer i into the current data cell.
+
+      INTEGER is a data instruction.
+    """
+
     P = (I16,)
 
     def execute(self, vm):
@@ -1093,6 +1763,14 @@ class INTEGER(DataOperation):
 
 
 class DSKIP(DataOperation):
+    """
+    DSKIP(n)
+      Skip the next n data cells. Typically used to reserve space for a fixed-size
+      array.
+
+      DSKIP is a data instruction.
+    """
+
     P = (U16,)
 
     def execute(self, vm):
@@ -1103,6 +1781,15 @@ class DSKIP(DataOperation):
 
 
 class LP_STRING(DataOperation):
+    """
+    LP_STRING(s)
+      Place the length-prefixed string s into memory at the current data cell, so that
+      the first cell holds the string's length and the rest of the cells hold the
+      ASCII characters of the string.
+
+      LP_STRING is a data instruction.
+    """
+
     P = (STRING,)
 
     def execute(self, vm):
@@ -1123,6 +1810,12 @@ class LP_STRING(DataOperation):
 
 
 class CONSTANT(DataOperation):
+    """
+    CONSTANT(x, d)
+      Declare the symbol x to have the value d. x can subsequently be used wherever in
+      the program the integer d would have been allowed, e.g. in a SET instruction.
+    """
+
     P = (LABEL_TYPE, I16)
 
     def convert(self):
@@ -1130,6 +1823,12 @@ class CONSTANT(DataOperation):
 
 
 class LABEL(AbstractOperation):
+    """
+    LABEL(l)
+      Designate the next instruction as l. Used so that the next instruction can be the
+      target of a branching instruction.
+    """
+
     P = (LABEL_TYPE,)
 
     def convert(self):
@@ -1137,6 +1836,14 @@ class LABEL(AbstractOperation):
 
 
 class DLABEL(DataOperation):
+    """
+    DLABEL(l)
+      Designate the next data cell as l. Used so that instructions like LOAD and STORE
+      can refer to data declared in the data segment.
+
+      DLABEL is a data instruction.
+    """
+
     P = (LABEL_TYPE,)
 
     def convert(self):
@@ -1144,6 +1851,13 @@ class DLABEL(DataOperation):
 
 
 class PRINT_REG(DebuggingOperation):
+    """
+    print_reg(Ra)
+      Print the value of Ra.
+
+      print_reg is a debugging instruction.
+    """
+
     P = (REGISTER,)
 
     def execute(self, vm):
@@ -1153,6 +1867,13 @@ class PRINT_REG(DebuggingOperation):
 
 
 class PRINT(DebuggingOperation):
+    """
+    print(s)
+      Print the string literal, without a newline at the end.
+
+      print is a debugging instruction.
+    """
+
     P = (STRING,)
 
     def execute(self, vm):
@@ -1161,6 +1882,13 @@ class PRINT(DebuggingOperation):
 
 
 class PRINTLN(DebuggingOperation):
+    """
+    println(s)
+      Print the string literal with a newline at the end.
+
+      println is a debugging instruction.
+    """
+
     P = (STRING,)
 
     def execute(self, vm):
