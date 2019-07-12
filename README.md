@@ -4,7 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/iafisher/hera-py/badge.svg?branch=master)](https://coveralls.io/github/iafisher/hera-py?branch=master)
 [![PyPI](https://img.shields.io/pypi/v/hera-py.svg?label=version)](https://pypi.org/project/hera-py/)
 
-A toolkit for the [Haverford Educational RISC Architecture](http://cs.haverford.edu/resources/hera) (HERA) assembly language. Includes an interpreter, a debugger, an assembler, and a disassembler.
+A toolkit for the [Haverford Educational RISC Architecture](http://cs.haverford.edu/resources/hera) (HERA) assembly language, comprising an interpreter, a debugger, an assembler, and a disassembler.
 
 ## Installation
 You can install hera-py with pip:

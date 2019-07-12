@@ -1002,7 +1002,7 @@ def expand_flag(flag: str) -> str:
 
 HELP = """\
 Available commands:
-    asm <op>        Show the binary machine code that the HERA operations
+    asm <op>        Show the binary machine code that the HERA operation
                     assembles to.
 
     assign <x> <y>  Assign the value of y to x.
