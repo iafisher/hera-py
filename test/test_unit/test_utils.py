@@ -158,7 +158,7 @@ def test_register_to_index_with_named_registers():
 def test_register_to_index_with_invalid_register():
     with pytest.raises(HERAError) as e:
         register_to_index("R16")
-    assert "R16" in str(e)
+    assert "R16" in str(e.value)
 
 
 def test_align_caret():

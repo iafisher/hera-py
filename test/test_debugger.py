@@ -1522,19 +1522,19 @@ def test_location_to_instruction_number_with_label(debugger):
 def test_location_to_instruction_number_fails_with_constant(debugger):
     with pytest.raises(ValueError) as e:
         debugger.location_to_instruction_number("N")
-    assert "could not locate label `N`" in str(e)
+    assert "could not locate label `N`" in str(e.value)
 
 
 def test_location_to_instruction_number_out_of_range(debugger):
     with pytest.raises(ValueError) as e:
         debugger.location_to_instruction_number("100")
-    assert "could not find corresponding line" in str(e)
+    assert "could not find corresponding line" in str(e.value)
 
 
 def test_location_to_instruction_number_invalid_format(debugger):
     with pytest.raises(ValueError) as e:
         debugger.location_to_instruction_number("a")
-    assert "could not locate label `a`" in str(e)
+    assert "could not locate label `a`" in str(e.value)
 
 
 def test_instruction_number_to_location(debugger):
