@@ -29,8 +29,8 @@ def main(argv: Optional[List[str]] = None) -> Optional[VirtualMachine]:
     """
     The entry point into hera-py.
 
-    When the interpreter is invoked, the virtual machine on which the program is run is
-    returned so that its internal state may be inspected for testing.
+    If the interpeter subcommand is executed, the virtual machine on which the program
+    is run is returned so that its internal state may be inspected for testing.
     """
     settings = parse_args(argv)
     path = settings.path

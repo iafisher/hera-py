@@ -1,17 +1,18 @@
 """
-The parser for the HERA language.
+The parser for the HERA language. As an assembly language, HERA has quite a simple
+syntax.
 
 Abstract grammar:
-  start := (op | include)*
 
+  start   := (op | include)*
   op      := SYMBOL LPAREN arglist? RPAREN
   include := INCLUDE (STRING | BRACKETED)
-
   arglist := (value COMMA)* value
 
+The lexical structure of the language is defined in `hera/lexer.py`.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: February 2019
+Version: July 2019
 """
 import os.path
 from typing import List, Optional, Set, Tuple, Union  # noqa: F401
@@ -46,6 +47,8 @@ def parse(
 class Parser:
     def __init__(self, lexer: Lexer, settings: Settings) -> None:
         self.lexer = lexer
+        # Keep track of the set of files that have already been parsed, to avoid
+        # infinite recursion through #include statements.
         self.visited = set()  # type: Set[str]
         self.settings = settings
         self.messages = Messages()
@@ -65,6 +68,7 @@ class Parser:
         return ops
 
     def match_program(self) -> List[AbstractOperation]:
+        """Match an entire program."""
         expecting_brace = False
         ops = []
         while self.lexer.tkn.type != Token.EOF:
@@ -78,8 +82,8 @@ class Parser:
             elif self.lexer.tkn.type == Token.SYMBOL:
                 name_tkn = self.lexer.tkn
                 self.lexer.next_token()
-                # Many legacy HERA program are enclosed with void HERA_main() { ... },
-                # which is handled here.
+                # Legacy HERA program are enclosed in void HERA_main() { ... }, which is
+                # handled here.
                 if self.lexer.tkn.type == Token.SYMBOL and name_tkn.value == "void":
                     expecting_brace = True
                     self.handle_cpp_boilerplate()
@@ -175,6 +179,7 @@ class Parser:
         return args if not hit_error else None
 
     def match_value(self) -> Optional[Token]:
+        """Match a value (e.g., an integer, a register)."""
         if self.lexer.tkn.type == Token.INT:
             return self.match_int()
         elif self.lexer.tkn.type == Token.CHAR:
@@ -201,6 +206,9 @@ class Parser:
             return self.lexer.tkn
 
     def match_int(self) -> Token:
+        """
+        Match an integer literal. Binary, octal and hexadecimal literals are supported.
+        """
         # Detect zero-prefixed octal numbers.
         prefix = self.lexer.tkn.value[:2]
         if len(prefix) == 2 and prefix[0] == "0" and prefix[1].isdigit():
@@ -220,6 +228,7 @@ class Parser:
         return self.lexer.tkn
 
     def match_include(self) -> List[AbstractOperation]:
+        """Match an #include statement."""
         root_path = self.lexer.path
         tkn = self.lexer.next_token()
         msg = "expected quote or angle-bracket delimited string"
@@ -261,6 +270,10 @@ class Parser:
         self.lexer.next_token()
 
     def expand_angle_include(self, include_path: Token) -> List[AbstractOperation]:
+        """
+        Given a path to a system library from an #include <...> statement, retrieve
+        the library, parse it, and return the HERA operations.
+        """
         # There is no check for recursive includes in this function, under the
         # assumption that system libraries do not have recursive includes.
         if include_path.value == "HERA.h":
@@ -275,7 +288,12 @@ class Parser:
         elif include_path.value == "Tiger-stdlib-reg.hera":
             included_text = TIGER_STDLIB_REG
         else:
-            root_path = os.environ.get("HERA_C_DIR", "/home/courses/lib/HERA-lib")
+            # If the library name is not a known library, look for it in a number of
+            # defined places.
+            root_path = os.environ.get(
+                "HERA_PY_DIR",
+                os.environ.get("HERA_C_DIR", "/home/courses/lib/HERA-lib"),
+            )
             try:
                 included_text = read_file(os.path.join(root_path, include_path.value))
             except HERAError as e:
@@ -289,6 +307,10 @@ class Parser:
         return ops
 
     def expect(self, types: Union[str, Set[str]], msg="unexpected token") -> bool:
+        """
+        Expect the current token to be one of the types in `types`, and record an error
+        and return False if it is not.
+        """
         if isinstance(types, str):
             types = {types}
 
@@ -305,16 +327,21 @@ class Parser:
             return True
 
     def skip_until(self, types: Set[str]) -> None:
+        """Keep consuming tokens until a token whose type is in `types` is reached."""
         types.add(Token.EOF)
         while self.lexer.tkn.type not in types:
             self.lexer.next_token()
 
     def err(self, msg: str, tkn: Optional[Token] = None) -> None:
+        """Record an error. Note that this does not immediately print to the console."""
         if tkn is None:
             tkn = self.lexer.tkn
         self.messages.err(msg, tkn.location)
 
     def warn(self, msg: str, tkn: Optional[Token] = None) -> None:
+        """
+        Record a warning. Note that this does not immediately print to the console.
+        """
         if tkn is None:
             tkn = self.lexer.tkn
         self.messages.warn(msg, tkn.location)
