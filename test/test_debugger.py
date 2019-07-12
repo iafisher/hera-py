@@ -1201,6 +1201,22 @@ def test_handle_print_abbreviated(shell):
         assert len(kwargs) == 0
 
 
+def test_handle_doc(shell, capsys):
+    shell.handle_command("doc")
+
+    out = capsys.readouterr().out
+    assert "SET" in out
+
+
+def test_handle_doc_with_arguments(shell, capsys):
+    shell.handle_command("doc ADD xor Buler")
+
+    out = capsys.readouterr().out
+    assert "ADD" in out
+    assert "XOR" in out
+    assert "BULER" in out
+
+
 def test_handle_help(shell, capsys):
     shell.handle_command("help")
 
