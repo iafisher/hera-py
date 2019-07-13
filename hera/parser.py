@@ -39,6 +39,7 @@ def parse(
     `path` is the path of the file being parsed, as it will appear in error and
     warning messages. It defaults to "<string>".
     """
+    text = evaluate_ifdefs(text)
     lexer = Lexer(text, path=path)
     parser = Parser(lexer, settings)
     program = parser.parse()
@@ -252,6 +253,7 @@ class Parser:
                 return []
             else:
                 old_lexer = self.lexer
+                included_text = evaluate_ifdefs(included_text)
                 self.lexer = Lexer(included_text, path=include_path)
                 ops = self.parse()
                 self.lexer = old_lexer

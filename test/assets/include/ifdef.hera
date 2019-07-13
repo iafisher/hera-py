@@ -1,0 +1,14 @@
+SET(R1, 42)
+#ifdef HERA_PY
+SET(R2, 42)
+#else
+SET(R3, 666)
+#endif
+
+#ifdef HERA_C
+SET(R4, 666)
+#else
+SET(R5, 42)
+#endif
+
+SET(R6, 42)

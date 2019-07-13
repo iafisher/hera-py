@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## Unreleased
 ### Added
 - The `doc` debugging command, for viewing documentation on individual HERA operations.
+- The parser now understands C-style `#ifdef` and `#ifndef` macros, with `HERA_PY` as the only defined symbol.
 
 
 ## [0.8.1] - 2019-03-09

@@ -83,3 +83,41 @@ def test_include_stdin_program(capsys):
     # We want this error and not a recursive include error, i.e. we need to distinguish
     # between actual standard input and a file called "<stdin>".
     assert 'file "<stdin>" does not exist' in captured.err
+
+
+def test_use_of_ifdef(capsys):
+    program = """\
+SET(R1, 42)
+#ifdef HERA_PY
+SET(R2, 42)
+#else
+SET(R3, 666)
+#endif
+
+#ifdef HERA_C
+SET(R4, 666)
+#else
+SET(R5, 42)
+#endif
+
+SET(R6, 42)
+    """
+    vm = execute_program_helper(program)
+
+    assert vm.registers[1] == 42
+    assert vm.registers[2] == 42
+    assert vm.registers[3] == 0
+    assert vm.registers[4] == 0
+    assert vm.registers[5] == 42
+    assert vm.registers[6] == 42
+
+
+def test_use_of_ifdef_in_included_program(capsys):
+    vm = execute_program_helper('#include "test/assets/include/ifdef.hera"')
+
+    assert vm.registers[1] == 42
+    assert vm.registers[2] == 42
+    assert vm.registers[3] == 0
+    assert vm.registers[4] == 0
+    assert vm.registers[5] == 42
+    assert vm.registers[6] == 42
