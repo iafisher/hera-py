@@ -27,11 +27,11 @@ from .stdlib import (
     TIGER_STDLIB_STACK,
     TIGER_STDLIB_STACK_DATA,
 )
-from .utils import read_file, register_to_index
+from .utils import Path, PATH_STRING, read_file, register_to_index
 
 
 def parse(
-    text: str, *, path=None, settings=Settings()
+    text: str, *, path=PATH_STRING, settings=Settings()
 ) -> Tuple[List[AbstractOperation], Messages]:
     """
     Parse a HERA program.
@@ -411,8 +411,8 @@ def evaluate_ifdefs(text):
     return "".join(ret)
 
 
-def get_canonical_path(fpath: str) -> str:
-    if fpath == "-" or fpath == "<string>":
-        return fpath
+def get_canonical_path(fpath: Path) -> str:
+    if not isinstance(fpath, Path) or fpath.kind == Path.FILE:
+        return Path(os.path.realpath(fpath))
     else:
-        return os.path.realpath(fpath)
+        return fpath

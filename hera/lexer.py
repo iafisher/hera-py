@@ -10,13 +10,13 @@ import string
 from typing import Optional, Tuple
 
 from hera.data import Location, Messages, Token
-from hera.utils import NAMED_REGISTERS
+from hera.utils import NAMED_REGISTERS, PATH_STRING
 
 
 class Lexer:
     """A lexer for HERA (and for the debugging mini-language)."""
 
-    def __init__(self, text: str, *, path: Optional[str] = None) -> None:
+    def __init__(self, text: str, *, path: Optional[str] = PATH_STRING) -> None:
         self.text = text
         self.file_lines = text.splitlines()
         if self.text.endswith("\n"):
@@ -24,7 +24,7 @@ class Lexer:
         self.position = 0
         self.line = 1
         self.column = 1
-        self.path = path or "<string>"
+        self.path = path
         self.messages = Messages()
         # Set the current token.
         self.next_token()

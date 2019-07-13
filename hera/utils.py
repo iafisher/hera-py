@@ -167,6 +167,33 @@ def align_caret(line: str, col: int) -> str:
     return "".join("\t" if c == "\t" else " " for c in line[: col - 1])
 
 
+class Path(str):
+    FILE = "file"
+    STDIN = "stdin"
+    STRING = "string"
+
+    def __new__(cls, *args, kind=FILE, **kwargs):
+        obj = str.__new__(cls, *args, **kwargs)
+        obj.kind = kind
+        return obj
+
+    def __repr__(self):
+        return "Path({!r}, kind={!r})".format(str.__repr__(self), self.kind)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Path)
+            and str.__eq__(self, other)
+            and self.kind == other.kind
+        )
+
+    def __hash__(self):
+        return hash((self[:], self.kind))
+
+
+PATH_STRING = Path("<string>", kind=Path.STRING)
+
+
 def read_file(path: str) -> str:
     """Read a file and return its contents."""
     try:
@@ -186,12 +213,13 @@ def read_file_or_stdin(path: str, settings) -> str:
     """
     Read a file and return its contents as a string.
 
-    If `path` is "-", then standard input is read rather than a file.
+    If `path` is a `Path` object and its `kind` field is `Path.STDIN`, then standard
+    input will be read from.
 
     This function will print warnings and errors to the console, and will exit the
     entire program on error.
     """
-    if path == "-":
+    if isinstance(path, Path) and path.kind == Path.STDIN:
         try:
             text = sys.stdin.read()
         except (IOError, KeyboardInterrupt):

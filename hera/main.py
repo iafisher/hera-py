@@ -13,7 +13,7 @@ from .data import HERAError, Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
 from .loader import load_program_from_file
 from .op import disassemble
-from .utils import format_int, read_file_or_stdin
+from .utils import format_int, Path, read_file_or_stdin
 from .vm import VirtualMachine
 
 
@@ -33,7 +33,10 @@ def main(argv: Optional[List[str]] = None) -> Optional[VirtualMachine]:
     is run is returned so that its internal state may be inspected for testing.
     """
     settings = parse_args(argv)
-    path = settings.path
+    if settings.path == "-":
+        path = Path("<stdin>", kind=Path.STDIN)
+    else:
+        path = Path(settings.path)
 
     if not sys.stderr.isatty():
         settings.color = False
