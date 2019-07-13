@@ -95,7 +95,7 @@ SET(R3, 666)
 #endif
 
 #ifdef HERA_C
-SET(R4, 666)
+R4 = 666;
 #else
 SET(R5, 42)
 #endif
