@@ -503,16 +503,6 @@ def test_handle_goto_with_line_number(shell):
     assert shell.debugger.vm.pc == 4
 
 
-@pytest.mark.skip("Should this work?")
-def test_handle_goto_with_line_number_not_on_operation(shell):
-    # A line number that doesn't correspond to an actual operation.
-    shell.handle_command("goto 6")
-
-    assert shell.debugger.vm.registers[1] == 0
-    assert shell.debugger.vm.registers[2] == 0
-    assert shell.debugger.vm.pc == 4
-
-
 def test_handle_goto_with_label(shell):
     shell.handle_command("goto add")
 
