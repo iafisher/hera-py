@@ -1,6 +1,6 @@
 from hera.data import Token
 from hera.op import ADD, INC, LABEL, RTI, SET
-from hera.parser import parse
+from hera.parser import evaluate_ifdefs, parse
 
 
 def valid(text, *, warnings=False):
@@ -135,6 +135,132 @@ def test_parse_ops_with_semicolons():
     assert len(program) == 2
     assert program[0].name == "SET"
     assert program[1].name == "SET"
+
+
+def test_evaluate_ifdefs_with_simple_ifdef():
+    program = evaluate_ifdefs(
+        """
+#ifdef HERA_PY
+  SET(R1, 42)
+#endif
+    """
+    )
+
+    assert program.strip() == "SET(R1, 42)"
+
+
+def test_evaluate_ifdefs_with_no_ifdefs():
+    original = "Just some text.\nWith no ifdefs."
+    program = evaluate_ifdefs(original)
+    assert program == original
+
+
+def test_evaluate_ifdefs_with_ifdef_and_else():
+    program = evaluate_ifdefs(
+        """
+#ifdef HERA_PY
+  SET(R1, 42)
+#else
+  R1 = 42;
+#endif
+    """
+    )
+
+    assert program.strip() == "SET(R1, 42)"
+
+
+def test_evaluate_ifdefs_with_ifdef_and_else_with_leading_whitespace():
+    program = evaluate_ifdefs(
+        """
+  #ifdef HERA_PY
+    SET(R1, 42)
+  #else
+    R1 = 42;
+  #endif
+    """
+    )
+
+    assert program.strip() == "SET(R1, 42)"
+
+
+def test_evaluate_ifdefs_with_ifndef():
+    program = evaluate_ifdefs(
+        """
+#ifndef HERA_PY
+  R1 = 42;
+#else
+  SET(R1, 42)
+#endif
+    """
+    )
+
+    assert program.strip() == "SET(R1, 42)"
+
+
+def test_evaluate_ifdefs_with_ifdef_of_unknown_token():
+    program = evaluate_ifdefs(
+        """
+#ifndef HERA_CPP
+  SET(R1, 42)
+#else
+  R1 = 42;
+#endif
+    """
+    )
+
+    assert program.strip() == "SET(R1, 42)"
+
+
+def test_evaluate_ifdefs_with_complex_program():
+    program = evaluate_ifdefs(
+        """
+// Leading text should be included.
+#ifdef HERA_PY
+  // 1: This should be included.
+  #ifdef HERA_CPP
+    // 1: This should not be included.
+    #else
+    // 2: This should be included.
+    #endif
+  // 3: This should be included.
+  #endif
+// 4: This should be included.
+#ifndef HERA_PY
+  // 2: This should not be included.
+  #else
+  // 5: This should be included.
+  #ifdef WHATEVER
+    // 3: This should not be included.
+    #else
+    // 6: This should be included.
+  #endif
+  // 7: This should be included.
+#endif
+// Trailing text should be included.
+    """
+    )
+
+    assert (
+        program.strip()
+        == """\
+// Leading text should be included.
+
+  // 1: This should be included.
+
+    // 2: This should be included.
+
+  // 3: This should be included.
+
+// 4: This should be included.
+
+  // 5: This should be included.
+
+    // 6: This should be included.
+
+  // 7: This should be included.
+
+// Trailing text should be included."""
+    )
 
 
 def SYM(s):

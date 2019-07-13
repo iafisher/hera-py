@@ -15,6 +15,7 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: July 2019
 """
 import os.path
+import re
 from typing import List, Optional, Set, Tuple, Union  # noqa: F401
 
 from .data import HERAError, Messages, Settings, Token
@@ -345,6 +346,67 @@ class Parser:
         if tkn is None:
             tkn = self.lexer.tkn
         self.messages.warn(msg, tkn.location)
+
+
+_ifdef_symbol = r"[A-Za-z_][A-Za-z0-9_]*"
+_ifdef_tokens = (
+    ("IFDEF", r"^\s*#ifdef\s+" + _ifdef_symbol + r"\s*$"),
+    ("IFNDEF", r"^\s*#ifndef\s+" + _ifdef_symbol + r"\s*$"),
+    ("ELSE", r"^\s*#else\s*$"),
+    ("ENDIF", r"^\s*#endif\s*$"),
+)
+_ifdef_pattern = re.compile(
+    "|".join("(?P<%s>%s)" % pair for pair in _ifdef_tokens), flags=re.MULTILINE
+)
+
+
+def evaluate_ifdefs(text):
+    """
+    For compatibility with the HERA-C interpreter written in C++, hera-py supports
+    #ifdef <x> ... #else ... #endif and #ifndef statements. The only token defined by
+    the hera-py interpreter is HERA_PY, so for instance in
+
+      #ifdef HERA_PY
+        ...
+      #else
+        ...
+      #endif
+
+    everything in the else clause will be stripped and may contain code that is not
+    valid HERA, e.g. C++.
+    """
+    ret = []
+    starting_at = 0
+    # A stack of booleans indicating whether we should keep text in the current block.
+    keeping = [True]
+    for mo in _ifdef_pattern.finditer(text):
+        if keeping[-1]:
+            ret.append(text[starting_at : mo.start()])
+
+        kind = mo.lastgroup
+        value = mo.group()
+        if kind == "IFDEF":
+            word = value.split()[-1]
+            if word == "HERA_PY":
+                keeping.append(True)
+            else:
+                keeping.append(False)
+        elif kind == "IFNDEF":
+            word = value.split()[-1]
+            if word != "HERA_PY":
+                keeping.append(True)
+            else:
+                keeping.append(False)
+        elif kind == "ELSE" and len(keeping) > 1:
+            keeping[-1] = not keeping[-1]
+        elif kind == "ENDIF" and len(keeping) > 1:
+            keeping.pop()
+
+        if keeping[-1]:
+            starting_at = mo.end()
+
+    ret.append(text[starting_at:])
+    return "".join(ret)
 
 
 def get_canonical_path(fpath: str) -> str:
