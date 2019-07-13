@@ -186,7 +186,6 @@ def test_stdlib_reg_ord():
     assert vm.registers[1] == 65
 
 
-@pytest.mark.skip("not implemented in HERA-C")
 def test_stdlib_reg_chr():
     vm = execute_program_helper(helper_stdlib_register("chr", 65))
 

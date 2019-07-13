@@ -814,6 +814,8 @@ LABEL(getchar)
 
   SET(R1, 2)
   MOVE(FP_alt, SP)
+  // This may cease to work if malloc is changed to use R2.
+  MOVE(R2, PC_ret)
   CALL(FP_alt, malloc)
 
   // R1 = pointer to newly-allocated string
@@ -839,6 +841,35 @@ LABEL(getchar)
   MOVE(R1, Rt)
 
   DEC(SP, 1)
+
+  // Restore old program counter.
+  MOVE(PC_ret, R2)
+
+  RETURN(FP_alt, PC_ret)
+
+
+LABEL(chr)
+     STORE(PC_ret, 0,FP)
+     STORE(FP_alt,1,FP)
+     INC(SP,2)
+     STORE(R1,4,FP)
+     STORE(R2,5,FP)
+     MOVE(FP_alt,SP) // malloc(2)
+     INC(SP,5)
+     SET(r1,2)
+     CALL(FP_alt,malloc)
+     MOVE(R2, R1)
+     DEC(SP, 5)
+     SET(Rt,1)
+     STORE(Rt,0,R2)	// set string length
+     LOAD(R1,4,FP)	// Reg 1 <-- argument (the integer value)
+     STORE(R1,1,R2)	// set string's one character
+     MOVE(R1, R2)
+     LOAD(R2,5,FP)
+     LOAD(PC_ret, 0,FP)
+     LOAD(FP_alt,1,FP)
+     DEC(SP,2)
+     RETURN(FP_alt, PC_ret)
 """
 
 
