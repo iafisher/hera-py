@@ -242,6 +242,36 @@ Error: expected HERA operation or #include, line 1 col 1 of <stdin>
     )
 
 
+def test_main_with_init_flag(capsys):
+    with patch("sys.stdin", StringIO("NOP()")):
+        main(["-", "--init=r1=4, r2=5"])
+
+    captured = capsys.readouterr().err
+    assert "R1  = 0x0004 = 4" in captured
+    assert "R2  = 0x0005 = 5" in captured
+
+
+def test_main_with_init_flag_withg_different_syntax(capsys):
+    with patch("sys.stdin", StringIO("NOP()")):
+        main(["-", "--init", "r1=4, r2=5"])
+
+    captured = capsys.readouterr().err
+    assert "R1  = 0x0004 = 4" in captured
+    assert "R2  = 0x0005 = 5" in captured
+
+
+def test_main_with_dash_to_separate_arguments(capsys):
+    with pytest.raises(SystemExit):
+        main(["debug", "--", "--version"])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    # Make sure we get a "file not found" error and not a "cannot use --version with
+    # debug subcommand" error, which would indicate that the dash separator was not
+    # being interpreted correctly.
+    assert 'file "--version" does not exist' in captured.err
+
+
 def test_credits_flag(capsys):
     with pytest.raises(SystemExit):
         main(["--credits"])

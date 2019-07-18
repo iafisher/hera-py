@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The `doc` debugging command, for viewing documentation on individual HERA operations.
 - The parser now understands C-style `#ifdef` and `#ifndef` macros, with `HERA_PY` as the only defined symbol.
 - The register calling convention version of the Tiger standard library function `chr`
+- The `--init` command-line option for initializing registers.
+- New `--throttle=<n>` syntax for the `--throttle` option.
 
 ### Fixed
 - The register calling convention version of the Tiger standard library function `getchar`, previously broken, has been fixed.

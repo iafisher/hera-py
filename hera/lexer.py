@@ -10,7 +10,7 @@ import string
 from typing import Optional, Tuple
 
 from hera.data import Location, Messages, Token
-from hera.utils import NAMED_REGISTERS, PATH_STRING
+from hera.utils import is_register, PATH_STRING
 
 
 class Lexer:
@@ -325,8 +325,3 @@ def escape_char(c):
         return '"'
     else:
         return "\\" + c
-
-
-def is_register(s: str) -> bool:
-    """Return True if the string names a register."""
-    return (s[0] in "rR" and s[1:].isdigit()) or s.lower() in NAMED_REGISTERS

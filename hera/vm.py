@@ -63,6 +63,10 @@ class VirtualMachine:
         self.warned_for_overflow = False
         self.warning_count = 0
 
+        # Initialize registers according to --init flag.
+        for dest, val in self.settings.init:
+            self.registers[dest] = val
+
     def copy(self) -> "VirtualMachine":
         """Return a copy of the virtual machine."""
         ret = copy.copy(self)

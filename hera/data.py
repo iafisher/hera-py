@@ -29,6 +29,8 @@ class Settings:
         self.data = False
         # Where is the start of the data segment?
         self.data_start = DEFAULT_DATA_START
+        # How should the registers of the virtual machine be initialized?
+        self.init = []
         # What is the program's mode (e.g., "debug", "assemble")?
         self.mode = mode
         # Are debugging operations allowed?

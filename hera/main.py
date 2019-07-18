@@ -2,18 +2,18 @@
 The command-line entry point into hera-py.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: March 2019
+Version: July 2019
 """
 import functools
 import sys
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from .assembler import assemble_and_print
 from .data import HERAError, Settings, VOLUME_QUIET, VOLUME_VERBOSE
 from .debugger import debug
 from .loader import load_program_from_file
 from .op import disassemble
-from .utils import format_int, Path, read_file_or_stdin
+from .utils import format_int, Path, read_file_or_stdin, register_to_index
 from .vm import VirtualMachine
 
 
@@ -137,7 +137,12 @@ def main_disassemble(path: str, settings: Settings) -> None:
 
 
 def parse_args(argv: Optional[List[str]]) -> Settings:
-    """Parse the command-line argument list into a Settings object."""
+    """
+    Parse the command-line argument list into a Settings object.
+
+    I'm rolling my own argument-parsing instead of using a library for maximum
+    flexibility.
+    """
     if argv is None:
         argv = sys.argv[1:]
 
@@ -150,16 +155,27 @@ def parse_args(argv: Optional[List[str]]) -> Settings:
         longarg = short_to_long(arg)
         if longarg == "--":
             after_flags = True
-        elif longarg in FLAGS:
-            # --throttle is the only flag that takes an argument.
+        elif not after_flags and longarg in FLAGS:
+            # --throttle and --init are the only flag that takes an argument.
             if longarg == "--throttle":
                 if i == len(argv) - 1 or not argv[i + 1].isdigit():
                     sys.stderr.write("--throttle takes one integer argument.\n")
                     sys.exit(1)
                 flags[longarg] = int(argv[i + 1])
                 i += 1
+            elif longarg == "--init":
+                if i == len(argv) - 1:
+                    sys.stderr.write("--init takes one argument.\n")
+                    sys.exit(1)
+                flags[longarg] = argv[i + 1]
+                i += 1
             else:
                 flags[longarg] = True
+        # Special syntax for --init and --throttle.
+        elif not after_flags and longarg.startswith("--throttle"):
+            flags["--throttle"] = int(longarg[len("--throttle=") :])
+        elif not after_flags and longarg.startswith("--init"):
+            flags["--init"] = longarg[len("--init=") :]
         elif not after_flags and longarg.startswith("-") and len(longarg) > 1:
             sys.stderr.write("Unrecognized flag: " + arg + "\n")
             sys.exit(1)
@@ -242,6 +258,14 @@ def parse_args(argv: Optional[List[str]]) -> Settings:
     if flags["--big-stack"]:
         # Arbitrary value copied over from HERA-C.
         settings.data_start = 0xC167
+    if flags["--init"] is False:
+        settings.init = []
+    else:
+        settings.init = parse_init_string(flags["--init"])
+        if settings.init is None:
+            sys.stderr.write("Invalid syntax for --init argument.\n\n")
+            sys.stderr.write('Sample correct syntax: --init="r1=5, r2=7"\n')
+            sys.exit(1)
     settings.no_debug_ops = flags["--no-debug-ops"]
     settings.obfuscate = flags["--obfuscate"]
     settings.stdout = flags["--stdout"]
@@ -266,6 +290,36 @@ def short_to_long(arg: str) -> str:
         return "--quiet"
     else:
         return arg
+
+
+def parse_init_string(initstr: str) -> Optional[List[Tuple[int, int]]]:
+    """
+    Parse the argument to --init into a list of (index, value) pairs.
+
+    Return None if the string is ill-formatted.
+    """
+    initstr = initstr.replace(",", " ")
+    assignments = initstr.split()
+    ret = []
+    for asgn in assignments:
+        try:
+            lhs, rhs = asgn.split("=", maxsplit=1)
+        except ValueError:
+            return None
+
+        try:
+            dest = register_to_index(lhs)
+        except HERAError:
+            return None
+
+        try:
+            val = int(rhs, base=0)
+        except ValueError:
+            return None
+
+        ret.append((dest, val))
+
+    return ret
 
 
 def dump_state(vm: VirtualMachine, settings: Settings) -> None:
@@ -323,6 +377,7 @@ FLAGS = {
     "--credits",
     "--data",
     "--help",
+    "--init",
     "--no-color",
     "--no-debug-ops",
     "--obfuscate",
@@ -349,6 +404,7 @@ PICKY_FLAGS = {
     "--code": ["assemble"],
     "--data": ["assemble"],
     "--stdout": ["assemble"],
+    "--init": ["", "debug"],
 }
 
 VERSION = "hera-py 0.8.1 for HERA version 2.4"
@@ -381,6 +437,10 @@ Common options:
 
 Interpreter and debugger options:
     --big-stack        Reserve more space for the stack.
+    --init=<str>
+    --init <str>       Initialize registers with the given expression,
+                       e.g. "r1=5, r2=6"
+    --throttle=<n>
     --throttle <n>     Exit after <n> instructions have been executed.
     --warn-return-off  Do not print warnings for invalid RETURN addresses.
 

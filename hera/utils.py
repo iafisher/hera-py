@@ -75,6 +75,11 @@ def register_to_index(rname: str) -> int:
     raise HERAError("{} is not a valid register".format(original))
 
 
+def is_register(s: str) -> bool:
+    """Return True if the string names a register."""
+    return (s[0] in "rR" and s[1:].isdigit()) or s.lower() in NAMED_REGISTERS
+
+
 def format_int(v: int, *, spec="xdsc") -> str:
     """
     Return a string of the form "... = ... = ..." where each ellipsis stands for a
