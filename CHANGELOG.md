@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 Nothing yet!
 
 
+## [1.0.2] - 2019-10-17
+### Fixed
+- Runtime errors on Python 3.7 due to use of typing library.
+
+
 ## [1.0.0] - 2019-08-28
 ### Added
 - The `doc` debugging command, for viewing documentation on individual HERA operations.

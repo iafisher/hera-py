@@ -16,6 +16,9 @@ from .utils import format_int, Path, read_file_or_stdin, register_to_index
 from .vm import VirtualMachine
 
 
+VERSION = "hera-py 1.0.2 for HERA version 2.4"
+
+
 def external_main(argv=None) -> None:
     """
     A wrapper around main that ignores its return value, which would otherwise be
@@ -406,7 +409,6 @@ PICKY_FLAGS = {
     "--init": ["", "debug"],
 }
 
-VERSION = "hera-py 1.0.1 for HERA version 2.4"
 CREDITS = (
     VERSION
     + """
