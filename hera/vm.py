@@ -6,7 +6,6 @@ Version: February 2019
 """
 import copy
 import sys
-from typing import List, Tuple  # noqa: F401
 
 from .data import Program, Settings
 from .utils import print_warning

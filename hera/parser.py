@@ -16,7 +16,6 @@ Version: July 2019
 """
 import os.path
 import re
-from typing import List, Optional, Set, Tuple, Union  # noqa: F401
 
 from .data import HERAError, Messages, Settings, Token
 from .lexer import Lexer
@@ -32,7 +31,7 @@ from .utils import Path, PATH_STRING, read_file, register_to_index
 
 def parse(
     text: str, *, path=PATH_STRING, settings=Settings()
-) -> Tuple[List[AbstractOperation], Messages]:
+) -> "Tuple[List[AbstractOperation], Messages]":
     """
     Parse a HERA program.
 
@@ -55,7 +54,7 @@ class Parser:
         self.settings = settings
         self.messages = Messages()
 
-    def parse(self) -> List[AbstractOperation]:
+    def parse(self) -> "List[AbstractOperation]":
         if self.lexer.path:
             self.visited.add(get_canonical_path(self.lexer.path))
 
@@ -69,7 +68,7 @@ class Parser:
         self.messages.extend(self.lexer.messages)
         return ops
 
-    def match_program(self) -> List[AbstractOperation]:
+    def match_program(self) -> "List[AbstractOperation]":
         """Match an entire program."""
         expecting_brace = False
         ops = []
@@ -107,7 +106,7 @@ class Parser:
 
         return ops
 
-    def match_op(self, name_tkn: Token) -> Optional[AbstractOperation]:
+    def match_op(self, name_tkn: Token) -> "Optional[AbstractOperation]":
         """
         Match an operation, assuming that self.lexer.tkn is on the left parenthesis.
         """
@@ -134,7 +133,7 @@ class Parser:
         Token.MINUS,
     }
 
-    def match_optional_arglist(self) -> Optional[List[Token]]:
+    def match_optional_arglist(self) -> "Optional[List[Token]]":
         """
         Match zero or more comma-separated values. Exits with the right parenthesis as
         the current token. Make sure to distinguish between a None return value (the
@@ -180,7 +179,7 @@ class Parser:
 
         return args if not hit_error else None
 
-    def match_value(self) -> Optional[Token]:
+    def match_value(self) -> "Optional[Token]":
         """Match a value (e.g., an integer, a register)."""
         if self.lexer.tkn.type == Token.INT:
             return self.match_int()
@@ -229,7 +228,7 @@ class Parser:
         self.lexer.tkn.value = arg_as_int
         return self.lexer.tkn
 
-    def match_include(self) -> List[AbstractOperation]:
+    def match_include(self) -> "List[AbstractOperation]":
         """Match an #include statement."""
         root_path = self.lexer.path
         tkn = self.lexer.next_token()
@@ -272,7 +271,7 @@ class Parser:
         self.expect(Token.LBRACE, "expected left curly brace")
         self.lexer.next_token()
 
-    def expand_angle_include(self, include_path: Token) -> List[AbstractOperation]:
+    def expand_angle_include(self, include_path: Token) -> "List[AbstractOperation]":
         """
         Given a path to a system library from an #include <...> statement, retrieve
         the library, parse it, and return the HERA operations.
@@ -309,7 +308,7 @@ class Parser:
         self.lexer = old_lexer
         return ops
 
-    def expect(self, types: Union[str, Set[str]], msg="unexpected token") -> bool:
+    def expect(self, types: "Union[str, Set[str]]", msg="unexpected token") -> bool:
         """
         Expect the current token to be one of the types in `types`, and record an error
         and return False if it is not.
@@ -329,19 +328,19 @@ class Parser:
         else:
             return True
 
-    def skip_until(self, types: Set[str]) -> None:
+    def skip_until(self, types: "Set[str]") -> None:
         """Keep consuming tokens until a token whose type is in `types` is reached."""
         types.add(Token.EOF)
         while self.lexer.tkn.type not in types:
             self.lexer.next_token()
 
-    def err(self, msg: str, tkn: Optional[Token] = None) -> None:
+    def err(self, msg: str, tkn: "Optional[Token]" = None) -> None:
         """Record an error. Note that this does not immediately print to the console."""
         if tkn is None:
             tkn = self.lexer.tkn
         self.messages.err(msg, tkn.location)
 
-    def warn(self, msg: str, tkn: Optional[Token] = None) -> None:
+    def warn(self, msg: str, tkn: "Optional[Token]" = None) -> None:
         """
         Record a warning. Note that this does not immediately print to the console.
         """

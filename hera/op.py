@@ -36,7 +36,6 @@ Version: July 2019
 import json
 import sys
 from contextlib import suppress
-from typing import Dict, List, Optional, Union
 
 from hera import stdlib
 from hera.data import Constant, DataLabel, HERAError, Label, Location, Messages, Token
@@ -68,7 +67,7 @@ class AbstractOperation:
         else:
             self.loc = None
 
-    def typecheck(self, symbol_table: Dict[str, int]) -> Messages:
+    def typecheck(self, symbol_table: "Dict[str, int]") -> Messages:
         """
         Type-check the operation. Subclasses do not generally need to override this
         method, as long as they provide a P class field listing their parameter types.
@@ -83,7 +82,7 @@ class AbstractOperation:
 
         return messages.extend(check_arglist(self.P, self.tokens, symbol_table))
 
-    def convert(self) -> List["AbstractOperation"]:
+    def convert(self) -> "List[AbstractOperation]":
         """
         Convert the pseudo-operation into a list of real operations. Only pseudo-ops
         need to override this method.
@@ -1860,7 +1859,7 @@ def disassemble(v: int) -> AbstractOperation:
     raise HERAError("bit pattern does not correspond to HERA instruction")
 
 
-def match_bitvector(pattern: str, v: int) -> Union[List, bool]:
+def match_bitvector(pattern: str, v: int) -> "Union[List, bool]":
     """
     Try to match the 16-bit integer `v` against `pattern`. Return a list of extracted
     arguments if `v` matches, or False otherwise.
@@ -1907,7 +1906,7 @@ def match_bitvector(pattern: str, v: int) -> Union[List, bool]:
     return args
 
 
-def substitute_bitvector(pattern: str, args: List[int]) -> bytes:
+def substitute_bitvector(pattern: str, args: "List[int]") -> bytes:
     """
     Given a 16-bit pattern and a list of arguments, substitute the arguments into the
     pattern to yield a two-byte machine operation.
@@ -1929,7 +1928,7 @@ def substitute_bitvector(pattern: str, args: List[int]) -> bytes:
     return bytes([high_byte, low_byte])
 
 
-def substitute_half_a_bitvector(pattern: str, args: List[int]) -> int:
+def substitute_half_a_bitvector(pattern: str, args: "List[int]") -> int:
     """
     Helper function for `substitute_bitvector`. Takes an 8-bit pattern and returns a
     single byte.
@@ -1981,7 +1980,7 @@ def check_arglist(argtypes, args, symbol_table):
     return messages
 
 
-def check_register(arg) -> Optional[str]:
+def check_register(arg) -> "Optional[str]":
     """
     Check that `arg` is a register. Return an error message as a string if it is not.
     """
@@ -1994,7 +1993,7 @@ def check_register(arg) -> Optional[str]:
             return "expected register"
 
 
-def check_register_or_label(arg, symbol_table: Dict[str, int]) -> Optional[str]:
+def check_register_or_label(arg, symbol_table: "Dict[str, int]") -> "Optional[str]":
     """
     Check that `arg` is a register or a label. Return an error message as a string if it
     is not.
@@ -2017,7 +2016,7 @@ def check_register_or_label(arg, symbol_table: Dict[str, int]) -> Optional[str]:
         return "expected register or label"
 
 
-def check_label(arg) -> Optional[str]:
+def check_label(arg) -> "Optional[str]":
     """Check that `arg` is a label. Return an error message as a string if it is not."""
     if arg.type == Token.SYMBOL:
         return None
@@ -2025,7 +2024,7 @@ def check_label(arg) -> Optional[str]:
         return "expected label"
 
 
-def check_string(arg) -> Optional[str]:
+def check_string(arg) -> "Optional[str]":
     """
     Check that `arg` is a string literal. Return an error message as a string if it is
     not.
@@ -2036,7 +2035,7 @@ def check_string(arg) -> Optional[str]:
         return None
 
 
-def check_in_range(arg, symbol_table, *, lo, hi, labels=False) -> Optional[str]:
+def check_in_range(arg, symbol_table, *, lo, hi, labels=False) -> "Optional[str]":
     """
     Check that `arg` is an integer (or a symbol resolving to an integer) within the
     bounds established by `lo` and `hi`.

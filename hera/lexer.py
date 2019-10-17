@@ -7,7 +7,6 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 import string
-from typing import Optional, Tuple
 
 from hera.data import Location, Messages, Token
 from hera.utils import is_register, PATH_STRING
@@ -16,7 +15,7 @@ from hera.utils import is_register, PATH_STRING
 class Lexer:
     """A lexer for HERA (and for the debugging mini-language)."""
 
-    def __init__(self, text: str, *, path: Optional[str] = PATH_STRING) -> None:
+    def __init__(self, text: str, *, path: "Optional[str]" = PATH_STRING) -> None:
         self.text = text
         self.file_lines = text.splitlines()
         if self.text.endswith("\n"):
@@ -116,7 +115,7 @@ class Lexer:
 
     HEX_DIGITS = "0123456789abcdefABCDEF"
 
-    def read_escape_char(self) -> Tuple[str, int]:
+    def read_escape_char(self) -> "Tuple[str, int]":
         """
         Read an escape sequence (assuming `self.text[self.position] == "\\"`) and return
         a pair (value, length), where `value` is what the escape sequence resolves to

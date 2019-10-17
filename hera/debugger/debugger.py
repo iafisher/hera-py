@@ -17,7 +17,6 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: February 2019
 """
 import copy
-from typing import Dict, List, Optional
 
 try:
     # On systems that don't have libreadline installed, this import results in an
@@ -64,7 +63,7 @@ class Debugger:
         self.old.breakpoints = self.breakpoints.copy()
         self.old.vm = self.vm.copy()
 
-    def get_breakpoints(self) -> Dict[int, str]:
+    def get_breakpoints(self) -> "Dict[int, str]":
         """Get the breakpoints dictionary."""
         return self.breakpoints
 
@@ -118,7 +117,7 @@ class Debugger:
             index = self.vm.pc
         return self.program.code[index].original
 
-    def real_ops(self) -> List[AbstractOperation]:
+    def real_ops(self) -> "List[AbstractOperation]":
         """
         Return the real operations that correspond to the current original operation.
         """
@@ -173,7 +172,7 @@ class Debugger:
 
         return loc
 
-    def find_label(self, ino: int) -> Optional[str]:
+    def find_label(self, ino: int) -> "Optional[str]":
         """Find a label, if one exists, corresponding to the instruction number."""
         for symbol, value in self.program.symbol_table.items():
             if value == ino and isinstance(value, Label):
@@ -189,7 +188,7 @@ class Debugger:
         return len(self.program.code) == 0
 
 
-def reverse_lookup_label(symbol_table: Dict[str, int], value: int) -> Optional[str]:
+def reverse_lookup_label(symbol_table: "Dict[str, int]", value: int) -> "Optional[str]":
     """
     Return the name of the label that maps to `value`, or None if no such label is
     found. Constants and data labels are ignored.

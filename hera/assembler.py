@@ -8,12 +8,11 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: March 2019
 """
 import textwrap
-from typing import List, Tuple
 
 from .data import Program, Settings
 
 
-def assemble(program: Program) -> Tuple[List[bytes], List[bytes]]:
+def assemble(program: Program) -> "Tuple[List[bytes], List[bytes]]":
     """
     Assemble a program into machine code. The return value is (code, data), where
     `code` is a list of HERA operations encoded as bytes objects (two bytes per op), and

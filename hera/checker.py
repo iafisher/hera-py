@@ -12,7 +12,6 @@ Author:  Ian Fisher (iafisher@protonmail.com)
 Version: Feburary 2019
 """
 from contextlib import suppress
-from typing import Dict, List, Optional, Set, Tuple  # noqa: F401
 
 from .data import (
     Constant,
@@ -38,8 +37,8 @@ from .utils import out_of_range
 
 
 def check(
-    oplist: List[AbstractOperation], settings: Settings
-) -> Tuple[Program, Messages]:
+    oplist: "List[AbstractOperation]", settings: Settings
+) -> "Tuple[Program, Messages]":
     """
     Type-check and program and preprocess it.
 
@@ -72,8 +71,8 @@ def check(
 
 
 def typecheck(
-    program: List[AbstractOperation], settings=Settings()
-) -> Tuple[Dict[str, int], Messages]:
+    program: "List[AbstractOperation]", settings=Settings()
+) -> "Tuple[Dict[str, int], Messages]":
     """
     Type-check the program, and return its symbol table.
 
@@ -117,7 +116,7 @@ def typecheck(
     return (symbol_table, messages)
 
 
-def check_symbol_redeclaration(program: List[AbstractOperation]) -> Messages:
+def check_symbol_redeclaration(program: "List[AbstractOperation]") -> Messages:
     """Check if any symbols are redeclared in the program."""
     messages = Messages()
     symbols = set()  # type: Set[str]
@@ -134,8 +133,8 @@ def check_symbol_redeclaration(program: List[AbstractOperation]) -> Messages:
 
 
 def get_labels(
-    program: List[AbstractOperation], settings: Settings
-) -> Tuple[Dict[str, int], Messages]:
+    program: "List[AbstractOperation]", settings: Settings
+) -> "Tuple[Dict[str, int], Messages]":
     """
     Return a dictionary mapping the labels and data labels (but not the constants) of
     the program to their concrete values.
@@ -222,8 +221,8 @@ def operation_length(op: AbstractOperation) -> int:
 
 
 def convert_ops(
-    oplist: List[AbstractOperation], symbol_table: Dict[str, int]
-) -> Tuple[List[AbstractOperation], Messages]:
+    oplist: "List[AbstractOperation]", symbol_table: "Dict[str, int]"
+) -> "Tuple[List[AbstractOperation], Messages]":
     """
     Convert the operations from pseudo-ops to real ops, and substitute values for
     labels and constants.
@@ -257,7 +256,7 @@ def convert_ops(
 
 
 def substitute_label(
-    op: AbstractOperation, symbol_table: Dict[str, int]
+    op: AbstractOperation, symbol_table: "Dict[str, int]"
 ) -> AbstractOperation:
     """Substitute any symbol in the operation with its concrete value."""
     for i, tkn in enumerate(op.tokens):
@@ -267,7 +266,7 @@ def substitute_label(
     return op
 
 
-def labels_to_line_numbers(oplist: List[AbstractOperation]) -> Dict[str, str]:
+def labels_to_line_numbers(oplist: "List[AbstractOperation]") -> "Dict[str, str]":
     """
     Return a dictionary that maps from label names to their locations in the program,
     as a string of the form "<filepath>:<lineno>".

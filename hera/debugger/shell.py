@@ -7,7 +7,6 @@ Version: March 2019
 import copy
 import functools
 import textwrap
-from typing import List, Optional
 
 from . import miniparser
 from .debugger import Debugger
@@ -184,7 +183,7 @@ class Shell:
         assemble_and_print(program, settings)
 
     @mutates
-    def handle_assign(self, args: List[str]) -> None:
+    def handle_assign(self, args: "List[str]") -> None:
         """
         assign <x> <y>
           Assign the value of y to x. x may be a register, a memory location, or the
@@ -250,7 +249,7 @@ class Shell:
             print("Eval error: " + str(e) + ".")
 
     @mutates
-    def handle_break(self, args: List[str]) -> None:
+    def handle_break(self, args: "List[str]") -> None:
         """
         break
           Print all current breakpoints.
@@ -290,7 +289,7 @@ class Shell:
                 print("Breakpoint set in file {0.path}, line {0.line}.".format(loc))
 
     @mutates
-    def handle_clear(self, args: List[str]) -> None:
+    def handle_clear(self, args: "List[str]") -> None:
         """
         clear <location>
           Clear a breakpoint at the given line. Location formats accepted are the same
@@ -322,7 +321,7 @@ class Shell:
                         print("No breakpoint at that location.")
 
     @mutates
-    def handle_continue(self, args: List[str]) -> None:
+    def handle_continue(self, args: "List[str]") -> None:
         """
         continue
           Execute the program until a breakpoint is encountered or the program
@@ -338,7 +337,7 @@ class Shell:
 
         self.print_current_op()
 
-    def handle_dis(self, args: List[str]) -> None:
+    def handle_dis(self, args: "List[str]") -> None:
         """
         dis <n>
           Interpret the 16-bit integer as a HERA machine instruction, and disassemble
@@ -404,7 +403,7 @@ class Shell:
         labels, and avoid using relative branching instructions at all.
     """
 
-    def handle_doc(self, args: List[str]) -> None:
+    def handle_doc(self, args: "List[str]") -> None:
         """
         doc <opname>...
           For each operation, print a message detailing its use and behavior.
@@ -476,7 +475,7 @@ class Shell:
         vm.pc = opc
 
     @mutates
-    def handle_goto(self, args: List[str]) -> None:
+    def handle_goto(self, args: "List[str]") -> None:
         """
         goto <loc>
           Jump to the given location (either a line number or a label) without
@@ -496,7 +495,7 @@ class Shell:
 
         self.print_current_op()
 
-    def handle_help(self, args: List[str]) -> None:
+    def handle_help(self, args: "List[str]") -> None:
         """
         help
           Print a summary of all debugging commands.
@@ -522,7 +521,7 @@ class Shell:
                 if i != len(args) - 1:
                     print()
 
-    def handle_info(self, args: List[str]) -> None:
+    def handle_info(self, args: "List[str]") -> None:
         """
         info <arg>...
           Print information about the current state of the program. Valid arguments to
@@ -554,7 +553,7 @@ class Shell:
             if i != len(fullargs) - 1:
                 print()
 
-    def handle_list(self, args: List[str]) -> None:
+    def handle_list(self, args: "List[str]") -> None:
         """
         list
           Print the current line of source and the three previous and next lines.
@@ -578,7 +577,7 @@ class Shell:
         else:
             print("Program has finished executing.")
 
-    def handle_ll(self, args: List[str]) -> None:
+    def handle_ll(self, args: "List[str]") -> None:
         """
         ll
           Print every line of the current file's source code.
@@ -594,7 +593,7 @@ class Shell:
             print("Program has finished executing.")
 
     @mutates
-    def handle_next(self, args: List[str]) -> None:
+    def handle_next(self, args: "List[str]") -> None:
         """
         next
           Execute the current line. If the current line is a CALL instruction, the
@@ -625,7 +624,7 @@ class Shell:
         self.print_current_op()
 
     @mutates
-    def handle_off(self, args: List[str]) -> None:
+    def handle_off(self, args: "List[str]") -> None:
         """
         off <f1> <f2>...
           Turn off all the HERA machine flags listed. Flags may be given in long
@@ -646,7 +645,7 @@ class Shell:
             setattr(self.debugger.vm, flag, False)
 
     @mutates
-    def handle_on(self, args: List[str]) -> None:
+    def handle_on(self, args: "List[str]") -> None:
         """
         on <f1> <f2>...
           Turn on all the HERA machine flags listed. Flags may be given in long form
@@ -749,7 +748,7 @@ class Shell:
             print(self.format_int(value, spec))
 
     @mutates
-    def handle_restart(self, args: List[str]) -> None:
+    def handle_restart(self, args: "List[str]") -> None:
         """
         restart
           Restart execution of the program from the beginning. All registers and
@@ -763,7 +762,7 @@ class Shell:
         self.print_current_op()
 
     @mutates
-    def handle_step(self, args: List[str]) -> None:
+    def handle_step(self, args: "List[str]") -> None:
         """
         step
           Step into the execution of a function.  The step command is only valid when
@@ -780,7 +779,7 @@ class Shell:
         self.debugger.next(step=True)
         self.print_current_op()
 
-    def handle_undo(self, args: List[str]) -> None:
+    def handle_undo(self, args: "List[str]") -> None:
         """
         undo
           Undo the last operation that changed the state of the debugger.
@@ -966,7 +965,9 @@ class Shell:
         else:
             print("Program has finished executing.")
 
-    def print_range_of_ops(self, loc: Location, context: Optional[int] = None) -> None:
+    def print_range_of_ops(
+        self, loc: Location, context: "Optional[int]" = None
+    ) -> None:
         """
         Print the line indicated by `loc`, as well as `context` previous and following
         lines. If `context` is None, the whole file is printed.

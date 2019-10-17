@@ -6,7 +6,6 @@ Version: July 2019
 """
 import functools
 import sys
-from typing import List, Optional, Tuple
 
 from .assembler import assemble_and_print
 from .data import HERAError, Settings, VOLUME_QUIET, VOLUME_VERBOSE
@@ -25,7 +24,7 @@ def external_main(argv=None) -> None:
     main(argv)
 
 
-def main(argv: Optional[List[str]] = None) -> Optional[VirtualMachine]:
+def main(argv: "Optional[List[str]]" = None) -> "Optional[VirtualMachine]":
     """
     The entry point into hera-py.
 
@@ -136,7 +135,7 @@ def main_disassemble(path: str, settings: Settings) -> None:
             print("// Unknown instruction: {}".format(line))
 
 
-def parse_args(argv: Optional[List[str]]) -> Settings:
+def parse_args(argv: "Optional[List[str]]") -> Settings:
     """
     Parse the command-line argument list into a Settings object.
 
@@ -292,7 +291,7 @@ def short_to_long(arg: str) -> str:
         return arg
 
 
-def parse_init_string(initstr: str) -> Optional[List[Tuple[int, int]]]:
+def parse_init_string(initstr: str) -> "Optional[List[Tuple[int, int]]]":
     """
     Parse the argument to --init into a list of (index, value) pairs.
 

@@ -20,7 +20,6 @@ setup(
     author="Ian Fisher",
     author_email="iafisher@protonmail.com",
     entry_points={"console_scripts": ["hera = hera.main:external_main"]},
-    install_requires=["typing==3.6.6"],  # typing module is necessary for Python 3.4
     packages=find_packages(exclude=["tests"]),
     project_urls={"Source": "https://github.com/iafisher/hera-py"},
     classifiers=[
