@@ -170,7 +170,7 @@ Nothing yet!
 - `break` debugging command now accepts labels as arguments.
 - Constants and data labels cannot be used as branch targets.
 - Re-defined constants prevent execution, instead of just printing an error message.
-- Passing too few parameters to SET no longer crashes the program.
+- Passing too few parameters to `SET` no longer crashes the program.
 - Constants can no longer be used before they are declared.
 - Invalid zero-prefixed octal literals no longer crash the interpreter.
 - Labels are calculated correctly after branches on registers.
@@ -188,10 +188,10 @@ Nothing yet!
 - Interactive debugging!
 - Support for `PC_ret` and `FP_alt` named registers.
 - Support for `#include` directive.
-- Runtime errors for use of SWI and RTI instructions now show line of code, and are only emitted once per program run.
+- Runtime errors for use of `SWI` and `RTI` instructions now show line of code, and are only emitted once per program run.
 
 ### Fixed
-- DSKIP with a named constant argument works correctly.
+- `DSKIP` with a named constant argument works correctly.
 - Symbols (labels, constants and data labels) cannot be redefined.
 
 
