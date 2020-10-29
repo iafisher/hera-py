@@ -67,7 +67,7 @@ hera-py also supports several features that HERA-C does not:
 HERA-C has a few features that hera-py does not:
   - C-style #define macros (and more generally the ability to embed arbitrary C++ code in HERA programs)
 
-hera-py generally runs faster than HERA-C on small and medium-sized programs, while HERA-C is faster for very large programs.
+Small to medium-sized programs generally run faster with hera-py than with HERA-C, while very large programs are typically faster with HERA-C.
 
 Hassem is the current HERA assembler used at Haverford. hera-py has better error messages than Hassem, allows the user greater control of output (e.g., with the `--stdout` flag), and fixes some Hassem bugs.
 
