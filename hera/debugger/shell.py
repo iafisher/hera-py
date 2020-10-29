@@ -1,7 +1,7 @@
 """
 The interactive shell interface to the HERA debugger.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: March 2019
 """
 import copy

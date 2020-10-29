@@ -1,7 +1,7 @@
 """
 Definitions of important data structures for hera-py.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: February 2019
 """
 from collections import namedtuple

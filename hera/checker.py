@@ -8,7 +8,7 @@ code.
 Note that the code for type-checking individual operations lives in hera/op.py. This
 module contains the code for program-wide type-checking.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: Feburary 2019
 """
 from contextlib import suppress

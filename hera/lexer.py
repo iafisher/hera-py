@@ -3,7 +3,7 @@ The lexer for HERA and the debugging mini-language.
 
 Consumed by hera/parser.py and hera/debugger/miniparser.py.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: February 2019
 """
 import string

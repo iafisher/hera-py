@@ -1,7 +1,7 @@
 """
 The parser for the debugger's expression mini-language.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: January 2019
 """
 from collections import namedtuple

@@ -13,7 +13,7 @@ to two real ops, SETLO and SETHI.
 Internally, the debugger operates on real ops, but whenever it displays output to the
 user, it must be in terms of original ops so that the user is not confused.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: February 2019
 """
 import copy

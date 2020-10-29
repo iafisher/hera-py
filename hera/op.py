@@ -30,7 +30,7 @@ Once the operation's class has been defined, make an entry in the `name_to_class
 dictonary in this module. After doing this, the operation should work throughout the
 hera-py toolkit (interpreter, debugger, assembler, etc.)!
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: July 2019
 """
 import json

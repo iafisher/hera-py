@@ -1,7 +1,7 @@
 """
 The virtual HERA machine.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: February 2019
 """
 import copy

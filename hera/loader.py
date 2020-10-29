@@ -2,7 +2,7 @@
 Convenient interface for parsing, type-checking and preprocessing a HERA program
 contained in a string or file.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: March 2019
 """
 from .checker import check

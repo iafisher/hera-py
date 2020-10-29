@@ -1,7 +1,7 @@
 """
 The command-line entry point into hera-py.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: July 2019
 """
 import functools
@@ -413,7 +413,7 @@ CREDITS = (
     VERSION
     + """
 
-Developed by Ian Fisher (HC '19) - iafisher@protonmail.com."""
+Written by Ian Fisher (HC '19) - iafisher@fastmail.com."""
 )
 HELP = """\
 hera: an interpreter for the Haverford Educational RISC Architecture.

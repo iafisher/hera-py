@@ -18,7 +18,7 @@ setup(
     long_description_content_type="text/markdown",
     license="MIT",
     author="Ian Fisher",
-    author_email="iafisher@protonmail.com",
+    author_email="iafisher@fastmail.com",
     entry_points={"console_scripts": ["hera = hera.main:external_main"]},
     packages=find_packages(exclude=["tests"]),
     project_urls={"Source": "https://github.com/iafisher/hera-py"},

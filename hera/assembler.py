@@ -4,7 +4,7 @@ The HERA assembler.
 The binary encodings of individual HERA operations are defined in op.py; this module
 defines the imperative logic to convert a HERA program into machine code.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: March 2019
 """
 import textwrap

@@ -1,7 +1,7 @@
 """
 Utilities for the hera-py system.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: February 2019
 """
 import sys

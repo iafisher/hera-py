@@ -11,7 +11,7 @@ Abstract grammar:
 
 The lexical structure of the language is defined in `hera/lexer.py`.
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: July 2019
 """
 import os.path

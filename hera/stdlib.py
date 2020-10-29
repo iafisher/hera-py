@@ -10,7 +10,7 @@ either because the operation accesses system resources like I/O that the HERA sp
 no provision for (e.g., `print`), or because implementing it in HERA would be too
 time-consuming (e.g., `div`).
 
-Author:  Ian Fisher (iafisher@protonmail.com)
+Author:  Ian Fisher (iafisher@fastmail.com)
 Version: February 2019
 """
 import sys
