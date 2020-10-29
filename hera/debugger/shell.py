@@ -76,8 +76,16 @@ class Shell:
             print("Cannot debug an empty program.")
             return
 
+        print("Welcome to the HERA debugger.")
+        print()
+        print("Enter 'help' to see a list of valid commands.")
+        print("Enter 'quit' or press Ctrl+D to exit.")
+        print()
+        print()
+
         self.print_current_op()
 
+        previous = None
         while True:
             try:
                 response = input(">>> ").strip()
@@ -86,11 +94,18 @@ class Shell:
                 break
 
             if not response:
-                continue
-            else:
-                should_continue = self.handle_command(response)
-                if should_continue is False:
-                    break
+                if previous:
+                    response = previous
+                    print("(executing previous command: {})".format(previous))
+                    print()
+                else:
+                    continue
+
+            should_continue = self.handle_command(response)
+            if should_continue is False:
+                break
+
+            previous = response
 
     def handle_command(self, response: str) -> bool:
         """
@@ -1111,6 +1126,6 @@ Available commands:
 
     <x> = <y>       Alias for "assign <x> <y>".
 
-Command names can generally be abbreviated with a unique prefix, e.g. "n" for
-"next".
-"""
+Commands can be abbreviated with a unique prefix, e.g. "n" for "next".
+
+Enter "help <command>" for detailed help on a specific command."""

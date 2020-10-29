@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 Nothing yet!
 
 
+## [1.0.3] - 2020-10-28
+### Added
+- Start-up message for debugger with instructions for new users.
+- Entering a blank line in the debugger repeats the previous command, like in `gdb`.
+
+
 ## [1.0.2] - 2019-10-17
 ### Fixed
 - Runtime errors on Python 3.7 due to use of typing library.
