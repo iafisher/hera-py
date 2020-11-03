@@ -9,7 +9,7 @@ with open(os.path.join(dpath, "README.md"), "r") as f:
 
 setup(
     name="hera-py",
-    version="1.0.3",
+    version="1.0.4",
     description=(
         "Interpreter for the Haverford Educational RISC Architecture (HERA) "
         "assembly language"

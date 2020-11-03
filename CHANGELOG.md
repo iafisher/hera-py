@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 Nothing yet!
 
 
+## [1.0.4] - 2020-11-02
+### Added
+- The command output includes the current version of the HERA language.
+
+
 ## [1.0.3] - 2020-10-28
 ### Added
 - Start-up message for debugger with instructions for new users.
