@@ -16,7 +16,7 @@ Warning: stack has overflowed into data segment, line 2 col 1 of <stdin>
   ^
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1  = 0xc002 = 49154 = -16382
 
     Carry-block flag is OFF
@@ -49,7 +49,7 @@ Warning: consider using "0o" prefix for octal numbers, line 2 col 9 of <stdin>
           ^
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1  = 0x000e = 14
     R2  = 0x000f = 15
 
@@ -81,7 +81,7 @@ Warning: unrecognized backslash escape, line 1 col 11 of <stdin>
             ^
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1  = 0x0075 = 117 = 'u'
 
     All flags are OFF
@@ -105,7 +105,7 @@ Warning: unrecognized backslash escape, line 1 col 18 of <stdin>
                    ^
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1 through R10 are all zero.
 
     All flags are OFF
@@ -129,7 +129,7 @@ Warning: don't use R11 with NOT, line 2 col 9 of <stdin>
           ^
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1 through R10 are all zero.
 
     Carry-block flag is OFF
@@ -157,7 +157,7 @@ Warning: first argument to CALL should be R12, line 1 col 6 of <stdin>
        ^
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1 through R10 are all zero.
 
     All flags are OFF
@@ -181,7 +181,7 @@ Warning: first argument to RETURN should be R12, line 1 col 8 of <stdin>
          ^
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1 through R10 are all zero.
 
     All flags are OFF
@@ -205,7 +205,7 @@ Warning: second argument to RETURN should be R13, line 1 col 13 of <stdin>
               ^
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1 through R10 are all zero.
 
     All flags are OFF
@@ -229,7 +229,7 @@ Warning: #include <HERA.h> is not necessary for hera-py, line 1 col 11 of <stdin
             ^
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1 through R10 are all zero.
 
     All flags are OFF
@@ -261,7 +261,7 @@ Warning: incorrect return address (got 100, expected 3), line 6 col 3 of <stdin>
     ^
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1 through R10 are all zero.
 
     All flags are OFF

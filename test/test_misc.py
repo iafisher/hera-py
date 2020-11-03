@@ -335,7 +335,7 @@ def test_no_extraneous_output(capsys):
         == """\
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1  = 0x002a = 42 = '*'
 
     All flags are OFF

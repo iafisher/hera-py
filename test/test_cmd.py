@@ -148,7 +148,7 @@ def test_main_with_verbose_flag(capsys):
         == """\
 
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1  = 0x002a = 42 = '*'
     R2  = 0x0000 = 0
     R3  = 0x0000 = 0
@@ -296,7 +296,7 @@ def test_dump_state(capsys):
         capsys.readouterr().err
         == """\
 
-Virtual machine state after execution:
+Virtual machine state after execution (HERA v2.4.0):
     R1  = 0x0000 = 0
     R2  = 0x0000 = 0
     R3  = 0x0000 = 0

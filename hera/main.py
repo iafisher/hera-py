@@ -340,7 +340,7 @@ def dump_state(vm: VirtualMachine, settings: Settings) -> None:
         while last_register > 0 and vm.registers[last_register] == 0:
             last_register -= 1
 
-    nprint("\nVirtual machine state after execution:")
+    nprint("\nVirtual machine state after execution (HERA v2.4.0):")
     for i, value in enumerate(vm.registers[1 : last_register + 1], start=1):
         rname = "    R" + str(i) + (" " if i < 10 else "")
         nprint("{} = {}".format(rname, format_int(value)))
