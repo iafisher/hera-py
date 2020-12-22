@@ -671,7 +671,7 @@ class ASL(UnaryOp):
     ASL(Rd, Rb)
       Shift the value of Rb one bit to the left, and store the result in Rd. If the
       carry-block is off and the carry is set, then the bit 1 is shifted in on the
-      left; otherwise 0 is shifted in. The bit shifted out becomes the carry flag.
+      right; otherwise 0 is shifted in. The bit shifted out becomes the carry flag.
 
       ASL sets the sign flag when the result is negative, and the zero flag when the
       result is zero.
@@ -695,16 +695,16 @@ class ASL(UnaryOp):
 
 class ASR(UnaryOp):
     """
-    ASL(Rd, Rb)
-      Shift the value of Rb one bit to the left, and store the result in Rd. If the
-      carry-block is off and the carry is set, then the bit 1 is shifted in on the
-      left; otherwise 0 is shifted in. The bit shifted out becomes the carry flag.
+    ASR(Rd, Rb)
+      Shift the value of Rb one bit to the right, and store the result in Rd. The bit
+      shifted out becomes the carry flag.
 
-      ASL sets the sign flag when the result is negative, and the zero flag when the
+      ASR sets the sign flag when the result is negative, and the zero flag when the
       result is zero.
 
-      The only difference between ASL and LSL is that ASL will additionally set the
-      overflow flag to the same value it would receive after executing ADD(Rd, Rb, Rb).
+      Unlike LSL, LSR and ASL, ASR ignores the carry flag regardless of whether the
+      carry-block is set and always shifts in 0 on the left. The result of ASR is always
+      one-half of the original signed value, rounded towards negative infinity.
     """
 
     BITV = "0011 AAAA 0101 BBBB"
