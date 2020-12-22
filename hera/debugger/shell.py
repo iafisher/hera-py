@@ -8,6 +8,13 @@ import copy
 import functools
 import textwrap
 
+from hera.assembler import assemble_and_print
+from hera.data import DataLabel, HERAError, Label, Location, Program, Settings
+from hera.loader import load_program
+from hera.op import LABEL, OPCODE, Branch, DataOperation, disassemble, name_to_class
+from hera.parser import parse
+from hera.utils import format_int, out_of_range, pad
+
 from . import miniparser
 from .debugger import Debugger
 from .miniparser import (
@@ -19,12 +26,6 @@ from .miniparser import (
     RegisterNode,
     SymbolNode,
 )
-from hera.assembler import assemble_and_print
-from hera.data import DataLabel, HERAError, Label, Location, Program, Settings
-from hera.loader import load_program
-from hera.op import Branch, DataOperation, disassemble, LABEL, name_to_class, OPCODE
-from hera.parser import parse
-from hera.utils import format_int, out_of_range, pad
 
 
 def debug(program: Program, settings: Settings) -> None:
@@ -919,7 +920,7 @@ class Shell:
         """
         vm = self.debugger.vm
         if isinstance(node, IntNode):
-            if node.value >= 2 ** 16 or node.value < -2 ** 15:
+            if node.value >= 2 ** 16 or node.value < -(2 ** 15):
                 raise HERAError("integer literal exceeds 16 bits")
             return node.value
         elif isinstance(node, RegisterNode):

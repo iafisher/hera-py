@@ -17,7 +17,7 @@ def to_u16(n: int) -> int:
     """
     # Note that we allow positive values up to 2**16, but negative values only
     # down to -2**15.
-    if n >= 2 ** 16 or n < -2 ** 15:
+    if n >= 2 ** 16 or n < -(2 ** 15):
         raise HERAError("signed integer too large for 16 bits")
 
     if n < 0:
@@ -42,7 +42,7 @@ def to_u32(n: int) -> int:
     """
     # Note that we allow positive values up to 2**32, but negative values only
     # down to -2**31.
-    if n >= 2 ** 32 or n < -2 ** 31:
+    if n >= 2 ** 32 or n < -(2 ** 31):
         raise HERAError("signed integer too large for 16 bits")
 
     if n < 0:

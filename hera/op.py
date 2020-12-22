@@ -149,10 +149,10 @@ REGISTER = "REGISTER"
 REGISTER_OR_LABEL = "REGISTER_OR_LABEL"
 STRING = "STRING"
 LABEL_TYPE = "LABEL_TYPE"
-I16 = range(-2 ** 15, 2 ** 16)
+I16 = range(-(2 ** 15), 2 ** 16)
 I16_OR_LABEL = "I16_OR_LABEL"
 U16 = range(2 ** 16)
-I8 = range(-2 ** 7, 2 ** 8)
+I8 = range(-(2 ** 7), 2 ** 8)
 I8_OR_LABEL = "I8_OR_LABEL"
 U5 = range(2 ** 5)
 U4 = range(2 ** 4)
@@ -1961,10 +1961,12 @@ def check_arglist(argtypes, args, symbol_table):
             err = check_string(got)
         elif expected == I16_OR_LABEL:
             err = check_in_range(
-                got, symbol_table, lo=-2 ** 15, hi=2 ** 16, labels=True
+                got, symbol_table, lo=-(2 ** 15), hi=2 ** 16, labels=True
             )
         elif expected == I8_OR_LABEL:
-            err = check_in_range(got, symbol_table, lo=-2 ** 7, hi=2 ** 8, labels=True)
+            err = check_in_range(
+                got, symbol_table, lo=-(2 ** 7), hi=2 ** 8, labels=True
+            )
         elif isinstance(expected, range):
             err = check_in_range(got, symbol_table, lo=expected.start, hi=expected.stop)
         else:
