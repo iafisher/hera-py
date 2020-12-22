@@ -308,6 +308,16 @@ def test_SUB_sets_carry_for_equal_operands(vm):
     assert vm.flag_carry
 
 
+def test_SUB_does_not_set_carry_for_equal_operands_with_no_incoming_carry(vm):
+    vm.registers[2] = 12
+    vm.registers[3] = 12
+
+    helper(vm, "SUB(R1, R2, R3)")
+
+    assert vm.registers[1] == to_u16(-1)
+    assert not vm.flag_carry
+
+
 def test_MUL_with_small_positives(vm):
     vm.registers[2] = 4
     vm.registers[3] = 2

@@ -12,6 +12,7 @@ Nothing yet!
 ### Fixed
 - The assembler no longer produces code for debugging instructions like `print_reg`.
 - `ASR` now rounds towards negative infinity for negative numbers instead of zero.
+- `DEC` and `SUB` now set the carry flag correctly in certain edge cases.
 
 
 ## [1.0.4] - 2020-11-02

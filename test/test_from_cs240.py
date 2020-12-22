@@ -19,7 +19,7 @@ def test_aslu_program(capsys):
     assert vm.flag_sign
     assert not vm.flag_zero
     assert not vm.flag_overflow
-    assert not vm.flag_carry
+    assert vm.flag_carry
     assert not vm.flag_carry_block
 
     assert "Warning" not in capsys.readouterr().err

@@ -422,7 +422,7 @@ class SUB(BinaryOp):
         # uints, left - right - borrow might not be.
         result = to_u16((left - right - borrow) & 0xFFFF)
 
-        vm.flag_carry = left >= right
+        vm.flag_carry = left >= (right + borrow)
         vm.flag_overflow = from_u16(result) != from_u16(left) - from_u16(right) - borrow
 
         return result
@@ -573,7 +573,7 @@ class DEC(AbstractOperation):
 
         vm.set_zero_and_sign(result)
         vm.flag_overflow = from_u16(result) != from_u16(original) - value
-        vm.flag_carry = original < value
+        vm.flag_carry = original >= value
         vm.pc += 1
 
     def assemble(self):

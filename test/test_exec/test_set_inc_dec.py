@@ -288,7 +288,7 @@ def test_DEC_sets_sign_flag(vm):
 def test_DEC_sets_carry_flag(vm):
     helper(vm, "DEC(R8, 1)")
 
-    assert vm.flag_carry
+    assert not vm.flag_carry
     assert not vm.flag_overflow
 
 
@@ -298,17 +298,16 @@ def test_DEC_sets_overflow_flag(vm):
     helper(vm, "DEC(R8, 5)")
 
     assert vm.registers[8] == 32763
-    assert not vm.flag_carry
+    assert vm.flag_carry
     assert vm.flag_overflow
 
 
 def test_DEC_ignores_incoming_carry(vm):
     vm.flag_carry = True
-    vm.registers[8] = 10
 
     helper(vm, "DEC(R8, 5)")
 
-    assert vm.registers[8] == 5
+    assert vm.registers[8] == to_u16(-5)
     assert not vm.flag_carry
 
 

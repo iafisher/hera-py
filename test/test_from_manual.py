@@ -245,7 +245,7 @@ HALT()
         assert vm.memory[DEFAULT_DATA_START + i + 1] == ord(s[i])
 
     assert vm.flag_carry_block
-    assert not vm.flag_carry
+    assert vm.flag_carry
     assert not vm.flag_overflow
     assert vm.flag_zero
     assert not vm.flag_sign
