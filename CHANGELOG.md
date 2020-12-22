@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 Nothing yet!
 
 
+## [1.0.5] - 2020-12-??
+### Fixed
+- The assembler no longer produces code for debugging instructions like `print_reg`.
+
+
 ## [1.0.4] - 2020-11-02
 ### Added
 - The command output includes the current version of the HERA language.

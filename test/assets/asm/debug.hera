@@ -1,0 +1,2 @@
+print_reg(R1)
+ADD(R0, R0, R0)

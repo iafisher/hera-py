@@ -89,7 +89,7 @@ class AbstractOperation:
         """
         return [self]
 
-    def assemble(self) -> bytes:
+    def assemble(self) -> "Optional[bytes]":
         """
         Assemble the operation into a 16-bit string. Subclasses do not generally need
         to override this method, as long as they provide a BITV class field.
@@ -275,7 +275,8 @@ class RelativeBranch(Branch):
 
 
 class DebuggingOperation(AbstractOperation):
-    pass
+    def assemble(self):
+        return None
 
 
 class DataOperation(AbstractOperation):

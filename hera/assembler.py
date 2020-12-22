@@ -22,7 +22,9 @@ def assemble(program: Program) -> "Tuple[List[bytes], List[bytes]]":
     data = []
 
     for op in program.code:
-        code.append(op.assemble())
+        assembled = op.assemble()
+        if assembled is not None:
+            code.append(assembled)
 
     for data_op in program.data:
         data.append(data_op.assemble())
