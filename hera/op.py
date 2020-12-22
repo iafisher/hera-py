@@ -711,14 +711,8 @@ class ASR(UnaryOp):
 
     @staticmethod
     def calculate(vm, arg):
-        # This is a little messy because right shift in Python rounds towards
-        # negative infinity (7 >> 1 == -4) but in HERA it rounds towards zero
-        # (7 >> 1 == -3).
         if arg & 0x8000:
-            if arg & 0x0001:
-                result = ((arg >> 1) | 0x8000) + 1
-            else:
-                result = arg >> 1 | 0x8000
+            result = arg >> 1 | 0x8000
         else:
             result = arg >> 1
 

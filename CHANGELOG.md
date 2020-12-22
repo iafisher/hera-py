@@ -11,6 +11,7 @@ Nothing yet!
 ## [1.0.5] - 2020-12-??
 ### Fixed
 - The assembler no longer produces code for debugging instructions like `print_reg`.
+- `ASR` now rounds towards negative infinity for negative numbers instead of zero.
 
 
 ## [1.0.4] - 2020-11-02

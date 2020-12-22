@@ -418,7 +418,7 @@ def test_ASR_with_small_negative(vm):
 
     helper(vm, "ASR(R1, R2)")
 
-    assert vm.registers[1] == to_u16(-3)
+    assert vm.registers[1] == to_u16(-4)
 
 
 def test_ASR_with_another_small_negative(vm):
@@ -426,7 +426,7 @@ def test_ASR_with_another_small_negative(vm):
 
     helper(vm, "ASR(R1, R2)")
 
-    assert vm.registers[1] == to_u16(-2)
+    assert vm.registers[1] == to_u16(-3)
 
 
 def test_ASR_with_large_negative(vm):
