@@ -24,14 +24,14 @@ from .data import (
     Token,
 )
 from .op import (
-    DataOperation,
-    DebuggingOperation,
-    AbstractOperation,
-    RegisterBranch,
-    RelativeBranch,
     LABEL,
     RTI,
     SWI,
+    AbstractOperation,
+    DataOperation,
+    DebuggingOperation,
+    RegisterBranch,
+    RelativeBranch,
 )
 from .utils import out_of_range
 
@@ -65,6 +65,12 @@ def check(
         if isinstance(op, DataOperation):
             data.append(op)
         else:
+            if isinstance(op, DebuggingOperation) and settings.mode in (
+                "assemble",
+                "preprocess",
+            ):
+                continue
+
             code.append(op)
 
     return (Program(data, code, symbol_table, debug_info), messages)
@@ -175,6 +181,10 @@ def get_labels(
                     dc += op.args[0]
                 elif op.args[0] in constants:
                     dc += constants[op.args[0]]
+        elif settings.mode in ("assemble", "preprocess") and isinstance(
+            op, DebuggingOperation
+        ):
+            continue
         else:
             pc += operation_length(op)
 

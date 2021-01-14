@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 Nothing yet!
 
 
+## [1.0.6] - 2021-01-13
+### Fixed
+- The assembler produces correct offsets for branches in the presence of debugging operations.
+
+
 ## [1.0.5] - 2020-12-??
 ### Fixed
 - The assembler no longer produces code for debugging instructions like `print_reg`.

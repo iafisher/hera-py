@@ -1,0 +1,4 @@
+BR(l)
+print("Hello, world") // This should not affect the branch offset.
+ADD(R0, R0, R0)
+LABEL(l)

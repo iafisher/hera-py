@@ -1,5 +1,5 @@
-from unittest.mock import patch
 from io import StringIO
+from unittest.mock import patch
 
 from hera.main import main
 
@@ -31,6 +31,16 @@ def test_assemble_branch(capsys):
     assert captured.err == ""
 
     with open("test/assets/asm/branch.hera.lcode") as f:
+        assert captured.out == f.read()
+
+
+def test_assemble_labelled_branch(capsys):
+    main(["assemble", "--code", "--stdout", "test/assets/asm/branch_label.hera"])
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+
+    with open("test/assets/asm/branch_label.hera.lcode") as f:
         assert captured.out == f.read()
 
 
