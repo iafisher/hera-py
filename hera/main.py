@@ -15,7 +15,7 @@ from .op import disassemble
 from .utils import Path, format_int, read_file_or_stdin, register_to_index
 from .vm import VirtualMachine
 
-VERSION = "hera-py 1.0.5 for HERA version 2.4"
+VERSION = "hera-py 1.0.6 for HERA version 2.4"
 
 
 def external_main(argv=None) -> None:
