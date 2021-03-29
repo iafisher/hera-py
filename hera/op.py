@@ -67,7 +67,9 @@ class AbstractOperation:
         else:
             self.loc = None
 
-    def typecheck(self, symbol_table: "Dict[str, int]") -> Messages:
+    def typecheck(
+        self, symbol_table: "Dict[str, int]", *, assembly_only: bool = False
+    ) -> Messages:
         """
         Type-check the operation. Subclasses do not generally need to override this
         method, as long as they provide a P class field listing their parameter types.
@@ -1662,20 +1664,24 @@ class OPCODE(AbstractOperation):
 
     P = (U16,)
 
-    def typecheck(self, *args, **kwargs):
-        messages = super().typecheck(*args, **kwargs)
+    def typecheck(self, *args, assembly_only=False, **kwargs):
+        messages = super().typecheck(*args, assembly_only=assembly_only, **kwargs)
 
         try:
-            disassemble(self.args[0])
+            disassemble(self.args[0], allow_unknown=assembly_only)
         except HERAError:
-            messages.err("not a HERA instruction", self.tokens[0])
+            if not assembly_only:
+                messages.err("not a HERA instruction", self.tokens[0])
 
         return messages
+
+    def assemble(self) -> "Optional[bytes]":
+        return bytes([self.args[0] >> 8, self.args[0] & 0xFF])
 
     def convert(self):
         # We don't need to call .convert() on the return value of disassemble because
         # disassemble never returns a pseudo-op.
-        return [disassemble(self.args[0])]
+        return [disassemble(self.args[0], allow_unknown=True)]
 
 
 class INTEGER(DataOperation):
@@ -1842,7 +1848,7 @@ class __EVAL(DebuggingOperation):
         vm.pc += 1
 
 
-def disassemble(v: int) -> AbstractOperation:
+def disassemble(v: int, allow_unknown: bool = False) -> AbstractOperation:
     """Disassemble a 16-bit integer into a HERA operation."""
     # Iterating over every HERA class is inefficient but simple.
     for cls in name_to_class.values():
@@ -1851,7 +1857,10 @@ def disassemble(v: int) -> AbstractOperation:
             if m is not False and isinstance(m, list):
                 return cls.disassemble(*m)
 
-    raise HERAError("bit pattern does not correspond to HERA instruction")
+    if allow_unknown:
+        return OPCODE(Token(Token.INT, v))
+    else:
+        raise HERAError("bit pattern does not correspond to HERA instruction")
 
 
 def match_bitvector(pattern: str, v: int) -> "Union[List, bool]":

@@ -91,8 +91,9 @@ def typecheck(
     symbol_table, label_messages = get_labels(program, settings)
     messages.extend(label_messages)
 
+    assembly_only = settings.mode == "assemble"
     for op in program:
-        op_messages = op.typecheck(symbol_table)
+        op_messages = op.typecheck(symbol_table, assembly_only=assembly_only)
         messages.extend(op_messages)
 
         if isinstance(op, DataOperation):
