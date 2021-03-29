@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 Nothing yet!
 
 
+## [1.0.7] - 2021-03-28
+### Fixed
+- Custom `OPCODE` instructions (i.e., those not encoding valid HERA instructions) can now be assembled.
+
+
 ## [1.0.6] - 2021-01-13
 ### Fixed
 - The assembler produces correct offsets for branches in the presence of debugging operations.
